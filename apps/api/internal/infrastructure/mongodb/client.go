@@ -3,6 +3,7 @@ package mongodb
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -125,8 +126,17 @@ func (c *Client) EnsureIndexes(ctx context.Context) error {
 		coll := c.db.Collection(collName)
 		_, err := coll.Indexes().CreateMany(ctx, models)
 		if err != nil {
-			c.log.Error("Failed to create indexes", zap.String("collection", collName), zap.Error(err))
-			return fmt.Errorf("mongodb: ensure indexes for %s: %w", collName, err)
+			if strings.Contains(err.Error(), "IndexKeySpecsConflict") {
+				c.log.Warn("IndexKeySpecsConflict detected, dropping all non-id indexes and recreating", zap.String("collection", collName))
+				_ = coll.Indexes().DropAll(ctx)
+				if _, retryErr := coll.Indexes().CreateMany(ctx, models); retryErr != nil {
+					c.log.Error("Failed to recreate indexes after drop", zap.String("collection", collName), zap.Error(retryErr))
+					return fmt.Errorf("mongodb: ensure indexes for %s: %w", collName, retryErr)
+				}
+			} else {
+				c.log.Error("Failed to create indexes", zap.String("collection", collName), zap.Error(err))
+				return fmt.Errorf("mongodb: ensure indexes for %s: %w", collName, err)
+			}
 		}
 		c.log.Info("Indexes ensured", zap.String("collection", collName))
 	}
