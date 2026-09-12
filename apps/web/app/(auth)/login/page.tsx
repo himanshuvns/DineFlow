@@ -28,7 +28,7 @@ export default function LoginPage() {
 
   const handleFillDemo = () => {
     setPhone("+91 98765 43210");
-    setPassword("Password123!");
+    setPassword("DineFlow@2026");
     setError("");
   };
 
