@@ -26,6 +26,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 interface TenantRecord {
   id: string;
@@ -189,26 +190,27 @@ export default function PlatformAdminPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#070A12] text-slate-100 p-6 md:p-10 font-sans selection:bg-emerald-500/30">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#070A12] text-slate-900 dark:text-slate-100 p-6 md:p-10 font-sans selection:bg-emerald-500/30 transition-colors duration-200">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Top Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800/80 pb-6">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <span className="px-2.5 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-400 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+              <span className="px-2.5 py-0.5 rounded-full bg-purple-500/10 border border-purple-200 dark:border-purple-500/30 text-purple-700 dark:text-purple-400 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
                 <ShieldAlert className="h-3.5 w-3.5" /> Platform Super-Admin
               </span>
-              <span className="text-xs text-slate-500">• DineFlow Core Engine</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400">• DineFlow Core Engine</span>
             </div>
-            <h1 className="text-3xl font-extrabold text-white tracking-tight">
+            <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
               SaaS Platform & Revenue Console
             </h1>
-            <p className="text-xs sm:text-sm text-slate-400 mt-1">
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1 font-medium">
               Real-time platform financial health, multi-tenant billing status, and plan control.
             </p>
           </div>
 
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             <Link href="/dashboard">
               <Button variant="outline" size="sm">
                 Return to Restaurant
@@ -227,15 +229,15 @@ export default function PlatformAdminPage() {
           <Card variant="glass" className="border-emerald-500/30 bg-emerald-500/5">
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-400 font-medium">Monthly Run Rate (MRR)</span>
-                <span className="p-2 rounded-lg bg-emerald-500/20 text-emerald-400">
+                <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">Monthly Run Rate (MRR)</span>
+                <span className="p-2 rounded-lg bg-emerald-500/15 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
                   <DollarSign className="h-4 w-4" />
                 </span>
               </div>
-              <p className="text-2xl sm:text-3xl font-extrabold text-white mt-2">
+              <p className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mt-2">
                 ₹{totalMRR.toLocaleString("en-IN")}
               </p>
-              <p className="text-[11px] text-emerald-400 font-medium mt-1 flex items-center gap-1">
+              <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold mt-1 flex items-center gap-1">
                 <TrendingUp className="h-3 w-3" /> +24.8% vs last month
               </p>
             </CardContent>
@@ -244,15 +246,15 @@ export default function PlatformAdminPage() {
           <Card variant="glass">
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-400 font-medium">Annualized ARR</span>
-                <span className="p-2 rounded-lg bg-teal-500/20 text-teal-400">
+                <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">Annualized ARR</span>
+                <span className="p-2 rounded-lg bg-teal-500/15 dark:bg-teal-500/20 text-teal-600 dark:text-teal-400">
                   <TrendingUp className="h-4 w-4" />
                 </span>
               </div>
-              <p className="text-2xl sm:text-3xl font-extrabold text-white mt-2">
+              <p className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mt-2">
                 ₹{totalARR.toLocaleString("en-IN")}
               </p>
-              <p className="text-[11px] text-slate-400 mt-1">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
                 Contracted annualized recurring value
               </p>
             </CardContent>
@@ -261,15 +263,15 @@ export default function PlatformAdminPage() {
           <Card variant="glass">
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-400 font-medium">Active Dining Tenants</span>
-                <span className="p-2 rounded-lg bg-blue-500/20 text-blue-400">
+                <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">Active Dining Tenants</span>
+                <span className="p-2 rounded-lg bg-blue-500/15 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400">
                   <Building2 className="h-4 w-4" />
                 </span>
               </div>
-              <p className="text-2xl sm:text-3xl font-extrabold text-white mt-2">
+              <p className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mt-2">
                 {activeCount}
               </p>
-              <p className="text-[11px] text-slate-400 mt-1">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
                 Across {tenants.length} registered properties
               </p>
             </CardContent>
@@ -278,15 +280,15 @@ export default function PlatformAdminPage() {
           <Card variant="glass" className={graceCount > 0 ? "border-amber-500/40 bg-amber-500/5" : ""}>
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-400 font-medium">Grace Period Retries</span>
-                <span className="p-2 rounded-lg bg-amber-500/20 text-amber-400">
+                <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">Grace Period Retries</span>
+                <span className="p-2 rounded-lg bg-amber-500/15 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400">
                   <AlertTriangle className="h-4 w-4" />
                 </span>
               </div>
-              <p className="text-2xl sm:text-3xl font-extrabold text-white mt-2">
+              <p className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mt-2">
                 {graceCount}
               </p>
-              <p className="text-[11px] text-amber-300/90 mt-1">
+              <p className="text-[11px] text-amber-700 dark:text-amber-300/90 font-medium mt-1">
                 Protected by 14-day zero-downtime policy
               </p>
             </CardContent>
@@ -296,36 +298,36 @@ export default function PlatformAdminPage() {
         {/* Tier Distribution Bar */}
         <Card variant="glass">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-bold text-white uppercase tracking-wider">
+            <CardTitle className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
               Tenant Subscription Distribution
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
-              <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
-                <span className="text-slate-400">Free Tier</span>
-                <p className="text-xl font-bold text-white mt-1">
+              <div className="p-3 rounded-xl bg-slate-100/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+                <span className="text-slate-600 dark:text-slate-400">Free Tier</span>
+                <p className="text-xl font-bold text-slate-900 dark:text-white mt-1">
                   {tenants.filter((t) => t.plan === "free").length}
                 </p>
                 <span className="text-[10px] text-slate-500">Trial / Pop-up stores</span>
               </div>
-              <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
-                <span className="text-slate-400">Starter Tier</span>
-                <p className="text-xl font-bold text-white mt-1">
+              <div className="p-3 rounded-xl bg-slate-100/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+                <span className="text-slate-600 dark:text-slate-400">Starter Tier</span>
+                <p className="text-xl font-bold text-slate-900 dark:text-white mt-1">
                   {tenants.filter((t) => t.plan === "starter").length}
                 </p>
                 <span className="text-[10px] text-slate-500">Single-location bistros</span>
               </div>
-              <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
-                <span className="text-emerald-400 font-semibold">Growth Tier</span>
-                <p className="text-xl font-bold text-emerald-400 mt-1">
+              <div className="p-3 rounded-xl bg-slate-100/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Growth Tier</span>
+                <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">
                   {tenants.filter((t) => t.plan === "growth").length}
                 </p>
                 <span className="text-[10px] text-slate-500">Multi-KDS restaurants</span>
               </div>
-              <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
-                <span className="text-amber-400 font-semibold">Hotel Pro</span>
-                <p className="text-xl font-bold text-amber-400 mt-1">
+              <div className="p-3 rounded-xl bg-slate-100/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+                <span className="text-amber-600 dark:text-amber-400 font-semibold">Hotel Pro</span>
+                <p className="text-xl font-bold text-amber-600 dark:text-amber-400 mt-1">
                   {tenants.filter((t) => t.plan === "hotel_pro").length}
                 </p>
                 <span className="text-[10px] text-slate-500">Luxury resorts & suites</span>
@@ -338,10 +340,10 @@ export default function PlatformAdminPage() {
         <Card variant="glass">
           <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 gap-4">
             <div>
-              <CardTitle className="text-base font-bold text-white">
+              <CardTitle className="text-base font-bold text-slate-900 dark:text-white">
                 Multi-Tenant Directory
               </CardTitle>
-              <CardDescription className="text-xs text-slate-400 mt-0.5">
+              <CardDescription className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
                 Inspect subscriber status, MRR contributions, and execute plan overrides.
               </CardDescription>
             </div>
@@ -359,7 +361,7 @@ export default function PlatformAdminPage() {
               <select
                 value={planFilter}
                 onChange={(e) => setPlanFilter(e.target.value)}
-                className="h-9 px-3 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-300 focus:outline-none focus:border-emerald-500"
+                className="h-9 px-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs text-slate-800 dark:text-slate-300 focus:outline-none focus:border-emerald-500 shadow-2xs"
               >
                 <option value="all">All Plans</option>
                 <option value="free">Free</option>
@@ -374,7 +376,7 @@ export default function PlatformAdminPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-800 text-slate-400 font-semibold bg-slate-950/40">
+                  <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-semibold bg-slate-100/70 dark:bg-slate-950/40">
                     <th className="p-3">Restaurant / Property</th>
                     <th className="p-3">City</th>
                     <th className="p-3">Plan Tier</th>
@@ -385,20 +387,20 @@ export default function PlatformAdminPage() {
                     <th className="p-3 text-right">Admin Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60">
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
                   {filteredTenants.map((t) => (
-                    <tr key={t.id} className="hover:bg-slate-800/20 transition-colors">
-                      <td className="p-3 font-semibold text-white">
+                    <tr key={t.id} className="hover:bg-slate-100/60 dark:hover:bg-slate-800/20 transition-colors">
+                      <td className="p-3 font-semibold text-slate-900 dark:text-white">
                         <div className="flex items-center gap-2">
                           {t.roomsCount > 0 ? (
-                            <Hotel className="h-4 w-4 text-amber-400 shrink-0" />
+                            <Hotel className="h-4 w-4 text-amber-500 dark:text-amber-400 shrink-0" />
                           ) : (
-                            <UtensilsCrossed className="h-4 w-4 text-emerald-400 shrink-0" />
+                            <UtensilsCrossed className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                           )}
                           <span>{t.name}</span>
                         </div>
                       </td>
-                      <td className="p-3 text-slate-400">{t.city}</td>
+                      <td className="p-3 text-slate-600 dark:text-slate-400">{t.city}</td>
                       <td className="p-3">
                         <Badge
                           variant={
@@ -415,11 +417,11 @@ export default function PlatformAdminPage() {
                           {t.plan.toUpperCase()}
                         </Badge>
                       </td>
-                      <td className="p-3 text-slate-400 capitalize">{t.cycle}</td>
-                      <td className="p-3 text-slate-300">
+                      <td className="p-3 text-slate-600 dark:text-slate-400 capitalize">{t.cycle}</td>
+                      <td className="p-3 text-slate-700 dark:text-slate-300">
                         {t.tablesCount} Tables {t.roomsCount > 0 && `• ${t.roomsCount} Rooms`}
                       </td>
-                      <td className="p-3 font-mono font-semibold text-white">
+                      <td className="p-3 font-mono font-semibold text-slate-900 dark:text-white">
                         ₹{t.mrr.toLocaleString("en-IN")}/mo
                       </td>
                       <td className="p-3">
@@ -458,19 +460,19 @@ export default function PlatformAdminPage() {
           size="md"
         >
           <div className="space-y-4">
-            <div className="p-3 rounded-lg bg-slate-950/70 border border-slate-800 text-xs space-y-1">
-              <div className="flex justify-between text-slate-400">
+            <div className="p-3 rounded-lg bg-slate-100 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 text-xs space-y-1">
+              <div className="flex justify-between text-slate-600 dark:text-slate-400">
                 <span>Tenant ID:</span>
-                <span className="font-mono text-white">{selectedTenant.id}</span>
+                <span className="font-mono text-slate-900 dark:text-white">{selectedTenant.id}</span>
               </div>
-              <div className="flex justify-between text-slate-400">
+              <div className="flex justify-between text-slate-600 dark:text-slate-400">
                 <span>Current Plan:</span>
-                <span className="font-bold text-white capitalize">{selectedTenant.plan}</span>
+                <span className="font-bold text-slate-900 dark:text-white capitalize">{selectedTenant.plan}</span>
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-slate-300">Target Subscription Tier</label>
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Target Subscription Tier</label>
               <div className="grid grid-cols-2 gap-2">
                 {[
                   { id: "free", label: "Free (5 Tables)" },
@@ -483,8 +485,8 @@ export default function PlatformAdminPage() {
                     onClick={() => setNewPlan(tier.id as any)}
                     className={`p-3 rounded-lg border text-left text-xs transition-all cursor-pointer ${
                       newPlan === tier.id
-                        ? "border-emerald-500 bg-emerald-500/10 text-white font-bold"
-                        : "border-slate-800 bg-slate-900/50 text-slate-300 hover:border-slate-700"
+                        ? "border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-white font-bold"
+                        : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700"
                     }`}
                   >
                     {tier.label}
