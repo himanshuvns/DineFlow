@@ -70,7 +70,7 @@ export default function HomePage() {
             showOverlayContent={false}
             className="h-full w-full"
             particleColor="rgba(16, 185, 129, 0.85)"
-            lineColor="rgba(20, 184, 166, "
+            lineColor="rgba(20, 184, 166, 0.5)"
           />
         </div>
 

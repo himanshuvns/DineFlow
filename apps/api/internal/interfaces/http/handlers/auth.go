@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"os"
 
@@ -43,6 +44,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		case errors.Is(err, authapp.ErrSlugAlreadyExists):
 			response.Conflict(c, "SLUG_EXISTS", "This business name is already taken. Please try a different name.")
 		default:
+			log.Printf("❌ [AUTH] Register unexpected error: %v", err)
 			response.InternalError(c)
 		}
 		return

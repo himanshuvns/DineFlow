@@ -74,6 +74,17 @@ func main() {
 		log.Warn("Failed to seed default data", zap.Error(err))
 	}
 
+	// ── Startup Disk Cleanup (non-fatal) ────────────────────────────────────
+	// Removes orphaned tenants, stale unverified users, and compacts collections
+	// to reclaim disk space on Railway's MongoDB volume.
+	go func() {
+		cleanCtx, cleanCancel := context.WithTimeout(context.Background(), 3*time.Minute)
+		defer cleanCancel()
+		if err := runStartupCleanup(cleanCtx, mongoDB, log); err != nil {
+			log.Warn("Startup cleanup had errors (non-fatal)", zap.Error(err))
+		}
+	}()
+
 	// ── Connect Redis ─────────────────────────────────────────────────────────
 	rdb, err := redisinfra.New(ctx, cfg.Redis.URL, log)
 	if err != nil {

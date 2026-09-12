@@ -244,12 +244,28 @@ func (s *Service) Register(ctx context.Context, req RegisterRequest) (string, er
 	}
 
 	// Insert tenant
+	log.Printf("📦 [AUTH] Inserting tenant slug=%s for user phone=%s", slug, phone)
 	if _, err := tenantsColl.InsertOne(ctx, newTenant); err != nil {
+		if mongo.IsDuplicateKeyError(err) {
+			return "", ErrSlugAlreadyExists
+		}
+		log.Printf("❌ [AUTH] InsertOne tenant failed: %v", err)
 		return "", fmt.Errorf("register: insert tenant: %w", err)
 	}
 
 	// Insert user
 	if _, err := usersColl.InsertOne(ctx, newUser); err != nil {
+		if mongo.IsDuplicateKeyError(err) {
+			// Phone or email index collision — roll back tenant insert
+			_, _ = tenantsColl.DeleteOne(ctx, bson.M{"_id": newTenant.ID})
+			if phone != "" {
+				return "", ErrPhoneAlreadyExists
+			}
+			return "", ErrEmailAlreadyExists
+		}
+		// Roll back tenant on any user insert failure
+		_, _ = tenantsColl.DeleteOne(ctx, bson.M{"_id": newTenant.ID})
+		log.Printf("❌ [AUTH] InsertOne user failed: %v", err)
 		return "", fmt.Errorf("register: insert user: %w", err)
 	}
 

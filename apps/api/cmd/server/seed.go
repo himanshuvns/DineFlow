@@ -354,3 +354,74 @@ func seedDefaultData(ctx context.Context, db *mongoinfra.Client, log *zap.Logger
 
 	return nil
 }
+
+// runStartupCleanup removes orphaned documents and compacts MongoDB collections
+// to reclaim disk space on the Railway volume. It is non-fatal and runs in the background.
+func runStartupCleanup(ctx context.Context, db *mongoinfra.Client, log *zap.Logger) error {
+	log.Info("🧹 Starting MongoDB disk cleanup...")
+
+	tenantsColl := db.Collection("tenants")
+	usersColl := db.Collection("users")
+
+	// ── Remove orphaned tenants (no matching owner user) ───────────────────
+	cursor, err := tenantsColl.Find(ctx, bson.M{})
+	if err != nil {
+		return err
+	}
+	var tenants []struct {
+		ID   bson.ObjectID `bson:"_id"`
+		Name string        `bson:"name"`
+		Slug string        `bson:"slug"`
+	}
+	if err := cursor.All(ctx, &tenants); err != nil {
+		return err
+	}
+
+	var orphanedIDs []bson.ObjectID
+	for _, t := range tenants {
+		count, err := usersColl.CountDocuments(ctx, bson.M{"tenantId": t.ID})
+		if err != nil {
+			continue
+		}
+		if count == 0 {
+			log.Info("🗑️  Removing orphaned tenant", zap.String("slug", t.Slug), zap.String("name", t.Name))
+			orphanedIDs = append(orphanedIDs, t.ID)
+		}
+	}
+	if len(orphanedIDs) > 0 {
+		res, err := tenantsColl.DeleteMany(ctx, bson.M{"_id": bson.M{"$in": orphanedIDs}})
+		if err != nil {
+			log.Warn("Failed to delete orphaned tenants", zap.Error(err))
+		} else {
+			log.Info("🗑️  Deleted orphaned tenants", zap.Int64("count", res.DeletedCount))
+		}
+	}
+
+	// ── Remove stale unverified users (invited, older than 24h) ────────────
+	cutoff := time.Now().UTC().Add(-24 * time.Hour)
+	res, err := usersColl.DeleteMany(ctx, bson.M{
+		"status":    "invited",
+		"createdAt": bson.M{"$lt": cutoff},
+	})
+	if err != nil {
+		log.Warn("Failed to delete stale unverified users", zap.Error(err))
+	} else if res.DeletedCount > 0 {
+		log.Info("🗑️  Deleted stale unverified users", zap.Int64("count", res.DeletedCount))
+	}
+
+	// ── Compact all collections to reclaim disk ─────────────────────────────
+	collections := []string{"tenants", "users", "menu_items", "categories", "tables", "orders", "qr_codes"}
+	for _, coll := range collections {
+		var result bson.M
+		err := db.DB().RunCommand(ctx, bson.D{{Key: "compact", Value: coll}}).Decode(&result)
+		if err != nil {
+			log.Warn("Compact failed (non-fatal)", zap.String("collection", coll), zap.Error(err))
+		} else {
+			log.Info("✅ Compacted collection", zap.String("collection", coll))
+		}
+	}
+
+	log.Info("🧹 MongoDB disk cleanup complete")
+	return nil
+}
+

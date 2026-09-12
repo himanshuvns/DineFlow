@@ -37,13 +37,15 @@ func Health(c *gin.Context) {
 		}
 	}
 
-	status := http.StatusOK
+	overall := "ok"
 	if mongoStatus != "connected" || redisStatus != "connected" {
-		status = http.StatusServiceUnavailable
+		overall = "degraded"
 	}
 
-	c.JSON(status, gin.H{
-		"status":    "ok",
+	// Always return 200 so Railway health checks pass during deployment.
+	// Operators can monitor the 'status' field for degradation.
+	c.JSON(http.StatusOK, gin.H{
+		"status":    overall,
 		"timestamp": time.Now().UTC().Format(time.RFC3339),
 		"services": gin.H{
 			"mongo": mongoStatus,

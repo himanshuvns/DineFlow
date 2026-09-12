@@ -13,6 +13,8 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 # Copy source code
+ARG BUILD_TIME=unknown
+RUN echo "Build time: $BUILD_TIME"
 COPY . .
 
 # Build statically linked binary
