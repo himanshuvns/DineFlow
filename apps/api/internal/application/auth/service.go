@@ -180,6 +180,9 @@ func (s *Service) Register(ctx context.Context, req RegisterRequest) (string, er
 
 	// Generate tenant slug from business name
 	slug := generateSlug(req.BusinessName)
+	if slug == "" {
+		slug = "restaurant"
+	}
 	slug, err := s.ensureUniqueSlug(ctx, tenantsColl, slug)
 	if err != nil {
 		return "", fmt.Errorf("register: slug: %w", err)
@@ -247,6 +250,9 @@ func (s *Service) Register(ctx context.Context, req RegisterRequest) (string, er
 	log.Printf("📦 [AUTH] Inserting tenant slug=%s for user phone=%s", slug, phone)
 	if _, err := tenantsColl.InsertOne(ctx, newTenant); err != nil {
 		if mongo.IsDuplicateKeyError(err) {
+			if strings.Contains(err.Error(), "idx_email") || strings.Contains(err.Error(), "email") {
+				return "", ErrEmailAlreadyExists
+			}
 			return "", ErrSlugAlreadyExists
 		}
 		log.Printf("❌ [AUTH] InsertOne tenant failed: %v", err)
@@ -258,10 +264,10 @@ func (s *Service) Register(ctx context.Context, req RegisterRequest) (string, er
 		if mongo.IsDuplicateKeyError(err) {
 			// Phone or email index collision — roll back tenant insert
 			_, _ = tenantsColl.DeleteOne(ctx, bson.M{"_id": newTenant.ID})
-			if phone != "" {
-				return "", ErrPhoneAlreadyExists
+			if strings.Contains(err.Error(), "idx_tenant_email") || strings.Contains(err.Error(), "email") {
+				return "", ErrEmailAlreadyExists
 			}
-			return "", ErrEmailAlreadyExists
+			return "", ErrPhoneAlreadyExists
 		}
 		// Roll back tenant on any user insert failure
 		_, _ = tenantsColl.DeleteOne(ctx, bson.M{"_id": newTenant.ID})

@@ -88,7 +88,7 @@ func (c *Client) EnsureIndexes(ctx context.Context) error {
 	indexDefs := map[string][]mongo.IndexModel{
 		"tenants": {
 			{Keys: bson.D{{Key: "slug", Value: 1}}, Options: options.Index().SetUnique(true).SetName("idx_slug")},
-			{Keys: bson.D{{Key: "contact.email", Value: 1}}, Options: options.Index().SetUnique(true).SetSparse(true).SetName("idx_email")},
+			{Keys: bson.D{{Key: "contact.email", Value: 1}}, Options: options.Index().SetSparse(true).SetName("idx_email")},
 			{Keys: bson.D{{Key: "plan", Value: 1}, {Key: "status", Value: 1}}, Options: options.Index().SetName("idx_plan_status")},
 		},
 		"users": {

@@ -73,8 +73,8 @@ type NotificationPrefs struct {
 type User struct {
 	ID                bson.ObjectID `bson:"_id,omitempty" json:"id"`
 	TenantID          bson.ObjectID `bson:"tenantId" json:"tenantId"`
-	Email             string             `bson:"email" json:"email"`
-	Phone             string             `bson:"phone,omitempty" json:"phone,omitempty"`
+	Email             string        `bson:"email,omitempty" json:"email,omitempty"`
+	Phone             string        `bson:"phone,omitempty" json:"phone,omitempty"`
 	Name              string             `bson:"name" json:"name"`
 	Avatar            string             `bson:"avatar,omitempty" json:"avatar,omitempty"`
 	Role              Role               `bson:"role" json:"role"`

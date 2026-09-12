@@ -39,9 +39,9 @@ const (
 
 // Contact holds communication details for the business.
 type Contact struct {
-	Email          string `bson:"email" json:"email"`
-	Phone          string `bson:"phone" json:"phone"`
-	WhatsAppPhone  string `bson:"whatsappPhone" json:"whatsappPhone"`
+	Email         string `bson:"email,omitempty" json:"email,omitempty"`
+	Phone         string `bson:"phone,omitempty" json:"phone,omitempty"`
+	WhatsAppPhone string `bson:"whatsappPhone,omitempty" json:"whatsappPhone,omitempty"`
 }
 
 // Address holds the physical address.
