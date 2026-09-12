@@ -5,18 +5,13 @@ import {
   Plus,
   Search,
   Sparkles,
-  Filter,
   Edit2,
   Trash2,
-  Check,
-  X,
-  Sliders,
-  DollarSign,
-  Tag,
-  ToggleLeft,
-  ToggleRight,
   FolderPlus,
-  Image as ImageIcon,
+  Coffee,
+  Utensils,
+  Flame,
+  Wine,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,121 +20,44 @@ import { Tabs } from "@/components/ui/tabs";
 import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
 import { formatCurrency } from "@/lib/utils";
-
-interface DishItem {
-  id: string;
-  name: string;
-  category: string;
-  price: number;
-  available: boolean;
-  isVeg: boolean;
-  desc: string;
-  imageUrl?: string;
-  variantsCount?: number;
-  modifiersCount?: number;
-}
-
-const INITIAL_MENU_ITEMS: DishItem[] = [
-  {
-    id: "itm_1",
-    name: "Truffle Mushroom Risotto",
-    category: "Mains",
-    price: 850,
-    available: true,
-    isVeg: true,
-    desc: "Arborio rice, black truffle paste, wild forest mushrooms, Parmigiano-Reggiano.",
-    imageUrl: "https://images.unsplash.com/photo-1621996346565-e3d5d6281691?auto=format&fit=crop&w=600&q=80",
-    variantsCount: 0,
-    modifiersCount: 2,
-  },
-  {
-    id: "itm_2",
-    name: "Wood-Fired Margherita",
-    category: "Pizzas",
-    price: 750,
-    available: true,
-    isVeg: true,
-    desc: "San Marzano tomatoes, fresh buffalo mozzarella, organic basil, extra virgin olive oil.",
-    imageUrl: "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=600&q=80",
-    variantsCount: 2,
-    modifiersCount: 3,
-  },
-  {
-    id: "itm_3",
-    name: "Burrata & Heirloom Salad",
-    category: "Starters",
-    price: 680,
-    available: true,
-    isVeg: true,
-    desc: "Pugliese burrata, heirloom cherry tomatoes, aged balsamic reduction, toasted pine nuts.",
-    imageUrl: "https://images.unsplash.com/photo-1592417817098-8f3d6910985c?auto=format&fit=crop&w=600&q=80",
-    variantsCount: 0,
-    modifiersCount: 2,
-  },
-  {
-    id: "itm_4",
-    name: "Cold Brew Tonic & Citrus",
-    category: "Beverages",
-    price: 320,
-    available: true,
-    isVeg: true,
-    desc: "Single origin 18-hour cold brew steeped with artisanal tonic and dehydrated orange slice.",
-    imageUrl: "https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=600&q=80",
-    variantsCount: 0,
-    modifiersCount: 0,
-  },
-  {
-    id: "itm_5",
-    name: "Belgian Chocolate Fondant",
-    category: "Desserts",
-    price: 450,
-    available: false,
-    isVeg: true,
-    desc: "Warm molten center cake with Madagascar bourbon vanilla bean gelato.",
-    imageUrl: "https://images.unsplash.com/photo-1579372786545-d24232daf58c?auto=format&fit=crop&w=600&q=80",
-    variantsCount: 0,
-    modifiersCount: 1,
-  },
-  {
-    id: "itm_6",
-    name: "Spicy Diavola Pizza",
-    category: "Pizzas",
-    price: 820,
-    available: true,
-    isVeg: false,
-    desc: "Calabrian salami, chili oil, San Marzano sauce, fresh mozzarella.",
-    imageUrl: "https://images.unsplash.com/photo-1534308983496-4fabb1a015ee?auto=format&fit=crop&w=600&q=80",
-    variantsCount: 2,
-    modifiersCount: 2,
-  },
-];
-
-const INITIAL_CATEGORIES = [
-  "Starters",
-  "Mains",
-  "Pizzas",
-  "Beverages",
-  "Desserts",
-];
+import { useTenantData, STARTER_TEMPLATES } from "@/lib/stores/tenant-data-store";
 
 const IMAGE_PRESETS = [
   { label: "Gourmet Pasta", url: "https://images.unsplash.com/photo-1621996346565-e3d5d6281691?auto=format&fit=crop&w=600&q=80" },
   { label: "Wood-Fired Pizza", url: "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=600&q=80" },
   { label: "Appetizer Salad", url: "https://images.unsplash.com/photo-1592417817098-8f3d6910985c?auto=format&fit=crop&w=600&q=80" },
   { label: "Artisanal Drink", url: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=600&q=80" },
+  { label: "Crispy Dosa", url: "https://images.unsplash.com/photo-1668236543090-82eba5ee5976?auto=format&fit=crop&w=600&q=80" },
+  { label: "Specialty Coffee", url: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=600&q=80" },
 ];
 
 export default function MenuManagementPage() {
   const { addToast } = useToast();
-  const [items, setItems] = React.useState<DishItem[]>(INITIAL_MENU_ITEMS);
-  const [categoryList, setCategoryList] = React.useState<string[]>(INITIAL_CATEGORIES);
+  const {
+    tenantName,
+    tenant,
+    isDemoTenant,
+    menuItems,
+    categories,
+    addMenuItem,
+    updateMenuItem,
+    deleteMenuItem,
+    applyStarterTemplate,
+  } = useTenantData();
+
   const [activeCategory, setActiveCategory] = React.useState("all");
   const [searchQuery, setSearchQuery] = React.useState("");
+
+  // Category fallback if empty
+  const categoryList =
+    categories.length > 0
+      ? categories
+      : ["Starters", "Mains", "Beverages", "Desserts"];
 
   // Modal State for New Dish
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
   const [newDishName, setNewDishName] = React.useState("");
-  const [newDishCategory, setNewDishCategory] = React.useState("Starters");
+  const [newDishCategory, setNewDishCategory] = React.useState(categoryList[0] || "Mains");
   const [newDishPrice, setNewDishPrice] = React.useState("");
   const [newDishDesc, setNewDishDesc] = React.useState("");
   const [newDishImageUrl, setNewDishImageUrl] = React.useState("");
@@ -152,21 +70,17 @@ export default function MenuManagementPage() {
   const [newCategoryName, setNewCategoryName] = React.useState("");
 
   const categoriesTabs = [
-    { id: "all", label: "All Items", badge: items.length },
+    { id: "all", label: "All Items", badge: menuItems.length },
     ...categoryList.map((cat) => ({
       id: cat,
       label: cat,
-      badge: items.filter((i) => i.category === cat).length,
+      badge: menuItems.filter((i) => i.category === cat).length,
     })),
   ];
 
   // Instant 86 / Out of Stock Toggle
-  const handleToggleAvailability = (dishId: string, current: boolean) => {
-    setItems((prev) =>
-      prev.map((item) =>
-        item.id === dishId ? { ...item, available: !current } : item
-      )
-    );
+  const handleToggleAvailability = async (dishId: string, current: boolean) => {
+    await updateMenuItem(dishId, { available: !current });
     if (current) {
       addToast(
         "warning",
@@ -182,20 +96,19 @@ export default function MenuManagementPage() {
     }
   };
 
-  const handleDelete = (dishId: string, name: string) => {
-    setItems((prev) => prev.filter((item) => item.id !== dishId));
+  const handleDelete = async (dishId: string, name: string) => {
+    await deleteMenuItem(dishId);
     addToast("info", "Dish Deleted", `${name} was removed from the menu.`);
   };
 
-  const handleCreateDish = (e: React.FormEvent) => {
+  const handleCreateDish = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newDishName.trim() || !newDishPrice) {
       addToast("error", "Missing Fields", "Please enter dish name and valid price.");
       return;
     }
 
-    const newDish: DishItem = {
-      id: `itm_${Date.now()}`,
+    const created = await addMenuItem({
       name: newDishName.trim(),
       category: newDishCategory,
       price: parseFloat(newDishPrice),
@@ -205,9 +118,8 @@ export default function MenuManagementPage() {
       imageUrl: newDishImageUrl.trim() || undefined,
       variantsCount: hasVariants ? 2 : 0,
       modifiersCount: hasModifiers ? 2 : 0,
-    };
+    });
 
-    setItems([newDish, ...items]);
     setIsAddModalOpen(false);
     // Reset
     setNewDishName("");
@@ -220,7 +132,7 @@ export default function MenuManagementPage() {
     addToast(
       "success",
       "Menu Item Created",
-      `${newDish.name} added to ${newDish.category}. Available on QR menu.`
+      `${created.name} added to ${created.category}. Available on QR menu.`
     );
   };
 
@@ -233,18 +145,22 @@ export default function MenuManagementPage() {
       return;
     }
 
-    setCategoryList([...categoryList, catTrimmed]);
+    setNewDishCategory(catTrimmed);
     setIsCategoryModalOpen(false);
     setNewCategoryName("");
     addToast("success", "Category Added", `Category "${catTrimmed}" created.`);
   };
 
-  const handleSeedMenu = () => {
-    setItems(INITIAL_MENU_ITEMS);
-    addToast("success", "Sample Menu Populated", "6 gourmet chef signature dishes loaded into your catalog.");
+  const handleApplyPreset = (key: keyof typeof STARTER_TEMPLATES) => {
+    applyStarterTemplate(key);
+    addToast(
+      "success",
+      "Starter Dishes Loaded",
+      `Loaded signature items from ${STARTER_TEMPLATES[key].name} into ${tenantName}.`
+    );
   };
 
-  const filteredItems = items.filter((item) => {
+  const filteredItems = menuItems.filter((item) => {
     if (activeCategory !== "all" && item.category !== activeCategory) return false;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -262,14 +178,15 @@ export default function MenuManagementPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold mb-2">
-            <Sparkles className="h-3.5 w-3.5" /> Interactive Digital Menu Manager
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold mb-2">
+            <Sparkles className="h-3.5 w-3.5" />
+            <span>{tenantName} Menu Management</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
             Menu Management
           </h1>
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-            Configure dishes, portions, modifier groups, and instant one-click 86/sold-out toggles.
+            Configure dishes, prices, dietary tags, and instant one-click 86/sold-out toggles for {tenantName}.
           </p>
         </div>
 
@@ -302,7 +219,7 @@ export default function MenuManagementPage() {
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
           <input
             type="text"
-            placeholder="Search menu..."
+            placeholder="Search dishes..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 shadow-xs"
@@ -310,16 +227,56 @@ export default function MenuManagementPage() {
         </div>
       </div>
 
-      {/* Menu Grid */}
+      {/* Empty State / Starter Template Chooser */}
       {filteredItems.length === 0 ? (
-        <div className="p-12 text-center bg-slate-50 dark:bg-slate-900/50 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-3">
-          <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">No dishes found in this category</p>
-          <div className="flex justify-center gap-3">
-            <Button variant="secondary" size="sm" onClick={handleSeedMenu}>
-              Seed Sample Menu
+        <div className="p-10 text-center bg-slate-50 dark:bg-slate-900/50 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-4">
+          <div className="max-w-md mx-auto">
+            <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">
+              No dishes found {activeCategory !== "all" ? `in "${activeCategory}"` : `for ${tenantName}`}
+            </h3>
+            <p className="text-xs text-slate-500 mt-1">
+              Add your signature recipes one by one, or instantly populate your menu with a curated starter template:
+            </p>
+          </div>
+
+          <div className="flex flex-wrap justify-center gap-2.5 pt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              leftIcon={<Utensils className="h-3.5 w-3.5 text-emerald-500" />}
+              onClick={() => handleApplyPreset("bistro")}
+            >
+              Load Bistro & Pizza
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              leftIcon={<Coffee className="h-3.5 w-3.5 text-amber-500" />}
+              onClick={() => handleApplyPreset("cafe")}
+            >
+              Load Cafe & Coffee
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              leftIcon={<Flame className="h-3.5 w-3.5 text-orange-500" />}
+              onClick={() => handleApplyPreset("indian")}
+            >
+              Load South Indian / Dosa
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              leftIcon={<Wine className="h-3.5 w-3.5 text-indigo-500" />}
+              onClick={() => handleApplyPreset("bar")}
+            >
+              Load Bar & Taproom
+            </Button>
+          </div>
+
+          <div className="pt-2">
             <Button variant="glow" size="sm" onClick={() => setIsAddModalOpen(true)}>
-              Add First Dish
+              + Create Custom Dish
             </Button>
           </div>
         </div>
@@ -404,7 +361,7 @@ export default function MenuManagementPage() {
               <div className="pt-4 mt-4 border-t border-slate-200 dark:border-slate-800/80 flex items-center justify-between">
                 <div>
                   <span className="text-base font-bold font-mono text-slate-900 dark:text-white">
-                    {formatCurrency(item.price, "INR")}
+                    {formatCurrency(item.price, tenant?.currency || "INR")}
                   </span>
                 </div>
 
@@ -438,7 +395,7 @@ export default function MenuManagementPage() {
         isOpen={isCategoryModalOpen}
         onClose={() => setIsCategoryModalOpen(false)}
         title="Add Menu Category"
-        description="Create a new section for your digital menu (e.g. Chef Tasting, Artisanal Mocktails)."
+        description="Create a new section for your digital menu (e.g. Chef Specials, Artisanal Beverages)."
         footer={
           <div className="flex items-center justify-end gap-2 w-full">
             <Button
@@ -467,7 +424,7 @@ export default function MenuManagementPage() {
             <input
               type="text"
               required
-              placeholder="e.g. Signature Mocktails or Wood-Fired Breads"
+              placeholder="e.g. Signature Mocktails or Crispy Dosai"
               value={newCategoryName}
               onChange={(e) => setNewCategoryName(e.target.value)}
               className="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 shadow-xs"
@@ -481,7 +438,7 @@ export default function MenuManagementPage() {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         title="Add New Dish"
-        description="Add a culinary dish to your digital menu with pricing and dietary configuration."
+        description={`Add a culinary dish to ${tenantName}'s digital menu.`}
         footer={
           <div className="flex items-center justify-end gap-2 w-full">
             <Button
@@ -510,7 +467,7 @@ export default function MenuManagementPage() {
             <input
               type="text"
               required
-              placeholder="e.g. Handmade Truffle Tagliolini"
+              placeholder="e.g. Butter Garlic Naan or Truffle Risotto"
               value={newDishName}
               onChange={(e) => setNewDishName(e.target.value)}
               className="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 shadow-xs"
@@ -537,14 +494,14 @@ export default function MenuManagementPage() {
 
             <div>
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1">
-                Base Price (₹ INR) *
+                Base Price ({tenant?.currency || "INR"}) *
               </label>
               <input
                 type="number"
                 step="1"
                 min="0"
                 required
-                placeholder="e.g. 750"
+                placeholder="e.g. 350"
                 value={newDishPrice}
                 onChange={(e) => setNewDishPrice(e.target.value)}
                 className="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 font-mono shadow-xs"
@@ -616,7 +573,7 @@ export default function MenuManagementPage() {
             </label>
             <textarea
               rows={2}
-              placeholder="Highlight ingredients, flavor profiles, and allergen notes..."
+              placeholder="Highlight ingredients, spice level, or allergen warnings..."
               value={newDishDesc}
               onChange={(e) => setNewDishDesc(e.target.value)}
               className="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 resize-none shadow-xs"
@@ -640,7 +597,7 @@ export default function MenuManagementPage() {
                 onChange={(e) => setHasModifiers(e.target.checked)}
                 className="rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-emerald-600 focus:ring-0"
               />
-              <span>Enable Modifier Groups (e.g. Add-on toppings, dressings)</span>
+              <span>Enable Modifier Groups (e.g. Add-on extra cheese, toppings)</span>
             </label>
           </div>
         </form>

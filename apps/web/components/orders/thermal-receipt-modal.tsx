@@ -7,10 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
 
+import { useAuthStore } from "@/lib/stores/auth-store";
+
 export interface ThermalPrintModalProps {
   isOpen: boolean;
   onClose: () => void;
   type: "kot" | "bill";
+  restaurantName?: string;
   order: {
     id: string;
     locationName: string; // e.g. "Table 14" or "Suite 302"
@@ -34,8 +37,11 @@ export function ThermalPrintModal({
   isOpen,
   onClose,
   type,
+  restaurantName,
   order,
 }: ThermalPrintModalProps) {
+  const { tenant } = useAuthStore();
+  const displayName = restaurantName || tenant?.name || "RESTAURANT";
   const { addToast } = useToast();
   const [copied, setCopied] = React.useState(false);
   const [paperWidth, setPaperWidth] = React.useState<"80mm" | "58mm">("80mm");
@@ -161,8 +167,8 @@ export function ThermalPrintModal({
               // ── GUEST TAX BILL FORMAT ──────────────────────────
               <div className="space-y-2">
                 <div className="text-center space-y-0.5">
-                  <div className="font-extrabold text-sm">THE GRAND BISTRO</div>
-                  <div className="text-[10px] text-slate-600">Colaba Causeway, Mumbai</div>
+                  <div className="font-extrabold text-sm uppercase">{displayName}</div>
+                  <div className="text-[10px] text-slate-600">DineFlow Verified Restaurant</div>
                   <div className="text-[10px] text-slate-600">GSTIN: 27AABCU9603R1ZM</div>
                   <div className="border-b-2 border-dashed border-slate-800 pt-1" />
                 </div>

@@ -15,121 +15,103 @@ import {
   Clock,
   ExternalLink,
   Sparkles,
+  Utensils,
+  Coffee,
+  Flame,
+  Wine,
+  HelpCircle,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Modal } from "@/components/ui/modal";
-import { useAuthStore } from "@/lib/stores/auth-store";
+import { useTenantData, STARTER_TEMPLATES } from "@/lib/stores/tenant-data-store";
 import { useToast } from "@/components/ui/toast";
 import { formatCurrency } from "@/lib/utils";
 
-interface OrderFeedItem {
-  id: string;
-  table: string;
-  items: string;
-  total: number;
-  source: string;
-  time: string;
-  status: "preparing" | "ready" | "served";
-}
-
-const INITIAL_RECENT_ORDERS: OrderFeedItem[] = [
-  {
-    id: "ORD-9421",
-    table: "Table 04",
-    items: "2x Truffle Burger, 1x Sweet Potato Fries, 2x Cold Brew",
-    total: 1840,
-    source: "QR Scan",
-    time: "2 mins ago",
-    status: "preparing",
-  },
-  {
-    id: "ORD-9420",
-    table: "Table 12",
-    items: "1x Wood-fired Margherita, 1x Burrata Salad, 1x Tiramisu",
-    total: 2150,
-    source: "WhatsApp",
-    time: "6 mins ago",
-    status: "ready",
-  },
-  {
-    id: "ORD-9419",
-    table: "Room 302",
-    items: "1x Club Sandwich, 1x Fresh Orange Juice",
-    total: 920,
-    source: "QR Room",
-    time: "14 mins ago",
-    status: "served",
-  },
-  {
-    id: "ORD-9418",
-    table: "Table 07",
-    items: "3x Grilled Salmon, 2x Pinot Grigio Bottle",
-    total: 5400,
-    source: "POS Counter",
-    time: "22 mins ago",
-    status: "served",
-  },
-  {
-    id: "ORD-9417",
-    table: "Table 02",
-    items: "1x Matcha Latte, 1x Avocado Sourdough Toast",
-    total: 780,
-    source: "QR Scan",
-    time: "29 mins ago",
-    status: "served",
-  },
-];
-
-const DEFAULT_ONBOARDING_STEPS = [
-  { id: 1, title: "Register Business & Workspace", completed: true },
-  { id: 2, title: "Configure Dine-in Tables & Hotel Rooms", completed: true },
-  { id: 3, title: "Add Your Signature Menu Items", completed: true, cta: "View Menu", href: "/dashboard/menu" },
-  { id: 4, title: "Print & Display QR Code Stands", completed: false, cta: "Download QRs", href: "/dashboard/tables" },
-  { id: 5, title: "Connect WhatsApp Cloud API", completed: false, cta: "Connect Now", href: "/dashboard/whatsapp" },
-];
-
 export default function DashboardOverviewPage() {
-  const { user, tenant } = useAuthStore();
+  const {
+    tenantName,
+    tenantSlug,
+    isDemoTenant,
+    user,
+    tenant,
+    menuItems,
+    tables,
+    orders,
+    onboardingSteps,
+    addOrder,
+    toggleOnboardingStep,
+    applyStarterTemplate,
+  } = useTenantData();
+
   const { addToast } = useToast();
 
-  const userDisplayName = user?.firstName || "Laurent";
-  const tenantName = tenant?.name || "The Grand Bistro";
+  const userDisplayName =
+    user?.firstName || user?.name || (isDemoTenant ? "Laurent" : "Restaurant Owner");
 
-  const [orders, setOrders] = React.useState<OrderFeedItem[]>(INITIAL_RECENT_ORDERS);
-  const [onboardingSteps, setOnboardingSteps] = React.useState(DEFAULT_ONBOARDING_STEPS);
   const [isNewOrderOpen, setIsNewOrderOpen] = React.useState(false);
 
   // Quick order state
-  const [orderTable, setOrderTable] = React.useState("Table 03");
-  const [orderItemsText, setOrderItemsText] = React.useState("1x Truffle Mushroom Risotto, 1x Cold Brew Tonic");
-  const [orderAmount, setOrderAmount] = React.useState("1170");
+  const [orderTable, setOrderTable] = React.useState("Table 01");
+  const [orderItemsText, setOrderItemsText] = React.useState("1x House Special, 1x Beverage");
+  const [orderAmount, setOrderAmount] = React.useState("450");
+
+  // Keep orderTable aligned with available tables if present
+  React.useEffect(() => {
+    if (tables.length > 0 && !tables.some((t) => t.name === orderTable)) {
+      setOrderTable(tables[0].name);
+    }
+  }, [tables, orderTable]);
 
   const completedCount = onboardingSteps.filter((s) => s.completed).length;
   const progressPct = Math.round((completedCount / onboardingSteps.length) * 100);
 
-  const handleCreateQuickOrder = (e: React.FormEvent) => {
-    e.preventDefault();
-    const newId = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
-    const newEntry: OrderFeedItem = {
-      id: newId,
-      table: orderTable,
-      items: orderItemsText.trim() || "1x Chef Special Course",
-      total: parseFloat(orderAmount) || 850,
-      source: "POS Counter",
-      time: "Just now",
-      status: "preparing",
-    };
+  // Calculate live dynamic metrics from tenant data
+  const calculatedRevenue = orders.reduce((acc, o) => acc + (o.total || 0), 0);
+  const displayRevenue = calculatedRevenue > 0 ? calculatedRevenue : isDemoTenant ? 84250 : 0;
 
-    setOrders([newEntry, ...orders]);
+  const preparingCount = orders.filter((o) => o.status === "preparing").length;
+  const readyCount = orders.filter((o) => o.status === "ready").length;
+  const activeCount = preparingCount + readyCount;
+
+  const occupiedCount = tables.filter((t) => t.status === "occupied").length;
+  const totalTables = tables.length;
+  const occupancyPct = totalTables > 0 ? Math.round((occupiedCount / totalTables) * 100) : 0;
+
+  const handleCreateQuickOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const amount = parseFloat(orderAmount) || 250;
+    const created = await addOrder({
+      table: orderTable,
+      customerName: "Walk-in Guest",
+      customerPhone: "",
+      destination: "dine_in",
+      station: "main_kitchen",
+      status: "preparing",
+      total: amount,
+      items: [
+        {
+          name: orderItemsText.trim() || "1x Chef Special Course",
+          qty: 1,
+        },
+      ],
+    });
+
     setIsNewOrderOpen(false);
-    addToast("success", "Order Created", `Ticket ${newId} dispatched to kitchen for ${orderTable}.`);
+    addToast(
+      "success",
+      "Order Created",
+      `Ticket ${created.id} dispatched to kitchen for ${orderTable}.`
+    );
   };
 
-  const handleStepClick = (stepId: number) => {
-    setOnboardingSteps((prev) =>
-      prev.map((s) => (s.id === stepId ? { ...s, completed: !s.completed } : s))
+  const handleApplyPreset = (key: keyof typeof STARTER_TEMPLATES) => {
+    applyStarterTemplate(key);
+    addToast(
+      "success",
+      "Starter Template Applied",
+      `Loaded ${STARTER_TEMPLATES[key].name} menu items and tables into your workspace.`
     );
   };
 
@@ -138,14 +120,16 @@ export default function DashboardOverviewPage() {
       {/* Welcome Banner */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold mb-2">
-            <Sparkles className="h-3.5 w-3.5" /> Live Restaurant Telemetry
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold mb-2">
+            <Sparkles className="h-3.5 w-3.5" />
+            <span>{isDemoTenant ? "Live Demo Showcase" : `${tenantName} Workspace`}</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
             Welcome back, {userDisplayName} 👋
           </h1>
           <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
-            Here is your live service overview for <span className="text-slate-900 dark:text-white font-medium">{tenantName}</span> today.
+            Here is your live service overview for{" "}
+            <span className="text-slate-900 dark:text-white font-semibold">{tenantName}</span> today.
           </p>
         </div>
 
@@ -178,6 +162,59 @@ export default function DashboardOverviewPage() {
         </div>
       </div>
 
+      {/* Quick Starter Preset Banner if New Tenant has no items */}
+      {!isDemoTenant && menuItems.length === 0 && (
+        <Card variant="glass" className="border-emerald-500/30 bg-emerald-500/5 p-5">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <Badge variant="glow" size="sm">Quick Setup</Badge>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                  Get your {tenantName} dashboard running in seconds
+                </h3>
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+                Select a starter preset to populate sample signature dishes and QR tables, or build from scratch.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                leftIcon={<Utensils className="h-3.5 w-3.5 text-emerald-500" />}
+                onClick={() => handleApplyPreset("bistro")}
+              >
+                Bistro & Pizza
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                leftIcon={<Coffee className="h-3.5 w-3.5 text-amber-500" />}
+                onClick={() => handleApplyPreset("cafe")}
+              >
+                Cafe & Coffee
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                leftIcon={<Flame className="h-3.5 w-3.5 text-orange-500" />}
+                onClick={() => handleApplyPreset("indian")}
+              >
+                Dosa & Diner
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                leftIcon={<Wine className="h-3.5 w-3.5 text-indigo-500" />}
+                onClick={() => handleApplyPreset("bar")}
+              >
+                Bar & Taproom
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* KPI Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Metric 1 */}
@@ -190,13 +227,15 @@ export default function DashboardOverviewPage() {
           </div>
           <div className="mt-3">
             <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-              {formatCurrency(84250, tenant?.currency || "INR")}
+              {formatCurrency(displayRevenue, tenant?.currency || "INR")}
             </h2>
             <div className="flex items-center gap-1.5 mt-1 text-xs">
               <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center">
-                <ArrowUpRight className="h-3.5 w-3.5" /> +18.4%
+                <ArrowUpRight className="h-3.5 w-3.5" /> {orders.length > 0 ? "+100%" : "+0%"}
               </span>
-              <span className="text-slate-500 dark:text-slate-400">vs yesterday</span>
+              <span className="text-slate-500 dark:text-slate-400">
+                {orders.length > 0 ? `across ${orders.length} orders` : "ready for sales"}
+              </span>
             </div>
           </div>
         </Card>
@@ -210,11 +249,13 @@ export default function DashboardOverviewPage() {
             </div>
           </div>
           <div className="mt-3">
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">12 Orders</h2>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+              {activeCount} Orders
+            </h2>
             <div className="flex items-center gap-2 mt-1 text-xs text-slate-500 dark:text-slate-400">
-              <span className="text-amber-600 dark:text-amber-400 font-semibold">4 preparing</span>
+              <span className="text-amber-600 dark:text-amber-400 font-semibold">{preparingCount} preparing</span>
               <span>•</span>
-              <span className="text-cyan-600 dark:text-cyan-400 font-semibold">3 ready</span>
+              <span className="text-cyan-600 dark:text-cyan-400 font-semibold">{readyCount} ready</span>
             </div>
           </div>
         </Card>
@@ -228,10 +269,16 @@ export default function DashboardOverviewPage() {
             </div>
           </div>
           <div className="mt-3">
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">18 / 24</h2>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+              {totalTables > 0 ? `${occupiedCount} / ${totalTables}` : "0 Tables"}
+            </h2>
             <div className="flex items-center gap-1.5 mt-1 text-xs">
-              <span className="text-emerald-600 dark:text-emerald-400 font-semibold">75% capacity</span>
-              <span className="text-slate-500 dark:text-slate-400">(6 tables free)</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                {totalTables > 0 ? `${occupancyPct}% capacity` : "Setup required"}
+              </span>
+              <span className="text-slate-500 dark:text-slate-400">
+                {totalTables > 0 ? `(${totalTables - occupiedCount} free)` : ""}
+              </span>
             </div>
           </div>
         </Card>
@@ -239,16 +286,20 @@ export default function DashboardOverviewPage() {
         {/* Metric 4 */}
         <Card variant="glass" hoverEffect>
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">WhatsApp Orders</span>
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Menu Catalog</span>
             <div className="h-8 w-8 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-              <MessageSquare className="h-4 w-4" />
+              <Utensils className="h-4 w-4" />
             </div>
           </div>
           <div className="mt-3">
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">34 Orders</h2>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+              {menuItems.length} Dishes
+            </h2>
             <div className="flex items-center gap-1.5 mt-1 text-xs">
-              <span className="text-emerald-600 dark:text-emerald-400 font-semibold">62% share</span>
-              <span className="text-slate-500 dark:text-slate-400">of digital orders</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                {menuItems.filter((i) => i.available).length} Live
+              </span>
+              <span className="text-slate-500 dark:text-slate-400">on contactless QR</span>
             </div>
           </div>
         </Card>
@@ -265,7 +316,7 @@ export default function DashboardOverviewPage() {
               <Badge variant="success" size="sm">{completedCount} of {onboardingSteps.length} Completed</Badge>
             </div>
             <CardDescription className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-              Complete these setup steps to unlock maximum customer table turns and automated marketing.
+              Complete these setup steps to launch contactless QR menus, live KDS, and WhatsApp marketing for {tenantName}.
             </CardDescription>
           </div>
           <div className="w-full sm:w-48 bg-slate-200 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
@@ -284,7 +335,7 @@ export default function DashboardOverviewPage() {
             >
               <button
                 type="button"
-                onClick={() => handleStepClick(step.id)}
+                onClick={() => toggleOnboardingStep(step.id)}
                 className="flex items-center gap-2.5 min-w-0 text-left cursor-pointer"
               >
                 {step.completed ? (
@@ -326,7 +377,7 @@ export default function DashboardOverviewPage() {
                 <span className="h-2 w-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-ping" />
               </CardTitle>
               <CardDescription className="text-xs text-slate-600 dark:text-slate-400">
-                Orders arriving via contactless QR codes, WhatsApp bot, and register
+                Orders arriving via contactless QR codes, WhatsApp bot, and register for {tenantName}
               </CardDescription>
             </div>
             <Button variant="ghost" size="sm" asChild>
@@ -337,83 +388,123 @@ export default function DashboardOverviewPage() {
           </CardHeader>
 
           <CardContent className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold uppercase tracking-wider text-[10px] bg-slate-50/60 dark:bg-transparent">
-                  <th className="py-2.5 pl-2">Order ID & Source</th>
-                  <th className="py-2.5">Location</th>
-                  <th className="py-2.5">Items Summary</th>
-                  <th className="py-2.5">Amount</th>
-                  <th className="py-2.5 text-right pr-2">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
-                {orders.map((order) => {
-                  const statusBadges = {
-                    preparing: <Badge variant="warning" dot size="sm">Preparing</Badge>,
-                    ready: <Badge variant="info" dot size="sm">Ready</Badge>,
-                    served: <Badge variant="success" size="sm">Served</Badge>,
-                  };
+            {orders.length === 0 ? (
+              <div className="py-12 text-center">
+                <div className="h-12 w-12 rounded-full bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center mx-auto text-slate-400 mb-3">
+                  <ShoppingBag className="h-6 w-6" />
+                </div>
+                <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">No Orders in Kitchen Queue</h4>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
+                  Place a new quick order using the button above, or scan one of your table QR stands to simulate a guest order.
+                </p>
+                <div className="mt-4">
+                  <Button
+                    size="sm"
+                    variant="glow"
+                    leftIcon={<Plus className="h-4 w-4" />}
+                    onClick={() => setIsNewOrderOpen(true)}
+                  >
+                    Place First Order
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold uppercase tracking-wider text-[10px] bg-slate-50/60 dark:bg-transparent">
+                    <th className="py-2.5 pl-2">Order ID</th>
+                    <th className="py-2.5">Location</th>
+                    <th className="py-2.5">Items Summary</th>
+                    <th className="py-2.5">Amount</th>
+                    <th className="py-2.5 text-right pr-2">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
+                  {orders.slice(0, 6).map((order) => {
+                    const statusBadges = {
+                      pending: <Badge variant="warning" dot size="sm">Pending</Badge>,
+                      preparing: <Badge variant="warning" dot size="sm">Preparing</Badge>,
+                      ready: <Badge variant="info" dot size="sm">Ready</Badge>,
+                      served: <Badge variant="success" size="sm">Served</Badge>,
+                    };
 
-                  return (
-                    <tr key={order.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                      <td className="py-3 pl-2 font-medium">
-                        <div className="text-slate-900 dark:text-white font-bold">{order.id}</div>
-                        <div className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
-                          <span className="font-medium">{order.source}</span>
-                          <span>•</span>
-                          <span className="flex items-center gap-0.5">
-                            <Clock className="h-2.5 w-2.5" /> {order.time}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-3 font-bold text-emerald-700 dark:text-emerald-300">{order.table}</td>
-                      <td className="py-3 text-slate-700 dark:text-slate-300 max-w-[200px] truncate font-medium">
-                        {order.items}
-                      </td>
-                      <td className="py-3 font-bold text-slate-900 dark:text-white font-mono">
-                        {formatCurrency(order.total, tenant?.currency || "INR")}
-                      </td>
-                      <td className="py-3 text-right pr-2">
-                        {statusBadges[order.status as keyof typeof statusBadges]}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                    const itemsSummary =
+                      order.items && order.items.length > 0
+                        ? order.items.map((i) => `${i.qty}x ${i.name}`).join(", ")
+                        : "Special Order";
+
+                    return (
+                      <tr key={order.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                        <td className="py-3 pl-2 font-medium">
+                          <div className="text-slate-900 dark:text-white font-bold">{order.id}</div>
+                          <div className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
+                            <span className="font-medium">{order.destination === "room_service" ? "Room QR" : "Table QR"}</span>
+                            <span>•</span>
+                            <span className="flex items-center gap-0.5">
+                              <Clock className="h-2.5 w-2.5" /> {order.time || "Recent"}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-3 font-bold text-emerald-700 dark:text-emerald-300">{order.table}</td>
+                        <td className="py-3 text-slate-700 dark:text-slate-300 max-w-[200px] truncate font-medium">
+                          {itemsSummary}
+                        </td>
+                        <td className="py-3 font-bold text-slate-900 dark:text-white font-mono">
+                          {formatCurrency(order.total, tenant?.currency || "INR")}
+                        </td>
+                        <td className="py-3 text-right pr-2">
+                          {statusBadges[order.status as keyof typeof statusBadges] || (
+                            <Badge variant="neutral" size="sm">{order.status}</Badge>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
           </CardContent>
         </Card>
 
         {/* Right Insights Column (4 Cols) */}
         <div className="lg:col-span-4 space-y-6">
-          {/* Top Selling Items */}
+          {/* Top Selling Items / Catalog preview */}
           <Card variant="glass">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-bold text-slate-900 dark:text-white">
-                Top Performing Dishes Today
+                Signature Catalog Items
               </CardTitle>
               <CardDescription className="text-xs text-slate-600 dark:text-slate-400">
-                Highest ordered items across digital menus
+                Active dishes displayed to guests in {tenantName}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              {[
-                { name: "Truffle Mushroom Risotto", count: 42, rev: 35700 },
-                { name: "Wood-Fired Margherita", count: 38, rev: 28500 },
-                { name: "Cold Brew Tonic", count: 29, rev: 8700 },
-                { name: "Belgian Chocolate Fondant", count: 24, rev: 10800 },
-              ].map((dish, i) => (
-                <div key={i} className="flex items-center justify-between text-xs py-1 border-b border-slate-100 dark:border-slate-800/40 last:border-0">
-                  <div className="min-w-0">
-                    <p className="text-slate-800 dark:text-slate-200 font-semibold truncate">{dish.name}</p>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400">{dish.count} orders</p>
-                  </div>
-                  <span className="font-bold text-slate-900 dark:text-white ml-2 font-mono">
-                    {formatCurrency(dish.rev, tenant?.currency || "INR")}
-                  </span>
+              {menuItems.length === 0 ? (
+                <div className="py-6 text-center text-xs text-slate-500">
+                  <p>No dishes added to your catalog yet.</p>
+                  <Link
+                    href="/dashboard/menu"
+                    className="inline-block mt-2 font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
+                  >
+                    + Add your first dish
+                  </Link>
                 </div>
-              ))}
+              ) : (
+                menuItems.slice(0, 4).map((dish) => (
+                  <div
+                    key={dish.id}
+                    className="flex items-center justify-between text-xs py-1 border-b border-slate-100 dark:border-slate-800/40 last:border-0"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-slate-800 dark:text-slate-200 font-semibold truncate">{dish.name}</p>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400">{dish.category}</p>
+                    </div>
+                    <span className="font-bold text-slate-900 dark:text-white ml-2 font-mono">
+                      {formatCurrency(dish.price, tenant?.currency || "INR")}
+                    </span>
+                  </div>
+                ))
+              )}
             </CardContent>
           </Card>
 
@@ -430,31 +521,26 @@ export default function DashboardOverviewPage() {
             <CardContent className="space-y-3.5 text-xs">
               <div>
                 <div className="flex justify-between text-slate-700 dark:text-slate-300 font-semibold mb-1">
-                  <span>Hot Kitchen (Grill & Pasta)</span>
-                  <span className="text-amber-600 dark:text-amber-400 font-bold">85% load</span>
+                  <span>Hot Kitchen (Grill & Cooking)</span>
+                  <span className="text-amber-600 dark:text-amber-400 font-bold">
+                    {activeCount > 0 ? "Active Load" : "Idle"}
+                  </span>
                 </div>
                 <div className="h-2 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-                  <div className="h-full bg-amber-500 dark:bg-amber-400 rounded-full w-[85%]" />
+                  <div
+                    className="h-full bg-amber-500 dark:bg-amber-400 rounded-full transition-all duration-500"
+                    style={{ width: `${Math.min(activeCount * 25, 100)}%` }}
+                  />
                 </div>
               </div>
 
               <div>
                 <div className="flex justify-between text-slate-700 dark:text-slate-300 font-semibold mb-1">
-                  <span>Cold Prep & Salads</span>
-                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">35% load</span>
+                  <span>Beverage & Bar Station</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">Ready</span>
                 </div>
                 <div className="h-2 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-                  <div className="h-full bg-emerald-500 dark:bg-emerald-400 rounded-full w-[35%]" />
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between text-slate-700 dark:text-slate-300 font-semibold mb-1">
-                  <span>Beverage & Bar Counter</span>
-                  <span className="text-cyan-600 dark:text-cyan-400 font-bold">50% load</span>
-                </div>
-                <div className="h-2 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-                  <div className="h-full bg-cyan-500 dark:bg-cyan-400 rounded-full w-[50%]" />
+                  <div className="h-full bg-emerald-500 dark:bg-emerald-400 rounded-full w-[25%]" />
                 </div>
               </div>
             </CardContent>
@@ -466,64 +552,83 @@ export default function DashboardOverviewPage() {
       <Modal
         isOpen={isNewOrderOpen}
         onClose={() => setIsNewOrderOpen(false)}
-        title="Create Direct / Phone Order"
-        description="Quickly queue an order for dine-in tables, room service, or counter takeaway."
-        footer={
-          <div className="flex items-center justify-end gap-2 w-full">
-            <Button variant="ghost" size="sm" onClick={() => setIsNewOrderOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" form="quick-order-form" variant="glow" size="sm">
-              Dispatch to Kitchen
-            </Button>
-          </div>
-        }
+        title="Create Quick POS / Dine-in Order"
+        description="Dispatch an immediate food order directly to the kitchen display screen."
       >
-        <form id="quick-order-form" onSubmit={handleCreateQuickOrder} className="space-y-4 py-2">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1">
-                Table / Room *
-              </label>
+        <form onSubmit={handleCreateQuickOrder} className="space-y-4 pt-2">
+          <div>
+            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">
+              Table / Location
+            </label>
+            {tables.length > 0 ? (
               <select
                 value={orderTable}
                 onChange={(e) => setOrderTable(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 shadow-xs"
+                className="w-full px-3 py-2 text-xs bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
               >
-                <option value="Table 01">Table 01</option>
-                <option value="Table 02">Table 02</option>
-                <option value="Table 03">Table 03</option>
-                <option value="Table 04">Table 04</option>
-                <option value="Room 301">Room 301</option>
-                <option value="Room 302">Room 302</option>
-                <option value="Takeaway Counter">Takeaway Counter</option>
+                {tables.map((t) => (
+                  <option key={t.id} value={t.name}>
+                    {t.name} ({t.zone})
+                  </option>
+                ))}
               </select>
-            </div>
-
-            <div>
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1">
-                Estimated Amount (₹)
-              </label>
+            ) : (
               <input
-                type="number"
-                value={orderAmount}
-                onChange={(e) => setOrderAmount(e.target.value)}
-                className="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 font-mono shadow-xs"
+                type="text"
+                value={orderTable}
+                onChange={(e) => setOrderTable(e.target.value)}
+                className="w-full px-3 py-2 text-xs bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                placeholder="Table 01"
               />
-            </div>
+            )}
           </div>
 
           <div>
-            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1">
-              Order Items & Quantities
+            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">
+              Ordered Items (Summary)
             </label>
-            <textarea
-              rows={3}
+            <input
+              type="text"
               value={orderItemsText}
               onChange={(e) => setOrderItemsText(e.target.value)}
-              className="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 resize-none shadow-xs"
-              placeholder="e.g. 2x Truffle Burger, 1x Sweet Potato Fries"
+              placeholder="e.g. 1x Special Thali, 2x Cold Brew"
+              required
+              className="w-full px-3 py-2 text-xs bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
             />
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">
+              Total Amount ({tenant?.currency || "INR"})
+            </label>
+            <input
+              type="number"
+              value={orderAmount}
+              onChange={(e) => setOrderAmount(e.target.value)}
+              placeholder="450"
+              min="0"
+              required
+              className="w-full px-3 py-2 text-xs bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsNewOrderOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="glow"
+              size="sm"
+              leftIcon={<Plus className="h-4 w-4" />}
+            >
+              Send to Kitchen
+            </Button>
           </div>
         </form>
       </Modal>

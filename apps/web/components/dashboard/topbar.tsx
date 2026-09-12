@@ -32,7 +32,7 @@ export function TopBar() {
 
   const userDisplayName = user
     ? `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.email
-    : "Chef Laurent";
+    : "Restaurant Owner";
 
   return (
     <header className="h-16 border-b border-slate-200/80 dark:border-slate-800/80 bg-white/80 dark:bg-[#090D16]/80 backdrop-blur-md sticky top-0 z-20 flex items-center justify-between px-4 sm:px-8 transition-colors duration-200">
@@ -47,7 +47,7 @@ export function TopBar() {
 
         <div className="flex items-center gap-2 text-xs">
           <span className="text-slate-500 dark:text-slate-400 font-medium">
-            {tenant?.name || "The Grand Bistro"}
+            {tenant?.name || "Your Restaurant"}
           </span>
           <span className="text-slate-400 dark:text-slate-600">/</span>
           <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Workspace Overview</span>

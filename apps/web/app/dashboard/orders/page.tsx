@@ -32,6 +32,7 @@ import { Modal } from "@/components/ui/modal";
 import { ThermalPrintModal } from "@/components/orders/thermal-receipt-modal";
 import { useToast } from "@/components/ui/toast";
 import { formatCurrency } from "@/lib/utils";
+import { useTenantData } from "@/lib/stores/tenant-data-store";
 
 interface KdsItem {
   name: string;
@@ -128,9 +129,19 @@ const MENU_PRESETS = [
 
 export default function KDSOrdersPage() {
   const { addToast } = useToast();
+  const {
+    tenantName,
+    tenantSlug,
+    isDemoTenant,
+    orders,
+    addOrder,
+    updateOrderStatus,
+    menuItems,
+    tables,
+  } = useTenantData();
+
   const [activeTab, setActiveTab] = React.useState("all");
   const [stationFilter, setStationFilter] = React.useState("all");
-  const [orders, setOrders] = React.useState<KdsOrder[]>(INITIAL_KDS_ORDERS);
   const [soundEnabled, setSoundEnabled] = React.useState(true);
   const [isFullscreen, setIsFullscreen] = React.useState(false);
 
@@ -212,13 +223,10 @@ export default function KDSOrdersPage() {
   };
 
   // Live timer tick every second
+  const [tick, setTick] = React.useState(0);
   React.useEffect(() => {
     const timer = setInterval(() => {
-      setOrders((prev) =>
-        prev.map((o) =>
-          o.status !== "served" ? { ...o, secondsElapsed: o.secondsElapsed + 1 } : o
-        )
-      );
+      setTick((prev) => prev + 1);
     }, 1000);
     return () => clearInterval(timer);
   }, []);
@@ -245,16 +253,13 @@ export default function KDSOrdersPage() {
   };
 
   // Bump bar transitions: pending -> preparing -> ready -> served
-  const handleBump = (orderId: string, currentStatus: KdsOrder["status"]) => {
+  const handleBump = async (orderId: string, currentStatus: KdsOrder["status"]) => {
     let nextStatus: KdsOrder["status"] = "preparing";
     if (currentStatus === "pending") nextStatus = "preparing";
     else if (currentStatus === "preparing") nextStatus = "ready";
     else if (currentStatus === "ready") nextStatus = "served";
 
-    setOrders((prev) =>
-      prev.map((o) => (o.id === orderId ? { ...o, status: nextStatus } : o))
-    );
-
+    await updateOrderStatus(orderId, nextStatus);
     playAlertChime();
 
     const statusLabels: Record<string, string> = {
@@ -266,45 +271,42 @@ export default function KDSOrdersPage() {
     addToast("success", `Ticket ${orderId}`, statusLabels[nextStatus]);
   };
 
-  const handleRejectOrder = (orderId: string) => {
-    setOrders((prev) => prev.filter((o) => o.id !== orderId));
-    addToast("warning", `Order ${orderId} Rejected`, "Ticket removed from the active kitchen display.");
+  const handleRejectOrder = async (orderId: string) => {
+    await updateOrderStatus(orderId, "served");
+    addToast("warning", `Order ${orderId} Closed`, "Ticket cleared from active kitchen display.");
   };
 
-  const handleSimulateNewOrder = () => {
+  const handleSimulateNewOrder = async () => {
     const isRoom = Math.random() > 0.5;
-    const newId = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
-    const newOrder: KdsOrder = {
-      id: newId,
-      table: isRoom ? `Suite ${Math.floor(301 + Math.random() * 8)}` : `Table 0${Math.floor(1 + Math.random() * 8)}`,
-      customerName: isRoom ? "In-House Hotel Guest" : "Online Guest",
+    const sampleDish = menuItems.length > 0 ? menuItems[Math.floor(Math.random() * menuItems.length)] : null;
+    const sampleTable = tables.length > 0 ? tables[Math.floor(Math.random() * tables.length)].name : "Table 01";
+
+    const created = await addOrder({
+      table: isRoom ? `Suite ${Math.floor(301 + Math.random() * 8)}` : sampleTable,
+      customerName: isRoom ? "In-House Hotel Guest" : "Online QR Guest",
       customerPhone: "+91 99000 11222",
       secondsElapsed: 0,
       station: isRoom ? "room_service" : "main_kitchen",
       destination: isRoom ? "room_service" : "dine_in",
       status: "pending",
-      total: isRoom ? 2120 : 1390,
-      items: isRoom
-        ? [
-            { name: "Artisanal Grand Club Sandwich", qty: 1, notes: "Charge to room folio" },
-            { name: "Fresh Pressed Valencia Citrus Juice", qty: 2 },
-          ]
-        : [
-            { name: "Wood-Fired Margherita", qty: 1, variant: "14-Inch", modifiers: ["Double Mozzarella"] },
-            { name: "Cold Brew Tonic with Yuzu", qty: 1 },
-          ],
-    };
+      total: sampleDish ? sampleDish.price : 450,
+      items: [
+        {
+          name: sampleDish ? sampleDish.name : "House Signature Specialty",
+          qty: 1,
+        },
+      ],
+    });
 
-    setOrders([newOrder, ...orders]);
     playAlertChime();
     addToast(
       "info",
       isRoom ? "In-Room Dining Order!" : "New Table Order!",
-      `Ticket ${newId} received for ${newOrder.table}.`
+      `Ticket ${created.id} received for ${created.table}.`
     );
   };
 
-  const handleCreateManualOrder = (e: React.FormEvent) => {
+  const handleCreateManualOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     const itemsList: KdsItem[] = Object.entries(selectedItems)
       .filter(([_, qty]) => qty > 0)
@@ -321,30 +323,25 @@ export default function KDSOrdersPage() {
 
     let calculatedTotal = 0;
     for (const itm of itemsList) {
-      const match = MENU_PRESETS.find((p) => p.name === itm.name);
-      calculatedTotal += (match ? match.price : 500) * itm.qty;
+      const match = menuItems.find((p) => p.name === itm.name) || MENU_PRESETS.find((p) => p.name === itm.name);
+      calculatedTotal += (match ? match.price : 450) * itm.qty;
     }
 
-    const newId = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
-    const isRoom = manualDestination === "room_service";
-
-    const manualOrder: KdsOrder = {
-      id: newId,
+    const created = await addOrder({
       table: manualTable,
-      customerName: manualCustomer.trim() || (isRoom ? "Suite Guest" : "Walk-in Guest"),
+      customerName: manualCustomer.trim() || (manualDestination === "room_service" ? "Suite Guest" : "Walk-in Guest"),
       customerPhone: manualPhone.trim() || "+91 98000 00000",
       secondsElapsed: 0,
-      station: isRoom ? "room_service" : "main_kitchen",
+      station: manualDestination === "room_service" ? "room_service" : "main_kitchen",
       destination: manualDestination,
       status: "pending",
       total: calculatedTotal,
       items: itemsList,
-    };
+    });
 
-    setOrders([manualOrder, ...orders]);
     setIsManualModalOpen(false);
     playAlertChime();
-    addToast("success", "Order Created", `Ticket ${newId} queued for ${manualTable}.`);
+    addToast("success", "Order Created", `Ticket ${created.id} queued for ${manualTable}.`);
   };
 
   const filteredOrders = orders.filter((o) => {
@@ -729,12 +726,20 @@ export default function KDSOrdersPage() {
                   onChange={(e) => setManualTable(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
                 >
-                  <option value="Table 01">Table 01</option>
-                  <option value="Table 02">Table 02</option>
-                  <option value="Table 03">Table 03</option>
-                  <option value="Table 04">Table 04</option>
-                  <option value="Table 05">Table 05</option>
-                  <option value="Counter / Bar">Counter / Bar</option>
+                  {tables.length > 0 ? (
+                    tables.map((t) => (
+                      <option key={t.id} value={t.name}>
+                        {t.name} ({t.zone})
+                      </option>
+                    ))
+                  ) : (
+                    <>
+                      <option value="Table 01">Table 01</option>
+                      <option value="Table 02">Table 02</option>
+                      <option value="Table 03">Table 03</option>
+                      <option value="Counter / Bar">Counter / Bar</option>
+                    </>
+                  )}
                 </select>
               )}
             </div>
@@ -758,7 +763,7 @@ export default function KDSOrdersPage() {
               Select Dishes
             </label>
             <div className="space-y-2 max-h-44 overflow-y-auto pr-1">
-              {MENU_PRESETS.map((dish) => {
+              {(menuItems.length > 0 ? menuItems : MENU_PRESETS).map((dish) => {
                 const qty = selectedItems[dish.name] || 0;
                 return (
                   <div
@@ -809,7 +814,7 @@ export default function KDSOrdersPage() {
             </label>
             <input
               type="text"
-              placeholder="e.g. Charge to Room 302 Folio, deliver on silver tray"
+              placeholder="e.g. Extra napkins, deliver hot on tray"
               value={manualNotes}
               onChange={(e) => setManualNotes(e.target.value)}
               className="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
@@ -824,6 +829,7 @@ export default function KDSOrdersPage() {
           isOpen={isThermalOpen}
           onClose={() => setIsThermalOpen(false)}
           type={thermalType}
+          restaurantName={tenantName}
           order={thermalOrder}
         />
       )}

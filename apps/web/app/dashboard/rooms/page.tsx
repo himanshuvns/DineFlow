@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
 import { QRCodeImage } from "@/components/ui/qr-code-image";
+import { useAuthStore } from "@/lib/stores/auth-store";
 
 interface RoomItem {
   id: string;
@@ -50,6 +51,9 @@ const INITIAL_ROOMS: RoomItem[] = [
 
 export default function RoomsDirectoryPage() {
   const { addToast } = useToast();
+  const { tenant } = useAuthStore();
+  const tenantSlug = tenant?.slug || "dineflow";
+  const tenantName = tenant?.name || "Your Hotel & Suites";
   const [rooms, setRooms] = React.useState<RoomItem[]>(INITIAL_ROOMS);
   const [floorFilter, setFloorFilter] = React.useState("all");
   const [wingFilter, setWingFilter] = React.useState("all");
@@ -150,7 +154,7 @@ export default function RoomsDirectoryPage() {
   };
 
   const getRoomQRURL = (room: RoomItem) => {
-    return `${baseUrl}/m/the-grand-bistro/room/${room.roomNumber.toLowerCase()}`;
+    return `${baseUrl}/m/${tenantSlug}/room/${room.roomNumber.toLowerCase()}`;
   };
 
   const filteredRooms = rooms.filter((r) => {

@@ -66,7 +66,7 @@ export function Sidebar() {
                   Dine<span className="text-emerald-500 dark:text-emerald-400">Flow</span>
                 </span>
                 <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 truncate">
-                  {tenant?.name || "The Grand Bistro"}
+                  {tenant?.name || "Your Restaurant"}
                 </span>
               </div>
             )}

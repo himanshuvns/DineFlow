@@ -213,6 +213,14 @@ export default function CustomerMenuPage() {
   const tenantSlug = (params?.tenantSlug as string) || "the-grand-bistro";
   const tableId = (params?.tableId as string) || "t-04";
 
+  const restaurantDisplayName =
+    tenantSlug === "the-grand-bistro"
+      ? "The Grand Bistro & Lounge"
+      : tenantSlug
+          .split("-")
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(" ");
+
   // Table display name
   const tableName =
     tableId.toUpperCase().startsWith("T-")
@@ -323,10 +331,10 @@ export default function CustomerMenuPage() {
                   DineFlow Contactless Ordering
                 </span>
                 <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                  The Grand Bistro & Lounge
+                  {restaurantDisplayName}
                 </h1>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Contemporary European & Wood-Fired Fare
+                  Contactless Guest Dining & Table Ordering
                 </p>
               </div>
 
