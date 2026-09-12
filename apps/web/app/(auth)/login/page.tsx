@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Mail, Lock, Eye, EyeOff, ArrowRight, Sparkles } from "lucide-react";
+import { Phone, Lock, Eye, EyeOff, ArrowRight, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
@@ -17,7 +17,7 @@ export default function LoginPage() {
   const { addToast } = useToast();
   const setAuth = useAuthStore((state) => state.setAuth);
 
-  const [email, setEmail] = React.useState("");
+  const [phone, setPhone] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [showPassword, setShowPassword] = React.useState(false);
   const [rememberMe, setRememberMe] = React.useState(true);
@@ -27,8 +27,8 @@ export default function LoginPage() {
   const [error, setError] = React.useState("");
 
   const handleFillDemo = () => {
-    setEmail("owner@thegrandbistro.com");
-    setPassword("DineFlow@2026");
+    setPhone("+91 98765 43210");
+    setPassword("Password123!");
     setError("");
   };
 
@@ -38,7 +38,7 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const res = await apiClient.post("/auth/login", { email, password });
+      const res = await apiClient.post("/auth/login", { phone, password });
       if (res.data?.success) {
         const { user, tenant, accessToken } = res.data.data;
         setAuth(user, tenant, accessToken);
@@ -57,7 +57,7 @@ export default function LoginPage() {
         err?.response?.data?.error?.message ||
         err?.response?.data?.message ||
         err?.message ||
-        "Invalid email or password. Please try again.";
+        "Invalid mobile number or password. Please try again.";
       setError(msg);
       addToast("error", "Sign in failed", msg);
       setIsLoading(false);
@@ -108,13 +108,13 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
-            label="Work Email"
-            type="email"
-            placeholder="chef@restaurant.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            label="Mobile Number"
+            type="tel"
+            placeholder="+91 98765 43210"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
             required
-            leftIcon={<Mail className="h-4 w-4" />}
+            leftIcon={<Phone className="h-4 w-4" />}
           />
 
           <Input

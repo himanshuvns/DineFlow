@@ -25,7 +25,9 @@ import (
 
 var (
 	ErrEmailAlreadyExists   = errors.New("an account with this email already exists")
-	ErrInvalidCredentials   = errors.New("invalid email or password")
+	ErrPhoneAlreadyExists   = errors.New("an account with this mobile number already exists")
+	ErrInvalidPhone         = errors.New("please enter a valid mobile number")
+	ErrInvalidCredentials   = errors.New("invalid mobile number or password")
 	ErrAccountLocked        = errors.New("account is temporarily locked due to too many failed attempts")
 	ErrInvalidOTP           = errors.New("invalid or expired verification code")
 	ErrInvalidRefreshToken  = errors.New("invalid or expired refresh token")
@@ -40,7 +42,8 @@ const maxFailedAttempts = 5
 type RegisterRequest struct {
 	BusinessName string              `json:"businessName" validate:"required,min=2,max=100"`
 	BusinessType tenant.BusinessType `json:"businessType" validate:"required"`
-	Email        string              `json:"email" validate:"required,email"`
+	Phone        string              `json:"phone"`
+	Email        string              `json:"email,omitempty"`
 	Password     string              `json:"password" validate:"required,min=8"`
 	Name         string              `json:"name"`
 	FirstName    string              `json:"firstName,omitempty"`
@@ -51,35 +54,42 @@ type RegisterRequest struct {
 
 // VerifyOTPRequest is the input for OTP verification.
 type VerifyOTPRequest struct {
-	Email string `json:"email" validate:"required,email"`
+	Phone string `json:"phone"`
+	Email string `json:"email,omitempty"`
 	OTP   string `json:"otp"`
 	Code  string `json:"code,omitempty"`
 }
 
-// LoginRequest is the input for email/password login.
+// LoginRequest is the input for mobile/password login.
 type LoginRequest struct {
-	Email    string `json:"email" validate:"required,email"`
+	Phone    string `json:"phone"`
+	Email    string `json:"email,omitempty"`
 	Password string `json:"password" validate:"required"`
+}
+
+// SendOTPRequest is the input for requesting a verification or login OTP.
+type SendOTPRequest struct {
+	Phone string `json:"phone" validate:"required"`
 }
 
 // AuthResponse is returned on successful auth (register/login/refresh).
 type AuthResponse struct {
-	AccessToken  string          `json:"accessToken"`
-	RefreshToken string          `json:"refreshToken"`
-	ExpiresIn    int             `json:"expiresIn"` // seconds
+	AccessToken  string             `json:"accessToken"`
+	RefreshToken string             `json:"refreshToken"`
+	ExpiresIn    int                `json:"expiresIn"` // seconds
 	User         user.PublicProfile `json:"user"`
-	Tenant       *tenant.Tenant  `json:"tenant"`
+	Tenant       *tenant.Tenant     `json:"tenant"`
 }
 
 // ─── Service ──────────────────────────────────────────────────────────────────
 
 // Service handles all authentication business logic.
 type Service struct {
-	mongo      *mongoinfra.Client
-	redis      *redisinfra.Client
-	tokenMaker *token.Maker
-	otpSvc     *otp.Service
-	emailSvc   EmailSender
+	mongo       *mongoinfra.Client
+	redis       *redisinfra.Client
+	tokenMaker  *token.Maker
+	otpProvider otp.OTPProvider
+	emailSvc    EmailSender
 }
 
 // EmailSender is an interface for sending transactional emails.
@@ -95,15 +105,15 @@ func NewService(
 	mongoClient *mongoinfra.Client,
 	redisClient *redisinfra.Client,
 	tokenMaker *token.Maker,
-	otpSvc *otp.Service,
+	otpProvider otp.OTPProvider,
 	emailSvc EmailSender,
 ) *Service {
 	return &Service{
-		mongo:      mongoClient,
-		redis:      redisClient,
-		tokenMaker: tokenMaker,
-		otpSvc:     otpSvc,
-		emailSvc:   emailSvc,
+		mongo:       mongoClient,
+		redis:       redisClient,
+		tokenMaker:  tokenMaker,
+		otpProvider: otpProvider,
+		emailSvc:    emailSvc,
 	}
 }
 
@@ -112,7 +122,16 @@ func (s *Service) Register(ctx context.Context, req RegisterRequest) (string, er
 	tenantsColl := s.mongo.Collection("tenants")
 	usersColl := s.mongo.Collection("users")
 
+	phone := otp.NormalizePhone(req.Phone)
 	email := strings.ToLower(strings.TrimSpace(req.Email))
+
+	// Validation: phone must be valid if provided, or if phone is empty, email must be valid
+	if phone == "" && email == "" {
+		return "", ErrInvalidPhone
+	}
+	if phone != "" && len(phone) < 10 {
+		return "", ErrInvalidPhone
+	}
 
 	// Resolve user name
 	name := strings.TrimSpace(req.Name)
@@ -133,29 +152,35 @@ func (s *Service) Register(ctx context.Context, req RegisterRequest) (string, er
 		country = "IN"
 	}
 
-	// Check if user already exists
-	var existingUser user.User
-	err := usersColl.FindOne(ctx, bson.M{"email": email}).Decode(&existingUser)
-	if err == nil {
-		// If already verified, reject duplicate
-		if existingUser.Auth.EmailVerified {
-			return "", ErrEmailAlreadyExists
+	// Check if user with phone already exists
+	if phone != "" {
+		var existingUser user.User
+		err := usersColl.FindOne(ctx, bson.M{"phone": phone}).Decode(&existingUser)
+		if err == nil {
+			if existingUser.Auth.PhoneVerified {
+				return "", ErrPhoneAlreadyExists
+			}
+			// If unverified, resend OTP
+			otpCode, err := s.otpProvider.SendOTP(ctx, phone)
+			if err != nil {
+				return "", fmt.Errorf("register: resend otp: %w", err)
+			}
+			log.Printf("🔑 [AUTH OTP] Resent for unverified user %s (provider: %s): %s", phone, s.otpProvider.Name(), otpCode)
+			return otpCode, nil
 		}
-		// If unverified, generate fresh OTP and let them verify
-		otpCode, err := s.otpSvc.Generate(ctx, email)
-		if err != nil {
-			return "", fmt.Errorf("register: generate otp: %w", err)
+	} else if email != "" {
+		var existingUser user.User
+		err := usersColl.FindOne(ctx, bson.M{"email": email}).Decode(&existingUser)
+		if err == nil {
+			if existingUser.Auth.EmailVerified {
+				return "", ErrEmailAlreadyExists
+			}
 		}
-		log.Printf("🔑 [AUTH DEV OTP] Resent for unverified user %s: %s", email, otpCode)
-		if err := s.emailSvc.SendOTP(ctx, email, existingUser.Name, otpCode); err != nil {
-			_ = err
-		}
-		return otpCode, nil
 	}
 
 	// Generate tenant slug from business name
 	slug := generateSlug(req.BusinessName)
-	slug, err = s.ensureUniqueSlug(ctx, tenantsColl, slug)
+	slug, err := s.ensureUniqueSlug(ctx, tenantsColl, slug)
 	if err != nil {
 		return "", fmt.Errorf("register: slug: %w", err)
 	}
@@ -180,7 +205,10 @@ func (s *Service) Register(ctx context.Context, req RegisterRequest) (string, er
 		Currency:     "INR",
 		Country:      country,
 		TaxRate:      0,
-		Contact:      tenant.Contact{Email: email},
+		Contact: tenant.Contact{
+			Email: email,
+			Phone: phone,
+		},
 		Settings: tenant.Settings{
 			OrderingEnabled:        true,
 			RequireGuestPhone:      false,
@@ -200,6 +228,7 @@ func (s *Service) Register(ctx context.Context, req RegisterRequest) (string, er
 	newUser := user.User{
 		ID:          bson.NewObjectID(),
 		TenantID:    newTenant.ID,
+		Phone:       phone,
 		Email:       email,
 		Name:        name,
 		Role:        user.RoleOwner,
@@ -207,6 +236,7 @@ func (s *Service) Register(ctx context.Context, req RegisterRequest) (string, er
 		Auth: user.Auth{
 			PasswordHash:  string(passwordHash),
 			EmailVerified: false,
+			PhoneVerified: false,
 		},
 		Status:    user.StatusInvited, // becomes Active after OTP
 		CreatedAt: now,
@@ -223,17 +253,20 @@ func (s *Service) Register(ctx context.Context, req RegisterRequest) (string, er
 		return "", fmt.Errorf("register: insert user: %w", err)
 	}
 
-	// Generate and send OTP
-	otpCode, err := s.otpSvc.Generate(ctx, email)
+	// Send OTP via OTPProvider
+	targetIdentifier := phone
+	if targetIdentifier == "" {
+		targetIdentifier = email
+	}
+	otpCode, err := s.otpProvider.SendOTP(ctx, targetIdentifier)
 	if err != nil {
-		return "", fmt.Errorf("register: generate otp: %w", err)
+		return "", fmt.Errorf("register: send otp: %w", err)
 	}
 
-	log.Printf("🔑 [AUTH DEV OTP] Generated for new user %s: %s", email, otpCode)
+	log.Printf("🔑 [AUTH OTP] Sent for new user %s (provider: %s): %s", targetIdentifier, s.otpProvider.Name(), otpCode)
 
-	if err := s.emailSvc.SendOTP(ctx, email, newUser.Name, otpCode); err != nil {
-		// Non-fatal: user was created, OTP will be re-sent on retry
-		_ = err
+	if email != "" {
+		_ = s.emailSvc.SendOTP(ctx, email, newUser.Name, otpCode)
 	}
 
 	return otpCode, nil
@@ -241,6 +274,7 @@ func (s *Service) Register(ctx context.Context, req RegisterRequest) (string, er
 
 // VerifyOTP confirms the OTP and activates the user account, returning tokens.
 func (s *Service) VerifyOTP(ctx context.Context, req VerifyOTPRequest) (*AuthResponse, error) {
+	phone := otp.NormalizePhone(req.Phone)
 	email := strings.ToLower(strings.TrimSpace(req.Email))
 
 	code := strings.TrimSpace(req.OTP)
@@ -251,34 +285,60 @@ func (s *Service) VerifyOTP(ctx context.Context, req VerifyOTPRequest) (*AuthRes
 		return nil, ErrInvalidOTP
 	}
 
-	// Verify OTP
-	valid, err := s.otpSvc.Verify(ctx, email, code)
+	targetIdentifier := phone
+	if targetIdentifier == "" {
+		targetIdentifier = email
+	}
+	if targetIdentifier == "" {
+		return nil, ErrInvalidPhone
+	}
+
+	// Verify OTP via Provider
+	valid, err := s.otpProvider.VerifyOTP(ctx, targetIdentifier, code)
 	if err != nil {
-		return nil, fmt.Errorf("verify-otp: redis: %w", err)
+		return nil, fmt.Errorf("verify-otp: %w", err)
 	}
 	if !valid {
 		return nil, ErrInvalidOTP
 	}
 
-	// Find user
+	// Find user by phone, or fallback to email
 	usersColl := s.mongo.Collection("users")
 	var u user.User
-	if err := usersColl.FindOne(ctx, bson.M{"email": email}).Decode(&u); err != nil {
+	var filter bson.M
+	if phone != "" {
+		filter = bson.M{"phone": phone}
+	} else {
+		filter = bson.M{"email": email}
+	}
+
+	if err := usersColl.FindOne(ctx, filter).Decode(&u); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, ErrInvalidCredentials
+			if email != "" && phone != "" {
+				if err2 := usersColl.FindOne(ctx, bson.M{"email": email}).Decode(&u); err2 != nil {
+					return nil, ErrInvalidCredentials
+				}
+			} else {
+				return nil, ErrInvalidCredentials
+			}
+		} else {
+			return nil, fmt.Errorf("verify-otp: find user: %w", err)
 		}
-		return nil, fmt.Errorf("verify-otp: find user: %w", err)
 	}
 
 	// Activate user
 	now := time.Now().UTC()
 	_, _ = usersColl.UpdateOne(ctx, bson.M{"_id": u.ID}, bson.M{
 		"$set": bson.M{
+			"auth.phoneVerified": true,
 			"auth.emailVerified": true,
 			"status":             string(user.StatusActive),
 			"updatedAt":          now,
 		},
 	})
+	u.Auth.PhoneVerified = true
+	u.Auth.EmailVerified = true
+	u.Status = user.StatusActive
 
 	// Load tenant
 	tenantsColl := s.mongo.Collection("tenants")
@@ -291,13 +351,29 @@ func (s *Service) VerifyOTP(ctx context.Context, req VerifyOTPRequest) (*AuthRes
 	return s.issueTokenPair(ctx, &u, &t)
 }
 
-// Login authenticates with email + password and returns tokens.
+// Login authenticates with mobile number/email + password and returns tokens.
 func (s *Service) Login(ctx context.Context, req LoginRequest) (*AuthResponse, error) {
+	phone := otp.NormalizePhone(req.Phone)
 	email := strings.ToLower(strings.TrimSpace(req.Email))
+
+	if phone == "" && email == "" {
+		return nil, ErrInvalidCredentials
+	}
 
 	usersColl := s.mongo.Collection("users")
 	var u user.User
-	if err := usersColl.FindOne(ctx, bson.M{"email": email}).Decode(&u); err != nil {
+	var err error
+
+	if phone != "" {
+		err = usersColl.FindOne(ctx, bson.M{"phone": phone}).Decode(&u)
+		if err != nil && errors.Is(err, mongo.ErrNoDocuments) && email != "" {
+			err = usersColl.FindOne(ctx, bson.M{"email": email}).Decode(&u)
+		}
+	} else {
+		err = usersColl.FindOne(ctx, bson.M{"email": email}).Decode(&u)
+	}
+
+	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, ErrInvalidCredentials
 		}
@@ -311,7 +387,6 @@ func (s *Service) Login(ctx context.Context, req LoginRequest) (*AuthResponse, e
 
 	// Verify password
 	if err := bcrypt.CompareHashAndPassword([]byte(u.Auth.PasswordHash), []byte(req.Password)); err != nil {
-		// Increment failed attempt counter
 		s.incrementFailedAttempts(ctx, usersColl, u.ID)
 		return nil, ErrInvalidCredentials
 	}
@@ -322,7 +397,7 @@ func (s *Service) Login(ctx context.Context, req LoginRequest) (*AuthResponse, e
 		"$set": bson.M{
 			"auth.failedLoginAttempts": 0,
 			"auth.lockedUntil":         nil,
-			"auth.lastLoginAt":          now,
+			"auth.lastLoginAt":         now,
 			"updatedAt":                now,
 		},
 	})
@@ -335,6 +410,34 @@ func (s *Service) Login(ctx context.Context, req LoginRequest) (*AuthResponse, e
 	}
 
 	return s.issueTokenPair(ctx, &u, &t)
+}
+
+// ResendOTP sends a fresh OTP to the given phone number.
+func (s *Service) ResendOTP(ctx context.Context, phone string) (string, error) {
+	normPhone := otp.NormalizePhone(phone)
+	if normPhone == "" {
+		return "", ErrInvalidPhone
+	}
+	return s.otpProvider.SendOTP(ctx, normPhone)
+}
+
+// SendLoginOTP generates an OTP for passwordless login if user exists.
+func (s *Service) SendLoginOTP(ctx context.Context, phone string) (string, error) {
+	normPhone := otp.NormalizePhone(phone)
+	if normPhone == "" {
+		return "", ErrInvalidPhone
+	}
+
+	usersColl := s.mongo.Collection("users")
+	var u user.User
+	if err := usersColl.FindOne(ctx, bson.M{"phone": normPhone}).Decode(&u); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return "", ErrInvalidCredentials
+		}
+		return "", err
+	}
+
+	return s.otpProvider.SendOTP(ctx, normPhone)
 }
 
 // RefreshTokens validates a refresh token and issues a new token pair.

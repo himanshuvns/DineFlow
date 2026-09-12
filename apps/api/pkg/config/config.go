@@ -20,6 +20,16 @@ type Config struct {
 	Storage  StorageConfig
 	WhatsApp WhatsAppConfig
 	AI       AIConfig
+	OTP      OTPConfig
+}
+
+type OTPConfig struct {
+	Provider          string
+	FirebaseProjectID string
+	MSG91AuthKey      string
+	MSG91TemplateID   string
+	MSG91SenderID     string
+	TestNumbers       string
 }
 
 // AIConfig holds configuration for the AI/LLM integration (Phase 6).
@@ -130,6 +140,14 @@ func Load() (*Config, error) {
 
 	// ── AI / Gemini (Phase 6) ─────────────────────────────────────────────────
 	cfg.AI.GeminiAPIKey = getEnv("GEMINI_API_KEY", "") // Optional: empty = mock mode
+
+	// ── OTP Provider (Firebase Test vs MSG91) ──────────────────────────────────
+	cfg.OTP.Provider = getEnv("OTP_PROVIDER", "firebase_test")
+	cfg.OTP.FirebaseProjectID = getEnv("FIREBASE_PROJECT_ID", "")
+	cfg.OTP.MSG91AuthKey = getEnv("MSG91_AUTH_KEY", "")
+	cfg.OTP.MSG91TemplateID = getEnv("MSG91_TEMPLATE_ID", "")
+	cfg.OTP.MSG91SenderID = getEnv("MSG91_SENDER_ID", "")
+	cfg.OTP.TestNumbers = getEnv("OTP_TEST_NUMBERS", "")
 
 	return cfg, nil
 }

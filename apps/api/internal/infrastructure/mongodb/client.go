@@ -91,7 +91,8 @@ func (c *Client) EnsureIndexes(ctx context.Context) error {
 			{Keys: bson.D{{Key: "plan", Value: 1}, {Key: "status", Value: 1}}, Options: options.Index().SetName("idx_plan_status")},
 		},
 		"users": {
-			{Keys: bson.D{{Key: "tenantId", Value: 1}, {Key: "email", Value: 1}}, Options: options.Index().SetUnique(true).SetName("idx_tenant_email")},
+			{Keys: bson.D{{Key: "phone", Value: 1}}, Options: options.Index().SetUnique(true).SetSparse(true).SetName("idx_user_phone")},
+			{Keys: bson.D{{Key: "tenantId", Value: 1}, {Key: "email", Value: 1}}, Options: options.Index().SetUnique(true).SetSparse(true).SetName("idx_tenant_email")},
 			{Keys: bson.D{{Key: "tenantId", Value: 1}, {Key: "role", Value: 1}}, Options: options.Index().SetName("idx_tenant_role")},
 			{Keys: bson.D{{Key: "auth.refreshTokens.tokenId", Value: 1}}, Options: options.Index().SetSparse(true).SetName("idx_refresh_token_id")},
 			{Keys: bson.D{{Key: "inviteToken", Value: 1}}, Options: options.Index().SetSparse(true).SetName("idx_invite_token")},

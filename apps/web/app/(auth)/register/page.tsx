@@ -9,7 +9,7 @@ import {
   Hotel,
   Soup,
   Palmtree,
-  Mail,
+  Phone,
   Lock,
   User,
   Building2,
@@ -40,7 +40,7 @@ export default function RegisterPage() {
   const [businessType, setBusinessType] = React.useState("restaurant");
   const [firstName, setFirstName] = React.useState("");
   const [lastName, setLastName] = React.useState("");
-  const [email, setEmail] = React.useState("");
+  const [phone, setPhone] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
   const [isRedirecting, setIsRedirecting] = React.useState(false);
@@ -66,7 +66,7 @@ export default function RegisterPage() {
         name: `${firstName} ${lastName}`.trim(),
         firstName,
         lastName,
-        email,
+        phone,
         password,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Kolkata",
         country: "IN",
@@ -77,12 +77,12 @@ export default function RegisterPage() {
       if (devOtp) {
         addToast("success", "Account Created!", `Verification code: ${devOtp}`);
         setTimeout(() => {
-          router.push(`/verify?email=${encodeURIComponent(email)}&devOtp=${encodeURIComponent(devOtp)}`);
+          router.push(`/verify?phone=${encodeURIComponent(phone)}&devOtp=${encodeURIComponent(devOtp)}`);
         }, 2400);
       } else {
-        addToast("success", "Registration submitted!", "Please check your email for the 6-digit verification code.");
+        addToast("success", "Registration submitted!", "Please check your mobile for the 6-digit verification code.");
         setTimeout(() => {
-          router.push(`/verify?email=${encodeURIComponent(email)}`);
+          router.push(`/verify?phone=${encodeURIComponent(phone)}`);
         }, 2400);
       }
     } catch (err: any) {
@@ -192,16 +192,16 @@ export default function RegisterPage() {
             />
           </div>
 
-          {/* Email */}
+          {/* Mobile Number */}
           <Input
-            label="Work Email"
-            type="email"
-            placeholder="chef@restaurant.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            label="Mobile Number"
+            type="tel"
+            placeholder="+91 98765 43210"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
             required
-            leftIcon={<Mail className="h-4 w-4" />}
-            helperText="A 6-digit OTP will be sent to this address"
+            leftIcon={<Phone className="h-4 w-4" />}
+            helperText="A 6-digit OTP will be sent to this mobile number"
           />
 
           {/* Password */}
@@ -224,7 +224,7 @@ export default function RegisterPage() {
             isLoading={isLoading}
             rightIcon={<ArrowRight className="h-4 w-4" />}
           >
-            Create Workspace & Verify Email
+            Create Workspace & Verify Mobile
           </Button>
         </form>
       </CardContent>

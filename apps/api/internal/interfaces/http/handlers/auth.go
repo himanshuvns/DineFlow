@@ -34,8 +34,12 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	otpCode, err := h.authService.Register(c.Request.Context(), req)
 	if err != nil {
 		switch {
+		case errors.Is(err, authapp.ErrPhoneAlreadyExists):
+			response.Conflict(c, "PHONE_EXISTS", "An account with this mobile number already exists.")
 		case errors.Is(err, authapp.ErrEmailAlreadyExists):
 			response.Conflict(c, "EMAIL_EXISTS", "An account with this email already exists.")
+		case errors.Is(err, authapp.ErrInvalidPhone):
+			response.BadRequest(c, "INVALID_PHONE", "Please provide a valid 10-digit mobile number.")
 		case errors.Is(err, authapp.ErrSlugAlreadyExists):
 			response.Conflict(c, "SLUG_EXISTS", "This business name is already taken. Please try a different name.")
 		default:
@@ -45,9 +49,9 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	}
 
 	respData := gin.H{
-		"message": "Registration successful. Please check your email for a verification code.",
+		"message": "Registration successful. Please enter the verification code sent to your mobile number.",
 	}
-	if os.Getenv("APP_ENV") != "production" || os.Getenv("RESEND_API_KEY") == "" {
+	if os.Getenv("APP_ENV") != "production" || os.Getenv("OTP_PROVIDER") != "msg91" {
 		respData["devOtp"] = otpCode
 	}
 
@@ -72,6 +76,8 @@ func (h *AuthHandler) VerifyOTP(c *gin.Context) {
 		switch {
 		case errors.Is(err, authapp.ErrInvalidOTP):
 			response.BadRequest(c, "INVALID_OTP", "The verification code is invalid or has expired.")
+		case errors.Is(err, authapp.ErrInvalidPhone):
+			response.BadRequest(c, "INVALID_PHONE", "Please provide a valid mobile number.")
 		case errors.Is(err, authapp.ErrInvalidCredentials):
 			response.NotFound(c, "Account")
 		default:
@@ -88,7 +94,7 @@ func (h *AuthHandler) VerifyOTP(c *gin.Context) {
 
 // Login godoc
 // POST /api/v1/auth/login
-// Authenticates with email + password.
+// Authenticates with mobile number/email + password.
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req authapp.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -100,7 +106,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, authapp.ErrInvalidCredentials):
-			response.Unauthorized(c, "Invalid email or password.")
+			response.Unauthorized(c, "Invalid mobile number or password.")
 		case errors.Is(err, authapp.ErrAccountLocked):
 			response.Forbidden(c, "ACCOUNT_LOCKED", "Your account is temporarily locked. Please try again in 15 minutes.")
 		default:
@@ -111,6 +117,70 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	setRefreshTokenCookie(c, authResp.RefreshToken)
 	response.OK(c, authResp)
+}
+
+// SendOTP godoc
+// POST /api/v1/auth/send-otp
+// Dispatches an OTP to a mobile number.
+func (h *AuthHandler) SendOTP(c *gin.Context) {
+	var req authapp.SendOTPRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "INVALID_BODY", err.Error())
+		return
+	}
+
+	otpCode, err := h.authService.SendLoginOTP(c.Request.Context(), req.Phone)
+	if err != nil {
+		switch {
+		case errors.Is(err, authapp.ErrInvalidPhone):
+			response.BadRequest(c, "INVALID_PHONE", "Please provide a valid mobile number.")
+		case errors.Is(err, authapp.ErrInvalidCredentials):
+			response.NotFound(c, "Account")
+		default:
+			response.InternalError(c)
+		}
+		return
+	}
+
+	respData := gin.H{
+		"message": "Verification code dispatched successfully.",
+	}
+	if os.Getenv("APP_ENV") != "production" || os.Getenv("OTP_PROVIDER") != "msg91" {
+		respData["devOtp"] = otpCode
+	}
+
+	response.OK(c, respData)
+}
+
+// ResendOTP godoc
+// POST /api/v1/auth/resend-otp
+// Resends a fresh OTP to the given mobile number.
+func (h *AuthHandler) ResendOTP(c *gin.Context) {
+	var req authapp.SendOTPRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "INVALID_BODY", err.Error())
+		return
+	}
+
+	otpCode, err := h.authService.ResendOTP(c.Request.Context(), req.Phone)
+	if err != nil {
+		switch {
+		case errors.Is(err, authapp.ErrInvalidPhone):
+			response.BadRequest(c, "INVALID_PHONE", "Please provide a valid mobile number.")
+		default:
+			response.InternalError(c)
+		}
+		return
+	}
+
+	respData := gin.H{
+		"message": "New verification code dispatched.",
+	}
+	if os.Getenv("APP_ENV") != "production" || os.Getenv("OTP_PROVIDER") != "msg91" {
+		respData["devOtp"] = otpCode
+	}
+
+	response.OK(c, respData)
 }
 
 // Refresh godoc

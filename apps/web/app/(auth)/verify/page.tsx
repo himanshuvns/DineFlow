@@ -14,7 +14,7 @@ import { HospitalityLoader } from "@/components/ui/hospitality-loader";
 function VerifyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const emailParam = searchParams.get("email") || "";
+  const phoneParam = searchParams.get("phone") || searchParams.get("email") || "";
   const devOtpParam = searchParams.get("devOtp") || "";
   const { addToast } = useToast();
   const setAuth = useAuthStore((state) => state.setAuth);
@@ -82,21 +82,15 @@ function VerifyContent() {
   const handleResend = async () => {
     if (timer > 0) return;
     try {
-      const res = await apiClient.post("/auth/register", {
-        email: emailParam,
-        businessName: "DineFlow Restaurant",
-        businessType: "restaurant",
-        password: "TempPassword@123",
-        name: "Owner",
-        timezone: "Asia/Kolkata",
-        country: "IN",
+      const res = await apiClient.post("/auth/resend-otp", {
+        phone: phoneParam,
       });
       const newDevOtp = res.data?.data?.devOtp;
       if (newDevOtp) {
         addToast("info", "New OTP Generated", `Your verification code is: ${newDevOtp}`);
         setOtp(newDevOtp.split(""));
       } else {
-        addToast("info", "New OTP Dispatched", "A fresh 6-digit code was sent to your email.");
+        addToast("info", "New OTP Dispatched", "A fresh 6-digit code was sent to your mobile.");
       }
       setTimer(120);
     } catch (err: any) {
@@ -116,7 +110,7 @@ function VerifyContent() {
     setIsLoading(true);
     try {
       const res = await apiClient.post("/auth/verify-otp", {
-        email: emailParam,
+        phone: phoneParam,
         otp: code,
         code: code,
       });
@@ -126,7 +120,7 @@ function VerifyContent() {
         setAuth(user, tenant, accessToken);
         setTenantName(tenant?.name || "your restaurant");
         setIsRedirecting(true);
-        addToast("success", "Email Verified!", `Welcome to ${tenant?.name || "your workspace"}!`);
+        addToast("success", "Mobile Verified!", `Welcome to ${tenant?.name || "your workspace"}!`);
         setTimeout(() => {
           router.push("/dashboard");
         }, 2400);
@@ -165,11 +159,11 @@ function VerifyContent() {
           <ShieldCheck className="h-7 w-7" />
         </div>
         <CardTitle className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-          Verify your email
+          Verify your mobile
         </CardTitle>
         <CardDescription className="text-slate-600 dark:text-slate-400 text-sm mt-1.5 leading-relaxed">
           We sent a 6-digit verification code to <br />
-          <span className="font-semibold text-emerald-700 dark:text-emerald-400">{emailParam}</span>
+          <span className="font-semibold text-emerald-700 dark:text-emerald-400">{phoneParam}</span>
         </CardDescription>
       </CardHeader>
 

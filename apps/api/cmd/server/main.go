@@ -89,7 +89,17 @@ func main() {
 		cfg.JWT.RefreshTTL,
 	)
 
-	otpService := otp.NewService(rdb.Raw())
+	otpProvider, err := otp.NewOTPProvider(otp.Config{
+		Provider:        cfg.OTP.Provider,
+		MSG91AuthKey:    cfg.OTP.MSG91AuthKey,
+		MSG91TemplateID: cfg.OTP.MSG91TemplateID,
+		MSG91SenderID:   cfg.OTP.MSG91SenderID,
+		TestNumbers:     otp.ParseTestNumbers(cfg.OTP.TestNumbers),
+	}, rdb.Raw())
+	if err != nil {
+		log.Fatal("Failed to initialize OTP provider", zap.Error(err))
+	}
+	log.Info("Initialized OTP Provider", zap.String("provider", otpProvider.Name()))
 
 	emailService := emailinfra.NewService(
 		cfg.Email.ResendAPIKey,
@@ -98,7 +108,7 @@ func main() {
 		"http://localhost:3000", // TODO: from config in production
 	)
 
-	authService := authapp.NewService(mongoDB, rdb, tokenMaker, otpService, emailService)
+	authService := authapp.NewService(mongoDB, rdb, tokenMaker, otpProvider, emailService)
 
 	// ── Initialize Handlers & Services ───────────────────────────────────────
 	hub := realtimeinfra.GetHub()

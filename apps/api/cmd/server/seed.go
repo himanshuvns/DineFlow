@@ -98,6 +98,7 @@ func seedDefaultData(ctx context.Context, db *mongoinfra.Client, log *zap.Logger
 		demoUser := user.User{
 			ID:          bson.NewObjectID(),
 			TenantID:    tenantID,
+			Phone:       "+919876543210",
 			Email:       demoEmail,
 			Name:        "Laurent Bistro",
 			Role:        user.RoleOwner,
@@ -116,6 +117,7 @@ func seedDefaultData(ctx context.Context, db *mongoinfra.Client, log *zap.Logger
 			log.Warn("Failed to insert demo user", zap.Error(err))
 		} else {
 			log.Info("🌱 Seeded live demo account",
+				zap.String("phone", "+919876543210"),
 				zap.String("email", demoEmail),
 				zap.String("password", "DineFlow@2026"),
 				zap.String("tenantSlug", demoTenant.Slug),
@@ -125,6 +127,13 @@ func seedDefaultData(ctx context.Context, db *mongoinfra.Client, log *zap.Logger
 		var existingUser user.User
 		if err := usersColl.FindOne(ctx, bson.M{"email": demoEmail}).Decode(&existingUser); err == nil {
 			tenantID = existingUser.TenantID
+			// Ensure phone is set on existing demo user
+			_, _ = usersColl.UpdateOne(ctx, bson.M{"_id": existingUser.ID}, bson.M{
+				"$set": bson.M{
+					"phone":              "+919876543210",
+					"auth.phoneVerified": true,
+				},
+			})
 		}
 	}
 
@@ -139,6 +148,7 @@ func seedDefaultData(ctx context.Context, db *mongoinfra.Client, log *zap.Logger
 		adminUser := user.User{
 			ID:          bson.NewObjectID(),
 			TenantID:    tenantID,
+			Phone:       "+919999999999",
 			Email:       "admin@dineflow.io",
 			Name:        "Laurent Bistro Admin",
 			Role:        user.RoleOwner,
@@ -153,8 +163,19 @@ func seedDefaultData(ctx context.Context, db *mongoinfra.Client, log *zap.Logger
 			UpdatedAt: time.Now().UTC(),
 		}
 		if _, err := usersColl.InsertOne(ctx, adminUser); err == nil {
-			log.Info("🌱 Seeded admin@dineflow.io demo account", zap.String("password", "Password123!"))
+			log.Info("🌱 Seeded admin@dineflow.io demo account",
+				zap.String("phone", "+919999999999"),
+				zap.String("password", "Password123!"),
+			)
 		}
+	} else {
+		// Ensure phone is set on existing admin user
+		_, _ = usersColl.UpdateOne(ctx, bson.M{"email": "admin@dineflow.io"}, bson.M{
+			"$set": bson.M{
+				"phone":              "+919999999999",
+				"auth.phoneVerified": true,
+			},
+		})
 	}
 
 	// 3. Seed Sample Categories and Menu Items if none exist for this tenant

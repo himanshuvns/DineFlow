@@ -59,6 +59,8 @@ func Setup(
 		{
 			auth.POST("/register", authRateLimit, authHandler.Register)
 			auth.POST("/verify-otp", authRateLimit, authHandler.VerifyOTP)
+			auth.POST("/send-otp", authRateLimit, authHandler.SendOTP)
+			auth.POST("/resend-otp", authRateLimit, authHandler.ResendOTP)
 			auth.POST("/login", authRateLimit, authHandler.Login)
 			auth.POST("/refresh", authHandler.Refresh)
 			auth.POST("/forgot-password", authRateLimit, authHandler.ForgotPassword)

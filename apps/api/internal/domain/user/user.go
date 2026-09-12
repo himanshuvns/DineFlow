@@ -134,7 +134,8 @@ func (u *User) IsLocked() bool {
 type PublicProfile struct {
 	ID          string      `json:"id"`
 	TenantID    string      `json:"tenantId"`
-	Email       string      `json:"email"`
+	Email       string      `json:"email,omitempty"`
+	Phone       string      `json:"phone,omitempty"`
 	Name        string      `json:"name"`
 	Avatar      string      `json:"avatar,omitempty"`
 	Role        Role        `json:"role"`
@@ -149,6 +150,7 @@ func (u *User) ToPublic() PublicProfile {
 		ID:          u.ID.Hex(),
 		TenantID:    u.TenantID.Hex(),
 		Email:       u.Email,
+		Phone:       u.Phone,
 		Name:        u.Name,
 		Avatar:      u.Avatar,
 		Role:        u.Role,
