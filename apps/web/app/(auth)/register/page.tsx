@@ -11,7 +11,6 @@ import {
   Palmtree,
   Phone,
   Lock,
-  User,
   Building2,
   ArrowRight,
   Eye,
@@ -180,15 +179,14 @@ export default function RegisterPage() {
           <div className="grid grid-cols-2 gap-3">
             <Input
               label="First Name"
-              placeholder="Jean"
+              placeholder="First name"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
               required
-              leftIcon={<User className="h-4 w-4" />}
             />
             <Input
               label="Last Name"
-              placeholder="Laurent"
+              placeholder="Last name"
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
               required
@@ -200,12 +198,14 @@ export default function RegisterPage() {
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
               Mobile Number
             </label>
-            <div className="relative flex items-center">
-              {/* Fixed +91 prefix badge */}
-              <span className="absolute left-0 h-full flex items-center pl-3.5 pr-2.5 text-sm font-semibold text-slate-700 dark:text-slate-200 border-r border-slate-200/80 dark:border-slate-700 pointer-events-none select-none z-10">
-                <Phone className="h-4 w-4 text-slate-400 mr-1.5" />
+            {/* Unified glass container: prefix pill + input */}
+            <div className="flex items-stretch rounded-xl overflow-hidden glass-input focus-within:ring-2 focus-within:ring-emerald-500/30 focus-within:border-emerald-500">
+              {/* +91 prefix — locked */}
+              <span className="flex items-center gap-1.5 pl-3.5 pr-3 border-r border-slate-200 dark:border-white/10 text-sm font-semibold text-slate-700 dark:text-slate-200 select-none whitespace-nowrap shrink-0">
+                <Phone className="h-4 w-4 text-slate-400 dark:text-slate-400" />
                 +91
               </span>
+              {/* Number input — no own border/bg so it blends with container */}
               <input
                 type="tel"
                 placeholder="98765 43210"
@@ -216,11 +216,7 @@ export default function RegisterPage() {
                 }}
                 required
                 maxLength={11}
-                className={cn(
-                  "w-full rounded-xl text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500",
-                  "glass-input pl-24 pr-3.5 py-2.5 outline-none transition-all duration-200",
-                  "focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
-                )}
+                className="flex-1 bg-transparent outline-none border-none text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 px-3.5 py-2.5"
               />
             </div>
             <span className="text-xs text-slate-500 dark:text-slate-400">A 6-digit OTP will be sent to this mobile number</span>
