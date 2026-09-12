@@ -638,7 +638,7 @@ export default function MenuManagementPage() {
                 type="checkbox"
                 checked={hasModifiers}
                 onChange={(e) => setHasModifiers(e.target.checked)}
-                className="rounded border-slate-700 bg-slate-950 text-emerald-500 focus:ring-0"
+                className="rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-emerald-600 focus:ring-0"
               />
               <span>Enable Modifier Groups (e.g. Add-on toppings, dressings)</span>
             </label>

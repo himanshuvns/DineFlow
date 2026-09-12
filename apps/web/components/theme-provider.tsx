@@ -17,13 +17,13 @@ const ThemeContext = React.createContext<ThemeContextType | undefined>(undefined
 const STORAGE_KEY = "dineflow_theme";
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = React.useState<Theme>("dark");
-  const [resolvedTheme, setResolvedTheme] = React.useState<ResolvedTheme>("dark");
+  const [theme, setThemeState] = React.useState<Theme>("light");
+  const [resolvedTheme, setResolvedTheme] = React.useState<ResolvedTheme>("light");
   const [mounted, setMounted] = React.useState(false);
 
   // Apply theme to html documentElement
   const applyTheme = React.useCallback((targetTheme: Theme) => {
-    let effective: ResolvedTheme = "dark";
+    let effective: ResolvedTheme = "light";
     if (targetTheme === "system") {
       const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
       effective = systemDark ? "dark" : "light";
@@ -42,7 +42,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   // Initialize from localStorage or fallback
   React.useEffect(() => {
-    const saved = (localStorage.getItem(STORAGE_KEY) as Theme) || "dark";
+    const saved = (localStorage.getItem(STORAGE_KEY) as Theme) || "light";
     setThemeState(saved);
     applyTheme(saved);
     setMounted(true);

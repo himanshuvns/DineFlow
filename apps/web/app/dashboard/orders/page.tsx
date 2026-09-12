@@ -371,10 +371,10 @@ export default function KDSOrdersPage() {
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold mb-2">
             <Flame className="h-3.5 w-3.5 text-amber-400" /> Multi-Station Kitchen Display (KDS)
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
             Live Kitchen Display
           </h1>
-          <p className="text-xs sm:text-sm text-slate-400">
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
             Real-time station routing for Main Kitchen, In-Room Dining (Room Service), and Bar.
           </p>
         </div>
@@ -384,7 +384,7 @@ export default function KDSOrdersPage() {
           <button
             type="button"
             onClick={toggleFullscreen}
-            className="h-9 px-3 rounded-xl border border-slate-800 bg-slate-900 text-slate-300 hover:text-white flex items-center gap-1.5 text-xs font-semibold"
+            className="h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white shadow-xs flex items-center gap-1.5 text-xs font-semibold"
             title="Toggle KDS Fullscreen Display"
           >
             {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
@@ -397,10 +397,10 @@ export default function KDSOrdersPage() {
               setSoundEnabled(!soundEnabled);
               if (!soundEnabled) playAlertChime();
             }}
-            className={`h-9 px-3 rounded-xl border flex items-center gap-1.5 text-xs font-semibold transition-colors ${
+            className={`h-9 px-3 rounded-xl border flex items-center gap-1.5 text-xs font-semibold transition-colors shadow-xs ${
               soundEnabled
-                ? "bg-slate-900 border-slate-700 text-emerald-400"
-                : "bg-slate-900 border-slate-800 text-slate-500"
+                ? "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400"
+                : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500"
             }`}
           >
             {soundEnabled ? (
@@ -445,10 +445,10 @@ export default function KDSOrdersPage() {
             key={st.id}
             type="button"
             onClick={() => setStationFilter(st.id)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-colors ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-colors shadow-xs ${
               stationFilter === st.id
                 ? "bg-emerald-500 text-slate-950 shadow"
-                : "bg-slate-900 border border-slate-800 text-slate-400 hover:text-white"
+                : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/60"
             }`}
           >
             {st.label}
@@ -474,10 +474,10 @@ export default function KDSOrdersPage() {
       {/* KDS Ticket Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {filteredOrders.length === 0 ? (
-          <div className="col-span-full p-12 text-center bg-slate-900/40 rounded-3xl border border-slate-800">
-            <ChefHat className="h-10 w-10 text-slate-600 mx-auto mb-3" />
-            <h3 className="text-base font-bold text-white">All Clear in this Station!</h3>
-            <p className="text-xs text-slate-400 mt-1">
+          <div className="col-span-full p-12 text-center bg-slate-100/60 dark:bg-slate-900/40 rounded-3xl border border-slate-200 dark:border-slate-800">
+            <ChefHat className="h-10 w-10 text-slate-400 dark:text-slate-600 mx-auto mb-3" />
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">All Clear in this Station!</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
               No active tickets waiting in the selected queue.
             </p>
           </div>
@@ -500,28 +500,28 @@ export default function KDSOrdersPage() {
                     ? "border-amber-500/60 bg-amber-500/5"
                     : order.status === "ready"
                     ? "border-blue-500/60"
-                    : "border-slate-800"
+                    : "border-slate-200 dark:border-slate-800"
                 }`}
               >
                 {/* Ticket Header */}
-                <CardHeader className="p-4 pb-3 border-b border-slate-800/80 flex flex-row items-center justify-between">
+                <CardHeader className="p-4 pb-3 border-b border-slate-200/80 dark:border-slate-800/80 flex flex-row items-center justify-between">
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="text-lg font-black text-white tracking-tight">
+                      <span className="text-lg font-black text-slate-900 dark:text-white tracking-tight">
                         {order.table}
                       </span>
                       {isRoomService && (
-                        <span className="text-[10px] font-bold text-amber-300 bg-amber-500/20 border border-amber-500/30 px-1.5 py-0.5 rounded flex items-center gap-1">
+                        <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 dark:bg-amber-500/20 border border-amber-500/30 px-1.5 py-0.5 rounded flex items-center gap-1">
                           <Hotel className="h-2.5 w-2.5" /> Room Service
                         </span>
                       )}
                     </div>
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className="text-[11px] text-slate-400 font-mono font-semibold">
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono font-semibold">
                         {order.id}
                       </span>
-                      <span className="text-slate-600">•</span>
-                      <span className="text-[11px] text-slate-400 truncate max-w-[90px]">
+                      <span className="text-slate-400 dark:text-slate-600">•</span>
+                      <span className="text-[11px] text-slate-600 dark:text-slate-400 truncate max-w-[90px]">
                         {order.customerName}
                       </span>
                     </div>
@@ -541,11 +541,11 @@ export default function KDSOrdersPage() {
                   {order.items.map((item, idx) => (
                     <div
                       key={idx}
-                      className="border-b border-slate-800/50 pb-2.5 last:border-0 last:pb-0"
+                      className="border-b border-slate-100 dark:border-slate-800/50 pb-2.5 last:border-0 last:pb-0"
                     >
                       <div className="flex items-start justify-between text-sm">
-                        <div className="font-semibold text-white">
-                          <span className="text-emerald-400 font-bold mr-2 text-base">
+                        <div className="font-semibold text-slate-900 dark:text-white">
+                          <span className="text-emerald-600 dark:text-emerald-400 font-bold mr-2 text-base">
                             {item.qty}x
                           </span>
                           <span>{item.name}</span>
@@ -553,19 +553,19 @@ export default function KDSOrdersPage() {
                       </div>
 
                       {item.variant && (
-                        <p className="text-[11px] text-slate-400 pl-6 mt-0.5">
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 pl-6 mt-0.5">
                           Size: {item.variant}
                         </p>
                       )}
 
                       {item.modifiers && item.modifiers.length > 0 && (
-                        <p className="text-[11px] text-emerald-400/90 pl-6 mt-0.5">
+                        <p className="text-[11px] text-emerald-600 dark:text-emerald-400/90 pl-6 mt-0.5">
                           + {item.modifiers.join(", ")}
                         </p>
                       )}
 
                       {item.notes && (
-                        <p className="text-[11px] text-amber-300 font-medium pl-6 mt-1 italic bg-amber-500/10 p-1 rounded">
+                        <p className="text-[11px] text-amber-800 dark:text-amber-300 font-medium pl-6 mt-1 italic bg-amber-500/10 p-1 rounded">
                           ↳ Note: {item.notes}
                         </p>
                       )}
@@ -604,7 +604,7 @@ export default function KDSOrdersPage() {
                       <button
                         type="button"
                         onClick={() => handleRejectOrder(order.id)}
-                        className="p-1.5 rounded-lg text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors"
+                        className="p-1.5 rounded-lg text-rose-500 dark:text-rose-400 hover:text-rose-600 dark:hover:text-rose-300 hover:bg-rose-500/10 transition-colors"
                         title="Reject Order"
                       >
                         <XCircle className="h-4 w-4" />
@@ -614,7 +614,7 @@ export default function KDSOrdersPage() {
                     <button
                       type="button"
                       onClick={() => handleOpenThermal(order, order.status === "served" ? "bill" : "kot")}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                      className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                       title={order.status === "served" ? "Print Guest Tax Bill" : "Print Kitchen KOT"}
                     >
                       <Printer className="h-4 w-4" />
@@ -670,7 +670,7 @@ export default function KDSOrdersPage() {
         <form id="manual-order-form" onSubmit={handleCreateManualOrder} className="space-y-4 py-2">
           {/* Destination Type Toggle */}
           <div>
-            <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block mb-1">
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1">
               Order Type
             </label>
             <div className="grid grid-cols-2 gap-2">
@@ -682,8 +682,8 @@ export default function KDSOrdersPage() {
                 }}
                 className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
                   manualDestination === "dine_in"
-                    ? "bg-emerald-500/20 border-emerald-500 text-emerald-400"
-                    : "bg-slate-950 border-slate-800 text-slate-400"
+                    ? "bg-emerald-500/20 border-emerald-500 text-emerald-600 dark:text-emerald-400"
+                    : "bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400"
                 }`}
               >
                 🍽️ Restaurant Table
@@ -696,8 +696,8 @@ export default function KDSOrdersPage() {
                 }}
                 className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
                   manualDestination === "room_service"
-                    ? "bg-amber-500/20 border-amber-500 text-amber-300"
-                    : "bg-slate-950 border-slate-800 text-slate-400"
+                    ? "bg-amber-500/20 border-amber-500 text-amber-700 dark:text-amber-300"
+                    : "bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400"
                 }`}
               >
                 🏨 In-Room Dining (Suite)
@@ -707,14 +707,14 @@ export default function KDSOrdersPage() {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block mb-1">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1">
                 {manualDestination === "room_service" ? "Suite / Room *" : "Table *"}
               </label>
               {manualDestination === "room_service" ? (
                 <select
                   value={manualTable}
                   onChange={(e) => setManualTable(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
                 >
                   <option value="Suite 101">Suite 101</option>
                   <option value="Suite 201">Suite 201</option>
@@ -727,7 +727,7 @@ export default function KDSOrdersPage() {
                 <select
                   value={manualTable}
                   onChange={(e) => setManualTable(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
                 >
                   <option value="Table 01">Table 01</option>
                   <option value="Table 02">Table 02</option>
@@ -740,7 +740,7 @@ export default function KDSOrdersPage() {
             </div>
 
             <div>
-              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block mb-1">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1">
                 Guest Name
               </label>
               <input
@@ -748,13 +748,13 @@ export default function KDSOrdersPage() {
                 placeholder={manualDestination === "room_service" ? "In-House Guest" : "Walk-in Guest"}
                 value={manualCustomer}
                 onChange={(e) => setManualCustomer(e.target.value)}
-                className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:border-emerald-500"
+                className="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
               />
             </div>
           </div>
 
           <div>
-            <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block mb-2">
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-2">
               Select Dishes
             </label>
             <div className="space-y-2 max-h-44 overflow-y-auto pr-1">
@@ -763,11 +763,11 @@ export default function KDSOrdersPage() {
                 return (
                   <div
                     key={dish.name}
-                    className="flex items-center justify-between p-2 rounded-xl bg-slate-950 border border-slate-800 text-xs"
+                    className="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs"
                   >
                     <div>
-                      <span className="font-semibold text-white">{dish.name}</span>
-                      <span className="text-emerald-400 font-mono ml-2">₹{dish.price}</span>
+                      <span className="font-semibold text-slate-900 dark:text-white">{dish.name}</span>
+                      <span className="text-emerald-600 dark:text-emerald-400 font-mono ml-2">₹{dish.price}</span>
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -779,11 +779,11 @@ export default function KDSOrdersPage() {
                             [dish.name]: Math.max(0, qty - 1),
                           })
                         }
-                        className="h-6 w-6 rounded bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center font-bold"
+                        className="h-6 w-6 rounded bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white flex items-center justify-center font-bold"
                       >
                         -
                       </button>
-                      <span className="w-5 text-center font-bold text-white">{qty}</span>
+                      <span className="w-5 text-center font-bold text-slate-900 dark:text-white">{qty}</span>
                       <button
                         type="button"
                         onClick={() =>
@@ -792,7 +792,7 @@ export default function KDSOrdersPage() {
                             [dish.name]: qty + 1,
                           })
                         }
-                        className="h-6 w-6 rounded bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center font-bold"
+                        className="h-6 w-6 rounded bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white flex items-center justify-center font-bold"
                       >
                         +
                       </button>
@@ -804,7 +804,7 @@ export default function KDSOrdersPage() {
           </div>
 
           <div>
-            <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block mb-1">
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1">
               Delivery Notes / Folio Billing Instructions
             </label>
             <input
@@ -812,7 +812,7 @@ export default function KDSOrdersPage() {
               placeholder="e.g. Charge to Room 302 Folio, deliver on silver tray"
               value={manualNotes}
               onChange={(e) => setManualNotes(e.target.value)}
-              className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:border-emerald-500"
+              className="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
             />
           </div>
         </form>

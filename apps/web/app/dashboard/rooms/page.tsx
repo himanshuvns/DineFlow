@@ -358,7 +358,7 @@ export default function RoomsDirectoryPage() {
             </div>
           }
         >
-          <div className="flex flex-col items-center justify-center p-6 bg-slate-950 rounded-2xl border border-slate-800 my-2">
+          <div className="flex flex-col items-center justify-center p-6 bg-slate-100/80 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 my-2">
             {/* Luxury Acrylic Room Tent Card */}
             <div className="p-6 bg-white rounded-3xl shadow-2xl flex flex-col items-center max-w-xs text-slate-950 border border-slate-200">
               <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700">

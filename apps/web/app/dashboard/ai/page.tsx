@@ -25,10 +25,10 @@ const AI_TOOLS = [
     description: "Generate compelling, revenue-driving descriptions for every dish — in seconds.",
     badge: "6.1",
     badgeVariant: "success" as const,
-    gradient: "from-emerald-500/20 to-teal-500/10",
-    border: "border-emerald-500/30",
-    iconColor: "text-emerald-400",
-    iconBg: "bg-emerald-500/20",
+    gradient: "from-emerald-500/10 to-teal-500/5 dark:from-emerald-500/20 dark:to-teal-500/10",
+    border: "border-emerald-200 dark:border-emerald-500/30",
+    iconColor: "text-emerald-600 dark:text-emerald-400",
+    iconBg: "bg-emerald-500/10 dark:bg-emerald-500/20",
     metrics: "↑ 18% higher add-to-cart rate",
   },
   {
@@ -38,10 +38,10 @@ const AI_TOOLS = [
     description: "\"Goes well with…\" AI suggestions shown on the customer ordering page to lift AOV.",
     badge: "6.2",
     badgeVariant: "info" as const,
-    gradient: "from-blue-500/20 to-cyan-500/10",
-    border: "border-blue-500/30",
-    iconColor: "text-blue-400",
-    iconBg: "bg-blue-500/20",
+    gradient: "from-blue-500/10 to-cyan-500/5 dark:from-blue-500/20 dark:to-cyan-500/10",
+    border: "border-blue-200 dark:border-blue-500/30",
+    iconColor: "text-blue-600 dark:text-blue-400",
+    iconBg: "bg-blue-500/10 dark:bg-blue-500/20",
     metrics: "↑ 12.4% average order value",
   },
   {
@@ -51,10 +51,10 @@ const AI_TOOLS = [
     description: "7-day predicted order volume by hour with AI-powered staffing recommendations.",
     badge: "6.3",
     badgeVariant: "purple" as const,
-    gradient: "from-violet-500/20 to-purple-500/10",
-    border: "border-violet-500/30",
-    iconColor: "text-violet-400",
-    iconBg: "bg-violet-500/20",
+    gradient: "from-violet-500/10 to-purple-500/5 dark:from-violet-500/20 dark:to-purple-500/10",
+    border: "border-violet-200 dark:border-violet-500/30",
+    iconColor: "text-violet-600 dark:text-violet-400",
+    iconBg: "bg-violet-500/10 dark:bg-violet-500/20",
     metrics: "78% forecast accuracy",
   },
   {
@@ -64,10 +64,10 @@ const AI_TOOLS = [
     description: "Let guests reorder their last meal, track orders, or browse specials — all via WhatsApp.",
     badge: "6.4",
     badgeVariant: "success" as const,
-    gradient: "from-green-500/20 to-emerald-500/10",
-    border: "border-green-500/30",
-    iconColor: "text-green-400",
-    iconBg: "bg-green-500/20",
+    gradient: "from-green-500/10 to-emerald-500/5 dark:from-green-500/20 dark:to-emerald-500/10",
+    border: "border-green-200 dark:border-green-500/30",
+    iconColor: "text-green-600 dark:text-green-400",
+    iconBg: "bg-green-500/10 dark:bg-green-500/20",
     metrics: "3× faster reorder time",
   },
   {
@@ -77,10 +77,10 @@ const AI_TOOLS = [
     description: "AI scans your full menu for underpriced stars, overpriced slow-movers, and margin leaks.",
     badge: "6.5",
     badgeVariant: "warning" as const,
-    gradient: "from-amber-500/20 to-orange-500/10",
-    border: "border-amber-500/30",
-    iconColor: "text-amber-400",
-    iconBg: "bg-amber-500/20",
+    gradient: "from-amber-500/10 to-orange-500/5 dark:from-amber-500/20 dark:to-orange-500/10",
+    border: "border-amber-200 dark:border-amber-500/30",
+    iconColor: "text-amber-600 dark:text-amber-400",
+    iconBg: "bg-amber-500/10 dark:bg-amber-500/20",
     metrics: "₹84,500 projected monthly uplift",
   },
 ];
@@ -96,13 +96,13 @@ export default function AIStudioPage() {
   return (
     <div className="space-y-8 max-w-7xl">
       {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-3xl border border-violet-500/20 bg-gradient-to-br from-[#0d0f1a] via-[#111526] to-[#0b0d18] p-8">
+      <div className="relative overflow-hidden rounded-3xl border border-violet-200 dark:border-violet-500/20 bg-gradient-to-br from-violet-50/80 via-white to-indigo-50/60 dark:from-[#0d0f1a] dark:via-[#111526] dark:to-[#0b0d18] p-8 shadow-xs">
         {/* Background glow */}
         <div className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-violet-600/10 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-emerald-500/8 blur-3xl" />
 
         <div className="relative">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-500/15 border border-violet-500/30 text-violet-300 text-xs font-semibold mb-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-500/10 dark:bg-violet-500/15 border border-violet-200 dark:border-violet-500/30 text-violet-700 dark:text-violet-300 text-xs font-semibold mb-4">
             <Sparkles className="h-3.5 w-3.5" />
             Powered by Gemini 2.0 Flash Lite
           </div>

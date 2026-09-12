@@ -34,7 +34,7 @@ export default function RootLayout({
             __html: `
               (function() {
                 try {
-                  var saved = localStorage.getItem('dineflow_theme') || 'dark';
+                  var saved = localStorage.getItem('dineflow_theme') || 'light';
                   var isDark = saved === 'dark' || (saved === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
                   if (isDark) {
                     document.documentElement.classList.add('dark');
