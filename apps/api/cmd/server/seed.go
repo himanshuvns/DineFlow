@@ -122,7 +122,6 @@ func seedDefaultData(ctx context.Context, db *mongoinfra.Client, log *zap.Logger
 			)
 		}
 	} else {
-		// Retrieve existing tenantID
 		var existingUser user.User
 		if err := usersColl.FindOne(ctx, bson.M{"email": demoEmail}).Decode(&existingUser); err == nil {
 			tenantID = existingUser.TenantID
@@ -131,6 +130,31 @@ func seedDefaultData(ctx context.Context, db *mongoinfra.Client, log *zap.Logger
 
 	if tenantID.IsZero() {
 		return nil
+	}
+
+	// Also ensure default UI login account admin@dineflow.io exists
+	adminCount, _ := usersColl.CountDocuments(ctx, bson.M{"email": "admin@dineflow.io"})
+	if adminCount == 0 {
+		adminHash, _ := bcrypt.GenerateFromPassword([]byte("Password123!"), bcrypt.DefaultCost)
+		adminUser := user.User{
+			ID:          bson.NewObjectID(),
+			TenantID:    tenantID,
+			Email:       "admin@dineflow.io",
+			Name:        "Laurent Bistro Admin",
+			Role:        user.RoleOwner,
+			Permissions: user.DefaultPermissionsForRole(user.RoleOwner),
+			Auth: user.Auth{
+				PasswordHash:  string(adminHash),
+				EmailVerified: true,
+				PhoneVerified: true,
+			},
+			Status:    user.StatusActive,
+			CreatedAt: time.Now().UTC(),
+			UpdatedAt: time.Now().UTC(),
+		}
+		if _, err := usersColl.InsertOne(ctx, adminUser); err == nil {
+			log.Info("🌱 Seeded admin@dineflow.io demo account", zap.String("password", "Password123!"))
+		}
 	}
 
 	// 3. Seed Sample Categories and Menu Items if none exist for this tenant
