@@ -23,7 +23,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         )}
         <div className="relative flex items-center">
           {leftIcon && (
-            <span className="absolute left-3.5 flex items-center pointer-events-none text-slate-400">
+            <span className="absolute left-3 flex items-center pointer-events-none text-slate-400">
               {leftIcon}
             </span>
           )}
@@ -35,8 +35,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
               "w-full rounded-xl text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500",
               "glass-input px-3.5 py-2.5 outline-none transition-all duration-200",
               "focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500",
-              leftIcon ? "pl-11" : "",
-              rightIcon ? "pr-11" : "",
+              leftIcon ? "pl-9" : "",
+              rightIcon ? "pr-9" : "",
               error ? "border-rose-500 focus:border-rose-500 focus:ring-rose-500/20" : "",
               className
             )}
