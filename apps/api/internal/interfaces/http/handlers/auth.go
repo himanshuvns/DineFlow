@@ -47,7 +47,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	respData := gin.H{
 		"message": "Registration successful. Please check your email for a verification code.",
 	}
-	if os.Getenv("APP_ENV") != "production" {
+	if os.Getenv("APP_ENV") != "production" || os.Getenv("RESEND_API_KEY") == "" {
 		respData["devOtp"] = otpCode
 	}
 

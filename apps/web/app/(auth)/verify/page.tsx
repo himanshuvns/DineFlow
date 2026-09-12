@@ -209,13 +209,13 @@ function VerifyContent() {
             </div>
           ) : (
             <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-center flex items-center justify-between">
-              <span className="text-xs text-slate-600 dark:text-slate-400">Testing locally?</span>
+              <span className="text-xs text-slate-600 dark:text-slate-400">Testing or demo?</span>
               <button
                 type="button"
                 onClick={() => setOtp(["1", "2", "3", "4", "5", "6"])}
                 className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 underline cursor-pointer"
               >
-                Auto-fill dev code (123456)
+                Auto-fill test code (123456)
               </button>
             </div>
           )}
