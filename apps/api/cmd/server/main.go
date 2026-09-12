@@ -31,6 +31,9 @@ import (
 	"go.uber.org/zap"
 )
 
+// buildTime is set at compile time via -ldflags to guarantee a unique binary per deploy.
+var buildTime = "dev"
+
 func main() {
 	// ── Load Configuration ───────────────────────────────────────────────────
 	cfg, err := config.Load()
@@ -42,7 +45,7 @@ func main() {
 	log := logger.New(cfg.App.Env)
 	defer func() { _ = log.Sync() }()
 
-	log.Info("Starting DineFlow API", zap.String("env", cfg.App.Env))
+	log.Info("Starting DineFlow API", zap.String("env", cfg.App.Env), zap.String("buildTime", buildTime))
 
 	// ── Set Gin Mode ─────────────────────────────────────────────────────────
 	if cfg.IsProduction() {

@@ -17,8 +17,11 @@ ARG BUILD_TIME=unknown
 RUN echo "Build time: $BUILD_TIME"
 COPY . .
 
-# Build statically linked binary
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /build/dineflow-api cmd/server/main.go cmd/server/seed.go
+# Build statically linked binary with embedded build timestamp
+RUN BUILD_TS=$(date +%s) && \
+    CGO_ENABLED=0 GOOS=linux go build \
+    -ldflags="-s -w -X main.buildTime=$BUILD_TS" \
+    -o /build/dineflow-api cmd/server/main.go cmd/server/seed.go
 
 # Production runner stage
 FROM alpine:3.20 AS runner
