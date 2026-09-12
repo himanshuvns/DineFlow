@@ -35,15 +35,15 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
               "w-full rounded-xl text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500",
               "glass-input px-3.5 py-2.5 outline-none transition-all duration-200",
               "focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500",
-              leftIcon ? "pl-10" : "",
-              rightIcon ? "pr-10" : "",
+              leftIcon ? "pl-11" : "",
+              rightIcon ? "pr-11" : "",
               error ? "border-rose-500 focus:border-rose-500 focus:ring-rose-500/20" : "",
               className
             )}
             {...props}
           />
           {rightIcon && (
-            <span className="absolute right-3.5 flex items-center text-slate-400">
+            <span className="absolute right-3 flex items-center text-slate-400">
               {rightIcon}
             </span>
           )}

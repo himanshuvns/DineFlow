@@ -14,6 +14,8 @@ import {
   User,
   Building2,
   ArrowRight,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -40,8 +42,9 @@ export default function RegisterPage() {
   const [businessType, setBusinessType] = React.useState("restaurant");
   const [firstName, setFirstName] = React.useState("");
   const [lastName, setLastName] = React.useState("");
-  const [phone, setPhone] = React.useState("");
+  const [phone, setPhone] = React.useState("+91");
   const [password, setPassword] = React.useState("");
+  const [showPassword, setShowPassword] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const [isRedirecting, setIsRedirecting] = React.useState(false);
 
@@ -193,27 +196,57 @@ export default function RegisterPage() {
           </div>
 
           {/* Mobile Number */}
-          <Input
-            label="Mobile Number"
-            type="tel"
-            placeholder="+91 98765 43210"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            required
-            leftIcon={<Phone className="h-4 w-4" />}
-            helperText="A 6-digit OTP will be sent to this mobile number"
-          />
+          <div className="w-full flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              Mobile Number
+            </label>
+            <div className="relative flex items-center">
+              {/* Fixed +91 prefix badge */}
+              <span className="absolute left-0 h-full flex items-center pl-3.5 pr-2.5 text-sm font-semibold text-slate-700 dark:text-slate-200 border-r border-slate-200/80 dark:border-slate-700 pointer-events-none select-none z-10">
+                <Phone className="h-4 w-4 text-slate-400 mr-1.5" />
+                +91
+              </span>
+              <input
+                type="tel"
+                placeholder="98765 43210"
+                value={phone.startsWith("+91") ? phone.slice(3) : phone}
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/[^0-9 ]/g, "");
+                  setPhone("+91" + digits);
+                }}
+                required
+                maxLength={11}
+                className={cn(
+                  "w-full rounded-xl text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500",
+                  "glass-input pl-24 pr-3.5 py-2.5 outline-none transition-all duration-200",
+                  "focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+                )}
+              />
+            </div>
+            <span className="text-xs text-slate-500 dark:text-slate-400">A 6-digit OTP will be sent to this mobile number</span>
+          </div>
 
           {/* Password */}
           <Input
             label="Password"
-            type="password"
+            type={showPassword ? "text" : "password"}
             placeholder="At least 8 characters"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
             minLength={8}
             leftIcon={<Lock className="h-4 w-4" />}
+            rightIcon={
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer p-0.5 rounded"
+                tabIndex={-1}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            }
           />
 
           <Button
