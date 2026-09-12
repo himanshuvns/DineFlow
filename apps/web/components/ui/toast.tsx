@@ -45,36 +45,60 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-2.5 max-w-sm w-full pointer-events-none">
         {toasts.map((toast) => {
           const iconMap = {
-            success: <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0" />,
-            error: <AlertCircle className="h-5 w-5 text-rose-400 shrink-0" />,
-            warning: <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0" />,
-            info: <Info className="h-5 w-5 text-cyan-400 shrink-0" />,
+            success: (
+              <div className="p-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
+                <CheckCircle2 className="h-5 w-5" />
+              </div>
+            ),
+            error: (
+              <div className="p-1 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 shrink-0">
+                <AlertCircle className="h-5 w-5" />
+              </div>
+            ),
+            warning: (
+              <div className="p-1 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 shrink-0">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+            ),
+            info: (
+              <div className="p-1 rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 shrink-0">
+                <Info className="h-5 w-5" />
+              </div>
+            ),
+          };
+
+          const typeStyles = {
+            success: "border-l-4 border-l-emerald-500 border-slate-200/90 dark:border-slate-800",
+            error: "border-l-4 border-l-rose-500 border-slate-200/90 dark:border-slate-800",
+            warning: "border-l-4 border-l-amber-500 border-slate-200/90 dark:border-slate-800",
+            info: "border-l-4 border-l-cyan-500 border-slate-200/90 dark:border-slate-800",
           };
 
           return (
             <div
               key={toast.id}
               className={cn(
-                "pointer-events-auto flex items-start gap-3 p-4 rounded-xl glass-panel-glow border shadow-2xl",
+                "pointer-events-auto flex items-start gap-3 p-4 rounded-xl bg-white dark:bg-[#0E131F] border shadow-2xl backdrop-blur-md",
                 "animate-in slide-in-from-bottom-5 duration-200 transition-all",
-                toast.type === "success" && "border-emerald-500/30",
-                toast.type === "error" && "border-rose-500/30",
-                toast.type === "warning" && "border-amber-500/30",
-                toast.type === "info" && "border-cyan-500/30"
+                typeStyles[toast.type]
               )}
             >
               {iconMap[toast.type]}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-white">{toast.title}</p>
+              <div className="flex-1 min-w-0 pt-0.5">
+                <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                  {toast.title}
+                </p>
                 {toast.description && (
-                  <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">
+                  <p className="text-xs font-medium text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
                     {toast.description}
                   </p>
                 )}
               </div>
               <button
+                type="button"
                 onClick={() => removeToast(toast.id)}
-                className="text-slate-400 hover:text-white p-1 rounded-md"
+                className="text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 p-1.5 rounded-lg transition-colors cursor-pointer"
+                aria-label="Dismiss notification"
               >
                 <X className="h-4 w-4" />
               </button>
