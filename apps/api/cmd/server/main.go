@@ -64,9 +64,9 @@ func main() {
 		_ = mongoDB.Disconnect(shutdownCtx)
 	}()
 
-	// Ensure all indexes exist (idempotent)
+	// Ensure all indexes exist (idempotent, non-fatal if disk threshold reached)
 	if err := mongoDB.EnsureIndexes(ctx); err != nil {
-		log.Fatal("Failed to ensure MongoDB indexes", zap.Error(err))
+		log.Warn("Failed to ensure some MongoDB indexes, continuing server start", zap.Error(err))
 	}
 
 	// Seed default / demo workspace and owner (idempotent)
