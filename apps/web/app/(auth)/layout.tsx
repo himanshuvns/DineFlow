@@ -51,41 +51,21 @@ export default function AuthLayout({
             </span>
           </Link>
 
-          {/* Value Prop */}
-          <div className="mt-10 max-w-lg">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-semibold mb-5">
+          {/* Value Prop & Chef Hero */}
+          <div className="mt-8 max-w-lg">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-semibold mb-3">
               <Sparkles className="h-3.5 w-3.5" /> Next-Generation Hospitality OS
             </div>
-            <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
               Streamline operations. <br />
               <span className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 dark:from-emerald-400 dark:to-teal-300 bg-clip-text text-transparent">
                 Delight your diners.
               </span>
             </h1>
-            <p className="text-slate-600 dark:text-slate-400 mt-3 leading-relaxed text-sm">
-              Unified multi-tenant platform for contactless QR table ordering, lightning-fast
-              Kitchen Display (KDS), and automated WhatsApp marketing.
-            </p>
-
-            {/* Feature Pills */}
-            <div className="mt-6 space-y-3">
-              {[
-                { icon: Zap, text: "Zero-lag live order routing to kitchen stations" },
-                { icon: ShieldCheck, text: "Strict tenant data isolation & enterprise RBAC" },
-                { icon: CheckCircle, text: "Direct WhatsApp order tracking & receipts" },
-              ].map((item, idx) => (
-                <div key={idx} className="flex items-center gap-3 text-slate-700 dark:text-slate-300 text-sm">
-                  <div className="h-6 w-6 rounded-full bg-emerald-500/10 dark:bg-emerald-500/15 border border-emerald-500/25 dark:border-emerald-500/30 flex items-center justify-center shrink-0">
-                    <item.icon className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-                  </div>
-                  <span>{item.text}</span>
-                </div>
-              ))}
-            </div>
           </div>
 
-          {/* Chef character — centered in the remaining space */}
-          <div className="mt-10 flex justify-center">
+          {/* Chef character — hero visual */}
+          <div className="my-6 flex justify-center">
             <PeekingChef isPasswordFocused={isPasswordFocused} />
           </div>
         </div>

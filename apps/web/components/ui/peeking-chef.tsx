@@ -7,190 +7,207 @@ interface PeekingChefProps {
 }
 
 export function PeekingChef({ isPasswordFocused = false }: PeekingChefProps) {
-  const svgRef = React.useRef<SVGSVGElement>(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
   const [pupilOffset, setPupilOffset] = React.useState({ x: 0, y: 0 });
+  const [headTilt, setHeadTilt] = React.useState({ rotateX: 0, rotateY: 0 });
   const [blinking, setBlinking] = React.useState(false);
 
-  // Track cursor and calculate eye direction
+  // Smooth mouse movement tracking using requestAnimationFrame
   React.useEffect(() => {
-    if (isPasswordFocused) return;
+    if (isPasswordFocused) {
+      setPupilOffset({ x: 0, y: 0 });
+      setHeadTilt({ rotateX: 0, rotateY: 0 });
+      return;
+    }
+
+    let rafId: number | null = null;
 
     const handleMouseMove = (e: MouseEvent) => {
-      if (!svgRef.current) return;
-      const rect = svgRef.current.getBoundingClientRect();
-      // Center of the face in screen coordinates
-      const faceCx = rect.left + rect.width * 0.5;
-      const faceCy = rect.top + rect.height * 0.5;
-      const dx = e.clientX - faceCx;
-      const dy = e.clientY - faceCy;
-      const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-      const maxPupilTravel = 5;
-      const ratio = Math.min(maxPupilTravel, dist * 0.03) / dist;
-      setPupilOffset({ x: dx * ratio, y: dy * ratio });
+      if (rafId) cancelAnimationFrame(rafId);
+
+      rafId = requestAnimationFrame(() => {
+        if (!containerRef.current) return;
+        const rect = containerRef.current.getBoundingClientRect();
+        
+        // Approximate face center on screen
+        const faceX = rect.left + rect.width * 0.65;
+        const faceY = rect.top + rect.height * 0.45;
+
+        const dx = e.clientX - faceX;
+        const dy = e.clientY - faceY;
+        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+
+        // Realistic natural pupil movement radius (max ~6.5px)
+        const maxPupilTravel = 6.5;
+        const travel = Math.min(maxPupilTravel, dist * 0.025);
+        const pupilX = (dx / dist) * travel;
+        const pupilY = (dy / dist) * travel;
+
+        // Subtle 3D head parallax tilt (max ~3.5 deg)
+        const tiltX = Math.max(-3.5, Math.min(3.5, -(dy / window.innerHeight) * 7));
+        const tiltY = Math.max(-4.5, Math.min(4.5, (dx / window.innerWidth) * 9));
+
+        setPupilOffset({ x: pupilX, y: pupilY });
+        setHeadTilt({ rotateX: tiltX, rotateY: tiltY });
+      });
     };
 
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mousemove", handleMouseMove, { passive: true });
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      if (rafId) cancelAnimationFrame(rafId);
+    };
   }, [isPasswordFocused]);
 
-  // Reset pupils when covering eyes
-  React.useEffect(() => {
-    if (isPasswordFocused) setPupilOffset({ x: 0, y: 0 });
-  }, [isPasswordFocused]);
-
-  // Blink every ~3.5s
+  // Periodic natural blinking every 4s
   React.useEffect(() => {
     if (isPasswordFocused) return;
-    const id = setInterval(() => {
+    const interval = setInterval(() => {
       setBlinking(true);
       setTimeout(() => setBlinking(false), 140);
-    }, 3500);
-    return () => clearInterval(id);
+    }, 4000);
+    return () => clearInterval(interval);
   }, [isPasswordFocused]);
 
-  const lx = 82 + pupilOffset.x;
-  const ly = 124 + pupilOffset.y;
-  const rx = 118 + pupilOffset.x;
-  const ry = 124 + pupilOffset.y;
-
   return (
-    <div className="flex flex-col items-center select-none" aria-hidden="true">
-      <svg
-        ref={svgRef}
-        viewBox="0 0 200 245"
-        width="220"
-        height="270"
-        xmlns="http://www.w3.org/2000/svg"
-        className="drop-shadow-xl"
+    <div
+      ref={containerRef}
+      className="flex flex-col items-center select-none"
+      aria-hidden="true"
+    >
+      {/* 3D Perspective Stage */}
+      <div
+        className="relative w-[280px] sm:w-[310px] aspect-[400/500] transition-transform duration-200 ease-out"
+        style={{
+          perspective: "1000px",
+          transform: isPasswordFocused
+            ? "translateY(0px) scale(1.02)"
+            : `perspective(1000px) rotateX(${headTilt.rotateX}deg) rotateY(${headTilt.rotateY}deg)`,
+        }}
       >
-        {/* Chef hat brim */}
-        <ellipse cx="100" cy="84" rx="48" ry="10" fill="#e2e8f0" stroke="#cbd5e1" strokeWidth="1.5" />
-        {/* Hat body */}
-        <rect x="62" y="42" width="76" height="46" rx="8" fill="#f8fafc" stroke="#e2e8f0" strokeWidth="1.5" />
-        {/* Hat dome */}
-        <ellipse cx="100" cy="42" rx="38" ry="18" fill="#f8fafc" stroke="#e2e8f0" strokeWidth="1.5" />
-        {/* Hat shine */}
-        <ellipse cx="87" cy="35" rx="11" ry="5" fill="white" opacity="0.55" />
-        {/* Emerald stripe */}
-        <rect x="62" y="72" width="76" height="5" rx="1" fill="#10b981" opacity="0.3" />
+        {/* Ambient Counter Glow / Drop Shadow */}
+        <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-4/5 h-8 bg-slate-900/15 dark:bg-black/40 blur-lg rounded-full pointer-events-none" />
 
-        {/* Neck */}
-        <rect x="86" y="162" width="28" height="20" rx="6" fill="#fde8c8" />
+        {/* ======================================================== */}
+        {/* STATE 1: OPEN EYES & CURSOR TRACKING                     */}
+        {/* ======================================================== */}
+        <div
+          className="absolute inset-0 transition-all duration-350 ease-out"
+          style={{
+            opacity: isPasswordFocused ? 0 : 1,
+            transform: isPasswordFocused ? "scale(0.95) translateY(4px)" : "scale(1) translateY(0)",
+            pointerEvents: isPasswordFocused ? "none" : "auto",
+          }}
+        >
+          {/* Base Chef Image with Clean Eye Sclera */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/chef/chef-looking-base.webp"
+            alt="Chef watching"
+            className="w-full h-full object-contain pointer-events-none drop-shadow-md"
+            loading="eager"
+            decoding="async"
+          />
 
-        {/* Head */}
-        <ellipse cx="100" cy="137" rx="52" ry="58" fill="#fde8c8" stroke="#f5c89a" strokeWidth="1.5" />
-        {/* Ears */}
-        <ellipse cx="48" cy="137" rx="10" ry="13" fill="#fde8c8" stroke="#f5c89a" strokeWidth="1.2" />
-        <ellipse cx="48" cy="137" rx="5" ry="7" fill="#f8b98a" opacity="0.45" />
-        <ellipse cx="152" cy="137" rx="10" ry="13" fill="#fde8c8" stroke="#f5c89a" strokeWidth="1.2" />
-        <ellipse cx="152" cy="137" rx="5" ry="7" fill="#f8b98a" opacity="0.45" />
+          {/* Left Pupil (Viewer's Left, Character's Right) */}
+          <div
+            className="absolute pointer-events-none will-change-transform"
+            style={{
+              left: "50.75%",
+              top: "47.20%",
+              width: "11.0%",
+              height: "8.8%",
+              transform: `translate3d(${pupilOffset.x}px, ${pupilOffset.y}px, 0) ${
+                blinking ? "scaleY(0.08)" : "scaleY(1)"
+              }`,
+              transformOrigin: "center 60%",
+              transition: blinking
+                ? "transform 0.08s ease-in-out"
+                : "transform 110ms cubic-bezier(0.2, 0.8, 0.2, 1)",
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/images/chef/chef-pupil-left.webp"
+              alt=""
+              className="w-full h-full object-contain pointer-events-none"
+            />
+          </div>
 
-        {/* Cheek blush */}
-        <ellipse cx="70" cy="153" rx="12" ry="7" fill="#f87171" opacity="0.18" />
-        <ellipse cx="130" cy="153" rx="12" ry="7" fill="#f87171" opacity="0.18" />
+          {/* Right Pupil (Viewer's Right, Character's Left) */}
+          <div
+            className="absolute pointer-events-none will-change-transform"
+            style={{
+              left: "70.0%",
+              top: "42.0%",
+              width: "10.0%",
+              height: "8.0%",
+              transform: `translate3d(${pupilOffset.x * 0.95}px, ${pupilOffset.y * 0.95}px, 0) ${
+                blinking ? "scaleY(0.08)" : "scaleY(1)"
+              }`,
+              transformOrigin: "center 60%",
+              transition: blinking
+                ? "transform 0.08s ease-in-out"
+                : "transform 110ms cubic-bezier(0.2, 0.8, 0.2, 1)",
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/images/chef/chef-pupil-right.webp"
+              alt=""
+              className="w-full h-full object-contain pointer-events-none"
+            />
+          </div>
+        </div>
 
-        {/* Eyebrows */}
-        {isPasswordFocused ? (
-          <>
-            <path d="M70 111 Q82 105 92 109" stroke="#92400e" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-            <path d="M108 109 Q118 105 130 111" stroke="#92400e" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-          </>
-        ) : (
-          <>
-            <path d="M70 113 Q82 108 92 112" stroke="#92400e" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-            <path d="M108 112 Q118 108 130 113" stroke="#92400e" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-          </>
-        )}
+        {/* ======================================================== */}
+        {/* STATE 2: COVERING EYES WITH HANDS (PASSWORD MODE)        */}
+        {/* ======================================================== */}
+        <div
+          className="absolute inset-0 transition-all duration-350 ease-out"
+          style={{
+            opacity: isPasswordFocused ? 1 : 0,
+            transform: isPasswordFocused ? "scale(1) translateY(0)" : "scale(0.95) translateY(4px)",
+            pointerEvents: isPasswordFocused ? "auto" : "none",
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/chef/chef-covering-eyes.webp"
+            alt="Chef covering eyes"
+            className="w-full h-full object-contain pointer-events-none drop-shadow-md"
+            loading="eager"
+            decoding="async"
+          />
+        </div>
+      </div>
 
-        {/* Eyes */}
-        {isPasswordFocused ? (
-          <>
-            {/* Squint lines */}
-            <path d="M70 125 Q82 119 92 125" stroke="#1e293b" strokeWidth="3" strokeLinecap="round" fill="none" />
-            <path d="M108 125 Q118 119 128 125" stroke="#1e293b" strokeWidth="3" strokeLinecap="round" fill="none" />
-            {/* Sweat drop */}
-            <ellipse cx="67" cy="115" rx="2.5" ry="4" fill="#93c5fd" opacity="0.75" />
-            <circle cx="67" cy="110" r="1.5" fill="#93c5fd" opacity="0.5" />
-          </>
-        ) : (
-          <>
-            {/* Left eye */}
-            <ellipse cx="82" cy="124" rx="14" ry={blinking ? 2 : 14} fill="white" stroke="#1e293b" strokeWidth="1.5" style={{ transition: "ry 0.05s" }} />
-            <circle cx={lx} cy={ly} r={blinking ? 0 : 6} fill="#1e293b" style={{ transition: "cx 0.06s, cy 0.06s, r 0.05s" }} />
-            <circle cx={lx + 2} cy={ly - 3} r={blinking ? 0 : 2} fill="white" style={{ transition: "cx 0.06s, cy 0.06s" }} />
-            {/* Right eye */}
-            <ellipse cx="118" cy="124" rx="14" ry={blinking ? 2 : 14} fill="white" stroke="#1e293b" strokeWidth="1.5" style={{ transition: "ry 0.05s" }} />
-            <circle cx={rx} cy={ry} r={blinking ? 0 : 6} fill="#1e293b" style={{ transition: "cx 0.06s, cy 0.06s, r 0.05s" }} />
-            <circle cx={rx + 2} cy={ry - 3} r={blinking ? 0 : 2} fill="white" style={{ transition: "cx 0.06s, cy 0.06s" }} />
-          </>
-        )}
-
-        {/* Nose */}
-        <ellipse cx="100" cy="143" rx="5" ry="3.5" fill="#f5a97f" opacity="0.55" />
-        <circle cx="97" cy="144" r="1.5" fill="#d97706" opacity="0.3" />
-        <circle cx="103" cy="144" r="1.5" fill="#d97706" opacity="0.3" />
-
-        {/* Mouth */}
-        {isPasswordFocused ? (
-          <path d="M87 159 Q100 156 113 159" stroke="#b45309" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-        ) : (
-          <path d="M85 159 Q100 171 115 159" stroke="#b45309" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-        )}
-
-        {/* Hands covering eyes (password mode) */}
-        {isPasswordFocused && (
-          <>
-            {/* Left arm */}
-            <path d="M58 188 Q62 168 74 150 Q80 140 83 129" stroke="#fde8c8" strokeWidth="16" strokeLinecap="round" fill="none" />
-            {/* Left palm */}
-            <ellipse cx="80" cy="123" rx="18" ry="14" fill="#fde8c8" stroke="#f5c89a" strokeWidth="1.5" />
-            {/* Left fingers */}
-            <ellipse cx="65" cy="113" rx="5.5" ry="9" fill="#fde8c8" stroke="#f5c89a" strokeWidth="1.2" transform="rotate(-20,65,113)" />
-            <ellipse cx="73" cy="108" rx="5.5" ry="10" fill="#fde8c8" stroke="#f5c89a" strokeWidth="1.2" transform="rotate(-10,73,108)" />
-            <ellipse cx="82" cy="107" rx="5.5" ry="10" fill="#fde8c8" stroke="#f5c89a" strokeWidth="1.2" />
-            <ellipse cx="91" cy="109" rx="5" ry="9" fill="#fde8c8" stroke="#f5c89a" strokeWidth="1.2" transform="rotate(10,91,109)" />
-            <ellipse cx="98" cy="114" rx="5" ry="8" fill="#fde8c8" stroke="#f5c89a" strokeWidth="1.2" transform="rotate(20,98,114)" />
-
-            {/* Right arm */}
-            <path d="M142 188 Q138 168 126 150 Q120 140 117 129" stroke="#fde8c8" strokeWidth="16" strokeLinecap="round" fill="none" />
-            {/* Right palm */}
-            <ellipse cx="120" cy="123" rx="18" ry="14" fill="#fde8c8" stroke="#f5c89a" strokeWidth="1.5" />
-            {/* Right fingers */}
-            <ellipse cx="102" cy="114" rx="5" ry="8" fill="#fde8c8" stroke="#f5c89a" strokeWidth="1.2" transform="rotate(-20,102,114)" />
-            <ellipse cx="109" cy="109" rx="5" ry="9" fill="#fde8c8" stroke="#f5c89a" strokeWidth="1.2" transform="rotate(-10,109,109)" />
-            <ellipse cx="118" cy="107" rx="5.5" ry="10" fill="#fde8c8" stroke="#f5c89a" strokeWidth="1.2" />
-            <ellipse cx="127" cy="108" rx="5.5" ry="10" fill="#fde8c8" stroke="#f5c89a" strokeWidth="1.2" transform="rotate(10,127,108)" />
-            <ellipse cx="135" cy="113" rx="5.5" ry="9" fill="#fde8c8" stroke="#f5c89a" strokeWidth="1.2" transform="rotate(20,135,113)" />
-          </>
-        )}
-
-        {/* Body / Chef jacket */}
-        <path
-          d="M70 180 Q60 187 55 212 Q52 232 55 245 L145 245 Q148 232 145 212 Q140 187 130 180 Q115 174 100 174 Q85 174 70 180Z"
-          fill="#f8fafc" stroke="#e2e8f0" strokeWidth="1.5"
-        />
-        {/* Buttons */}
-        <circle cx="100" cy="196" r="3" fill="#10b981" opacity="0.75" />
-        <circle cx="100" cy="211" r="3" fill="#10b981" opacity="0.75" />
-        <circle cx="100" cy="226" r="3" fill="#10b981" opacity="0.75" />
-        {/* Lapels */}
-        <path d="M100 180 Q90 187 85 200 L100 193Z" fill="#e2e8f0" />
-        <path d="M100 180 Q110 187 115 200 L100 193Z" fill="#e2e8f0" />
-        {/* Bow tie */}
-        <path d="M92 180 L85 174 L92 169 L100 174 L108 169 L115 174 L108 180 L100 176Z" fill="#10b981" opacity="0.9" />
-      </svg>
-
-      {/* Caption */}
-      <div className="mt-2 text-center min-h-[28px]">
-        {isPasswordFocused ? (
-          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 italic animate-pulse">
-            🙈 Not peeking, promise!
-          </p>
-        ) : (
-          <p className="text-sm font-medium text-slate-400 dark:text-slate-500">
-            👀 Watching over your workspace
-          </p>
-        )}
+      {/* ======================================================== */}
+      {/* Interactive Status Caption Pill                          */}
+      {/* ======================================================== */}
+      <div className="mt-3 min-h-[32px] flex items-center justify-center">
+        <div
+          className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-300 ${
+            isPasswordFocused
+              ? "bg-amber-500/15 border border-amber-500/30 text-amber-700 dark:text-amber-300 shadow-sm scale-105"
+              : "bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400"
+          }`}
+        >
+          {isPasswordFocused ? (
+            <>
+              <span className="text-sm">🙈</span>
+              <span>Not peeking, promise!</span>
+            </>
+          ) : (
+            <>
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+              </span>
+              <span>Watching your cursor</span>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
