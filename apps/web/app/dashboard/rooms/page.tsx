@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
+import { QRCodeImage } from "@/components/ui/qr-code-image";
 
 interface RoomItem {
   id: string;
@@ -59,6 +60,14 @@ export default function RoomsDirectoryPage() {
   const [isAddRoomOpen, setIsAddRoomOpen] = React.useState(false);
   const [isBulkOpen, setIsBulkOpen] = React.useState(false);
   const [isPrintAllOpen, setIsPrintAllOpen] = React.useState(false);
+
+  const [baseUrl, setBaseUrl] = React.useState("https://dineflow-steel.vercel.app");
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined" && window.location.origin) {
+      setBaseUrl(window.location.origin);
+    }
+  }, []);
 
   // Single Add Form
   const [newRoomName, setNewRoomName] = React.useState("");
@@ -141,7 +150,7 @@ export default function RoomsDirectoryPage() {
   };
 
   const getRoomQRURL = (room: RoomItem) => {
-    return `http://localhost:3000/m/the-grand-bistro/room/${room.roomNumber.toLowerCase()}`;
+    return `${baseUrl}/m/the-grand-bistro/room/${room.roomNumber.toLowerCase()}`;
   };
 
   const filteredRooms = rooms.filter((r) => {
@@ -369,8 +378,12 @@ export default function RoomsDirectoryPage() {
                 In-Room Dining & 24h Concierge
               </p>
 
-              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200">
-                <QrCode className="h-36 w-36 text-slate-900" />
+              <div className="p-3 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center justify-center">
+                <QRCodeImage
+                  value={getRoomQRURL(selectedRoom)}
+                  size={144}
+                  alt={`${selectedRoom.name} QR Code`}
+                />
               </div>
 
               <span className="text-xs font-bold mt-3 text-slate-900">
@@ -591,8 +604,12 @@ export default function RoomsDirectoryPage() {
                     The Grand Palace & Spa
                   </span>
                   <h4 className="text-sm font-black mt-0.5 mb-2">{r.name}</h4>
-                  <div className="p-2 bg-slate-50 rounded-xl border border-slate-200">
-                    <QrCode className="h-24 w-24 text-slate-900" />
+                  <div className="p-2 bg-white rounded-xl border border-slate-200 shadow-2xs">
+                    <QRCodeImage
+                      value={getRoomQRURL(r)}
+                      size={96}
+                      alt={r.name}
+                    />
                   </div>
                   <span className="text-[10px] font-bold mt-2 text-slate-800">
                     In-Room Dining & Concierge

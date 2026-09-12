@@ -13,12 +13,15 @@ import {
   ExternalLink,
   Search,
   Grid,
+  MessageCircle,
+  Globe,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
+import { QRCodeImage } from "@/components/ui/qr-code-image";
 
 interface TableItem {
   id: string;
@@ -40,11 +43,21 @@ const INITIAL_TABLES: TableItem[] = [
   { id: "R-303", name: "Room 303", seats: 2, zone: "Hotel Suites", status: "reserved" },
 ];
 
-export default function TablesPage() {
+export default function TablesManagementPage() {
   const { addToast } = useToast();
   const [tables, setTables] = React.useState<TableItem[]>(INITIAL_TABLES);
   const [selectedTable, setSelectedTable] = React.useState<TableItem | null>(null);
   const [filterZone, setFilterZone] = React.useState("all");
+
+  // QR Mode: "web" for Digital Menu, "whatsapp" for Direct WhatsApp ordering
+  const [qrTarget, setQrTarget] = React.useState<"web" | "whatsapp">("web");
+  const [baseUrl, setBaseUrl] = React.useState("https://dineflow-steel.vercel.app");
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined" && window.location.origin) {
+      setBaseUrl(window.location.origin);
+    }
+  }, []);
 
   // New Table Modal
   const [isAddTableOpen, setIsAddTableOpen] = React.useState(false);
@@ -84,13 +97,17 @@ export default function TablesPage() {
     );
   };
 
-  const getQRLink = (table: TableItem) => {
-    return `http://localhost:3000/m/the-grand-bistro/${table.id.toLowerCase()}`;
+  const getQRLink = (table: TableItem, target: "web" | "whatsapp" = qrTarget) => {
+    if (target === "whatsapp") {
+      const msg = `Hi The Grand Bistro! 👋 I am seated at ${table.name}. Please send me the live digital menu & daily specials.`;
+      return `https://wa.me/919876543210?text=${encodeURIComponent(msg)}`;
+    }
+    return `${baseUrl}/m/the-grand-bistro/${table.id.toLowerCase()}`;
   };
 
   const copyQRLink = (table: TableItem) => {
     navigator.clipboard?.writeText(getQRLink(table));
-    addToast("info", "Link Copied", "Direct customer ordering link copied to clipboard.");
+    addToast("info", "Link Copied", `${qrTarget === "whatsapp" ? "WhatsApp bot" : "Digital menu"} link copied to clipboard.`);
   };
 
   const filteredTables = tables.filter((t) => {
@@ -214,7 +231,7 @@ export default function TablesPage() {
           isOpen={!!selectedTable}
           onClose={() => setSelectedTable(null)}
           title={`${selectedTable.name} — QR Stand`}
-          description={`Direct QR order link for ${selectedTable.zone}`}
+          description={`High-resolution scannable QR code for ${selectedTable.zone}`}
           footer={
             <div className="flex items-center justify-between w-full">
               <Button
@@ -223,17 +240,26 @@ export default function TablesPage() {
                 leftIcon={<Copy className="h-4 w-4" />}
                 onClick={() => copyQRLink(selectedTable)}
               >
-                Copy Menu URL
+                Copy {qrTarget === "whatsapp" ? "WhatsApp" : "Menu"} Link
               </Button>
               <div className="flex items-center gap-2">
                 <a
                   href={getQRLink(selectedTable)}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-white dark:border-transparent transition-colors"
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-white dark:border-transparent transition-colors"
                 >
-                  <ExternalLink className="h-3.5 w-3.5" />
-                  <span>Open Customer View</span>
+                  {qrTarget === "whatsapp" ? (
+                    <>
+                      <MessageCircle className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <span>Test WhatsApp Chat</span>
+                    </>
+                  ) : (
+                    <>
+                      <ExternalLink className="h-3.5 w-3.5" />
+                      <span>Open Customer Menu</span>
+                    </>
+                  )}
                 </a>
                 <Button
                   variant="glow"
@@ -250,28 +276,78 @@ export default function TablesPage() {
           }
         >
           <div className="flex flex-col items-center justify-center p-6 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 my-2">
+            {/* Mode Switcher: Web Menu vs WhatsApp Ordering */}
+            <div className="flex items-center justify-center gap-2 mb-4 p-1 rounded-xl bg-slate-200/70 dark:bg-slate-900 border border-slate-300 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setQrTarget("web")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  qrTarget === "web"
+                    ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs border border-slate-200 dark:border-slate-700"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                }`}
+              >
+                <Globe className="h-3.5 w-3.5 text-blue-500" />
+                <span>Digital Web Menu</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setQrTarget("whatsapp")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  qrTarget === "whatsapp"
+                    ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs border border-slate-200 dark:border-slate-700"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                }`}
+              >
+                <MessageCircle className="h-3.5 w-3.5 text-emerald-500" />
+                <span>WhatsApp Bot Order</span>
+              </button>
+            </div>
+
             {/* Elegant Table Stand Card representation */}
-            <div className="p-6 bg-white rounded-3xl shadow-2xl flex flex-col items-center max-w-xs text-slate-950 border border-slate-200">
-              <span className="text-[11px] font-black uppercase tracking-widest text-emerald-600">
+            <div className="p-6 bg-white rounded-3xl shadow-2xl flex flex-col items-center max-w-xs text-slate-950 border border-slate-200 text-center">
+              <span className="text-[11px] font-black uppercase tracking-widest text-emerald-700">
                 The Grand Bistro
               </span>
               <h4 className="text-xl font-black mt-0.5 mb-3">{selectedTable.name}</h4>
 
-              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200">
-                <QrCode className="h-40 w-40 text-slate-900" />
+              <div className="p-3 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center justify-center">
+                <QRCodeImage
+                  value={getQRLink(selectedTable, qrTarget)}
+                  size={160}
+                  alt={`${selectedTable.name} QR code`}
+                />
               </div>
 
-              <span className="text-xs font-bold mt-3 text-slate-900">
-                Scan to Order & Pay
-              </span>
-              <span className="text-[10px] text-slate-500 font-mono mt-0.5 text-center">
-                No app installation required
-              </span>
+              {qrTarget === "web" ? (
+                <>
+                  <span className="text-xs font-bold mt-3 text-slate-900">
+                    Scan for Digital Menu & Order
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-mono mt-0.5">
+                    Browse dishes • Cart • No app required
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="text-xs font-bold mt-3 text-emerald-800 flex items-center gap-1">
+                    <MessageCircle className="h-3.5 w-3.5 text-emerald-600" /> Scan to Order via WhatsApp
+                  </span>
+                  <span className="text-[10px] text-slate-600 font-mono mt-0.5">
+                    Live DineBot Concierge • +91 98765 43210
+                  </span>
+                </>
+              )}
             </div>
 
-            <p className="text-xs text-slate-600 dark:text-slate-400 mt-4 text-center font-mono">
-              {getQRLink(selectedTable)}
-            </p>
+            <div className="mt-4 text-center max-w-sm">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                Encoded URL (scannable by any camera):
+              </p>
+              <p className="text-xs text-emerald-700 dark:text-emerald-400 font-mono break-all mt-0.5 font-semibold">
+                {getQRLink(selectedTable, qrTarget)}
+              </p>
+            </div>
           </div>
         </Modal>
       )}
@@ -284,18 +360,45 @@ export default function TablesPage() {
           title="Print QR Stands Package"
           description="High-resolution acrylic table stand inserts ready to print for all dining locations."
           footer={
-            <div className="flex items-center justify-end gap-2 w-full">
-              <Button variant="ghost" size="sm" onClick={() => setIsPrintPackageOpen(false)}>
-                Close
-              </Button>
-              <Button
-                variant="glow"
-                size="sm"
-                leftIcon={<Printer className="h-4 w-4" />}
-                onClick={() => window.print()}
-              >
-                Print Stand Sheet (A4 / Letter)
-              </Button>
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Target:</span>
+                <button
+                  type="button"
+                  onClick={() => setQrTarget("web")}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${
+                    qrTarget === "web"
+                      ? "bg-emerald-500 text-slate-950 font-bold"
+                      : "bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400"
+                  }`}
+                >
+                  Digital Menu
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQrTarget("whatsapp")}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${
+                    qrTarget === "whatsapp"
+                      ? "bg-emerald-500 text-slate-950 font-bold"
+                      : "bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400"
+                  }`}
+                >
+                  WhatsApp Bot
+                </button>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="sm" onClick={() => setIsPrintPackageOpen(false)}>
+                  Close
+                </Button>
+                <Button
+                  variant="glow"
+                  size="sm"
+                  leftIcon={<Printer className="h-4 w-4" />}
+                  onClick={() => window.print()}
+                >
+                  Print Stand Sheet (A4 / Letter)
+                </Button>
+              </div>
             </div>
           }
         >
@@ -306,17 +409,21 @@ export default function TablesPage() {
                   key={t.id}
                   className="p-4 bg-white rounded-2xl shadow border border-slate-300 flex flex-col items-center text-slate-950 text-center"
                 >
-                  <span className="text-[9px] font-black uppercase tracking-widest text-emerald-600">
+                  <span className="text-[9px] font-black uppercase tracking-widest text-emerald-700">
                     The Grand Bistro
                   </span>
                   <h5 className="text-sm font-black mt-0.5 mb-2">{t.name}</h5>
-                  <div className="p-2 bg-slate-50 rounded-xl border border-slate-200">
-                    <QrCode className="h-24 w-24 text-slate-900" />
+                  <div className="p-2 bg-white rounded-xl border border-slate-200 shadow-2xs">
+                    <QRCodeImage
+                      value={getQRLink(t, qrTarget)}
+                      size={96}
+                      alt={t.name}
+                    />
                   </div>
-                  <span className="text-[10px] font-bold mt-2 text-slate-800">
-                    Scan to Order
+                  <span className="text-[10px] font-bold mt-2 text-slate-900">
+                    {qrTarget === "whatsapp" ? "Scan for WhatsApp" : "Scan to Order"}
                   </span>
-                  <span className="text-[8px] text-slate-400 font-mono mt-0.5">
+                  <span className="text-[8px] text-slate-500 font-mono mt-0.5">
                     {t.zone} • {t.seats} Seats
                   </span>
                 </div>

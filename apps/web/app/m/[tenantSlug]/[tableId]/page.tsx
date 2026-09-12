@@ -12,6 +12,7 @@ import {
   Clock,
   Heart,
   Plus,
+  MessageCircle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -249,6 +250,11 @@ export default function CustomerMenuPage() {
     );
   };
 
+  const handleOpenWhatsApp = () => {
+    const msg = `Hi The Grand Bistro! 👋 I am browsing the digital menu for ${tableName}. Could I get some recommendations or assistance?`;
+    window.open(`https://wa.me/919876543210?text=${encodeURIComponent(msg)}`, "_blank");
+  };
+
   // Filtered dishes
   const filteredCategories = MENU_DATA.map((cat) => {
     const items = cat.items.filter((item) => {
@@ -283,6 +289,14 @@ export default function CustomerMenuPage() {
 
           {/* Quick Action Badges */}
           <div className="absolute top-4 right-4 flex items-center gap-2">
+            <button
+              onClick={handleOpenWhatsApp}
+              className="px-3 h-9 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-600/30 transition-transform active:scale-95 cursor-pointer"
+              title="Order or Inquire on WhatsApp"
+            >
+              <MessageCircle className="h-4 w-4" />
+              <span>WhatsApp</span>
+            </button>
             <button
               onClick={handleWifiInfo}
               className="h-9 w-9 rounded-full bg-slate-900/80 backdrop-blur border border-slate-700/60 text-slate-300 flex items-center justify-center hover:text-white"
@@ -323,6 +337,20 @@ export default function CustomerMenuPage() {
                 </Badge>
                 <span className="text-[10px] text-slate-500 mt-1">Direct to KDS</span>
               </div>
+            </div>
+
+            <div className="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs">
+              <div className="flex items-center gap-1.5 text-slate-300">
+                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="font-medium text-slate-300">Live Kitchen Active</span>
+              </div>
+              <button
+                onClick={handleOpenWhatsApp}
+                className="text-[11px] font-semibold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 cursor-pointer"
+              >
+                <MessageCircle className="h-3.5 w-3.5" />
+                <span>Prefer WhatsApp? Tap here</span>
+              </button>
             </div>
 
             {/* Search Bar */}

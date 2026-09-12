@@ -14,6 +14,7 @@ import {
   Phone,
   User,
   MessageSquare,
+  MessageCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -89,9 +90,10 @@ export function CustomerCartDrawer({
       })),
     };
 
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || "https://api-production-f170.up.railway.app/api/v1";
     try {
-      // Try sending to Go backend public order endpoint
-      const res = await fetch("http://localhost:8080/api/v1/public/orders", {
+      // Send to Go backend public order endpoint
+      const res = await fetch(`${apiBase}/public/orders`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -123,6 +125,32 @@ export function CustomerCartDrawer({
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleOrderViaWhatsApp = () => {
+    if (items.length === 0) return;
+    const itemList = items
+      .map(
+        (i) =>
+          `• ${i.quantity}x ${i.name}${i.selectedVariant ? ` (${i.selectedVariant})` : ""}${
+            i.selectedModifiers && i.selectedModifiers.length > 0
+              ? ` [+${i.selectedModifiers.join(", ")}]`
+              : ""
+          } — ${formatCurrency(i.unitPrice * i.quantity, "INR")}`
+      )
+      .join("\n");
+
+    const text =
+      `🍽️ *New Order from ${tableName}*\n` +
+      `Guest Name: ${nameInput.trim() || "Guest"}\n` +
+      (phoneInput.trim() ? `Phone: ${phoneInput.trim()}\n` : "") +
+      (notesInput.trim() ? `Special Notes: ${notesInput.trim()}\n` : "") +
+      `\n*Order Summary:*\n${itemList}\n\n` +
+      `*Total: ${formatCurrency(total, "INR")}* (incl. taxes)\n\n` +
+      `Please confirm receipt for kitchen preparation! 🙏`;
+
+    window.open(`https://wa.me/919876543210?text=${encodeURIComponent(text)}`, "_blank");
+    addToast("info", "WhatsApp Opened", "Your order draft was prepared in WhatsApp!");
   };
 
   if (itemCount === 0 && !isOpen) {
@@ -340,7 +368,7 @@ export function CustomerCartDrawer({
             </div>
 
             {/* Footer Submit Button */}
-            <div className="p-4 border-t border-slate-800 bg-slate-950/90 backdrop-blur">
+            <div className="p-4 border-t border-slate-800 bg-slate-950/90 backdrop-blur space-y-2">
               <Button
                 type="submit"
                 form="order-form"
@@ -357,6 +385,16 @@ export function CustomerCartDrawer({
                   </>
                 )}
               </Button>
+
+              <button
+                type="button"
+                onClick={handleOrderViaWhatsApp}
+                disabled={items.length === 0}
+                className="w-full h-11 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 transition-all cursor-pointer active:scale-[0.99]"
+              >
+                <MessageCircle className="h-4 w-4" />
+                <span>Or Order Directly via WhatsApp</span>
+              </button>
             </div>
           </div>
         </div>
