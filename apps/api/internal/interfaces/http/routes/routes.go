@@ -41,6 +41,7 @@ func Setup(
 	v1 := r.Group("/api/v1")
 	{
 		v1.GET("/", handlers.Version)
+		v1.GET("/health", handlers.Health) // alias for Railway's stored healthcheckPath
 
 		// ── Public Customer QR Endpoints (No login required) ───────────────
 		publicGroup := v1.Group("/public")
