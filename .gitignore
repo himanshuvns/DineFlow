@@ -51,3 +51,4 @@ coverage/
 # ─── Uploads (local dev) ──────────────────────────────────────────────────────
 uploads/
 tmp/
+.env*
