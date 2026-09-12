@@ -229,6 +229,8 @@ export default function RegisterPage() {
             placeholder="At least 8 characters"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            onFocus={() => window.dispatchEvent(new Event("password-field-focus"))}
+            onBlur={() => window.dispatchEvent(new Event("password-field-blur"))}
             required
             minLength={8}
             leftIcon={<Lock className="h-4 w-4" />}

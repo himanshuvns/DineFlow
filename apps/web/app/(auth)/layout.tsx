@@ -4,12 +4,27 @@ import * as React from "react";
 import Link from "next/link";
 import { UtensilsCrossed, Sparkles, CheckCircle, Zap, ShieldCheck } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { PeekingChef } from "@/components/ui/peeking-chef";
 
 export default function AuthLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const [isPasswordFocused, setIsPasswordFocused] = React.useState(false);
+
+  // Listen for custom events fired by password fields in child pages
+  React.useEffect(() => {
+    const onFocus = () => setIsPasswordFocused(true);
+    const onBlur = () => setIsPasswordFocused(false);
+    window.addEventListener("password-field-focus", onFocus);
+    window.addEventListener("password-field-blur", onBlur);
+    return () => {
+      window.removeEventListener("password-field-focus", onFocus);
+      window.removeEventListener("password-field-blur", onBlur);
+    };
+  }, []);
+
   return (
     <main className="min-h-screen grid lg:grid-cols-12 relative overflow-hidden bg-slate-50 text-slate-900 dark:bg-[#090D16] dark:text-slate-100 transition-colors duration-200">
       {/* Top right absolute theme toggle */}
@@ -37,23 +52,23 @@ export default function AuthLayout({
           </Link>
 
           {/* Value Prop */}
-          <div className="mt-20 max-w-lg">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-semibold mb-6">
+          <div className="mt-10 max-w-lg">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-semibold mb-5">
               <Sparkles className="h-3.5 w-3.5" /> Next-Generation Hospitality OS
             </div>
-            <h1 className="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
+            <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
               Streamline operations. <br />
               <span className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 dark:from-emerald-400 dark:to-teal-300 bg-clip-text text-transparent">
                 Delight your diners.
               </span>
             </h1>
-            <p className="text-slate-600 dark:text-slate-400 mt-4 leading-relaxed text-sm">
+            <p className="text-slate-600 dark:text-slate-400 mt-3 leading-relaxed text-sm">
               Unified multi-tenant platform for contactless QR table ordering, lightning-fast
               Kitchen Display (KDS), and automated WhatsApp marketing.
             </p>
 
             {/* Feature Pills */}
-            <div className="mt-8 space-y-3.5">
+            <div className="mt-6 space-y-3">
               {[
                 { icon: Zap, text: "Zero-lag live order routing to kitchen stations" },
                 { icon: ShieldCheck, text: "Strict tenant data isolation & enterprise RBAC" },
@@ -68,10 +83,15 @@ export default function AuthLayout({
               ))}
             </div>
           </div>
+
+          {/* Chef character — centered in the remaining space */}
+          <div className="mt-10 flex justify-center">
+            <PeekingChef isPasswordFocused={isPasswordFocused} />
+          </div>
         </div>
 
         {/* Bottom Social Proof */}
-        <div className="pt-8 border-t border-slate-200/80 dark:border-slate-800/80">
+        <div className="pt-6 border-t border-slate-200/80 dark:border-slate-800/80">
           <div className="flex items-center gap-4">
             <div className="flex -space-x-2 overflow-hidden">
               {["MK", "RS", "AJ"].map((initials, i) => (

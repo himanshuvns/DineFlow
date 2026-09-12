@@ -123,6 +123,8 @@ export default function LoginPage() {
             placeholder="••••••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            onFocus={() => window.dispatchEvent(new Event("password-field-focus"))}
+            onBlur={() => window.dispatchEvent(new Event("password-field-blur"))}
             required
             leftIcon={<Lock className="h-4 w-4" />}
             rightIcon={
