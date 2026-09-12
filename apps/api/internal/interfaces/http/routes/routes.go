@@ -1,0 +1,191 @@
+package routes
+
+import (
+	"time"
+
+	redisinfra "github.com/dineflow/api/internal/infrastructure/redis"
+	"github.com/dineflow/api/internal/interfaces/http/handlers"
+	"github.com/dineflow/api/internal/interfaces/http/middleware"
+	"github.com/dineflow/api/pkg/token"
+	"github.com/gin-gonic/gin"
+)
+
+// Setup registers all routes on the given Gin engine.
+func Setup(
+	r *gin.Engine,
+	tokenMaker *token.Maker,
+	redisClient *redisinfra.Client,
+	authHandler *handlers.AuthHandler,
+	tenantHandler *handlers.TenantHandler,
+	staffHandler *handlers.StaffHandler,
+	storageHandler *handlers.StorageHandler,
+	menuHandler *handlers.MenuHandler,
+	tableHandler *handlers.TableHandler,
+	orderHandler *handlers.OrderHandler,
+	subHandler *handlers.SubscriptionHandler,
+	waHandler *handlers.WhatsAppHandler,
+	analyticsHandler *handlers.AnalyticsHandler,
+	aiHandler *handlers.AIHandler,
+) {
+	// Auth middleware (used on protected routes)
+	authMiddleware := middleware.Auth(tokenMaker)
+
+	// Rate limiters
+	authRateLimit := middleware.RateLimit(redisClient, middleware.ByIPAndRoute, 20, time.Minute)
+	apiRateLimit := middleware.RateLimit(redisClient, middleware.ByTenant, 2000, time.Minute)
+
+	// ── Health ──────────────────────────────────────────────────────────────
+	r.GET("/health", handlers.Health)
+
+	// ── API v1 ─────────────────────────────────────────────────────────────
+	v1 := r.Group("/api/v1")
+	{
+		v1.GET("/", handlers.Version)
+
+		// ── Public Customer QR Endpoints (No login required) ───────────────
+		publicGroup := v1.Group("/public")
+		{
+			publicGroup.GET("/m/:slug", menuHandler.GetPublicMenu)
+			publicGroup.POST("/orders", orderHandler.CreateCustomerOrder)
+			publicGroup.GET("/orders/:orderId", orderHandler.GetCustomerOrder)
+		}
+
+		// ── Public WhatsApp Webhook (Meta Cloud API) ──────────────────────
+		v1.GET("/whatsapp/webhook", waHandler.VerifyWebhook)
+		v1.POST("/whatsapp/webhook", waHandler.HandleWebhook)
+
+		// ── Auth (Public) ─────────────────────────────────────────────────
+		auth := v1.Group("/auth")
+		{
+			auth.POST("/register", authRateLimit, authHandler.Register)
+			auth.POST("/verify-otp", authRateLimit, authHandler.VerifyOTP)
+			auth.POST("/login", authRateLimit, authHandler.Login)
+			auth.POST("/refresh", authHandler.Refresh)
+			auth.POST("/forgot-password", authRateLimit, authHandler.ForgotPassword)
+			auth.POST("/reset-password", authRateLimit, authHandler.ResetPassword)
+			auth.POST("/accept-invite/:token", authRateLimit, authHandler.AcceptInvite)
+		}
+
+		// ── Protected Routes (require JWT) ────────────────────────────────
+		protected := v1.Group("", authMiddleware, apiRateLimit)
+		{
+			// Auth (authenticated)
+			protected.POST("/auth/logout", authHandler.Logout)
+			protected.GET("/auth/me", authHandler.Me)
+
+			// Tenant management
+			tenantGroup := protected.Group("/tenant")
+			{
+				tenantGroup.GET("", tenantHandler.Get)
+				tenantGroup.PATCH("", middleware.OwnerOrManager(), tenantHandler.Update)
+				tenantGroup.POST("/logo", middleware.OwnerOnly(), tenantHandler.UploadLogo)
+				tenantGroup.GET("/features", tenantHandler.GetFeatures)
+				tenantGroup.GET("/onboarding", tenantHandler.GetOnboarding)
+				tenantGroup.PATCH("/onboarding/:step", tenantHandler.UpdateOnboardingStep)
+			}
+
+			// Staff management
+			staffGroup := protected.Group("/staff")
+			{
+				staffGroup.GET("", middleware.OwnerOrManager(), staffHandler.List)
+				staffGroup.POST("/invite", middleware.OwnerOrManager(), staffHandler.Invite)
+				staffGroup.GET("/:userId", middleware.OwnerOrManager(), staffHandler.Get)
+				staffGroup.PATCH("/:userId", middleware.OwnerOrManager(), staffHandler.Update)
+				staffGroup.DELETE("/:userId", middleware.OwnerOnly(), staffHandler.Delete)
+			}
+
+			// Storage (authenticated file uploads)
+			storageGroup := protected.Group("/storage")
+			{
+				storageGroup.POST("/presign", storageHandler.Presign)
+			}
+
+			// ── Menu Management (Phase 2) ──────────────────────────────────
+			menuGroup := protected.Group("/menu")
+			{
+				menuGroup.GET("/categories", menuHandler.ListCategories)
+				menuGroup.POST("/categories", middleware.OwnerOrManager(), menuHandler.CreateCategory)
+				menuGroup.DELETE("/categories/:id", middleware.OwnerOrManager(), menuHandler.DeleteCategory)
+
+				menuGroup.GET("/items", menuHandler.ListItems)
+				menuGroup.POST("/items", middleware.OwnerOrManager(), menuHandler.CreateItem)
+				menuGroup.PATCH("/items/:id/availability", menuHandler.ToggleAvailability)
+				menuGroup.DELETE("/items/:id", middleware.OwnerOrManager(), menuHandler.DeleteItem)
+			}
+
+			// ── Table Management (Phase 2) ─────────────────────────────────
+			tableGroup := protected.Group("/tables")
+			{
+				tableGroup.GET("", tableHandler.List)
+				tableGroup.POST("", middleware.OwnerOrManager(), tableHandler.Create)
+				tableGroup.PATCH("/:id/status", tableHandler.UpdateStatus)
+				tableGroup.DELETE("/:id", middleware.OwnerOnly(), tableHandler.Delete)
+			}
+
+			// ── Hotel Rooms & Suites (Phase 3) ─────────────────────────────
+			roomGroup := protected.Group("/rooms")
+			{
+				roomGroup.GET("", tableHandler.ListRooms)
+				roomGroup.POST("", middleware.OwnerOrManager(), tableHandler.Create)
+				roomGroup.POST("/bulk", middleware.OwnerOrManager(), tableHandler.CreateRoomsBulk)
+				roomGroup.PATCH("/:id/dnd", tableHandler.ToggleDND)
+				roomGroup.PATCH("/:id/status", tableHandler.UpdateStatus)
+				roomGroup.DELETE("/:id", middleware.OwnerOnly(), tableHandler.Delete)
+			}
+
+			// ── Live Orders & KDS (Phase 2 & 3) ───────────────────────────
+			orderGroup := protected.Group("/orders")
+			{
+				orderGroup.GET("", orderHandler.List)
+				orderGroup.PATCH("/:orderId/status", orderHandler.UpdateStatus)
+				orderGroup.GET("/stream", orderHandler.StreamOrders)
+			}
+
+			// ── Subscription & Billing (Phase 4) ───────────────────────────
+			billingGroup := protected.Group("/billing")
+			{
+				billingGroup.GET("/status", subHandler.GetBillingStatus)
+				billingGroup.POST("/checkout", middleware.OwnerOnly(), subHandler.CreateCheckout)
+				billingGroup.POST("/change-plan", middleware.OwnerOnly(), subHandler.ChangePlan)
+				billingGroup.GET("/invoices", subHandler.ListInvoices)
+				billingGroup.POST("/simulate-grace-period", middleware.OwnerOnly(), subHandler.SimulateGracePeriod)
+			}
+
+			// ── Platform Super-Admin (Phase 4) ─────────────────────────────
+			adminGroup := protected.Group("/admin")
+			{
+				adminGroup.GET("/platform/overview", subHandler.GetPlatformOverview)
+				adminGroup.POST("/platform/override-plan", subHandler.AdminOverridePlan)
+			}
+
+			// ── WhatsApp Marketing & Invoicing (Phase 5) ───────────────────
+			waGroup := protected.Group("/whatsapp")
+			{
+				waGroup.GET("/status", waHandler.GetStatus)
+				waGroup.POST("/send-test", waHandler.SendTestMessage)
+				waGroup.GET("/logs", waHandler.ListLogs)
+			}
+
+			// ── Sales & Operational Analytics (Phase 5) ────────────────────
+			analyticsGroup := protected.Group("/analytics")
+			{
+				analyticsGroup.GET("/overview", analyticsHandler.GetOverview)
+				analyticsGroup.GET("/hourly", analyticsHandler.GetHourlyVelocity)
+				analyticsGroup.GET("/items", analyticsHandler.GetTopItems)
+				analyticsGroup.GET("/categories", analyticsHandler.GetCategoryBreakdown)
+				analyticsGroup.GET("/export", analyticsHandler.ExportCSV)
+			}
+
+			// ── AI Features (Phase 6) ──────────────────────────────────────────────
+			aiGroup := protected.Group("/ai")
+			{
+				aiGroup.GET("/status", aiHandler.GetStatus)
+				aiGroup.POST("/menu-description", middleware.OwnerOrManager(), aiHandler.GenerateMenuDescription)
+				aiGroup.POST("/upsell", aiHandler.GetUpsellSuggestions)
+				aiGroup.GET("/forecast", middleware.OwnerOrManager(), aiHandler.GetDemandForecast)
+				aiGroup.GET("/pricing-alerts", middleware.OwnerOrManager(), aiHandler.GetPricingAlerts)
+				aiGroup.POST("/chatbot", aiHandler.ChatbotReply)
+			}
+		}
+	}
+}
