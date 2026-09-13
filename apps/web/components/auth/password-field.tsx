@@ -57,7 +57,7 @@ export const PasswordField = React.forwardRef<HTMLInputElement, PasswordFieldPro
           <button
             type="button"
             onClick={() => setShowPassword((prev) => !prev)}
-            className="text-slate-400 hover:text-white transition-colors cursor-pointer p-1 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#14F1C7]"
+            className="text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer p-1 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:focus:ring-[#14F1C7]"
             tabIndex={-1}
             aria-label={showPassword ? "Hide password" : "Show password"}
           >
