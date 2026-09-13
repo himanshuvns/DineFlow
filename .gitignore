@@ -38,6 +38,10 @@ Thumbs.db
 .vscode/settings.json
 *.swp
 *.swo
+*.mov
+scratch/
+/images/
+
 
 # ─── Logs ─────────────────────────────────────────────────────────────────────
 *.log

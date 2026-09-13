@@ -3,10 +3,15 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Phone, Lock, Eye, EyeOff, ArrowRight, Sparkles } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import {
+  Phone,
+  Sparkles,
+  ShieldCheck,
+  Headphones,
+  CheckCircle2,
+  ChevronDown,
+} from "lucide-react";
+import { FormInput, PasswordField, CTAButton } from "@/components/auth";
 import { useToast } from "@/components/ui/toast";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { apiClient } from "@/lib/api";
@@ -19,7 +24,6 @@ export default function LoginPage() {
 
   const [phone, setPhone] = React.useState("");
   const [password, setPassword] = React.useState("");
-  const [showPassword, setShowPassword] = React.useState(false);
   const [rememberMe, setRememberMe] = React.useState(true);
   const [isLoading, setIsLoading] = React.useState(false);
   const [isRedirecting, setIsRedirecting] = React.useState(false);
@@ -27,7 +31,7 @@ export default function LoginPage() {
   const [error, setError] = React.useState("");
 
   const handleFillDemo = () => {
-    setPhone("+91 98765 43210");
+    setPhone("+91 9876543210");
     setPassword("DineFlow@2026");
     setError("");
   };
@@ -46,10 +50,9 @@ export default function LoginPage() {
         setWelcomeName(name);
         setIsRedirecting(true);
         addToast("success", "Welcome back!", `Signed in to ${tenant?.name || "your restaurant"}`);
-        // Display hospitality cloche loading animation before routing to dashboard
         setTimeout(() => {
           router.push("/dashboard");
-        }, 2400);
+        }, 2200);
         return;
       }
     } catch (err: any) {
@@ -80,109 +83,128 @@ export default function LoginPage() {
           subtitle="Connecting live POS, kitchen displays and table QR stands"
         />
       )}
-      <Card variant="glass" className="border-slate-200 dark:border-slate-700/60 shadow-2xl relative">
-      <CardHeader className="text-center pb-6">
-        <CardTitle className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-          Sign in to DineFlow
-        </CardTitle>
-        <CardDescription className="text-slate-600 dark:text-slate-400">
-          Enter your credentials to access your restaurant workspace
-        </CardDescription>
-      </CardHeader>
 
-      <CardContent>
+      {/* ======================================================== */}
+      {/* FLOATING LOGIN CARD                                      */}
+      {/* ======================================================== */}
+      <div className="relative rounded-[32px] bg-[#0F172A]/70 backdrop-blur-2xl border border-white/10 p-6 sm:p-9 shadow-[0_20px_60px_rgba(0,0,0,0.6)] text-[#F8FAFC]">
+        {/* Subtle glossy top reflection */}
+        <div className="absolute inset-x-8 top-0 h-[1px] bg-gradient-to-r from-transparent via-[#14F1C7]/30 to-transparent pointer-events-none rounded-t-[32px]" />
+
+        {/* Card Header */}
+        <div className="text-center pb-6">
+          <h2 className="text-2xl sm:text-3xl font-display font-extrabold text-white tracking-tight">
+            Sign in to DineFlow
+          </h2>
+          <p className="mt-2 text-[14px] font-body text-[#94A3B8] max-w-sm mx-auto leading-normal">
+            Enter your credentials to access your restaurant workspace
+          </p>
+        </div>
+
         {/* Quick Demo Pill */}
-        <div className="mb-6 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs text-emerald-700 dark:text-emerald-300 font-medium">
-            <Sparkles className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+        <div className="mb-5 p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-xs text-[#14F1C7] font-medium">
+            <Sparkles className="h-4 w-4 text-[#14F1C7]" />
             <span>Quick test account available</span>
           </div>
           <button
             type="button"
             onClick={handleFillDemo}
-            className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 underline cursor-pointer"
+            className="text-xs font-semibold text-[#14F1C7] hover:underline cursor-pointer transition-colors"
           >
             Auto-fill demo
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            label="Mobile Number"
-            type="tel"
-            placeholder="+91 98765 43210"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            required
-            leftIcon={<Phone className="h-4 w-4" />}
-          />
+          {/* Mobile Number */}
+          <div className="w-full space-y-1.5">
+            <label className="text-[13px] font-medium text-slate-300 block select-none">
+              Mobile Number
+            </label>
+            <div className="group relative flex items-center rounded-2xl border border-slate-700/60 bg-[#0F172A]/70 backdrop-blur-md transition-all duration-200 hover:border-slate-600 focus-within:border-[#14F1C7] focus-within:ring-1 focus-within:ring-[#14F1C7]/40 focus-within:shadow-[0_0_20px_rgba(20,241,199,0.22)]">
+              <div className="flex items-center gap-1 pl-4 pr-3 py-3.5 border-r border-slate-700/60 text-slate-300 font-medium text-[14px] select-none shrink-0">
+                <Phone className="h-4 w-4 text-slate-400 mr-1" />
+                <span>+91</span>
+                <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
+              </div>
+              <input
+                type="tel"
+                placeholder="98765 43210"
+                value={phone.startsWith("+91") ? phone.slice(3).trim() : phone}
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/[^0-9]/g, "");
+                  setPhone("+91 " + digits);
+                }}
+                required
+                className="w-full bg-transparent text-[14px] text-[#F8FAFC] placeholder:text-slate-500 outline-none px-3.5 py-3.5"
+              />
+            </div>
+          </div>
 
-          <Input
-            label="Password"
-            type={showPassword ? "text" : "password"}
-            placeholder="••••••••••••"
+          {/* Password */}
+          <PasswordField
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            onFocus={() => window.dispatchEvent(new Event("password-field-focus"))}
-            onBlur={() => window.dispatchEvent(new Event("password-field-blur"))}
             required
-            leftIcon={<Lock className="h-4 w-4" />}
-            rightIcon={
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors cursor-pointer"
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            }
+            helperText=""
           />
 
           <div className="flex items-center justify-between text-xs pt-1">
-            <label className="flex items-center gap-2 text-slate-600 dark:text-slate-400 cursor-pointer">
+            <label className="flex items-center gap-2 text-slate-400 cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-emerald-600 focus:ring-emerald-500/30"
+                className="rounded border-slate-700 bg-slate-900 text-[#14F1C7] focus:ring-[#14F1C7]/30"
               />
-              Remember me
+              <span>Remember me</span>
             </label>
             <Link
               href="/forgot-password"
-              className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors font-medium"
+              className="text-[#14F1C7] hover:underline transition-colors font-medium"
             >
               Forgot password?
             </Link>
           </div>
 
-          {error && <p className="text-xs text-rose-600 dark:text-rose-400 font-medium">{error}</p>}
+          {error && <p className="text-xs text-rose-400 font-medium">{error}</p>}
 
-          <Button
-            type="submit"
-            variant="glow"
-            size="lg"
-            className="w-full mt-2"
-            isLoading={isLoading}
-            rightIcon={<ArrowRight className="h-4 w-4" />}
-          >
-            Sign In to Workspace
-          </Button>
+          <div className="pt-2">
+            <CTAButton isLoading={isLoading}>
+              Sign In to Workspace
+            </CTAButton>
+          </div>
         </form>
-      </CardContent>
 
-      <CardFooter className="justify-center border-t border-slate-200 dark:border-slate-800/80 pt-6">
-        <p className="text-xs text-slate-600 dark:text-slate-400">
-          Don&apos;t have a workspace?{" "}
-          <Link
-            href="/register"
-            className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 font-semibold transition-colors"
-          >
-            Register your business
-          </Link>
-        </p>
-      </CardFooter>
-    </Card>
+        <div className="mt-5 text-center">
+          <p className="text-[13px] text-slate-400">
+            Don&apos;t have a workspace?{" "}
+            <Link
+              href="/register"
+              className="text-[#14F1C7] hover:text-[#00E5B8] font-semibold transition-colors hover:underline"
+            >
+              Register your business
+            </Link>
+          </p>
+        </div>
+
+        {/* Bottom Trust Section */}
+        <div className="mt-7 pt-5 border-t border-white/10 grid grid-cols-3 gap-2 text-center select-none">
+          <div className="flex items-center justify-center gap-1.5 text-[11px] sm:text-xs text-slate-400 font-medium">
+            <ShieldCheck className="h-4 w-4 text-[#14F1C7] shrink-0" />
+            <span className="truncate">Secure & Encrypted</span>
+          </div>
+          <div className="flex items-center justify-center gap-1.5 text-[11px] sm:text-xs text-slate-400 font-medium">
+            <Headphones className="h-4 w-4 text-[#14F1C7] shrink-0" />
+            <span className="truncate">24/7 Support</span>
+          </div>
+          <div className="flex items-center justify-center gap-1.5 text-[11px] sm:text-xs text-slate-400 font-medium">
+            <CheckCircle2 className="h-4 w-4 text-[#14F1C7] shrink-0" />
+            <span className="truncate">No Setup Fees</span>
+          </div>
+        </div>
+      </div>
     </>
   );
 }

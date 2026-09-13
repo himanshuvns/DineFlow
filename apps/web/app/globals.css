@@ -150,3 +150,30 @@ body {
 .dark ::-webkit-scrollbar-thumb:hover {
   background: #334155;
 }
+
+/* Typography utilities */
+.font-display {
+  font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
+}
+
+.font-body {
+  font-family: var(--font-body), var(--font-sans), system-ui, sans-serif;
+}
+
+/* Luxury Dark Glow & Neon Accents */
+.glow-teal-sm {
+  box-shadow: 0 0 15px rgba(20, 241, 199, 0.2);
+}
+
+.glow-teal-md {
+  box-shadow: 0 0 25px rgba(20, 241, 199, 0.35);
+}
+
+.glow-teal-lg {
+  box-shadow: 0 0 40px rgba(20, 241, 199, 0.45);
+}
+
+.glow-teal-text {
+  text-shadow: 0 0 20px rgba(20, 241, 199, 0.5);
+}
+

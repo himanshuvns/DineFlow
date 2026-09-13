@@ -4,33 +4,23 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  Utensils,
-  Coffee,
-  Hotel,
-  Soup,
-  Palmtree,
+  Store,
+  User,
   Phone,
-  Lock,
-  Building2,
-  ArrowRight,
-  Eye,
-  EyeOff,
+  ChevronDown,
+  ShieldCheck,
+  Headphones,
+  CheckCircle2,
 } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import {
+  BusinessCategorySelector,
+  FormInput,
+  PasswordField,
+  CTAButton,
+} from "@/components/auth";
 import { useToast } from "@/components/ui/toast";
 import { apiClient } from "@/lib/api";
-import { cn } from "@/lib/utils";
 import { HospitalityLoader } from "@/components/ui/hospitality-loader";
-
-const BUSINESS_TYPES = [
-  { id: "restaurant", label: "Restaurant", icon: Utensils },
-  { id: "cafe", label: "Café", icon: Coffee },
-  { id: "hotel", label: "Hotel / Rooms", icon: Hotel },
-  { id: "cloud_kitchen", label: "Cloud Kitchen", icon: Soup },
-  { id: "resort", label: "Resort", icon: Palmtree },
-];
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -43,7 +33,6 @@ export default function RegisterPage() {
   const [lastName, setLastName] = React.useState("");
   const [phone, setPhone] = React.useState("+91");
   const [password, setPassword] = React.useState("");
-  const [showPassword, setShowPassword] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const [isRedirecting, setIsRedirecting] = React.useState(false);
 
@@ -80,12 +69,16 @@ export default function RegisterPage() {
         addToast("success", "Account Created!", `Verification code: ${devOtp}`);
         setTimeout(() => {
           router.push(`/verify?phone=${encodeURIComponent(phone)}&devOtp=${encodeURIComponent(devOtp)}`);
-        }, 2400);
+        }, 2200);
       } else {
-        addToast("success", "Registration submitted!", "Please check your mobile for the 6-digit verification code.");
+        addToast(
+          "success",
+          "Registration submitted!",
+          "Please check your mobile for the 6-digit verification code."
+        );
         setTimeout(() => {
           router.push(`/verify?phone=${encodeURIComponent(phone)}`);
-        }, 2400);
+        }, 2200);
       }
     } catch (err: any) {
       const msg =
@@ -114,164 +107,152 @@ export default function RegisterPage() {
           subtitle="Configuring multi-station POS, table layout and inventory tracking"
         />
       )}
-      <Card variant="glass" className="border-slate-200 dark:border-slate-700/60 shadow-2xl relative my-8">
-      <CardHeader className="text-center pb-4">
-        <CardTitle className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-          Create your DineFlow Workspace
-        </CardTitle>
-        <CardDescription className="text-slate-600 dark:text-slate-400">
-          Get started with contactless QR menus, live KDS, and WhatsApp marketing
-        </CardDescription>
-      </CardHeader>
 
-      <CardContent>
+      {/* ======================================================== */}
+      {/* FLOATING REGISTRATION CARD                               */}
+      {/* ======================================================== */}
+      <div className="relative rounded-[32px] bg-[#0F172A]/70 backdrop-blur-2xl border border-white/10 p-6 sm:p-9 shadow-[0_20px_60px_rgba(0,0,0,0.6)] text-[#F8FAFC]">
+        {/* Subtle glossy top reflection */}
+        <div className="absolute inset-x-8 top-0 h-[1px] bg-gradient-to-r from-transparent via-[#14F1C7]/30 to-transparent pointer-events-none rounded-t-[32px]" />
+
+        {/* Card Header */}
+        <div className="text-center pb-6">
+          <h2 className="text-2xl sm:text-3xl font-display font-extrabold text-white tracking-tight">
+            Create your DineFlow Workspace
+          </h2>
+          <p className="mt-2 text-[14px] font-body text-[#94A3B8] max-w-sm mx-auto leading-normal">
+            Get started with contactless QR menus, live KDS, and WhatsApp
+            marketing in minutes.
+          </p>
+        </div>
+
+        {/* Form Body */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Business Type Selector */}
-          <div>
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2 block">
-              Business Category
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {BUSINESS_TYPES.map((type) => {
-                const isSelected = businessType === type.id;
-                const Icon = type.icon;
-                return (
-                  <button
-                    key={type.id}
-                    type="button"
-                    onClick={() => setBusinessType(type.id)}
-                    className={cn(
-                      "flex items-center gap-2 p-2.5 rounded-xl border text-xs font-medium transition-all text-left cursor-pointer",
-                      isSelected
-                        ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-700 dark:text-emerald-300 font-bold shadow-xs"
-                        : "bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-200"
-                    )}
-                  >
-                    <Icon className={cn("h-4 w-4 shrink-0", isSelected ? "text-emerald-600 dark:text-emerald-400" : "text-slate-500 dark:text-slate-400")} />
-                    <span className="truncate">{type.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          {/* 1. Business Category Selector */}
+          <BusinessCategorySelector
+            value={businessType}
+            onChange={setBusinessType}
+          />
 
-          {/* Business Name & Slug Preview */}
+          {/* 2. Business Name */}
           <div>
-            <Input
+            <FormInput
               label="Business Name"
               placeholder="e.g. The Grand Bistro"
               value={businessName}
               onChange={(e) => setBusinessName(e.target.value)}
               required
-              leftIcon={<Building2 className="h-4 w-4" />}
+              leftIcon={<Store className="h-4 w-4" />}
             />
             {slug && (
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 pl-1">
+              <p className="text-[11px] text-slate-400 mt-1 pl-1 font-mono">
                 Customer QR URL:{" "}
-                <span className="text-emerald-700 dark:text-emerald-400 font-mono font-medium">
+                <span className="text-[#14F1C7] font-semibold">
                   dineflow.app/m/{slug}
                 </span>
               </p>
             )}
           </div>
 
-          {/* Names */}
+          {/* 3. First Name & Last Name (2 Columns) */}
           <div className="grid grid-cols-2 gap-3">
-            <Input
+            <FormInput
               label="First Name"
               placeholder="First name"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
               required
+              leftIcon={<User className="h-4 w-4" />}
             />
-            <Input
+            <FormInput
               label="Last Name"
               placeholder="Last name"
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
               required
+              leftIcon={<User className="h-4 w-4" />}
             />
           </div>
 
-          {/* Mobile Number */}
-          <div className="w-full flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+          {/* 4. Mobile Number with +91 segmented pill */}
+          <div className="w-full space-y-1.5">
+            <label className="text-[13px] font-medium text-slate-300 block select-none">
               Mobile Number
             </label>
-            {/* Unified glass container: prefix pill + input */}
-            <div className="flex items-stretch rounded-xl overflow-hidden glass-input focus-within:ring-2 focus-within:ring-emerald-500/30 focus-within:border-emerald-500">
-              {/* +91 prefix — locked */}
-              <span className="flex items-center gap-1.5 pl-3.5 pr-3 border-r border-slate-200 dark:border-white/10 text-sm font-semibold text-slate-700 dark:text-slate-200 select-none whitespace-nowrap shrink-0">
-                <Phone className="h-4 w-4 text-slate-400 dark:text-slate-400" />
-                +91
-              </span>
-              {/* Number input — no own border/bg so it blends with container */}
+            <div className="group relative flex items-center rounded-2xl border border-slate-700/60 bg-[#0F172A]/70 backdrop-blur-md transition-all duration-200 hover:border-slate-600 focus-within:border-[#14F1C7] focus-within:ring-1 focus-within:ring-[#14F1C7]/40 focus-within:shadow-[0_0_20px_rgba(20,241,199,0.22)]">
+              {/* Country Code Pill */}
+              <div className="flex items-center gap-1 pl-4 pr-3 py-3.5 border-r border-slate-700/60 text-slate-300 font-medium text-[14px] select-none shrink-0">
+                <Phone className="h-4 w-4 text-slate-400 mr-1" />
+                <span>+91</span>
+                <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
+              </div>
+
+              {/* Number Input */}
               <input
                 type="tel"
-                placeholder="98765 43210"
-                value={phone.startsWith("+91") ? phone.slice(3) : phone}
+                placeholder="9165437865"
+                value={phone.startsWith("+91") ? phone.slice(3).trim() : phone}
                 onChange={(e) => {
-                  const digits = e.target.value.replace(/[^0-9 ]/g, "");
+                  const digits = e.target.value.replace(/[^0-9]/g, "");
                   setPhone("+91" + digits);
                 }}
                 required
-                maxLength={11}
-                className="flex-1 bg-transparent outline-none border-none text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 px-3.5 py-2.5"
+                maxLength={10}
+                className="w-full bg-transparent text-[14px] text-[#F8FAFC] placeholder:text-slate-500 outline-none px-3.5 py-3.5"
               />
             </div>
-            <span className="text-xs text-slate-500 dark:text-slate-400">A 6-digit OTP will be sent to this mobile number</span>
+            <p className="text-[13px] text-[#94A3B8] pl-1">
+              A 6-digit OTP will be sent to this mobile number.
+            </p>
           </div>
 
-          {/* Password */}
-          <Input
-            label="Password"
-            type={showPassword ? "text" : "password"}
-            placeholder="At least 8 characters"
+          {/* 5. Password Field with Mascot Event Trigger */}
+          <PasswordField
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            onFocus={() => window.dispatchEvent(new Event("password-field-focus"))}
-            onBlur={() => window.dispatchEvent(new Event("password-field-blur"))}
             required
             minLength={8}
-            leftIcon={<Lock className="h-4 w-4" />}
-            rightIcon={
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer p-0.5 rounded"
-                tabIndex={-1}
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            }
           />
 
-          <Button
-            type="submit"
-            variant="glow"
-            size="lg"
-            className="w-full mt-3"
-            isLoading={isLoading}
-            rightIcon={<ArrowRight className="h-4 w-4" />}
-          >
-            Create Workspace & Verify Mobile
-          </Button>
+          {/* 6. Emerald Gradient CTA Button */}
+          <div className="pt-2">
+            <CTAButton isLoading={isLoading}>
+              Create Workspace & Verify Mobile
+            </CTAButton>
+          </div>
         </form>
-      </CardContent>
 
-      <CardFooter className="justify-center border-t border-slate-200 dark:border-slate-800/80 pt-6">
-        <p className="text-xs text-slate-600 dark:text-slate-400">
-          Already have an account?{" "}
-          <Link
-            href="/login"
-            className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 font-semibold transition-colors"
-          >
-            Sign in
-          </Link>
-        </p>
-      </CardFooter>
-    </Card>
+        {/* Footer: Already have an account */}
+        <div className="mt-5 text-center">
+          <p className="text-[13px] text-slate-400">
+            Already have an account?{" "}
+            <Link
+              href="/login"
+              className="text-[#14F1C7] hover:text-[#00E5B8] font-semibold transition-colors hover:underline"
+            >
+              Sign in
+            </Link>
+          </p>
+        </div>
+
+        {/* ======================================================== */}
+        {/* BOTTOM TRUST SECTION                                     */}
+        {/* ======================================================== */}
+        <div className="mt-7 pt-5 border-t border-white/10 grid grid-cols-3 gap-2 text-center select-none">
+          <div className="flex items-center justify-center gap-1.5 text-[11px] sm:text-xs text-slate-400 font-medium">
+            <ShieldCheck className="h-4 w-4 text-[#14F1C7] shrink-0" />
+            <span className="truncate">Secure & Encrypted</span>
+          </div>
+          <div className="flex items-center justify-center gap-1.5 text-[11px] sm:text-xs text-slate-400 font-medium">
+            <Headphones className="h-4 w-4 text-[#14F1C7] shrink-0" />
+            <span className="truncate">24/7 Support</span>
+          </div>
+          <div className="flex items-center justify-center gap-1.5 text-[11px] sm:text-xs text-slate-400 font-medium">
+            <CheckCircle2 className="h-4 w-4 text-[#14F1C7] shrink-0" />
+            <span className="truncate">No Setup Fees</span>
+          </div>
+        </div>
+      </div>
     </>
   );
 }
