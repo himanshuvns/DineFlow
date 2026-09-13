@@ -182,27 +182,27 @@ export default function PricingPage() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#070A12] text-slate-900 dark:text-slate-100 flex flex-col font-sans selection:bg-emerald-500/30">
       {/* Top Navbar */}
-      <header className="h-16 border-b border-slate-200 dark:border-slate-800/80 bg-white/80 dark:bg-slate-950/70 backdrop-blur-md sticky top-0 z-40 px-6 flex items-center justify-between max-w-7xl w-full mx-auto">
-        <Link href="/" className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 p-0.5 shadow-md shadow-emerald-500/20 flex items-center justify-center">
+      <header className="h-16 border-b border-slate-200 dark:border-slate-800/80 bg-white/80 dark:bg-slate-950/70 backdrop-blur-md sticky top-0 z-40 px-3 sm:px-6 flex items-center justify-between max-w-7xl w-full mx-auto">
+        <Link href="/" className="flex items-center gap-2.5 sm:gap-3">
+          <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 p-0.5 shadow-md shadow-emerald-500/20 flex items-center justify-center shrink-0">
             <div className="h-full w-full bg-slate-950 rounded-[10px] flex items-center justify-center">
               <UtensilsCrossed className="h-4 w-4 text-emerald-400" />
             </div>
           </div>
-          <span className="text-lg font-extrabold tracking-tight text-slate-900 dark:text-white">
+          <span className="text-base sm:text-lg font-extrabold tracking-tight text-slate-900 dark:text-white">
             Dine<span className="text-emerald-500 dark:text-emerald-400">Flow</span>
           </span>
         </Link>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <ThemeToggle />
-          <Link href="/dashboard">
+          <Link href="/dashboard" className="hidden sm:inline-flex">
             <Button variant="ghost" size="sm" className="text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white">
               Back to Dashboard
             </Button>
           </Link>
           <Link href="/register">
-            <Button variant="glow" size="sm">
+            <Button variant="glow" size="sm" className="text-xs sm:text-sm px-2.5 sm:px-3">
               Start Free Trial
             </Button>
           </Link>
@@ -210,7 +210,7 @@ export default function PricingPage() {
       </header>
 
       {/* Pricing Section using animated Pricing Component */}
-      <section className="px-4 sm:px-6 pb-12 max-w-7xl mx-auto w-full">
+      <section className="px-3 sm:px-6 pb-12 max-w-7xl mx-auto w-full">
         <Pricing
           plans={PLANS.map((plan) => ({
             name: plan.name,
@@ -241,24 +241,24 @@ export default function PricingPage() {
       </section>
 
       {/* 14-Day Grace Period Protection Banner */}
-      <section className="px-6 pb-16 max-w-7xl mx-auto w-full">
-        <div className="rounded-2xl p-8 bg-gradient-to-r from-emerald-100 dark:from-emerald-950/40 via-white dark:via-slate-900 to-teal-100 dark:to-teal-950/40 border border-emerald-300 dark:border-emerald-500/30 relative overflow-hidden">
+      <section className="px-3 sm:px-6 pb-16 max-w-7xl mx-auto w-full">
+        <div className="rounded-2xl p-5 sm:p-8 bg-gradient-to-r from-emerald-100 dark:from-emerald-950/40 via-white dark:via-slate-900 to-teal-100 dark:to-teal-950/40 border border-emerald-300 dark:border-emerald-500/30 relative overflow-hidden">
           <div className="absolute right-0 top-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
             <div className="space-y-2 max-w-2xl">
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-xs font-semibold">
                 <ShieldCheck className="h-4 w-4" /> Zero-Disruption Dining Protection
               </div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
                 Never worry about sudden service interruptions
               </h2>
               <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
                 If a bank card renewal expires or payment fails on a busy weekend rush, DineFlow grants an automatic <strong>14-day operational grace period</strong>. Your QR menus, KDS screens, and in-room ordering stay 100% active while you update your payment method.
               </p>
             </div>
-            <div className="flex items-center gap-3 shrink-0">
-              <Link href="/dashboard/settings">
-                <Button variant="glow" size="md">
+            <div className="flex items-center gap-3 shrink-0 w-full sm:w-auto">
+              <Link href="/dashboard/settings" className="w-full sm:w-auto">
+                <Button variant="glow" size="md" className="w-full sm:w-auto">
                   View Account Billing
                 </Button>
               </Link>
@@ -268,14 +268,14 @@ export default function PricingPage() {
       </section>
 
       {/* Detailed Feature Comparison Table */}
-      <section className="px-6 pb-20 max-w-7xl mx-auto w-full">
+      <section className="px-3 sm:px-6 pb-20 max-w-7xl mx-auto w-full">
         <div className="text-center mb-10">
           <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">Compare Plan Features</h2>
           <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Full breakdown of resource limits and architectural capabilities.</p>
         </div>
 
         <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40">
-          <table className="w-full text-left text-xs border-collapse">
+          <table className="w-full min-w-[620px] text-left text-xs border-collapse">
             <thead>
               <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/70">
                 <th className="p-4 text-slate-700 dark:text-slate-400 font-semibold w-1/3">Feature</th>

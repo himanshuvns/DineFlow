@@ -190,7 +190,7 @@ export default function PlatformAdminPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#070A12] text-slate-900 dark:text-slate-100 p-6 md:p-10 font-sans selection:bg-emerald-500/30 transition-colors duration-200">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#070A12] text-slate-900 dark:text-slate-100 p-3 sm:p-6 md:p-10 font-sans selection:bg-emerald-500/30 transition-colors duration-200">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Top Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800/80 pb-6">
@@ -201,7 +201,7 @@ export default function PlatformAdminPage() {
               </span>
               <span className="text-xs text-slate-500 dark:text-slate-400">• DineFlow Core Engine</span>
             </div>
-            <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
               SaaS Platform & Revenue Console
             </h1>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1 font-medium">
@@ -209,16 +209,16 @@ export default function PlatformAdminPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <ThemeToggle />
             <Link href="/dashboard">
               <Button variant="outline" size="sm">
                 Return to Restaurant
               </Button>
             </Link>
-            <Link href="/pricing">
+            <Link href="/pricing" className="hidden xs:inline-flex">
               <Button variant="ghost" size="sm">
-                View Public Pricing
+                Public Matrix
               </Button>
             </Link>
           </div>
@@ -348,8 +348,8 @@ export default function PlatformAdminPage() {
               </CardDescription>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="w-64">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
+              <div className="w-full sm:w-64">
                 <Input
                   placeholder="Search restaurant or city..."
                   value={searchQuery}
@@ -374,7 +374,7 @@ export default function PlatformAdminPage() {
 
           <CardContent>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
+              <table className="w-full min-w-[760px] text-left text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-semibold bg-slate-100/70 dark:bg-slate-950/40">
                     <th className="p-3">Restaurant / Property</th>

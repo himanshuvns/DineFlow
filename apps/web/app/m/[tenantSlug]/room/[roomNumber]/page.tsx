@@ -393,21 +393,21 @@ export default function RoomServiceMenuPage() {
                 <Button
                   variant="secondary"
                   size="sm"
-                  className="h-8 px-3 text-xs font-bold text-emerald-400 hover:text-white border-emerald-500/30 hover:bg-emerald-500/20"
+                  className="h-8 px-2.5 xs:px-3 text-xs font-bold text-emerald-400 hover:text-white border-emerald-500/30 hover:bg-emerald-500/20 shrink-0"
                   onClick={(e) => {
                     e.stopPropagation();
                     setCustomizingDish(dish);
                   }}
                 >
                   <Plus className="h-3.5 w-3.5 mr-1" />
-                  <span>Order to Suite</span>
+                  <span>Order<span className="hidden xs:inline"> to Suite</span></span>
                 </Button>
               </div>
             </div>
 
             {/* Right Image */}
             {dish.imageUrl && (
-              <div className="h-24 w-24 sm:h-28 sm:w-28 rounded-xl overflow-hidden bg-slate-800 shrink-0 relative">
+              <div className="h-20 w-20 xs:h-24 xs:w-24 sm:h-28 sm:w-28 rounded-xl overflow-hidden bg-slate-800 shrink-0 relative">
                 <img
                   src={dish.imageUrl}
                   alt={dish.name}

@@ -336,17 +336,18 @@ export default function RoomsDirectoryPage() {
           title={`${selectedRoom.name} — In-Room Stand`}
           description={`Direct In-Room Dining link for ${selectedRoom.floor}`}
           footer={
-            <div className="flex items-center justify-between w-full">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 w-full">
               <Button
                 variant="ghost"
                 size="sm"
-                leftIcon={<Copy className="h-4 w-4" />}
+                className="text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                leftIcon={<Copy className="h-3.5 w-3.5" />}
                 onClick={() => {
                   navigator.clipboard?.writeText(getRoomQRURL(selectedRoom));
-                  addToast("info", "Link Copied", "Guest QR link copied.");
+                  addToast("info", "Link Copied", "Room dining URL copied to clipboard.");
                 }}
               >
-                Copy URL
+                Copy Menu Link
               </Button>
 
               <div className="flex items-center gap-2">
@@ -354,7 +355,7 @@ export default function RoomsDirectoryPage() {
                   href={getRoomQRURL(selectedRoom)}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white"
+                  className="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold hover:text-slate-950 dark:hover:text-white flex items-center gap-1"
                 >
                   <ExternalLink className="h-3.5 w-3.5" />
                   <span>Open In-Room Menu</span>

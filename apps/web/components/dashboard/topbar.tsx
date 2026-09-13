@@ -37,20 +37,21 @@ export function TopBar() {
   return (
     <header className="h-16 border-b border-slate-200/80 dark:border-slate-800/80 bg-white/80 dark:bg-[#090D16]/80 backdrop-blur-md sticky top-0 z-20 flex items-center justify-between px-4 sm:px-8 transition-colors duration-200">
       {/* Left: Mobile trigger & Breadcrumbs */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1 mr-2">
         <button
           onClick={() => setMobileMenuOpen(true)}
-          className="md:hidden p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 transition-colors"
+          className="md:hidden p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 transition-colors shrink-0 cursor-pointer"
+          aria-label="Open navigation drawer"
         >
           <Menu className="h-5 w-5" />
         </button>
 
-        <div className="flex items-center gap-2 text-xs">
-          <span className="text-slate-500 dark:text-slate-400 font-medium">
+        <div className="flex items-center gap-1.5 sm:gap-2 text-xs min-w-0">
+          <span className="text-slate-700 dark:text-slate-300 font-semibold truncate max-w-[120px] sm:max-w-[200px]">
             {tenant?.name || "Your Restaurant"}
           </span>
-          <span className="text-slate-400 dark:text-slate-600">/</span>
-          <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Workspace Overview</span>
+          <span className="text-slate-400 dark:text-slate-600 hidden sm:inline">/</span>
+          <span className="text-emerald-600 dark:text-emerald-400 font-semibold hidden sm:inline truncate">Workspace Overview</span>
         </div>
       </div>
 

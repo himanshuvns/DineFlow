@@ -154,8 +154,8 @@ export default function RegisterPage() {
             />
           </div>
 
-          {/* 3. First Name & Last Name (2 Columns) */}
-          <div className="grid grid-cols-2 gap-2">
+          {/* 3. First Name & Last Name (Responsive Columns) */}
+          <div className="grid grid-cols-1 xs:grid-cols-2 gap-2">
             <FormInput
               label="First Name"
               placeholder="First name"
@@ -241,7 +241,7 @@ export default function RegisterPage() {
         {/* ======================================================== */}
         {/* BOTTOM TRUST SECTION                                     */}
         {/* ======================================================== */}
-        <div className="mt-2.5 pt-2 border-t border-slate-200/80 dark:border-white/10 grid grid-cols-3 gap-2 text-center select-none">
+        <div className="mt-2.5 pt-2 border-t border-slate-200/80 dark:border-white/10 grid grid-cols-1 xs:grid-cols-3 gap-2 text-center select-none">
           <div className="flex items-center justify-center gap-1.5 text-[10.5px] text-slate-600 dark:text-slate-400 font-medium">
             <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 dark:text-[#14F1C7] shrink-0" />
             <span className="truncate">Secure & Encrypted</span>

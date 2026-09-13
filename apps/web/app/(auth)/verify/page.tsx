@@ -170,7 +170,7 @@ function VerifyContent() {
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* 6 Digit Inputs */}
-          <div className="flex justify-center gap-2 sm:gap-3">
+          <div className="flex justify-center gap-1.5 xs:gap-2 sm:gap-3">
             {otp.map((digit, idx) => (
               <input
                 key={idx}
@@ -184,7 +184,7 @@ function VerifyContent() {
                 onChange={(e) => handleChange(idx, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(idx, e)}
                 onPaste={handlePaste}
-                className="h-13 w-11 sm:h-14 sm:w-12 rounded-xl text-center text-xl font-bold text-slate-900 dark:text-white bg-white dark:bg-slate-900/80 border border-slate-300 dark:border-slate-700/80 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 outline-none transition-all shadow-xs"
+                className="h-11 w-9 xs:w-10 sm:h-14 sm:w-12 rounded-xl text-center text-lg sm:text-xl font-bold text-slate-900 dark:text-white bg-white dark:bg-slate-900/80 border border-slate-300 dark:border-slate-700/80 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 outline-none transition-all shadow-xs shrink-0"
               />
             ))}
           </div>
@@ -202,7 +202,7 @@ function VerifyContent() {
               </button>
             </div>
           ) : (
-            <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-center flex items-center justify-between">
+            <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-center flex flex-col sm:flex-row items-center justify-between gap-1.5">
               <span className="text-xs text-slate-600 dark:text-slate-400">Testing or demo?</span>
               <button
                 type="button"
@@ -225,7 +225,7 @@ function VerifyContent() {
               <button
                 type="button"
                 onClick={handleResend}
-                className="inline-flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 font-semibold transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 font-semibold transition-colors cursor-pointer"
               >
                 <RefreshCw className="h-3 w-3" /> Resend Code
               </button>
@@ -245,10 +245,10 @@ function VerifyContent() {
         </form>
       </CardContent>
 
-      <CardFooter className="justify-center border-t border-slate-800/80 pt-6">
+      <CardFooter className="justify-center border-t border-slate-200 dark:border-slate-800/80 pt-6">
         <Link
           href="/login"
-          className="inline-flex items-center gap-2 text-xs text-slate-400 hover:text-slate-200 transition-colors"
+          className="inline-flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-colors"
         >
           <ArrowLeft className="h-3.5 w-3.5" /> Back to sign in
         </Link>

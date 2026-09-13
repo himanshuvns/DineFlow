@@ -207,8 +207,8 @@ export default function PricingAlertsPage() {
                   </div>
 
                   {/* Right — Price action */}
-                  <div className="flex flex-col items-end gap-3 shrink-0">
-                    <div className="text-right">
+                  <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-3 w-full sm:w-auto shrink-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-slate-200 dark:border-slate-800">
+                    <div className="text-left sm:text-right">
                       <p className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wide">Current → Suggested</p>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-base font-mono text-slate-400 dark:text-slate-500 line-through">₹{alert.currentPrice}</span>

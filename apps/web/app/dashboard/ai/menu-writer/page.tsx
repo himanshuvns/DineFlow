@@ -195,8 +195,8 @@ export default function MenuWriterPage() {
 
         {/* Right — Result */}
         <div className="lg:col-span-7">
-          <Card variant="glow" className="border-violet-500/20 h-full min-h-[400px]">
-            <CardHeader className="flex flex-row items-center justify-between pb-3">
+          <Card variant="glow" className="border-violet-500/20">
+            <CardHeader className="flex flex-col xs:flex-row items-start xs:items-center justify-between gap-2 pb-3">
               <div>
                 <CardTitle className="text-sm font-semibold text-slate-900 dark:text-white">Generated Description</CardTitle>
                 <CardDescription className="text-xs text-slate-600 dark:text-slate-400">

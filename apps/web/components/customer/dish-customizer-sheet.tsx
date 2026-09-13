@@ -121,7 +121,7 @@ export function DishCustomizerSheet({
       />
 
       {/* Sheet Container */}
-      <div className="relative w-full max-w-lg max-h-[90vh] flex flex-col bg-slate-900 border border-slate-800 rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden z-10 animate-in fade-in slide-in-from-bottom duration-200">
+      <div className="relative w-full max-w-lg max-h-[85dvh] sm:max-h-[90dvh] flex flex-col bg-slate-900 border border-slate-800 rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden z-10 animate-in fade-in slide-in-from-bottom duration-200">
         {/* Header with image */}
         {dish.imageUrl && (
           <div className="relative h-48 w-full bg-slate-950 overflow-hidden">
@@ -314,7 +314,7 @@ export function DishCustomizerSheet({
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 border-t border-slate-800 bg-slate-950/80 backdrop-blur flex items-center gap-3">
+        <div className="p-4 pb-safe border-t border-slate-800 bg-slate-950/80 backdrop-blur flex items-center gap-3">
           {/* Quantity Controls */}
           <div className="flex items-center bg-slate-900 border border-slate-800 rounded-xl p-1">
             <button

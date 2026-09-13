@@ -296,28 +296,28 @@ export default function CustomerMenuPage() {
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/50 to-transparent" />
 
           {/* Quick Action Badges */}
-          <div className="absolute top-4 right-4 flex items-center gap-2">
+          <div className="absolute top-3 right-3 sm:top-4 sm:right-4 flex items-center gap-1.5 xs:gap-2">
             <button
               onClick={handleOpenWhatsApp}
-              className="px-3 h-9 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-600/30 transition-transform active:scale-95 cursor-pointer"
+              className="px-2.5 xs:px-3 h-8 xs:h-9 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-600/30 transition-transform active:scale-95 cursor-pointer"
               title="Order or Inquire on WhatsApp"
             >
-              <MessageCircle className="h-4 w-4" />
-              <span>WhatsApp</span>
+              <MessageCircle className="h-3.5 w-3.5 xs:h-4 xs:w-4" />
+              <span className="hidden xs:inline">WhatsApp</span>
             </button>
             <button
               onClick={handleWifiInfo}
-              className="h-9 w-9 rounded-full bg-slate-900/80 backdrop-blur border border-slate-700/60 text-slate-300 flex items-center justify-center hover:text-white"
+              className="h-8 w-8 xs:h-9 xs:w-9 rounded-full bg-slate-900/80 backdrop-blur border border-slate-700/60 text-slate-300 flex items-center justify-center hover:text-white"
               title="Wi-Fi Information"
             >
-              <Wifi className="h-4 w-4" />
+              <Wifi className="h-3.5 w-3.5 xs:h-4 xs:w-4" />
             </button>
             <button
               onClick={handleCallWaiter}
-              className="px-3 h-9 rounded-full bg-emerald-500/90 hover:bg-emerald-500 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-500/20"
+              className="px-2.5 xs:px-3 h-8 xs:h-9 rounded-full bg-emerald-500/90 hover:bg-emerald-500 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-500/20"
             >
               <BellRing className="h-3.5 w-3.5" />
-              <span>Call Waiter</span>
+              <span><span className="hidden xs:inline">Call </span>Waiter</span>
             </button>
           </div>
         </div>
@@ -339,7 +339,7 @@ export default function CustomerMenuPage() {
               </div>
 
               {/* Table Pill */}
-              <div className="flex flex-col items-end">
+              <div className="flex flex-col items-end shrink-0 ml-2">
                 <Badge variant="glow" size="sm" className="font-mono font-bold text-xs">
                   {tableName}
                 </Badge>
@@ -439,7 +439,7 @@ export default function CustomerMenuPage() {
                   <div
                     key={dish.id}
                     onClick={() => setCustomizingDish(dish)}
-                    className="p-3.5 rounded-2xl bg-slate-900/70 border border-slate-800/80 hover:border-slate-700/80 transition-all flex gap-3.5 cursor-pointer group"
+                    className="p-3 sm:p-3.5 rounded-2xl bg-slate-900/70 border border-slate-800/80 hover:border-slate-700/80 transition-all flex gap-3 sm:gap-3.5 cursor-pointer group"
                   >
                     {/* Left: Info */}
                     <div className="flex-1 min-w-0 flex flex-col justify-between">
@@ -476,7 +476,7 @@ export default function CustomerMenuPage() {
                         <Button
                           variant="secondary"
                           size="sm"
-                          className="h-8 px-3 text-xs font-bold text-emerald-400 hover:text-white border-emerald-500/30 hover:bg-emerald-500/20"
+                          className="h-8 px-3 text-xs font-bold text-emerald-400 hover:text-white border-emerald-500/30 hover:bg-emerald-500/20 shrink-0"
                           onClick={(e) => {
                             e.stopPropagation();
                             setCustomizingDish(dish);
@@ -490,7 +490,7 @@ export default function CustomerMenuPage() {
 
                     {/* Right: Dish Image */}
                     {dish.imageUrl && (
-                      <div className="h-24 w-24 sm:h-28 sm:w-28 rounded-xl overflow-hidden bg-slate-800 shrink-0 relative">
+                      <div className="h-20 w-20 xs:h-24 xs:w-24 sm:h-28 sm:w-28 rounded-xl overflow-hidden bg-slate-800 shrink-0 relative">
                         <img
                           src={dish.imageUrl}
                           alt={dish.name}

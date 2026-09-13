@@ -47,13 +47,13 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "hidden md:flex flex-col justify-between border-r border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-gradient-to-b dark:from-[#0B0F19] dark:to-[#070A12] transition-all duration-300 z-30 sticky top-0 h-screen",
+        "hidden md:flex flex-col justify-between border-r border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-gradient-to-b dark:from-[#0B0F19] dark:to-[#070A12] transition-all duration-300 z-30 sticky top-0 h-screen overflow-hidden",
         sidebarCollapsed ? "w-20" : "w-64"
       )}
     >
-      <div>
+      <div className="flex-1 overflow-y-auto scrollbar-none flex flex-col min-h-0">
         {/* Logo & Workspace Title */}
-        <div className="h-16 flex items-center justify-between px-5 border-b border-slate-200/80 dark:border-slate-800/60">
+        <div className="h-16 flex items-center justify-between px-5 border-b border-slate-200/80 dark:border-slate-800/60 shrink-0">
           <Link href="/dashboard" className="flex items-center gap-3 overflow-hidden">
             <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 p-0.5 shadow-md shadow-emerald-500/20 flex items-center justify-center shrink-0">
               <div className="h-full w-full bg-slate-950 rounded-[10px] flex items-center justify-center">

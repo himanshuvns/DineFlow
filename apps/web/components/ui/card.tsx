@@ -13,12 +13,12 @@ export function Card({
   ...props
 }: CardProps) {
   const variantStyles = {
-    glass: "glass-panel rounded-2xl p-6",
-    glow: "glass-panel-glow rounded-2xl p-6",
+    glass: "glass-panel rounded-2xl p-4 sm:p-6",
+    glow: "glass-panel-glow rounded-2xl p-4 sm:p-6",
     bordered:
-      "bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm dark:shadow-none",
+      "bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-6 shadow-sm dark:shadow-none",
     solid:
-      "bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-none",
+      "bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-6 border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-none",
   };
 
   return (

@@ -190,9 +190,9 @@ export default function MenuManagementPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
-            variant="secondary"
+            variant="outline"
             size="sm"
             leftIcon={<FolderPlus className="h-4 w-4" />}
             onClick={() => setIsCategoryModalOpen(true)}
@@ -213,7 +213,9 @@ export default function MenuManagementPage() {
 
       {/* Filter Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <Tabs tabs={categoriesTabs} activeTab={activeCategory} onChange={setActiveCategory} />
+        <div className="min-w-0 flex-1">
+          <Tabs tabs={categoriesTabs} activeTab={activeCategory} onChange={setActiveCategory} />
+        </div>
 
         <div className="relative w-full sm:w-64">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />

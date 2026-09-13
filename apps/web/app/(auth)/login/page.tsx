@@ -102,9 +102,9 @@ export default function LoginPage() {
         </div>
 
         {/* Quick Demo Pill */}
-        <div className="mb-3 p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between">
+        <div className="mb-3 p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex flex-col xs:flex-row items-start xs:items-center justify-between gap-1.5">
           <div className="flex items-center gap-1.5 text-xs text-emerald-700 dark:text-[#14F1C7] font-medium">
-            <Sparkles className="h-3.5 w-3.5 text-emerald-600 dark:text-[#14F1C7]" />
+            <Sparkles className="h-3.5 w-3.5 text-emerald-600 dark:text-[#14F1C7] shrink-0" />
             <span>Quick test account available</span>
           </div>
           <button
@@ -190,7 +190,7 @@ export default function LoginPage() {
         </div>
 
         {/* Bottom Trust Section */}
-        <div className="mt-3 pt-2.5 border-t border-slate-200/80 dark:border-white/10 grid grid-cols-3 gap-2 text-center select-none">
+        <div className="mt-3 pt-2.5 border-t border-slate-200/80 dark:border-white/10 grid grid-cols-1 xs:grid-cols-3 gap-2 text-center select-none">
           <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-400 font-medium">
             <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 dark:text-[#14F1C7] shrink-0" />
             <span className="truncate">Secure & Encrypted</span>

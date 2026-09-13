@@ -402,7 +402,7 @@ export default function DashboardOverviewPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Live Orders Table (8 Cols) */}
         <Card variant="glass" className="lg:col-span-8">
-          <CardHeader className="flex flex-row items-center justify-between pb-4">
+          <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pb-4">
             <div>
               <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <span>Live Kitchen & Table Feed</span>
@@ -413,7 +413,7 @@ export default function DashboardOverviewPage() {
               </CardDescription>
             </div>
             <Button variant="ghost" size="sm" asChild>
-              <Link href="/dashboard/orders" className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
+              <Link href="/dashboard/orders" className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold shrink-0">
                 View All Orders
               </Link>
             </Button>
@@ -441,7 +441,7 @@ export default function DashboardOverviewPage() {
                 </div>
               </div>
             ) : (
-              <table className="w-full text-left text-xs">
+              <table className="w-full min-w-[540px] text-left text-xs">
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold uppercase tracking-wider text-[10px] bg-slate-50/60 dark:bg-transparent">
                     <th className="py-2.5 pl-2">Order ID</th>

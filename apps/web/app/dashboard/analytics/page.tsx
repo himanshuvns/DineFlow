@@ -150,7 +150,7 @@ export default function AnalyticsPage() {
 
         {/* Timeframe Switcher & Export */}
         <div className="flex flex-wrap items-center gap-2.5">
-          <div className="p-1 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center gap-1 text-xs">
+          <div className="p-1 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center gap-1 text-xs overflow-x-auto max-w-full">
             {[
               { id: "today" as const, label: "Today" },
               { id: "7d" as const, label: "7 Days" },
@@ -160,7 +160,7 @@ export default function AnalyticsPage() {
               <button
                 key={t.id}
                 onClick={() => setTimeframe(t.id)}
-                className={`px-3 py-1 rounded-lg font-medium transition-all cursor-pointer ${
+                className={`px-2 xs:px-3 py-1 rounded-lg font-medium transition-all cursor-pointer whitespace-nowrap ${
                   timeframe === t.id
                     ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-bold shadow-sm"
                     : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
@@ -278,21 +278,23 @@ export default function AnalyticsPage() {
             <Badge variant="success" size="sm">Real-Time Feed</Badge>
           </CardHeader>
           <CardContent>
-            <div className="h-60 flex items-end gap-2 sm:gap-3 pt-8 pb-2 px-2 border-b border-slate-200 dark:border-slate-800">
-              {data.hourly.map((bar, i) => (
-                <div key={i} className="flex-1 flex flex-col items-center gap-2 h-full justify-end group">
-                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                    {bar.amount}
-                  </span>
-                  <div
-                    style={{ height: `${bar.val}%` }}
-                    className="w-full rounded-t-lg bg-gradient-to-t from-emerald-600/70 to-teal-400 group-hover:from-emerald-500 group-hover:to-teal-300 transition-all duration-200 shadow-md shadow-emerald-500/10"
-                  />
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
-                    {bar.hour}
-                  </span>
-                </div>
-              ))}
+            <div className="overflow-x-auto pb-2 scrollbar-none">
+              <div className="h-60 min-w-[440px] sm:min-w-full flex items-end gap-2 sm:gap-3 pt-8 pb-2 px-2 border-b border-slate-200 dark:border-slate-800">
+                {data.hourly.map((bar, i) => (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-2 h-full justify-end group">
+                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                      {bar.amount}
+                    </span>
+                    <div
+                      style={{ height: `${bar.val}%` }}
+                      className="w-full rounded-t-lg bg-gradient-to-t from-emerald-600/70 to-teal-400 group-hover:from-emerald-500 group-hover:to-teal-300 transition-all duration-200 shadow-md shadow-emerald-500/10"
+                    />
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
+                      {bar.hour}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="pt-4 flex flex-wrap items-center justify-between text-xs text-slate-500 dark:text-slate-400 gap-4">

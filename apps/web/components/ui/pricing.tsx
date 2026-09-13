@@ -51,7 +51,8 @@ export function Pricing({
   className,
 }: PricingProps) {
   const [isMonthly, setIsMonthly] = React.useState(true);
-  const isDesktop = useMediaQuery("(min-width: 768px)");
+  const isLargeScreen = useMediaQuery("(min-width: 1024px)");
+  const isTablet = useMediaQuery("(min-width: 768px)");
   const switchRef = React.useRef<HTMLButtonElement>(null);
 
   const handleToggle = (checked: boolean) => {
@@ -162,7 +163,7 @@ export function Pricing({
               key={index}
               initial={{ y: 40, opacity: 0 }}
               whileInView={
-                isDesktop
+                isLargeScreen
                   ? isFourColumns
                     ? {
                         y: plan.isPopular ? -16 : 0,
@@ -175,7 +176,14 @@ export function Pricing({
                         x: index === 2 ? -24 : index === 0 ? 24 : 0,
                         scale: index === 0 || index === 2 ? 0.95 : 1.0,
                       }
-                  : { y: 0, opacity: 1 }
+                  : isTablet
+                  ? {
+                      y: plan.isPopular ? -10 : 0,
+                      opacity: 1,
+                      x: 0,
+                      scale: plan.isPopular ? 1.02 : 1.0,
+                    }
+                  : { y: 0, opacity: 1, x: 0 }
               }
               viewport={{ once: true }}
               transition={{
@@ -192,9 +200,9 @@ export function Pricing({
                 plan.isPopular
                   ? "border-emerald-500 dark:border-[#14F1C7] border-2 shadow-[0_16px_40px_rgba(16,185,129,0.15)] dark:shadow-[0_20px_50px_rgba(20,241,199,0.2)] z-10"
                   : "border-slate-200/90 dark:border-white/10 hover:border-slate-300 dark:hover:border-slate-700 shadow-sm z-0",
-                !plan.isPopular && !isFourColumns && "mt-4",
-                !isFourColumns && index === 0 && "origin-right",
-                !isFourColumns && index === 2 && "origin-left"
+                !plan.isPopular && !isFourColumns && "lg:mt-4",
+                !isFourColumns && index === 0 && "lg:origin-right",
+                !isFourColumns && index === 2 && "lg:origin-left"
               )}
             >
               {/* Most Popular Badge */}

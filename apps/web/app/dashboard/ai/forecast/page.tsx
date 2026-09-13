@@ -49,9 +49,9 @@ const INSIGHTS = [
 function getIntensityClass(orders: number): string {
   if (orders >= 60) return "bg-violet-500 text-white";
   if (orders >= 40) return "bg-violet-500/60 text-white";
-  if (orders >= 25) return "bg-violet-500/35 text-slate-200";
-  if (orders >= 12) return "bg-violet-500/15 text-slate-300";
-  return "bg-slate-800/60 text-slate-500";
+  if (orders >= 25) return "bg-violet-500/35 text-slate-900 dark:text-slate-200";
+  if (orders >= 12) return "bg-violet-500/15 text-slate-800 dark:text-slate-300";
+  return "bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400";
 }
 
 export default function ForecastPage() {
@@ -156,7 +156,7 @@ export default function ForecastPage() {
             </div>
           ) : view === "heatmap" ? (
             <div className="overflow-x-auto">
-              <table className="w-full text-xs border-collapse">
+              <table className="w-full min-w-[420px] text-xs border-collapse">
                 <thead>
                   <tr>
                     <th className="p-2 text-left text-slate-500 font-medium w-16">Hour</th>

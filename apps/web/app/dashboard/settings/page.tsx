@@ -541,7 +541,7 @@ export default function SettingsPage() {
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs border-collapse">
+                <table className="w-full min-w-[500px] text-left text-xs border-collapse">
                   <thead>
                     <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold bg-slate-50/60 dark:bg-transparent">
                       <th className="py-2.5 pl-2">Invoice Number</th>

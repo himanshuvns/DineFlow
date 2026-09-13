@@ -35,13 +35,13 @@ export default function StaffPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold mb-2">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold mb-2">
             <Sparkles className="h-3.5 w-3.5" /> Enterprise Role-Based Access Control
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
             Staff & Permissions
           </h1>
-          <p className="text-xs sm:text-sm text-slate-400">
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
             Invite managers, captains, and kitchen chefs with granular workspace permissions.
           </p>
         </div>
@@ -58,29 +58,29 @@ export default function StaffPage() {
 
       <Card variant="glass">
         <CardContent className="p-0 overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          <table className="w-full min-w-[500px] text-left text-xs">
             <thead>
-              <tr className="border-b border-slate-800 text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
+              <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
                 <th className="py-3.5 pl-6">Staff Member</th>
                 <th className="py-3.5">Assigned Role</th>
                 <th className="py-3.5">Status</th>
                 <th className="py-3.5 text-right pr-6">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
               {STAFF_MEMBERS.map((member) => (
-                <tr key={member.id} className="hover:bg-slate-800/30 transition-colors">
+                <tr key={member.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                   <td className="py-3.5 pl-6">
                     <div className="flex items-center gap-3">
                       <Avatar fallback={member.name} size="sm" />
                       <div>
-                        <p className="font-semibold text-white">{member.name}</p>
-                        <p className="text-[11px] text-slate-400">{member.email}</p>
+                        <p className="font-semibold text-slate-900 dark:text-white">{member.name}</p>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">{member.email}</p>
                       </div>
                     </div>
                   </td>
                   <td className="py-3.5">
-                    <span className="capitalize font-medium text-slate-200 bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-700/60">
+                    <span className="capitalize font-medium text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700/60">
                       {member.role}
                     </span>
                   </td>
@@ -120,11 +120,11 @@ export default function StaffPage() {
           />
 
           <div>
-            <label className="text-xs font-medium text-slate-300 mb-1.5 block">Role</label>
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">Role</label>
             <select
               value={inviteRole}
               onChange={(e) => setInviteRole(e.target.value)}
-              className="w-full rounded-xl text-sm text-slate-100 glass-input px-3.5 py-2.5 outline-none"
+              className="w-full rounded-xl text-sm text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3.5 py-2.5 outline-none focus:border-emerald-500"
             >
               <option value="manager">Manager (Can edit menus & view analytics)</option>
               <option value="kitchen">Kitchen Chef (KDS access only)</option>

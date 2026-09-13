@@ -424,7 +424,7 @@ export default function WhatsAppPage() {
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+            <table className="w-full min-w-[560px] text-left text-xs border-collapse">
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold bg-slate-50/70 dark:bg-slate-950/40">
                   <th className="p-3">Guest Name</th>
@@ -467,7 +467,7 @@ export default function WhatsAppPage() {
 
       {/* ─── 6.4 WhatsApp Reorder Chatbot ─────────────────────────────────────── */}
       <Card variant="glass" className="border-violet-500/20">
-        <CardHeader className="flex flex-row items-center justify-between pb-3">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 pb-3">
           <div>
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-600 dark:text-violet-400 text-[11px] font-semibold mb-1.5">
               <BrainCircuit className="h-3 w-3" /> Feature 6.4 — AI Chatbot

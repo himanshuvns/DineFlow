@@ -153,7 +153,7 @@ export default function TablesManagementPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           {tables.length > 0 && (
             <Button
               variant="secondary"
@@ -358,11 +358,11 @@ export default function TablesManagementPage() {
             </div>
 
             {/* Authentic, High-Resolution Scannable QR Code */}
-            <div className="p-5 bg-white rounded-3xl border border-slate-200 shadow-xl relative group">
+            <div className="p-4 sm:p-5 bg-white rounded-3xl border border-slate-200 shadow-xl relative group">
               <QRCodeImage
                 value={getQRLink(selectedTable)}
                 size={220}
-                className="w-48 h-48 sm:w-56 sm:h-56"
+                className="w-40 h-40 xs:w-48 xs:h-48 sm:w-56 sm:h-56 mx-auto"
               />
               <div className="mt-3 text-slate-900 font-extrabold text-sm tracking-tight">
                 {selectedTable.name}
@@ -389,7 +389,7 @@ export default function TablesManagementPage() {
             </div>
 
             {/* Quick Status Toggle */}
-            <div className="mt-4 flex items-center gap-2">
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
               <span className="text-xs text-slate-500 font-medium">Table Status:</span>
               <button
                 onClick={() => handleToggleStatus(selectedTable, "available")}

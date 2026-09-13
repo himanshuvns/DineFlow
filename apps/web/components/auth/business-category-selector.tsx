@@ -35,8 +35,8 @@ export function BusinessCategorySelector({
         Business Category
       </label>
 
-      {/* 5 columns compact single row */}
-      <div className="grid grid-cols-5 gap-1.5">
+      {/* Responsive columns grid */}
+      <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
         {BUSINESS_CATEGORIES.map((category) => {
           const isSelected = value === category.id;
           const Icon = category.icon;
@@ -53,7 +53,7 @@ export function BusinessCategorySelector({
                   : category.label
               }
               className={cn(
-                "group relative flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 rounded-xl border text-[11px] sm:text-xs font-medium cursor-pointer transition-all duration-200",
+                "group relative flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2 px-1 rounded-xl border text-[11px] sm:text-xs font-medium cursor-pointer transition-all duration-200 min-h-[42px]",
                 "hover:-translate-y-0.5 select-none",
                 isSelected
                   ? "bg-emerald-500/10 dark:bg-emerald-500/15 border-emerald-500 dark:border-emerald-400/60 text-emerald-700 dark:text-[#14F1C7] font-semibold shadow-[0_0_12px_rgba(16,185,129,0.15)] dark:shadow-[0_0_15px_rgba(20,241,199,0.22)] ring-1 ring-emerald-500/30 dark:ring-emerald-400/40"

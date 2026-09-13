@@ -72,12 +72,12 @@ export function ThermalPrintModal({
     >
       <div className="space-y-4">
         {/* Width Switcher */}
-        <div className="flex items-center justify-between bg-slate-950 p-2 rounded-xl border border-slate-800">
-          <span className="text-xs text-slate-400 font-medium px-2">Thermal Paper Roll:</span>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 bg-slate-950 p-2 rounded-xl border border-slate-800">
+          <span className="text-xs text-slate-400 font-medium px-1 sm:px-2">Thermal Paper Roll:</span>
           <div className="flex items-center gap-1">
             <button
               onClick={() => setPaperWidth("80mm")}
-              className={`px-3 py-1 text-xs rounded-lg font-bold transition-all cursor-pointer ${
+              className={`px-2.5 sm:px-3 py-1 text-xs rounded-lg font-bold transition-all cursor-pointer ${
                 paperWidth === "80mm"
                   ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
                   : "text-slate-400 hover:text-white"
@@ -87,7 +87,7 @@ export function ThermalPrintModal({
             </button>
             <button
               onClick={() => setPaperWidth("58mm")}
-              className={`px-3 py-1 text-xs rounded-lg font-bold transition-all cursor-pointer ${
+              className={`px-2.5 sm:px-3 py-1 text-xs rounded-lg font-bold transition-all cursor-pointer ${
                 paperWidth === "58mm"
                   ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
                   : "text-slate-400 hover:text-white"
@@ -102,7 +102,7 @@ export function ThermalPrintModal({
         <div className="flex justify-center p-3 bg-slate-950/80 rounded-xl border border-slate-800/80 max-h-[420px] overflow-y-auto">
           <div
             id="thermal-receipt-text"
-            className={`bg-[#fdfbf7] text-slate-950 font-mono text-[11px] leading-tight p-4 shadow-xl border-t-4 border-slate-400 selection:bg-slate-300 transition-all ${
+            className={`bg-[#fdfbf7] text-slate-950 font-mono text-[11px] leading-tight p-4 shadow-xl border-t-4 border-slate-400 selection:bg-slate-300 transition-all max-w-full ${
               paperWidth === "80mm" ? "w-[340px]" : "w-[260px]"
             }`}
             style={{

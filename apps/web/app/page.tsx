@@ -29,15 +29,15 @@ export default function HomePage() {
       <div className="absolute top-1/3 -right-48 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* Navigation Header */}
-      <header className="h-20 border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-40 bg-white/80 dark:bg-[#090D16]/80 backdrop-blur-xl transition-colors duration-200">
-        <div className="max-w-7xl mx-auto h-full px-6 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 p-0.5 shadow-lg shadow-emerald-500/25 flex items-center justify-center">
+      <header className="h-16 sm:h-20 border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-40 bg-white/80 dark:bg-[#090D16]/80 backdrop-blur-xl transition-colors duration-200">
+        <div className="max-w-7xl mx-auto h-full px-4 sm:px-6 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group">
+            <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 p-0.5 shadow-lg shadow-emerald-500/25 flex items-center justify-center shrink-0">
               <div className="h-full w-full bg-slate-950 rounded-[10px] flex items-center justify-center group-hover:bg-transparent transition-colors">
-                <UtensilsCrossed className="h-5 w-5 text-emerald-400 group-hover:text-slate-950 transition-colors" />
+                <UtensilsCrossed className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-400 group-hover:text-slate-950 transition-colors" />
               </div>
             </div>
-            <span className="text-xl font-black tracking-tight text-slate-900 dark:text-white">
+            <span className="text-lg sm:text-xl font-black tracking-tight text-slate-900 dark:text-white">
               Dine<span className="text-emerald-500 dark:text-emerald-400">Flow</span>
             </span>
           </Link>
@@ -49,15 +49,18 @@ export default function HomePage() {
             <Link href="/dashboard" className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">Live Demo</Link>
           </nav>
 
-          <div className="flex items-center gap-2.5 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3">
             {/* Light / Dark Mode Toggle */}
             <ThemeToggle />
 
-            <Button variant="ghost" size="sm" asChild>
+            <Button variant="ghost" size="sm" asChild className="hidden sm:inline-flex">
               <Link href="/login">Sign In</Link>
             </Button>
-            <Button variant="glow" size="sm" asChild>
-              <Link href="/register">Start Free Trial</Link>
+            <Button variant="glow" size="sm" asChild className="text-xs px-2.5 sm:px-3.5">
+              <Link href="/register">
+                <span className="sm:hidden">Start Free</span>
+                <span className="hidden sm:inline">Start Free Trial</span>
+              </Link>
             </Button>
           </div>
         </div>
@@ -108,19 +111,19 @@ export default function HomePage() {
           {/* Metric Badges */}
           <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto pt-8 border-t border-slate-200 dark:border-slate-800/80">
             <div>
-              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">0 sec</p>
+              <p className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">0 sec</p>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Customer App Install Time</p>
             </div>
             <div>
-              <p className="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">40%</p>
+              <p className="text-2xl sm:text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">40%</p>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Faster Table Turnover</p>
             </div>
             <div>
-              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">99.99%</p>
+              <p className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">99.99%</p>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Uptime SLA Guaranteed</p>
             </div>
             <div>
-              <p className="text-3xl font-extrabold text-teal-600 dark:text-teal-400">&lt; 100ms</p>
+              <p className="text-2xl sm:text-3xl font-extrabold text-teal-600 dark:text-teal-400">&lt; 100ms</p>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Live KDS Sync Latency</p>
             </div>
           </div>

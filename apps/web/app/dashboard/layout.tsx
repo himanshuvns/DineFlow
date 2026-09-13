@@ -29,7 +29,7 @@ export default function DashboardLayout({
             className="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm"
             onClick={() => setMobileMenuOpen(false)}
           />
-          <div className="relative w-72 bg-white dark:bg-[#0B0F19] border-r border-slate-200 dark:border-slate-800 p-5 flex flex-col justify-between z-10 animate-in slide-in-from-left duration-200 shadow-2xl">
+          <div className="relative w-72 max-w-[85vw] h-full bg-white dark:bg-[#0B0F19] border-r border-slate-200 dark:border-slate-800 p-5 flex flex-col justify-between z-10 animate-in slide-in-from-left duration-200 shadow-2xl overflow-y-auto pb-safe pt-safe">
             <div>
               <div className="flex items-center justify-between pb-6 border-b border-slate-200 dark:border-slate-800/80">
                 <div className="flex items-center gap-2.5">
@@ -45,6 +45,7 @@ export default function DashboardLayout({
                 <button
                   onClick={() => setMobileMenuOpen(false)}
                   className="p-1 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 cursor-pointer"
+                  aria-label="Close menu"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -87,7 +88,7 @@ export default function DashboardLayout({
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         <TopBar />
-        <main className="flex-1 p-4 sm:p-8 overflow-y-auto max-w-7xl w-full mx-auto">
+        <main className="flex-1 p-3 sm:p-6 lg:p-8 overflow-y-auto max-w-7xl w-full mx-auto pb-safe">
           {children}
         </main>
       </div>

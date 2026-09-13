@@ -35,14 +35,14 @@ export default function AuthLayout({
       {/* ======================================================== */}
       {/* LEFT 50%: IMMERSIVE HERO SECTION                         */}
       {/* ======================================================== */}
-      <aside className="lg:col-span-6 w-full lg:h-full lg:max-h-screen relative z-10 border-b lg:border-b-0 lg:border-r border-slate-200/80 dark:border-white/10 overflow-hidden">
+      <aside className="hidden lg:flex lg:col-span-6 w-full lg:h-full lg:max-h-screen relative z-10 border-b lg:border-b-0 lg:border-r border-slate-200/80 dark:border-white/10 overflow-hidden">
         <HeroSection isPasswordFocused={isPasswordFocused} />
       </aside>
 
       {/* ======================================================== */}
       {/* RIGHT 50%: FLOATING AUTH FORM PANE                       */}
       {/* ======================================================== */}
-      <section className="lg:col-span-6 w-full lg:h-full lg:max-h-screen flex flex-col justify-center items-center p-4 sm:p-6 lg:py-3 lg:px-6 xl:px-8 relative z-20 overflow-y-auto lg:overflow-hidden [@media(max-height:600px)]:lg:overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden bg-slate-50/90 dark:bg-[#020617]/95 transition-colors duration-200">
+      <section className="col-span-1 lg:col-span-6 w-full min-h-screen lg:h-full lg:max-h-screen flex flex-col justify-center items-center p-4 sm:p-6 lg:py-3 lg:px-6 xl:px-8 relative z-20 overflow-y-auto lg:overflow-hidden [@media(max-height:600px)]:lg:overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden bg-slate-50/90 dark:bg-[#020617]/95 transition-colors duration-200 pb-safe pt-safe">
         {/* Soft Ambient Teal Accents */}
         <div className="absolute -top-32 -right-32 w-96 h-96 bg-emerald-500/8 dark:bg-[#14F1C7]/10 rounded-full blur-[130px] pointer-events-none" />
         <div className="absolute -bottom-32 right-1/4 w-96 h-96 bg-teal-500/6 dark:bg-[#00D4AA]/8 rounded-full blur-[140px] pointer-events-none" />

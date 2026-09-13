@@ -161,12 +161,12 @@ export function CustomerCartDrawer({
     <>
       {/* Sticky Bottom Bar */}
       {itemCount > 0 && !isOpen && (
-        <div className="fixed bottom-4 inset-x-0 z-40 px-4 max-w-lg mx-auto">
+        <div className="fixed bottom-4 inset-x-0 z-40 px-3 xs:px-4 max-w-lg mx-auto pb-safe">
           <button
             onClick={() => setIsOpen(true)}
-            className="w-full h-14 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold px-5 rounded-2xl shadow-xl shadow-emerald-500/20 flex items-center justify-between transition-transform active:scale-[0.99]"
+            className="w-full h-14 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold px-4 xs:px-5 rounded-2xl shadow-xl shadow-emerald-500/20 flex items-center justify-between transition-transform active:scale-[0.99]"
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5 xs:gap-3">
               <div className="h-8 w-8 rounded-xl bg-slate-950/20 flex items-center justify-center font-mono font-extrabold text-sm">
                 {itemCount}
               </div>
@@ -196,7 +196,7 @@ export function CustomerCartDrawer({
             onClick={() => !isSubmitting && setIsOpen(false)}
           />
 
-          <div className="relative w-full max-w-lg max-h-[92vh] flex flex-col bg-slate-900 border border-slate-800 rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden z-10 animate-in fade-in slide-in-from-bottom duration-200">
+          <div className="relative w-full max-w-lg max-h-[90dvh] flex flex-col bg-slate-900 border border-slate-800 rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden z-10 animate-in fade-in slide-in-from-bottom duration-200">
             {/* Header */}
             <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/40">
               <div className="flex items-center gap-2">
@@ -368,7 +368,7 @@ export function CustomerCartDrawer({
             </div>
 
             {/* Footer Submit Button */}
-            <div className="p-4 border-t border-slate-800 bg-slate-950/90 backdrop-blur space-y-2">
+            <div className="p-4 pb-safe border-t border-slate-800 bg-slate-950/90 backdrop-blur space-y-2">
               <Button
                 type="submit"
                 form="order-form"
@@ -381,7 +381,7 @@ export function CustomerCartDrawer({
                 ) : (
                   <>
                     <ChefHat className="h-4 w-4" />
-                    <span>Send Order to Kitchen • {formatCurrency(total, "INR")}</span>
+                    <span>Send to Kitchen • {formatCurrency(total, "INR")}</span>
                   </>
                 )}
               </Button>
