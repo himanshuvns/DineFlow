@@ -41,18 +41,20 @@ export function ChefMascot({
 
   return (
     <div
-      className={cn("flex flex-col items-center select-none relative", className)}
+      className={cn("flex flex-col items-center select-none", className)}
+      style={{ position: "relative" }}
       aria-hidden="true"
     >
-      {/* Interactive Speech Bubble Tooltip on Hover */}
+      {/* Interactive Speech Bubble Tooltip on Hover — z-50 escapes floating card z-30 context */}
       <div
         className={cn(
-          "absolute -top-10 z-40 px-3 py-1.5 rounded-xl text-xs font-semibold backdrop-blur-md shadow-lg transition-all duration-300 pointer-events-none",
+          "absolute left-1/2 -translate-x-1/2 whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-semibold backdrop-blur-md shadow-lg transition-all duration-300 pointer-events-none",
           "bg-white/95 dark:bg-slate-900/90 border border-slate-200 dark:border-white/15 text-slate-800 dark:text-white",
           isHovered
-            ? "opacity-100 -translate-y-1 scale-100 shadow-[0_8px_20px_rgba(20,241,199,0.3)]"
-            : "opacity-0 translate-y-2 scale-95"
+            ? "opacity-100 scale-100 shadow-[0_8px_20px_rgba(20,241,199,0.3)]"
+            : "opacity-0 scale-95"
         )}
+        style={{ bottom: "calc(100% + 10px)", zIndex: 60 }}
       >
         {isClosed ? (
           <span className="flex items-center gap-1.5">
@@ -66,7 +68,7 @@ export function ChefMascot({
             <span className="text-emerald-500">✨</span>
           </span>
         )}
-        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 rotate-45 bg-white/95 dark:bg-slate-900/90 border-r border-b border-slate-200 dark:border-white/15" />
+        <div className="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 rotate-45 bg-white/95 dark:bg-slate-900/90 border-r border-b border-slate-200 dark:border-white/15 -mt-1" />
       </div>
 
       {/* 3D Chef Character Stage: Rock-solid anchored on counter (zero translation jump) */}

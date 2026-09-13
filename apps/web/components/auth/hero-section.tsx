@@ -164,9 +164,16 @@ export function HeroSection({ isPasswordFocused = false }: HeroSectionProps) {
         {/* Subtle Kitchen Counter Surface Glow behind chef */}
         <div className="absolute bottom-4 w-[85%] max-w-[480px] h-12 bg-gradient-to-r from-transparent via-emerald-500/15 dark:via-[#14F1C7]/15 to-transparent blur-xl pointer-events-none" />
 
-        <div className="relative flex items-center justify-center w-full max-w-xl min-h-[380px] sm:min-h-[410px]">
+        {/*
+          Layout strategy: we use a tall container (min-h-[460px]) with generous
+          horizontal width (max-w-2xl) so each card column has dedicated space.
+          Chef sits in the center at z-20; all cards are z-30; tooltip is z-60.
+          Cards never visually overlap the chef — they're positioned in the
+          gutters to the left and right of the 260-310px chef image.
+        */}
+        <div className="relative flex items-center justify-center w-full max-w-2xl min-h-[460px] sm:min-h-[500px]">
           {/* Chef Mascot (Centered, rock-solid seated on counter) */}
-          <div className="relative z-10">
+          <div className="relative z-20 flex-shrink-0">
             <ChefMascot isPasswordFocused={isPasswordFocused} />
           </div>
 
@@ -179,7 +186,7 @@ export function HeroSection({ isPasswordFocused = false }: HeroSectionProps) {
             }}
             onMouseEnter={() => setHighlightedFeature("qr")}
             onMouseLeave={() => setHighlightedFeature(null)}
-            className="absolute -top-4 left-0 sm:left-2 lg:-left-4 z-30 pointer-events-auto cursor-pointer"
+            className="absolute top-6 left-0 xl:-left-2 z-30 pointer-events-auto cursor-pointer"
             title="Click to simulate guest QR scan"
           >
             <FloatingCard
@@ -188,7 +195,7 @@ export function HeroSection({ isPasswordFocused = false }: HeroSectionProps) {
               floatY={7}
               rotateDeg={-1.5}
               isHighlighted={highlightedFeature === "qr"}
-              className="w-[160px] sm:w-[180px]"
+              className="w-[160px] sm:w-[178px]"
             >
               <div className="flex items-center gap-2.5">
                 <div className="relative h-8 w-8 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center shrink-0 text-emerald-600 dark:text-[#14F1C7] overflow-hidden">
@@ -197,7 +204,6 @@ export function HeroSection({ isPasswordFocused = false }: HeroSectionProps) {
                   ) : (
                     <QrCode className="h-4 w-4" />
                   )}
-                  {/* Subtle animated scan beam */}
                   <div className="absolute inset-x-0 h-[2px] bg-emerald-400 dark:bg-[#14F1C7] shadow-[0_0_8px_rgba(20,241,199,1)] animate-bounce opacity-40 pointer-events-none" />
                 </div>
 
@@ -206,7 +212,7 @@ export function HeroSection({ isPasswordFocused = false }: HeroSectionProps) {
                     <span className="text-[11.5px] font-bold text-slate-900 dark:text-white tracking-tight truncate">
                       {qrScanned ? "Table 12" : "QR Menus"}
                     </span>
-                    <span className="px-1.5 py-0.2 rounded bg-emerald-500/15 text-[8.5px] font-bold text-emerald-600 dark:text-[#14F1C7]">
+                    <span className="px-1.5 py-0.5 rounded bg-emerald-500/15 text-[8.5px] font-bold text-emerald-600 dark:text-[#14F1C7]">
                       {qrScanned ? "Scanned ✓" : "Live"}
                     </span>
                   </div>
@@ -227,7 +233,7 @@ export function HeroSection({ isPasswordFocused = false }: HeroSectionProps) {
             }}
             onMouseEnter={() => setHighlightedFeature("pasta")}
             onMouseLeave={() => setHighlightedFeature(null)}
-            className="absolute -top-3 right-0 sm:right-2 lg:-right-4 z-30 pointer-events-auto cursor-pointer"
+            className="absolute top-6 right-0 xl:-right-2 z-30 pointer-events-auto cursor-pointer"
             title="Click to advance dish status"
           >
             <FloatingCard
@@ -236,10 +242,9 @@ export function HeroSection({ isPasswordFocused = false }: HeroSectionProps) {
               floatY={8}
               rotateDeg={1.5}
               isHighlighted={highlightedFeature === "pasta"}
-              className="w-[175px] sm:w-[195px]"
+              className="w-[175px] sm:w-[192px]"
             >
               <div className="flex items-start gap-2.5">
-                {/* Pasta Dish Thumbnail */}
                 <div className="relative h-9 w-9 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/15 shrink-0 shadow-sm">
                   <Image
                     src="/images/pasta-dish.png"
@@ -256,7 +261,7 @@ export function HeroSection({ isPasswordFocused = false }: HeroSectionProps) {
                     <span className="text-[11.5px] font-bold text-slate-900 dark:text-white tracking-tight">
                       Table 4
                     </span>
-                    <span className="px-1.5 py-0.2 rounded bg-emerald-500/15 text-[9px] font-bold text-emerald-600 dark:text-[#14F1C7]">
+                    <span className="px-1.5 py-0.5 rounded bg-emerald-500/15 text-[9px] font-bold text-emerald-600 dark:text-[#14F1C7]">
                       {table4Stage === 0
                         ? "2×"
                         : table4Stage === 1
@@ -268,7 +273,6 @@ export function HeroSection({ isPasswordFocused = false }: HeroSectionProps) {
                     Pasta Arrabbiata
                   </p>
 
-                  {/* Dynamic Progress Bar */}
                   <div className="mt-1.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full h-1 overflow-hidden">
                     <div
                       className="bg-gradient-to-r from-emerald-500 to-teal-400 dark:from-[#14F1C7] dark:to-emerald-400 h-full rounded-full transition-all duration-500"
@@ -276,8 +280,6 @@ export function HeroSection({ isPasswordFocused = false }: HeroSectionProps) {
                         width:
                           table4Stage === 0
                             ? "70%"
-                            : table4Stage === 1
-                            ? "100%"
                             : "100%",
                       }}
                     />
@@ -288,7 +290,7 @@ export function HeroSection({ isPasswordFocused = false }: HeroSectionProps) {
           </div>
 
           {/* ==================================================== */}
-          {/* FLOATING CARD 3: REVENUE / SALES (Upper-Mid Left)    */}
+          {/* FLOATING CARD 3: REVENUE / SALES (Mid-Left)          */}
           {/* ==================================================== */}
           <div
             onClick={() => {
@@ -296,7 +298,7 @@ export function HeroSection({ isPasswordFocused = false }: HeroSectionProps) {
             }}
             onMouseEnter={() => setHighlightedFeature("sales")}
             onMouseLeave={() => setHighlightedFeature(null)}
-            className="absolute top-28 -left-3 sm:left-0 lg:-left-7 z-30 pointer-events-auto cursor-pointer"
+            className="absolute top-1/2 -translate-y-1/2 left-0 xl:-left-2 z-30 pointer-events-auto cursor-pointer"
             title="Click to cycle live analytics metrics"
           >
             <FloatingCard
@@ -305,7 +307,7 @@ export function HeroSection({ isPasswordFocused = false }: HeroSectionProps) {
               floatY={6}
               rotateDeg={-1.0}
               isHighlighted={highlightedFeature === "sales"}
-              className="w-[155px] sm:w-[175px]"
+              className="w-[155px] sm:w-[172px]"
             >
               <div className="flex items-center gap-2.5">
                 <div className="h-8 w-8 rounded-xl bg-teal-500/15 border border-teal-500/30 flex items-center justify-center shrink-0 text-teal-600 dark:text-teal-400">
@@ -332,13 +334,13 @@ export function HeroSection({ isPasswordFocused = false }: HeroSectionProps) {
           </div>
 
           {/* ==================================================== */}
-          {/* FLOATING CARD 4: INSTANT PAY / POS (Upper-Mid Right) */}
+          {/* FLOATING CARD 4: INSTANT PAY / POS (Mid-Right)       */}
           {/* ==================================================== */}
           <div
             onClick={() => setPayStage(!payStage)}
             onMouseEnter={() => setHighlightedFeature("pay")}
             onMouseLeave={() => setHighlightedFeature(null)}
-            className="absolute top-28 -right-3 sm:right-0 lg:-right-7 z-30 pointer-events-auto cursor-pointer"
+            className="absolute top-1/2 -translate-y-1/2 right-0 xl:-right-2 z-30 pointer-events-auto cursor-pointer"
             title="Click to toggle payment confirmation"
           >
             <FloatingCard
@@ -347,7 +349,7 @@ export function HeroSection({ isPasswordFocused = false }: HeroSectionProps) {
               floatY={7}
               rotateDeg={1.2}
               isHighlighted={highlightedFeature === "pay"}
-              className="w-[160px] sm:w-[180px]"
+              className="w-[160px] sm:w-[178px]"
             >
               <div className="flex items-center gap-2.5">
                 <div className="h-8 w-8 rounded-xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center shrink-0 text-indigo-600 dark:text-indigo-400">
@@ -379,7 +381,7 @@ export function HeroSection({ isPasswordFocused = false }: HeroSectionProps) {
             }}
             onMouseEnter={() => setHighlightedFeature("kds")}
             onMouseLeave={() => setHighlightedFeature(null)}
-            className="absolute bottom-4 left-0 sm:left-2 lg:-left-6 z-30 pointer-events-auto cursor-pointer"
+            className="absolute bottom-8 left-0 xl:-left-2 z-30 pointer-events-auto cursor-pointer"
             title="Click to cycle kitchen display ticket"
           >
             <FloatingCard
@@ -388,7 +390,7 @@ export function HeroSection({ isPasswordFocused = false }: HeroSectionProps) {
               floatY={7}
               rotateDeg={-1.2}
               isHighlighted={highlightedFeature === "kds"}
-              className="w-[160px] sm:w-[180px]"
+              className="w-[160px] sm:w-[178px]"
             >
               <div className="flex items-center gap-2.5">
                 <div className="h-8 w-8 rounded-xl bg-amber-500/15 dark:bg-amber-500/20 border border-amber-500/30 flex items-center justify-center shrink-0 text-amber-600 dark:text-amber-400">
@@ -399,7 +401,7 @@ export function HeroSection({ isPasswordFocused = false }: HeroSectionProps) {
                     <span className="text-[11.5px] font-bold text-slate-900 dark:text-white tracking-tight">
                       Live KDS
                     </span>
-                    <span className="px-1.5 py-0.2 rounded bg-amber-500/15 text-[8.5px] font-bold text-amber-600 dark:text-amber-400">
+                    <span className="px-1.5 py-0.5 rounded bg-amber-500/15 text-[8.5px] font-bold text-amber-600 dark:text-amber-400">
                       {kdsStage === 0
                         ? "Prep: 3m"
                         : kdsStage === 1
@@ -426,13 +428,14 @@ export function HeroSection({ isPasswordFocused = false }: HeroSectionProps) {
             onClick={() => setShowWhatsappBubble(!showWhatsappBubble)}
             onMouseEnter={() => setHighlightedFeature("whatsapp")}
             onMouseLeave={() => setHighlightedFeature(null)}
-            className="absolute bottom-5 right-0 sm:right-2 lg:-right-6 z-30 pointer-events-auto cursor-pointer relative"
+            className="absolute bottom-8 right-0 xl:-right-2 z-30 pointer-events-auto cursor-pointer"
             title="Click to preview incoming WhatsApp order"
           >
             {/* Interactive Preview Chat Bubble on Click */}
             {showWhatsappBubble && (
-              <div className="absolute -top-12 right-0 z-40 px-2.5 py-1 rounded-xl text-[10px] font-medium bg-emerald-600 text-white shadow-lg pointer-events-none whitespace-nowrap animate-in fade-in zoom-in-95 duration-200">
+              <div className="absolute bottom-full mb-2 right-0 z-50 px-2.5 py-1.5 rounded-xl text-[10px] font-medium bg-emerald-600 text-white shadow-lg pointer-events-none whitespace-nowrap animate-in fade-in zoom-in-95 duration-200">
                 💬 Table 6: 2× Arrabbiata, 1× Tiramisu
+                <div className="absolute top-full right-4 w-2 h-2 rotate-45 bg-emerald-600 -mt-1" />
               </div>
             )}
 
@@ -442,7 +445,7 @@ export function HeroSection({ isPasswordFocused = false }: HeroSectionProps) {
               floatY={6}
               rotateDeg={1.3}
               isHighlighted={highlightedFeature === "whatsapp"}
-              className="w-[160px] sm:w-[180px]"
+              className="w-[160px] sm:w-[178px]"
             >
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2.5">
