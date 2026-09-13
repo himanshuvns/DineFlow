@@ -8,48 +8,53 @@ interface PeekingChefProps {
 
 export function PeekingChef({ isPasswordFocused = false }: PeekingChefProps) {
   const containerRef = React.useRef<HTMLDivElement>(null);
-  const [headTilt, setHeadTilt] = React.useState({ rotateX: 0, rotateY: 0, translateX: 0, translateY: 0 });
+  const [offset, setOffset] = React.useState({ x: 0, y: 0 });
 
-  // Smooth mouse movement tracking using requestAnimationFrame
+  // Smooth damped parallax cursor tracking (lerp physics)
   React.useEffect(() => {
-    if (isPasswordFocused) {
-      setHeadTilt({ rotateX: 0, rotateY: 0, translateX: 0, translateY: 0 });
-      return;
-    }
-
-    let rafId: number | null = null;
+    let targetX = 0;
+    let targetY = 0;
+    let currentX = 0;
+    let currentY = 0;
+    let animFrameId: number;
 
     const handleMouseMove = (e: MouseEvent) => {
-      if (rafId) cancelAnimationFrame(rafId);
+      if (isPasswordFocused) return;
+      if (!containerRef.current) return;
+      
+      const rect = containerRef.current.getBoundingClientRect();
+      const chefCenterX = rect.left + rect.width * 0.5;
+      const chefCenterY = rect.top + rect.height * 0.45;
 
-      rafId = requestAnimationFrame(() => {
-        if (!containerRef.current) return;
-        const rect = containerRef.current.getBoundingClientRect();
-        
-        // Approximate face center on screen
-        const faceX = rect.left + rect.width * 0.5;
-        const faceY = rect.top + rect.height * 0.45;
+      const dx = e.clientX - chefCenterX;
+      const dy = e.clientY - chefCenterY;
+      const dist = Math.sqrt(dx * dx + dy * dy) || 1;
 
-        const dx = e.clientX - faceX;
-        const dy = e.clientY - faceY;
-        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+      // Gentle, subtle organic parallax travel (max 4px)
+      const maxTravel = 4.0;
+      targetX = (dx / dist) * Math.min(maxTravel, dist * 0.015);
+      targetY = (dy / dist) * Math.min(maxTravel * 0.75, dist * 0.012);
+    };
 
-        // Subtle, natural 3D head movement following cursor
-        const maxTilt = 4.0;
-        const tiltX = Math.max(-maxTilt, Math.min(maxTilt, -(dy / window.innerHeight) * 8));
-        const tiltY = Math.max(-maxTilt * 1.3, Math.min(maxTilt * 1.3, (dx / window.innerWidth) * 10));
-        
-        const moveX = Math.max(-4, Math.min(4, (dx / dist) * Math.min(4, dist * 0.015)));
-        const moveY = Math.max(-3, Math.min(3, (dy / dist) * Math.min(3, dist * 0.012)));
-
-        setHeadTilt({ rotateX: tiltX, rotateY: tiltY, translateX: moveX, translateY: moveY });
-      });
+    // 60fps physics loop with gentle deceleration (lerp factor 0.08)
+    const updateMotion = () => {
+      if (!isPasswordFocused) {
+        currentX += (targetX - currentX) * 0.08;
+        currentY += (targetY - currentY) * 0.08;
+        setOffset({
+          x: Math.round(currentX * 100) / 100,
+          y: Math.round(currentY * 100) / 100,
+        });
+      }
+      animFrameId = requestAnimationFrame(updateMotion);
     };
 
     window.addEventListener("mousemove", handleMouseMove, { passive: true });
+    animFrameId = requestAnimationFrame(updateMotion);
+
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
-      if (rafId) cancelAnimationFrame(rafId);
+      cancelAnimationFrame(animFrameId);
     };
   }, [isPasswordFocused]);
 
@@ -59,14 +64,14 @@ export function PeekingChef({ isPasswordFocused = false }: PeekingChefProps) {
       className="flex flex-col items-center select-none"
       aria-hidden="true"
     >
-      {/* 3D Perspective Stage */}
+      {/* Character Stage with Gentle Breathing and Organic Parallax */}
       <div
-        className="relative w-[280px] sm:w-[320px] aspect-[400/500] transition-all duration-300 ease-out"
+        className="relative w-[280px] sm:w-[320px] aspect-[400/500] will-change-transform"
         style={{
-          perspective: "1000px",
           transform: isPasswordFocused
-            ? "translateY(2px) scale(0.99)"
-            : `perspective(1000px) rotateX(${headTilt.rotateX}deg) rotateY(${headTilt.rotateY}deg) translate3d(${headTilt.translateX}px, ${headTilt.translateY}px, 0)`,
+            ? "translate3d(0, 0, 0)"
+            : `translate3d(${offset.x}px, ${offset.y}px, 0)`,
+          transition: isPasswordFocused ? "transform 0.4s ease-out" : "none",
         }}
       >
         {/* Soft Ambient Counter Drop Shadow */}
@@ -76,10 +81,9 @@ export function PeekingChef({ isPasswordFocused = false }: PeekingChefProps) {
         {/* STATE 1: SAME CHARACTER — EYES OPEN                      */}
         {/* ======================================================== */}
         <div
-          className="absolute inset-0 transition-all duration-300 ease-out"
+          className="absolute inset-0 transition-opacity duration-300 ease-in-out"
           style={{
             opacity: isPasswordFocused ? 0 : 1,
-            transform: isPasswordFocused ? "scale(0.98)" : "scale(1)",
             pointerEvents: isPasswordFocused ? "none" : "auto",
           }}
         >
@@ -97,10 +101,9 @@ export function PeekingChef({ isPasswordFocused = false }: PeekingChefProps) {
         {/* STATE 2: SAME CHARACTER — EYES CLOSED (PASSWORD MODE)    */}
         {/* ======================================================== */}
         <div
-          className="absolute inset-0 transition-all duration-300 ease-out"
+          className="absolute inset-0 transition-opacity duration-300 ease-in-out"
           style={{
             opacity: isPasswordFocused ? 1 : 0,
-            transform: isPasswordFocused ? "scale(1)" : "scale(0.98)",
             pointerEvents: isPasswordFocused ? "auto" : "none",
           }}
         >
