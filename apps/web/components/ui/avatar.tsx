@@ -32,12 +32,16 @@ export function Avatar({
     busy: "bg-amber-500 ring-slate-900",
   };
 
-  const initials = fallback
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .substring(0, 2)
-    .toUpperCase();
+  const safeFallback = typeof fallback === "string" ? fallback.trim() : "";
+  const initials = safeFallback
+    ? safeFallback
+        .split(" ")
+        .filter(Boolean)
+        .map((w) => w[0] || "")
+        .join("")
+        .substring(0, 2)
+        .toUpperCase() || "DF"
+    : "DF";
 
   return (
     <div className={cn("relative inline-block shrink-0", className)} {...props}>

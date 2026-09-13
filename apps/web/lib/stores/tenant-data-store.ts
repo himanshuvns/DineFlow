@@ -335,6 +335,54 @@ interface TenantDataState {
 
 const getStorageKey = (tenantId: string) => `dineflow_data_v2_${tenantId}`;
 
+const persistTenantState = (
+  tenantId: string | null,
+  data: {
+    categories?: string[];
+    menuItems?: MenuItem[];
+    tables?: TableItem[];
+    orders?: KdsOrder[];
+    onboardingSteps?: OnboardingStep[];
+  }
+) => {
+  if (typeof window === "undefined" || !tenantId) return;
+  try {
+    const key = getStorageKey(tenantId);
+    const existingRaw = localStorage.getItem(key);
+    const existing = existingRaw ? JSON.parse(existingRaw) : {};
+    const merged = {
+      categories: Array.isArray(data.categories)
+        ? data.categories
+        : Array.isArray(existing.categories)
+        ? existing.categories
+        : [],
+      menuItems: Array.isArray(data.menuItems)
+        ? data.menuItems
+        : Array.isArray(existing.menuItems)
+        ? existing.menuItems
+        : [],
+      tables: Array.isArray(data.tables)
+        ? data.tables
+        : Array.isArray(existing.tables)
+        ? existing.tables
+        : [],
+      orders: Array.isArray(data.orders)
+        ? data.orders
+        : Array.isArray(existing.orders)
+        ? existing.orders
+        : [],
+      onboardingSteps: Array.isArray(data.onboardingSteps)
+        ? data.onboardingSteps
+        : Array.isArray(existing.onboardingSteps)
+        ? existing.onboardingSteps
+        : DEFAULT_ONBOARDING,
+    };
+    localStorage.setItem(key, JSON.stringify(merged));
+  } catch (err) {
+    console.warn("Failed to persist tenant data to localStorage:", err);
+  }
+};
+
 export const useTenantDataStore = create<TenantDataState>((set, get) => ({
   tenantId: null,
   tenantName: "Your Restaurant",
@@ -383,13 +431,15 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
       }
     }
 
-    if (cachedData) {
+    if (cachedData && typeof cachedData === "object") {
       set({
-        categories: cachedData.categories || [],
-        menuItems: cachedData.menuItems || [],
-        tables: cachedData.tables || [],
-        orders: cachedData.orders || [],
-        onboardingSteps: cachedData.onboardingSteps || DEFAULT_ONBOARDING,
+        categories: Array.isArray(cachedData.categories) ? cachedData.categories : [],
+        menuItems: Array.isArray(cachedData.menuItems) ? cachedData.menuItems : [],
+        tables: Array.isArray(cachedData.tables) ? cachedData.tables : [],
+        orders: Array.isArray(cachedData.orders) ? cachedData.orders : [],
+        onboardingSteps: Array.isArray(cachedData.onboardingSteps)
+          ? cachedData.onboardingSteps
+          : DEFAULT_ONBOARDING,
         isLoading: false,
         initialized: true,
       });
@@ -473,9 +523,7 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
           }),
         };
 
-        if (typeof window !== "undefined") {
-          localStorage.setItem(storageKey, JSON.stringify(stateToSave));
-        }
+        persistTenantState(tenantId, stateToSave);
 
         set({
           ...stateToSave,
@@ -538,9 +586,7 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
         onboardingSteps: initialSteps,
       };
 
-      if (typeof window !== "undefined") {
-        localStorage.setItem(storageKey, JSON.stringify(demoState));
-      }
+      persistTenantState(tenantId, demoState);
 
       set({
         ...demoState,
@@ -557,9 +603,7 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
         onboardingSteps: DEFAULT_ONBOARDING,
       };
 
-      if (typeof window !== "undefined") {
-        localStorage.setItem(storageKey, JSON.stringify(cleanState));
-      }
+      persistTenantState(tenantId, cleanState);
 
       set({
         ...cleanState,
@@ -567,6 +611,7 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
         initialized: true,
       });
     }
+
   },
 
   addMenuItem: async (newItemData) => {
@@ -605,12 +650,7 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
       onboardingSteps: updatedSteps,
     };
 
-    if (typeof window !== "undefined" && state.tenantId) {
-      localStorage.setItem(
-        getStorageKey(state.tenantId),
-        JSON.stringify({ ...state, ...nextState })
-      );
-    }
+    persistTenantState(state.tenantId, nextState);
 
     set(nextState);
     return createdItem;
@@ -622,12 +662,7 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
       item.id === id ? { ...item, ...updates } : item
     );
 
-    if (typeof window !== "undefined" && state.tenantId) {
-      localStorage.setItem(
-        getStorageKey(state.tenantId),
-        JSON.stringify({ ...state, menuItems: updatedItems })
-      );
-    }
+    persistTenantState(state.tenantId, { menuItems: updatedItems });
 
     set({ menuItems: updatedItems });
   },
@@ -642,12 +677,7 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
 
     const updatedItems = state.menuItems.filter((i) => i.id !== id);
 
-    if (typeof window !== "undefined" && state.tenantId) {
-      localStorage.setItem(
-        getStorageKey(state.tenantId),
-        JSON.stringify({ ...state, menuItems: updatedItems })
-      );
-    }
+    persistTenantState(state.tenantId, { menuItems: updatedItems });
 
     set({ menuItems: updatedItems });
   },
@@ -680,12 +710,7 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
       onboardingSteps: updatedSteps,
     };
 
-    if (typeof window !== "undefined" && state.tenantId) {
-      localStorage.setItem(
-        getStorageKey(state.tenantId),
-        JSON.stringify({ ...state, ...nextState })
-      );
-    }
+    persistTenantState(state.tenantId, nextState);
 
     set(nextState);
     return createdTable;
@@ -697,12 +722,7 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
       tbl.id === id ? { ...tbl, status } : tbl
     );
 
-    if (typeof window !== "undefined" && state.tenantId) {
-      localStorage.setItem(
-        getStorageKey(state.tenantId),
-        JSON.stringify({ ...state, tables: updatedTables })
-      );
-    }
+    persistTenantState(state.tenantId, { tables: updatedTables });
 
     set({ tables: updatedTables });
   },
@@ -717,12 +737,7 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
 
     const updatedTables = state.tables.filter((t) => t.id !== id);
 
-    if (typeof window !== "undefined" && state.tenantId) {
-      localStorage.setItem(
-        getStorageKey(state.tenantId),
-        JSON.stringify({ ...state, tables: updatedTables })
-      );
-    }
+    persistTenantState(state.tenantId, { tables: updatedTables });
 
     set({ tables: updatedTables });
   },
@@ -747,12 +762,7 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
 
     const updatedOrders = [newOrder, ...state.orders];
 
-    if (typeof window !== "undefined" && state.tenantId) {
-      localStorage.setItem(
-        getStorageKey(state.tenantId),
-        JSON.stringify({ ...state, orders: updatedOrders })
-      );
-    }
+    persistTenantState(state.tenantId, { orders: updatedOrders });
 
     set({ orders: updatedOrders });
     return newOrder;
@@ -764,12 +774,7 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
       o.id === id ? { ...o, status } : o
     );
 
-    if (typeof window !== "undefined" && state.tenantId) {
-      localStorage.setItem(
-        getStorageKey(state.tenantId),
-        JSON.stringify({ ...state, orders: updatedOrders })
-      );
-    }
+    persistTenantState(state.tenantId, { orders: updatedOrders });
 
     set({ orders: updatedOrders });
   },
@@ -780,12 +785,7 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
       s.id === stepId ? { ...s, completed: !s.completed } : s
     );
 
-    if (typeof window !== "undefined" && state.tenantId) {
-      localStorage.setItem(
-        getStorageKey(state.tenantId),
-        JSON.stringify({ ...state, onboardingSteps: updated })
-      );
-    }
+    persistTenantState(state.tenantId, { onboardingSteps: updated });
 
     set({ onboardingSteps: updated });
   },
@@ -806,12 +806,7 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
       }),
     };
 
-    if (typeof window !== "undefined" && state.tenantId) {
-      localStorage.setItem(
-        getStorageKey(state.tenantId),
-        JSON.stringify({ ...state, ...nextState })
-      );
-    }
+    persistTenantState(state.tenantId, nextState);
 
     set(nextState);
   },

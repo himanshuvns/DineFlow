@@ -28,8 +28,15 @@ import { Modal } from "@/components/ui/modal";
 import { useTenantData, STARTER_TEMPLATES } from "@/lib/stores/tenant-data-store";
 import { useToast } from "@/components/ui/toast";
 import { formatCurrency } from "@/lib/utils";
+import { HospitalityLoader } from "@/components/ui/hospitality-loader";
 
 export default function DashboardOverviewPage() {
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const {
     tenantName,
     tenantSlug,
@@ -52,6 +59,12 @@ export default function DashboardOverviewPage() {
 
   const [isNewOrderOpen, setIsNewOrderOpen] = React.useState(false);
 
+  // Safe normalized arrays
+  const safeOrders = Array.isArray(orders) ? orders : [];
+  const safeTables = Array.isArray(tables) ? tables : [];
+  const safeMenuItems = Array.isArray(menuItems) ? menuItems : [];
+  const safeOnboardingSteps = Array.isArray(onboardingSteps) ? onboardingSteps : [];
+
   // Quick order state
   const [orderTable, setOrderTable] = React.useState("Table 01");
   const [orderItemsText, setOrderItemsText] = React.useState("1x House Special, 1x Beverage");
@@ -59,24 +72,30 @@ export default function DashboardOverviewPage() {
 
   // Keep orderTable aligned with available tables if present
   React.useEffect(() => {
-    if (tables.length > 0 && !tables.some((t) => t.name === orderTable)) {
-      setOrderTable(tables[0].name);
+    if (safeTables.length > 0 && !safeTables.some((t) => t?.name === orderTable)) {
+      setOrderTable(safeTables[0].name);
     }
-  }, [tables, orderTable]);
+  }, [safeTables, orderTable]);
 
-  const completedCount = onboardingSteps.filter((s) => s.completed).length;
-  const progressPct = Math.round((completedCount / onboardingSteps.length) * 100);
+  const completedCount = safeOnboardingSteps.filter((s) => s?.completed).length;
+  const progressPct =
+    safeOnboardingSteps.length > 0
+      ? Math.round((completedCount / safeOnboardingSteps.length) * 100)
+      : 0;
 
   // Calculate live dynamic metrics from tenant data
-  const calculatedRevenue = orders.reduce((acc, o) => acc + (o.total || 0), 0);
+  const calculatedRevenue = safeOrders.reduce(
+    (acc, o) => acc + (typeof o?.total === "number" ? o.total : 0),
+    0
+  );
   const displayRevenue = calculatedRevenue > 0 ? calculatedRevenue : isDemoTenant ? 84250 : 0;
 
-  const preparingCount = orders.filter((o) => o.status === "preparing").length;
-  const readyCount = orders.filter((o) => o.status === "ready").length;
+  const preparingCount = safeOrders.filter((o) => o?.status === "preparing").length;
+  const readyCount = safeOrders.filter((o) => o?.status === "ready").length;
   const activeCount = preparingCount + readyCount;
 
-  const occupiedCount = tables.filter((t) => t.status === "occupied").length;
-  const totalTables = tables.length;
+  const occupiedCount = safeTables.filter((t) => t?.status === "occupied").length;
+  const totalTables = safeTables.length;
   const occupancyPct = totalTables > 0 ? Math.round((occupiedCount / totalTables) * 100) : 0;
 
   const handleCreateQuickOrder = async (e: React.FormEvent) => {
@@ -114,6 +133,19 @@ export default function DashboardOverviewPage() {
       `Loaded ${STARTER_TEMPLATES[key].name} menu items and tables into your workspace.`
     );
   };
+
+  if (!mounted) {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center">
+        <HospitalityLoader
+          variant="cloche"
+          title="Loading Workspace…"
+          subtitle="Connecting live orders, table reservations & kitchen display systems"
+        />
+      </div>
+    );
+  }
+
 
   return (
     <div className="space-y-8 pb-12">
@@ -163,7 +195,7 @@ export default function DashboardOverviewPage() {
       </div>
 
       {/* Quick Starter Preset Banner if New Tenant has no items */}
-      {!isDemoTenant && menuItems.length === 0 && (
+      {!isDemoTenant && safeMenuItems.length === 0 && (
         <Card variant="glass" className="border-emerald-500/30 bg-emerald-500/5 p-5">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
@@ -231,10 +263,10 @@ export default function DashboardOverviewPage() {
             </h2>
             <div className="flex items-center gap-1.5 mt-1 text-xs">
               <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center">
-                <ArrowUpRight className="h-3.5 w-3.5" /> {orders.length > 0 ? "+100%" : "+0%"}
+                <ArrowUpRight className="h-3.5 w-3.5" /> {safeOrders.length > 0 ? "+100%" : "+0%"}
               </span>
               <span className="text-slate-500 dark:text-slate-400">
-                {orders.length > 0 ? `across ${orders.length} orders` : "ready for sales"}
+                {safeOrders.length > 0 ? `across ${safeOrders.length} orders` : "ready for sales"}
               </span>
             </div>
           </div>
@@ -293,11 +325,11 @@ export default function DashboardOverviewPage() {
           </div>
           <div className="mt-3">
             <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-              {menuItems.length} Dishes
+              {safeMenuItems.length} Dishes
             </h2>
             <div className="flex items-center gap-1.5 mt-1 text-xs">
               <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
-                {menuItems.filter((i) => i.available).length} Live
+                {safeMenuItems.filter((i) => i?.available).length} Live
               </span>
               <span className="text-slate-500 dark:text-slate-400">on contactless QR</span>
             </div>
@@ -313,7 +345,7 @@ export default function DashboardOverviewPage() {
               <CardTitle className="text-base font-bold text-slate-900 dark:text-white">
                 Workspace Setup Progress
               </CardTitle>
-              <Badge variant="success" size="sm">{completedCount} of {onboardingSteps.length} Completed</Badge>
+              <Badge variant="success" size="sm">{completedCount} of {safeOnboardingSteps.length} Completed</Badge>
             </div>
             <CardDescription className="text-xs text-slate-600 dark:text-slate-400 mt-1">
               Complete these setup steps to launch contactless QR menus, live KDS, and WhatsApp marketing for {tenantName}.
@@ -328,7 +360,7 @@ export default function DashboardOverviewPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-4">
-          {onboardingSteps.map((step) => (
+          {safeOnboardingSteps.map((step) => (
             <div
               key={step.id}
               className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-colors shadow-xs"
@@ -388,7 +420,7 @@ export default function DashboardOverviewPage() {
           </CardHeader>
 
           <CardContent className="overflow-x-auto">
-            {orders.length === 0 ? (
+            {safeOrders.length === 0 ? (
               <div className="py-12 text-center">
                 <div className="h-12 w-12 rounded-full bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center mx-auto text-slate-400 mb-3">
                   <ShoppingBag className="h-6 w-6" />
@@ -420,7 +452,7 @@ export default function DashboardOverviewPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
-                  {orders.slice(0, 6).map((order) => {
+                  {safeOrders.slice(0, 6).map((order) => {
                     const statusBadges = {
                       pending: <Badge variant="warning" dot size="sm">Pending</Badge>,
                       preparing: <Badge variant="warning" dot size="sm">Preparing</Badge>,
@@ -429,8 +461,14 @@ export default function DashboardOverviewPage() {
                     };
 
                     const itemsSummary =
-                      order.items && order.items.length > 0
-                        ? order.items.map((i) => `${i.qty}x ${i.name}`).join(", ")
+                      order?.items && Array.isArray(order.items) && order.items.length > 0
+                        ? order.items
+                            .map((i) =>
+                              typeof i === "string"
+                                ? i
+                                : `${i?.qty || 1}x ${i?.name || "Dish"}`
+                            )
+                            .join(", ")
                         : "Special Order";
 
                     return (
@@ -450,7 +488,7 @@ export default function DashboardOverviewPage() {
                           {itemsSummary}
                         </td>
                         <td className="py-3 font-bold text-slate-900 dark:text-white font-mono">
-                          {formatCurrency(order.total, tenant?.currency || "INR")}
+                          {formatCurrency(order?.total, tenant?.currency || "INR")}
                         </td>
                         <td className="py-3 text-right pr-2">
                           {statusBadges[order.status as keyof typeof statusBadges] || (
@@ -479,7 +517,7 @@ export default function DashboardOverviewPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              {menuItems.length === 0 ? (
+              {safeMenuItems.length === 0 ? (
                 <div className="py-6 text-center text-xs text-slate-500">
                   <p>No dishes added to your catalog yet.</p>
                   <Link
@@ -490,7 +528,7 @@ export default function DashboardOverviewPage() {
                   </Link>
                 </div>
               ) : (
-                menuItems.slice(0, 4).map((dish) => (
+                safeMenuItems.slice(0, 4).map((dish) => (
                   <div
                     key={dish.id}
                     className="flex items-center justify-between text-xs py-1 border-b border-slate-100 dark:border-slate-800/40 last:border-0"
@@ -500,13 +538,14 @@ export default function DashboardOverviewPage() {
                       <p className="text-[10px] text-slate-500 dark:text-slate-400">{dish.category}</p>
                     </div>
                     <span className="font-bold text-slate-900 dark:text-white ml-2 font-mono">
-                      {formatCurrency(dish.price, tenant?.currency || "INR")}
+                      {formatCurrency(dish?.price, tenant?.currency || "INR")}
                     </span>
                   </div>
                 ))
               )}
             </CardContent>
           </Card>
+
 
           {/* Kitchen Station Telemetry */}
           <Card variant="glass">
@@ -560,13 +599,13 @@ export default function DashboardOverviewPage() {
             <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">
               Table / Location
             </label>
-            {tables.length > 0 ? (
+            {safeTables.length > 0 ? (
               <select
                 value={orderTable}
                 onChange={(e) => setOrderTable(e.target.value)}
                 className="w-full px-3 py-2 text-xs bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
               >
-                {tables.map((t) => (
+                {safeTables.map((t) => (
                   <option key={t.id} value={t.name}>
                     {t.name} ({t.zone})
                   </option>
