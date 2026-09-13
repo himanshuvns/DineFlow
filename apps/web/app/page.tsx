@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Pricing } from "@/components/ui/pricing";
 import AetherFlowHero from "@/components/ui/aether-flow-hero";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
@@ -221,99 +222,104 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section id="pricing" className="py-20 px-6 max-w-7xl mx-auto w-full">
-        <div className="text-center max-w-2xl mx-auto mb-16">
-          <Badge variant="warning" size="sm">Subscription Plans</Badge>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white mt-3">
-            Transparent pricing for every stage
-          </h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
-            Start free, upgrade as your table capacity and kitchen volume expands.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          {[
+      {/* Pricing Section with animated NumberFlow & Confetti */}
+      <section id="pricing" className="py-8 px-4 sm:px-6 max-w-7xl mx-auto w-full">
+        <Pricing
+          plans={[
             {
               name: "Free",
-              price: "₹0",
-              period: "/mo",
-              desc: "For small cafés & food trucks testing digital menus",
-              features: ["1 Location", "Up to 5 Tables", "Digital QR Menu", "Basic Order Log"],
-              cta: "Get Started Free",
-              highlight: false,
+              price: "0",
+              yearlyPrice: "0",
+              period: "month",
+              description: "For small cafés & food trucks testing digital menus",
+              features: [
+                "1 Location",
+                "Up to 5 Tables",
+                "Digital QR Menu",
+                "Basic Order Log",
+                "Zero commission on orders",
+              ],
+              buttonText: "Get Started Free",
+              href: "/register",
+              isPopular: false,
+              limits: {
+                tables: "5 Tables",
+                dishes: "30 Items",
+                staff: "2 Seats",
+              },
             },
             {
               name: "Starter",
-              price: "₹1,999",
-              period: "/mo",
-              desc: "For standalone diners & busy bistro restaurants",
-              features: ["Up to 15 Tables", "1 Kitchen KDS Screen", "WhatsApp Order Notifications", "Staff Roles (Waiters)", "Daily Sales Reports"],
-              cta: "Choose Starter",
-              highlight: false,
+              price: "1999",
+              yearlyPrice: "1599",
+              period: "month",
+              description: "For standalone diners & busy bistro restaurants",
+              features: [
+                "Up to 15 Tables",
+                "1 Kitchen KDS Screen",
+                "WhatsApp Order Notifications",
+                "Staff Roles (Waiters)",
+                "Daily Sales Reports",
+              ],
+              buttonText: "Choose Starter",
+              href: "/register",
+              isPopular: false,
+              limits: {
+                tables: "15 Tables",
+                dishes: "100 Items",
+                staff: "5 Seats",
+              },
             },
             {
               name: "Growth",
-              price: "₹4,999",
-              period: "/mo",
-              desc: "For high-volume restaurants & multi-station kitchens",
-              features: ["Unlimited Tables", "3 Multi-Station KDS Screens", "WhatsApp Marketing Campaigns", "Full Analytics & Export", "Priority Support 24/7"],
-              cta: "Most Popular",
-              highlight: true,
+              price: "4999",
+              yearlyPrice: "3999",
+              period: "month",
+              description: "For high-volume restaurants & multi-station kitchens",
+              features: [
+                "Unlimited Tables",
+                "3 Multi-Station KDS Screens",
+                "WhatsApp Marketing Campaigns",
+                "Full Analytics & Export",
+                "Priority Support 24/7",
+              ],
+              buttonText: "Get Started",
+              href: "/register",
+              isPopular: true,
+              limits: {
+                tables: "Unlimited",
+                dishes: "Unlimited",
+                staff: "25 Seats",
+              },
             },
             {
               name: "Hotel Pro",
-              price: "₹9,999",
-              period: "/mo",
-              desc: "For hotels, resorts, & multi-outlet dining",
-              features: ["Room QR Service & Poolside", "Multi-Brand Menus", "PMS Invoicing Integration", "Dedicated Success Manager", "Custom Domain & Branding"],
-              cta: "Contact Enterprise",
-              highlight: false,
+              price: "9999",
+              yearlyPrice: "7999",
+              period: "month",
+              description: "For hotels, resorts, & multi-outlet dining",
+              features: [
+                "Room QR Service & Poolside",
+                "Multi-Brand Menus",
+                "PMS Invoicing Integration",
+                "Dedicated Success Manager",
+                "Custom Domain & Branding",
+              ],
+              buttonText: "Contact Enterprise",
+              href: "/register",
+              isPopular: false,
+              limits: {
+                tables: "500+ Rooms",
+                dishes: "Unlimited",
+                staff: "Unlimited",
+              },
             },
-          ].map((plan, i) => (
-            <Card
-              key={i}
-              variant={plan.highlight ? "glow" : "glass"}
-              className={`flex flex-col justify-between ${
-                plan.highlight ? "border-emerald-500/40 relative shadow-emerald-500/10 shadow-2xl scale-105" : ""
-              }`}
-            >
-              <div>
-                {plan.highlight && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-emerald-500 text-slate-950 font-bold text-[10px] uppercase tracking-wider">
-                    Recommended
-                  </span>
-                )}
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">{plan.name}</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 h-8">{plan.desc}</p>
-                <div className="mt-4 mb-6">
-                  <span className="text-3xl font-black text-slate-900 dark:text-white">{plan.price}</span>
-                  <span className="text-xs text-slate-500 dark:text-slate-400">{plan.period}</span>
-                </div>
-                <div className="space-y-2.5 border-t border-slate-200 dark:border-slate-800 pt-4">
-                  {plan.features.map((feat, fi) => (
-                    <div key={fi} className="flex items-center gap-2 text-xs text-slate-700 dark:text-slate-300">
-                      <CheckCircle className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-                      <span>{feat}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="pt-6">
-                <Button
-                  variant={plan.highlight ? "glow" : "outline"}
-                  size="sm"
-                  className="w-full"
-                  asChild
-                >
-                  <Link href="/register">{plan.cta}</Link>
-                </Button>
-              </div>
-            </Card>
-          ))}
-        </div>
+          ]}
+          title="Transparent pricing for every stage"
+          description={"Start free, upgrade as your table capacity and kitchen volume expands.\nAll plans include access to our contactless QR portal and 24/7 hospitality support."}
+          currency="INR"
+          currencySymbol="₹"
+        />
       </section>
 
       {/* Footer */}

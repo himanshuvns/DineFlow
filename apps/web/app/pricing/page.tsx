@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Modal } from "@/components/ui/modal";
+import { Pricing, PricingPlan } from "@/components/ui/pricing";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { useToast } from "@/components/ui/toast";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -208,142 +209,35 @@ export default function PricingPage() {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="py-16 px-6 text-center max-w-4xl mx-auto space-y-6">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-semibold">
-          <Sparkles className="h-3.5 w-3.5" /> Transparent Hospitality Pricing
-        </div>
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
-          One system for restaurants, cafes & <span className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 dark:from-emerald-400 dark:via-teal-300 dark:to-cyan-400 bg-clip-text text-transparent">luxury resorts</span>
-        </h1>
-        <p className="text-slate-600 dark:text-slate-400 text-base sm:text-lg max-w-2xl mx-auto">
-          Scale effortlessly from a single table to 500 rooms. Zero commission fees on customer orders. Every plan protected by our 14-day zero-disruption guarantee.
-        </p>
-
-        {/* Monthly / Annual Billing Switcher */}
-        <div className="pt-4 flex items-center justify-center gap-4">
-          <span className={`text-sm font-medium ${!isAnnual ? "text-slate-900 dark:text-white font-bold" : "text-slate-600 dark:text-slate-400"}`}>
-            Monthly Billing
-          </span>
-          <button
-            onClick={() => setIsAnnual(!isAnnual)}
-            className="relative w-14 h-7 bg-slate-200 dark:bg-slate-800 rounded-full p-1 border border-slate-300 dark:border-slate-700 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-            role="switch"
-            aria-checked={isAnnual}
-          >
-            <div
-              className={`w-5 h-5 bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full shadow-md transform transition-transform ${
-                isAnnual ? "translate-x-7" : "translate-x-0"
-              }`}
-            />
-          </button>
-          <div className="flex items-center gap-2">
-            <span className={`text-sm font-medium ${isAnnual ? "text-slate-900 dark:text-white font-bold" : "text-slate-600 dark:text-slate-400"}`}>
-              Annual Billing
-            </span>
-            <Badge variant="glow" size="sm" className="bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border-emerald-500/40 font-bold">
-              SAVE 20% + 2 MO FREE
-            </Badge>
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing Cards Grid */}
-      <section className="px-6 pb-20 max-w-7xl mx-auto w-full">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {PLANS.map((plan) => {
-            const price = isAnnual ? plan.annualMonthlyPrice : plan.monthlyPrice;
-            const isCurrent = tenant?.plan === plan.id;
-
-            return (
-              <div
-                key={plan.id}
-                className={`relative rounded-2xl p-6 flex flex-col justify-between transition-all duration-300 bg-white dark:bg-slate-900/60 backdrop-blur-xl border ${
-                  plan.popular
-                    ? "border-emerald-500/50 shadow-xl shadow-emerald-500/10 ring-1 ring-emerald-500/50"
-                    : plan.hotelSpecial
-                    ? "border-amber-500/40 shadow-xl shadow-amber-500/10"
-                    : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
-                }`}
-              >
-                {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="px-3 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 shadow-md">
-                      Most Popular
-                    </span>
-                  </div>
-                )}
-                {plan.hotelSpecial && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="px-3 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-gradient-to-r from-amber-400 to-orange-400 text-slate-950 shadow-md flex items-center gap-1">
-                      <Hotel className="h-3 w-3" /> Resorts & Hotels
-                    </span>
-                  </div>
-                )}
-
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">{plan.name}</h3>
-                    {isCurrent && (
-                      <Badge variant="success" size="sm">Current Plan</Badge>
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-600 dark:text-slate-400 min-h-[32px]">{plan.tagline}</p>
-
-                  <div className="my-6">
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white">
-                        ₹{price.toLocaleString("en-IN")}
-                      </span>
-                      <span className="text-xs text-slate-500 dark:text-slate-400">/month</span>
-                    </div>
-                    {isAnnual && plan.monthlyPrice > 0 && (
-                      <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold mt-1">
-                        Billed annually (₹{(price * 12).toLocaleString("en-IN")}/yr)
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Resource capacities */}
-                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 space-y-1.5 mb-6 text-xs">
-                    <div className="flex justify-between text-slate-700 dark:text-slate-300">
-                      <span className="text-slate-500 dark:text-slate-400">Tables/Rooms:</span>
-                      <span className="font-semibold text-slate-900 dark:text-white">{plan.limits.tables}</span>
-                    </div>
-                    <div className="flex justify-between text-slate-700 dark:text-slate-300">
-                      <span className="text-slate-500 dark:text-slate-400">Dishes:</span>
-                      <span className="font-semibold text-slate-900 dark:text-white">{plan.limits.dishes}</span>
-                    </div>
-                    <div className="flex justify-between text-slate-700 dark:text-slate-300">
-                      <span className="text-slate-500 dark:text-slate-400">Staff Seats:</span>
-                      <span className="font-semibold text-slate-900 dark:text-white">{plan.limits.staff}</span>
-                    </div>
-                  </div>
-
-                  {/* Feature Checklist */}
-                  <div className="space-y-2.5 mb-8">
-                    {plan.features.map((feat, idx) => (
-                      <div key={idx} className="flex items-start gap-2.5 text-xs text-slate-700 dark:text-slate-300">
-                        <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-                        <span>{feat}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <Button
-                  variant={plan.popular ? "glow" : plan.hotelSpecial ? "primary" : "outline"}
-                  size="md"
-                  className="w-full justify-center"
-                  onClick={() => handleSelectPlan(plan)}
-                  disabled={isCurrent}
-                >
-                  {isCurrent ? "Active Plan" : plan.monthlyPrice === 0 ? "Get Started Free" : `Choose ${plan.name}`}
-                </Button>
-              </div>
-            );
-          })}
-        </div>
+      {/* Pricing Section using animated Pricing Component */}
+      <section className="px-4 sm:px-6 pb-12 max-w-7xl mx-auto w-full">
+        <Pricing
+          plans={PLANS.map((plan) => ({
+            name: plan.name,
+            price: plan.monthlyPrice.toString(),
+            yearlyPrice: plan.annualMonthlyPrice.toString(),
+            period: "month",
+            features: plan.features,
+            description: plan.tagline,
+            buttonText:
+              tenant?.plan === plan.id
+                ? "Active Plan"
+                : plan.monthlyPrice === 0
+                ? "Get Started Free"
+                : `Choose ${plan.name}`,
+            href: "/register",
+            isPopular: !!plan.popular,
+            limits: plan.limits,
+          }))}
+          title="One system for restaurants, cafes & luxury resorts"
+          description={"Scale effortlessly from a single table to 500 rooms. Zero commission fees on customer orders.\nEvery plan protected by our 14-day zero-disruption guarantee."}
+          currency="INR"
+          currencySymbol="₹"
+          onSelectPlan={(plan) => {
+            const matched = PLANS.find((p) => p.name === plan.name);
+            if (matched) handleSelectPlan(matched);
+          }}
+        />
       </section>
 
       {/* 14-Day Grace Period Protection Banner */}
