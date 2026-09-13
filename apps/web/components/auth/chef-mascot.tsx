@@ -15,6 +15,8 @@ export function ChefMascot({
   showBadge = false,
 }: ChefMascotProps) {
   const [internalPasswordFocus, setInternalPasswordFocus] = React.useState(false);
+  const [isHovered, setIsHovered] = React.useState(false);
+  const [isClicked, setIsClicked] = React.useState(false);
 
   // Listen for global custom events from password fields
   React.useEffect(() => {
@@ -32,13 +34,51 @@ export function ChefMascot({
 
   const isClosed = controlledPasswordFocus ?? internalPasswordFocus;
 
+  const handleClick = () => {
+    setIsClicked(true);
+    setTimeout(() => setIsClicked(false), 500);
+  };
+
   return (
     <div
       className={cn("flex flex-col items-center select-none relative", className)}
       aria-hidden="true"
     >
+      {/* Interactive Speech Bubble Tooltip on Hover */}
+      <div
+        className={cn(
+          "absolute -top-10 z-40 px-3 py-1.5 rounded-xl text-xs font-semibold backdrop-blur-md shadow-lg transition-all duration-300 pointer-events-none",
+          "bg-white/95 dark:bg-slate-900/90 border border-slate-200 dark:border-white/15 text-slate-800 dark:text-white",
+          isHovered
+            ? "opacity-100 -translate-y-1 scale-100 shadow-[0_8px_20px_rgba(20,241,199,0.3)]"
+            : "opacity-0 translate-y-2 scale-95"
+        )}
+      >
+        {isClosed ? (
+          <span className="flex items-center gap-1.5">
+            <span>🙈</span>
+            <span>Eyes closed! Your password is secure</span>
+          </span>
+        ) : (
+          <span className="flex items-center gap-1.5">
+            <span>👨‍🍳</span>
+            <span>Chef Antonio • Ready to serve!</span>
+            <span className="text-emerald-500">✨</span>
+          </span>
+        )}
+        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 rotate-45 bg-white/95 dark:bg-slate-900/90 border-r border-b border-slate-200 dark:border-white/15" />
+      </div>
+
       {/* 3D Chef Character Stage: Rock-solid anchored on counter (zero translation jump) */}
-      <div className="relative w-[260px] sm:w-[290px] lg:w-[310px] aspect-[400/500]">
+      <div
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        onClick={handleClick}
+        className={cn(
+          "relative w-[260px] sm:w-[290px] lg:w-[310px] aspect-[400/500] cursor-pointer transition-transform duration-300",
+          isClicked ? "scale-95" : isHovered ? "scale-[1.02]" : "scale-100"
+        )}
+      >
         {/* Soft Ambient Counter Drop Shadow */}
         <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4/5 h-6 bg-black/40 dark:bg-black/70 blur-md rounded-full pointer-events-none" />
 
