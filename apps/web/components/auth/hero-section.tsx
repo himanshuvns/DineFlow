@@ -3,7 +3,6 @@
 import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { motion } from "framer-motion";
 import {
   UtensilsCrossed,
   Sparkles,
@@ -14,6 +13,7 @@ import {
 } from "lucide-react";
 import { ChefMascot } from "./chef-mascot";
 import { FloatingCard } from "./floating-card";
+import { RevolvingFoodOrbit } from "./revolving-food-orbit";
 
 interface HeroSectionProps {
   isPasswordFocused?: boolean;
@@ -43,35 +43,6 @@ export function HeroSection({ isPasswordFocused = false }: HeroSectionProps) {
             backgroundSize: "28px 28px",
           }}
         />
-
-        {/* Ambient floating micro-particles */}
-        {[
-          { x: "18%", y: "22%", size: 3, duration: 6, delay: 0 },
-          { x: "82%", y: "15%", size: 2.5, duration: 7, delay: 1.5 },
-          { x: "35%", y: "65%", size: 2, duration: 5.5, delay: 0.8 },
-          { x: "70%", y: "78%", size: 3.5, duration: 8, delay: 2 },
-        ].map((pt, i) => (
-          <motion.div
-            key={i}
-            className="absolute rounded-full bg-emerald-500/35 dark:bg-[#14F1C7]/40 blur-[0.5px]"
-            style={{
-              left: pt.x,
-              top: pt.y,
-              width: pt.size,
-              height: pt.size,
-            }}
-            animate={{
-              y: [0, -16, 0],
-              opacity: [0.25, 0.75, 0.25],
-            }}
-            transition={{
-              duration: pt.duration,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: pt.delay,
-            }}
-          />
-        ))}
       </div>
 
       {/* ======================================================== */}
@@ -101,8 +72,8 @@ export function HeroSection({ isPasswordFocused = false }: HeroSectionProps) {
         {/* ======================================================== */}
         {/* HERO HEADLINE & VALUE PROP                               */}
         {/* ======================================================== */}
-        <div className="mt-5 sm:mt-7 max-w-xl">
-          <h1 className="text-3xl sm:text-4xl lg:text-[42px] xl:text-[48px] font-display font-extrabold text-slate-900 dark:text-white tracking-tight leading-[1.1]">
+        <div className="mt-4 sm:mt-6 max-w-xl">
+          <h1 className="text-3xl sm:text-4xl lg:text-[40px] xl:text-[46px] font-display font-extrabold text-slate-900 dark:text-white tracking-tight leading-[1.1]">
             Run Your Restaurant.
             <br />
             <span className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 dark:from-[#14F1C7] dark:via-[#00E5B8] dark:to-emerald-400 bg-clip-text text-transparent glow-teal-text">
@@ -110,97 +81,80 @@ export function HeroSection({ isPasswordFocused = false }: HeroSectionProps) {
             </span>
           </h1>
 
-          <p className="mt-2.5 text-[14px] sm:text-[15px] font-body text-slate-600 dark:text-[#94A3B8] leading-relaxed max-w-lg">
+          <p className="mt-2 text-[13.5px] sm:text-[14.5px] font-body text-slate-600 dark:text-[#94A3B8] leading-relaxed max-w-lg">
             Everything you need to run a modern restaurant — from QR menus to
             kitchen operations, powered by smart technology.
           </p>
         </div>
-
-        {/* ======================================================== */}
-        {/* FEATURE CARDS (GLASSMORPHISM WITH HOVER GLOW)            */}
-        {/* ======================================================== */}
-        <div className="mt-4 sm:mt-5 grid grid-cols-1 sm:grid-cols-3 gap-2.5 max-w-2xl">
-          {/* Card 1: QR Menus */}
-          <div className="group relative rounded-2xl p-3 bg-white/80 dark:bg-slate-900/55 backdrop-blur-xl border border-slate-200/90 dark:border-white/10 hover:border-emerald-500/40 dark:hover:border-[#14F1C7]/40 hover:bg-white dark:hover:bg-slate-900/75 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(16,185,129,0.15)] dark:hover:shadow-[0_8px_25px_rgba(20,241,199,0.2)]">
-            <div className="flex items-center gap-2.5">
-              <div className="h-8 w-8 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center shrink-0 text-emerald-600 dark:text-[#14F1C7] group-hover:scale-110 transition-transform">
-                <QrCode className="h-4 w-4" />
-              </div>
-              <div className="min-w-0">
-                <h4 className="text-xs font-bold text-slate-900 dark:text-white tracking-tight truncate">
-                  QR Menus
-                </h4>
-                <p className="text-[10.5px] text-slate-500 dark:text-slate-400 truncate">
-                  Contactless dining
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 2: WhatsApp Orders */}
-          <div className="group relative rounded-2xl p-3 bg-white/80 dark:bg-slate-900/55 backdrop-blur-xl border border-slate-200/90 dark:border-white/10 hover:border-emerald-500/40 dark:hover:border-[#14F1C7]/40 hover:bg-white dark:hover:bg-slate-900/75 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(16,185,129,0.15)] dark:hover:shadow-[0_8px_25px_rgba(20,241,199,0.2)]">
-            <div className="flex items-center gap-2.5">
-              <div className="h-8 w-8 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center shrink-0 text-emerald-600 dark:text-[#14F1C7] group-hover:scale-110 transition-transform">
-                <MessageSquare className="h-4 w-4" />
-              </div>
-              <div className="min-w-0">
-                <h4 className="text-xs font-bold text-slate-900 dark:text-white tracking-tight truncate">
-                  WhatsApp Orders
-                </h4>
-                <p className="text-[10.5px] text-slate-500 dark:text-slate-400 truncate">
-                  More sales, less effort
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 3: Live Kitchen Display */}
-          <div className="group relative rounded-2xl p-3 bg-white/80 dark:bg-slate-900/55 backdrop-blur-xl border border-slate-200/90 dark:border-white/10 hover:border-emerald-500/40 dark:hover:border-[#14F1C7]/40 hover:bg-white dark:hover:bg-slate-900/75 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(16,185,129,0.15)] dark:hover:shadow-[0_8px_25px_rgba(20,241,199,0.2)]">
-            <div className="flex items-center gap-2.5">
-              <div className="h-8 w-8 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center shrink-0 text-emerald-600 dark:text-[#14F1C7] group-hover:scale-110 transition-transform">
-                <ChefHat className="h-4 w-4" />
-              </div>
-              <div className="min-w-0">
-                <h4 className="text-xs font-bold text-slate-900 dark:text-white tracking-tight truncate">
-                  Live Kitchen Display
-                </h4>
-                <p className="text-[10.5px] text-slate-500 dark:text-slate-400 truncate">
-                  Real-time operations
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* ======================================================== */}
-      {/* MASCOT AREA & FLOATING UI CARDS                          */}
+      {/* MASCOT AREA: CHEF + REVOLVING FOOD ORBIT + 4 CARDS       */}
       {/* ======================================================== */}
       <div className="relative z-10 my-auto py-2 flex flex-col items-center justify-center">
         {/* Subtle Kitchen Counter Surface Glow behind chef */}
-        <div className="absolute bottom-3 w-[80%] max-w-[440px] h-10 bg-gradient-to-r from-transparent via-emerald-500/15 dark:via-[#14F1C7]/15 to-transparent blur-xl pointer-events-none" />
+        <div className="absolute bottom-4 w-[85%] max-w-[480px] h-12 bg-gradient-to-r from-transparent via-emerald-500/15 dark:via-[#14F1C7]/15 to-transparent blur-xl pointer-events-none" />
 
-        <div className="relative flex items-center justify-center w-full max-w-lg">
-          {/* Chef Mascot (Rock-solid seated, zero position jump) */}
-          <ChefMascot isPasswordFocused={isPasswordFocused} />
+        <div className="relative flex items-center justify-center w-full max-w-xl min-h-[380px] sm:min-h-[400px]">
+          {/* 1. Revolving Food Orbit (Pizza, Burger, Fries, Sushi, Taco, Coffee, Croissant, Ramen) */}
+          <RevolvingFoodOrbit radius={175} duration={48} direction={1} />
 
-          {/* FLOATING CARD 1: Table 4 / Pasta Arrabbiata (Top-Right of Chef) */}
-          <div className="absolute -top-2 right-2 sm:right-6 lg:-right-2 z-30 pointer-events-auto">
+          {/* 2. Chef Mascot (Centered, Rock-solid seated, zero position jump) */}
+          <div className="relative z-10">
+            <ChefMascot isPasswordFocused={isPasswordFocused} />
+          </div>
+
+          {/* ==================================================== */}
+          {/* FLOATING CARD 1: QR MENUS (Top-Left of Chef)         */}
+          {/* ==================================================== */}
+          <div className="absolute -top-3 left-0 sm:left-2 lg:-left-4 z-30 pointer-events-auto">
             <FloatingCard
-              delay={0.2}
-              duration={5.2}
+              delay={0.1}
+              duration={5.0}
+              floatY={7}
+              rotateDeg={-1.5}
+              className="w-[165px] sm:w-[185px]"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="h-8 w-8 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center shrink-0 text-emerald-600 dark:text-[#14F1C7]">
+                  <QrCode className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-900 dark:text-white tracking-tight">
+                      QR Menus
+                    </span>
+                    <span className="px-1 py-0.2 rounded bg-emerald-500/15 text-[9px] font-bold text-emerald-600 dark:text-[#14F1C7]">
+                      Live
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                    Contactless dining
+                  </p>
+                </div>
+              </div>
+            </FloatingCard>
+          </div>
+
+          {/* ==================================================== */}
+          {/* FLOATING CARD 2: TABLE 4 PASTA (Top-Right of Chef)   */}
+          {/* ==================================================== */}
+          <div className="absolute -top-2 right-0 sm:right-2 lg:-right-4 z-30 pointer-events-auto">
+            <FloatingCard
+              delay={0.5}
+              duration={5.4}
               floatY={8}
-              rotateDeg={1.2}
-              className="w-[185px] sm:w-[210px]"
+              rotateDeg={1.5}
+              className="w-[175px] sm:w-[195px]"
             >
               <div className="flex items-start gap-2.5">
                 {/* Pasta Dish Thumbnail */}
-                <div className="relative h-11 w-11 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/15 shrink-0 shadow-sm">
+                <div className="relative h-10 w-10 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/15 shrink-0 shadow-sm">
                   <Image
                     src="/images/pasta-dish.png"
                     alt="Pasta Arrabbiata"
-                    width={44}
-                    height={44}
+                    width={40}
+                    height={40}
                     className="h-full w-full object-cover"
                     priority
                   />
@@ -215,12 +169,12 @@ export function HeroSection({ isPasswordFocused = false }: HeroSectionProps) {
                       2×
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-600 dark:text-slate-300 truncate mt-0.5 font-medium">
+                  <p className="text-[10.5px] text-slate-600 dark:text-slate-300 truncate font-medium">
                     Pasta Arrabbiata
                   </p>
 
                   {/* Teal Progress Bar */}
-                  <div className="mt-2 w-full bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                  <div className="mt-1.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
                     <div className="bg-gradient-to-r from-emerald-500 to-teal-400 dark:from-[#14F1C7] dark:to-emerald-400 h-full w-[75%] rounded-full shadow-[0_0_8px_rgba(20,241,199,0.6)]" />
                   </div>
                 </div>
@@ -228,14 +182,48 @@ export function HeroSection({ isPasswordFocused = false }: HeroSectionProps) {
             </FloatingCard>
           </div>
 
-          {/* FLOATING CARD 2: New WhatsApp Order (Bottom-Right of Chef) */}
-          <div className="absolute bottom-4 right-3 sm:right-8 lg:right-0 z-30 pointer-events-auto">
+          {/* ==================================================== */}
+          {/* FLOATING CARD 3: LIVE KITCHEN DISPLAY (Bottom-Left)  */}
+          {/* ==================================================== */}
+          <div className="absolute bottom-5 left-0 sm:left-2 lg:-left-6 z-30 pointer-events-auto">
             <FloatingCard
-              delay={1.2}
+              delay={1.0}
+              duration={4.8}
+              floatY={7}
+              rotateDeg={-1.2}
+              className="w-[170px] sm:w-[190px]"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="h-8 w-8 rounded-xl bg-amber-500/15 dark:bg-amber-500/20 border border-amber-500/30 flex items-center justify-center shrink-0 text-amber-600 dark:text-amber-400">
+                  <ChefHat className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-900 dark:text-white tracking-tight">
+                      Live KDS
+                    </span>
+                    <span className="px-1.5 py-0.2 rounded bg-amber-500/15 text-[9px] font-bold text-amber-600 dark:text-amber-400">
+                      Prep: 3m
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                    Real-time tickets
+                  </p>
+                </div>
+              </div>
+            </FloatingCard>
+          </div>
+
+          {/* ==================================================== */}
+          {/* FLOATING CARD 4: WHATSAPP ORDERS (Bottom-Right)      */}
+          {/* ==================================================== */}
+          <div className="absolute bottom-6 right-0 sm:right-2 lg:-right-6 z-30 pointer-events-auto">
+            <FloatingCard
+              delay={1.4}
               duration={4.6}
               floatY={6}
-              rotateDeg={-1.2}
-              className="w-[175px] sm:w-[195px]"
+              rotateDeg={1.3}
+              className="w-[165px] sm:w-[185px]"
             >
               <div className="flex items-center justify-between gap-2.5">
                 <div className="flex items-center gap-2">
@@ -244,16 +232,16 @@ export function HeroSection({ isPasswordFocused = false }: HeroSectionProps) {
                   </div>
                   <div>
                     <h5 className="text-xs font-bold text-slate-900 dark:text-white tracking-tight">
-                      New Order
+                      WhatsApp
                     </h5>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400">via WhatsApp</p>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400">New Order</p>
                   </div>
                 </div>
 
                 {/* Live pulsing indicator dot */}
                 <div className="relative flex h-2 w-2 shrink-0">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#25D366] opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#25D366]" />
                 </div>
               </div>
             </FloatingCard>
