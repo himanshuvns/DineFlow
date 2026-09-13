@@ -240,6 +240,15 @@ export function CameraMenuScannerModal({
           onExtracted(data.items);
           return;
         }
+      } else {
+        let errDetail = `HTTP ${response.status}`;
+        try {
+          const errData = await response.json();
+          errDetail = errData.details || errData.error || errDetail;
+        } catch { /* ignore */ }
+        setIsAnalyzing(false);
+        addToast("error", "AI Extraction Failed", `Gemini API error: ${errDetail}`);
+        return;
       }
     } catch (err) {
       console.warn("Vision API scan failed:", err);
