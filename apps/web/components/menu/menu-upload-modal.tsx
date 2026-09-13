@@ -211,14 +211,23 @@ export function MenuUploadModal({
         }
       }
     } catch (err) {
-      console.warn("Upload Vision API error, using NLP fallback:", err);
+      console.warn("Upload Vision API error:", err);
+      setIsProcessing(false);
+      addToast(
+        "error",
+        "Extraction Failed",
+        "Could not connect to Gemini Vision AI. Please check your internet connection and try again."
+      );
+      return;
     }
 
-    // Fallback if network or endpoint fails
-    const fallbackParsed = parseMenuOcrText(SAMPLE_INDIAN_MENU_OCR, existingItems);
+    // Gemini returned 0 items — show error instead of fake fallback
     setIsProcessing(false);
-    onClose();
-    onExtracted(fallbackParsed);
+    addToast(
+      "error",
+      "No Items Detected",
+      "AI could not read menu items from this image. Try a clearer photo or higher resolution image."
+    );
   };
 
   return (

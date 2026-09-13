@@ -19,7 +19,7 @@ import {
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
-import { parseMenuOcrText, ParsedMenuItem } from "@/lib/utils/menu-nlp-engine";
+import type { ParsedMenuItem } from "@/lib/utils/menu-nlp-engine";
 import type { MenuItem } from "@/lib/stores/tenant-data-store";
 
 interface CameraMenuScannerModalProps {
@@ -242,50 +242,23 @@ export function CameraMenuScannerModal({
         }
       }
     } catch (err) {
-      console.warn("Vision API scan failed, falling back to local NLP engine:", err);
+      console.warn("Vision API scan failed:", err);
+      setIsAnalyzing(false);
+      addToast(
+        "error",
+        "AI Extraction Failed",
+        "Could not connect to Gemini Vision AI. Please check your connection and try again."
+      );
+      return;
     }
 
-    // Fallback if vision route fails or is offline
-    const sampleMenuOcr = `
-NORTH INDIAN & TANDOORI SPECIALS
-Paneer Butter Masla ₹280 (V)
-Dal Makhani 240/-
-Kadhai Panner Rs. 290
-Butter Chiken ₹360 (NV)
-Chicken Curry Home Style 340
-Butter Garlic Naan 75/-
-Tandoori Roti 35
-Panner Tikka ₹290
-
-SOUTH INDIAN SIGNATURES
-Masala Dosai ₹150
-Mysore Masala Dosa 170/-
-Onion Tomato Uttapam Rs. 160
-Steamed Idli (2 Pcs) 90/-
-Medu Vada 110
-
-BIRYANI & RICE
-Hyderabadi Dum Chicken Biryani ₹340 (NV)
-Royal Veg Dum Biryani 260
-Lemon Rice 140
-
-STREET CORNER
-Pani Puri (6 Pcs) ₹60
-Pav Bhaji 150/-
-Vada Pav 45/-
-Paneer Kathi Roll 160
-
-DESSERTS & DRINKS
-Warm Gulab Jamun ₹80
-Kesari Rasmalai 110/-
-Masala Chai 40/-
-Punjabi Sweet Lassi 90
-    `;
-
-    const parsed = parseMenuOcrText(sampleMenuOcr, existingItems);
+    // Gemini returned 0 items — guide user to retry
     setIsAnalyzing(false);
-    onClose();
-    onExtracted(parsed);
+    addToast(
+      "error",
+      "No Items Detected",
+      "AI could not read menu items from this photo. Try better lighting or a clearer shot."
+    );
   };
 
   return (

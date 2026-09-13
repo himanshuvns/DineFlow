@@ -89,11 +89,11 @@ Critical Instructions:
             ],
             generationConfig: {
               temperature: 0.1,
-              maxOutputTokens: 8192,
+              maxOutputTokens: 16384,
             },
           };
 
-          const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${geminiKey}`;
+          const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${geminiKey}`;
           const gemResp = await fetch(endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
