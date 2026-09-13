@@ -2,7 +2,7 @@
   "name": "dineflow",
   "version": "0.1.0",
   "private": true,
-  "description": "DineFlow — Multi-tenant SaaS platform for restaurants, cafés, hotels, and cloud kitchens",
+  "description": "DineFlow \u2014 Multi-tenant SaaS platform for restaurants, caf\u00e9s, hotels, and cloud kitchens",
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
@@ -19,5 +19,5 @@
   "engines": {
     "node": ">=20.0.0"
   },
-  "packageManager": "pnpm@9.15.4"
+  "packageManager": "pnpm@8.15.9"
 }
