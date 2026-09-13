@@ -209,6 +209,16 @@ export function MenuUploadModal({
           onExtracted(data.items);
           return;
         }
+      } else {
+        // Surface the real API error from the response
+        let errDetail = `HTTP ${res.status}`;
+        try {
+          const errData = await res.json();
+          errDetail = errData.details || errData.error || errDetail;
+        } catch { /* ignore */ }
+        setIsProcessing(false);
+        addToast("error", "AI Extraction Failed", `Gemini API error: ${errDetail}`);
+        return;
       }
     } catch (err) {
       console.warn("Upload Vision API error:", err);

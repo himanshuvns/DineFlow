@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { enrichRawExtractedItems, parseMenuOcrText, ParsedMenuItem } from "@/lib/utils/menu-nlp-engine";
+import { enrichRawExtractedItems, parseMenuOcrText } from "@/lib/utils/menu-nlp-engine";
 import type { MenuItem } from "@/lib/stores/tenant-data-store";
 
-export const maxDuration = 60; // Allow up to 60s for multimodal vision OCR
+export const maxDuration = 60;
 
 interface ScanMenuRequestBody {
   imageBase64?: string;
@@ -11,147 +11,165 @@ interface ScanMenuRequestBody {
   existingItems?: MenuItem[];
 }
 
+// Ordered fallback chain — stops at first successful model
+const GEMINI_MODELS = [
+  "gemini-2.0-flash",
+  "gemini-2.0-flash-lite",
+  "gemini-1.5-flash",
+  "gemini-1.5-flash-8b",
+];
+
+const MENU_PROMPT = `You are an expert restaurant menu digitizer.
+Analyze this menu image and extract EVERY single food/drink item across ALL columns and sections.
+Return ONLY a valid JSON array — no markdown fences, no extra text:
+[
+  {
+    "name": "Item name in English",
+    "hindiName": "optional Hindi name in Devanagari",
+    "category": "Exact category heading from menu (Coffee, Tea & More, Cold Drinks, Breakfast, Sandwiches, Salads, Snacks & Bites, Desserts, North Indian, South Indian, Biryani, Beverages, etc.)",
+    "price": 140,
+    "isVeg": true,
+    "description": "Short appetizing description",
+    "spicyLevel": 1
+  }
+]
+Rules:
+1. Scan ALL columns top-to-bottom, left-to-right. Do NOT miss any section.
+2. Extract EVERY item — never truncate.
+3. Use the EXACT category name printed in the menu.
+4. Set price to 0 if not visible.
+5. Output ONLY the raw JSON array, nothing else.`;
+
+type RawMenuItem = {
+  name: string;
+  hindiName?: string;
+  category?: string;
+  price?: number;
+  isVeg?: boolean;
+  description?: string;
+  spicyLevel?: number;
+};
+
+async function callGeminiVision(
+  model: string,
+  apiKey: string,
+  mimeType: string,
+  base64Data: string
+): Promise<{ ok: boolean; items: RawMenuItem[]; error?: string }> {
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+  const resp = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [
+        {
+          parts: [
+            { text: MENU_PROMPT },
+            { inline_data: { mime_type: mimeType, data: base64Data } },
+          ],
+        },
+      ],
+      generationConfig: { temperature: 0.1, maxOutputTokens: 16384 },
+    }),
+  });
+
+  if (!resp.ok) {
+    const errBody = await resp.text();
+    console.error(`[scan] ${model} HTTP ${resp.status}:`, errBody.slice(0, 400));
+    return { ok: false, items: [], error: `${model}: HTTP ${resp.status} — ${errBody.slice(0, 200)}` };
+  }
+
+  const data = await resp.json();
+  let text: string = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? "";
+
+  if (!text) {
+    const reason = data?.candidates?.[0]?.finishReason ?? "unknown";
+    console.warn(`[scan] ${model} empty response, finishReason: ${reason}`);
+    return { ok: false, items: [], error: `${model}: empty response (finishReason=${reason})` };
+  }
+
+  // Strip markdown fences
+  text = text.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/i, "").trim();
+
+  // Extract array even if surrounded by extra text
+  const s = text.indexOf("[");
+  const e = text.lastIndexOf("]");
+  if (s === -1 || e === -1 || e < s) {
+    console.warn(`[scan] ${model} no JSON array found:`, text.slice(0, 200));
+    return { ok: false, items: [], error: `${model}: no JSON array in response` };
+  }
+
+  try {
+    const parsed = JSON.parse(text.slice(s, e + 1)) as RawMenuItem[];
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      console.log(`[scan] ${model} ✓ ${parsed.length} items`);
+      return { ok: true, items: parsed };
+    }
+    return { ok: false, items: [], error: `${model}: parsed array empty` };
+  } catch (err) {
+    console.error(`[scan] ${model} JSON parse error:`, err);
+    return { ok: false, items: [], error: `${model}: JSON parse failed` };
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as ScanMenuRequestBody;
     const { imageBase64, imagesBase64, rawText, existingItems = [] } = body;
 
     const geminiKey = process.env.GEMINI_API_KEY;
+    console.log("[scan] key present:", !!geminiKey, "len:", geminiKey?.length ?? 0);
 
-    // Collect images to process
     const imagesToProcess: string[] = [];
     if (imageBase64) imagesToProcess.push(imageBase64);
-    if (imagesBase64 && Array.isArray(imagesBase64)) {
-      imagesToProcess.push(...imagesBase64.filter(Boolean));
-    }
+    if (imagesBase64 && Array.isArray(imagesBase64)) imagesToProcess.push(...imagesBase64.filter(Boolean));
+    console.log("[scan] images:", imagesToProcess.length);
 
-    // If Gemini key is available and images are provided, perform real Multimodal Vision OCR
     if (geminiKey && imagesToProcess.length > 0) {
-      try {
-        const extractedAll: Array<{
-          name: string;
-          hindiName?: string;
-          category?: string;
-          price?: number;
-          isVeg?: boolean;
-          description?: string;
-          spicyLevel?: number;
-        }> = [];
+      const extractedAll: RawMenuItem[] = [];
+      const allErrors: string[] = [];
 
-        // Prompt tailored for Indian restaurant multi-column menus
-        const prompt = `You are an expert Indian restaurant menu digitizer.
-Analyze this restaurant menu image and extract EVERY single food item across all columns and sections.
-Return ONLY a valid JSON array of objects with this schema:
-[
-  {
-    "name": "Dish Name in English",
-    "hindiName": "Dish Name in Hindi Devanagari script",
-    "category": "Category name from menu (e.g. Breakfast, South Indian, Street Food, North Indian, Biryani, Indian Chinese, Snacks, Pizza, Burgers, Beverages, Desserts)",
-    "price": 280,
-    "isVeg": true,
-    "description": "Short appetizing description",
-    "spicyLevel": 1
-  }
-]
-Critical Instructions:
-1. Scan all columns thoroughly from top to bottom, left to right.
-2. Do not stop early or truncate the list. Extract EVERY single item listed on the menu.
-3. If an item has no printed price (such as unpriced burgers or ice cream), set "price": 0 so the owner can enter it manually.
-4. Green dot/box indicates vegetarian (isVeg: true). Red/brown dot/box indicates non-vegetarian (isVeg: false).
-5. Output ONLY the raw JSON array. Do not include markdown code fences or conversational text.`;
-
-        for (const rawImg of imagesToProcess) {
-          // Clean base64 string
-          let mimeType = "image/jpeg";
-          let cleanB64 = rawImg;
-
-          if (rawImg.startsWith("data:")) {
-            const match = rawImg.match(/^data:([^;]+);base64,(.+)$/);
-            if (match) {
-              mimeType = match[1];
-              cleanB64 = match[2];
-            }
-          }
-
-          const payload = {
-            contents: [
-              {
-                parts: [
-                  { text: prompt },
-                  {
-                    inline_data: {
-                      mime_type: mimeType,
-                      data: cleanB64,
-                    },
-                  },
-                ],
-              },
-            ],
-            generationConfig: {
-              temperature: 0.1,
-              maxOutputTokens: 16384,
-            },
-          };
-
-          const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${geminiKey}`;
-          const gemResp = await fetch(endpoint, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          });
-
-          if (!gemResp.ok) {
-            const errText = await gemResp.text();
-            console.error("Gemini Vision API error:", gemResp.status, errText);
-            continue;
-          }
-
-          const data = await gemResp.json();
-          let text = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
-
-          if (text.startsWith("```json")) text = text.slice(7);
-          if (text.startsWith("```")) text = text.slice(3);
-          if (text.endsWith("```")) text = text.slice(0, -3);
-
-          try {
-            const parsedArray = JSON.parse(text.trim());
-            if (Array.isArray(parsedArray)) {
-              extractedAll.push(...parsedArray);
-            }
-          } catch (jsonErr) {
-            console.error("Failed to parse Gemini output JSON:", jsonErr, text);
-          }
+      for (const rawImg of imagesToProcess) {
+        let mimeType = "image/jpeg";
+        let cleanB64 = rawImg;
+        if (rawImg.startsWith("data:")) {
+          const m = rawImg.match(/^data:([^;]+);base64,(.+)$/);
+          if (m) { mimeType = m[1]; cleanB64 = m[2]; }
         }
+        console.log("[scan] img mimeType:", mimeType, "b64len:", cleanB64.length);
 
-        if (extractedAll.length > 0) {
-          const enriched = enrichRawExtractedItems(extractedAll, existingItems);
-          return NextResponse.json({
-            success: true,
-            source: "gemini_vision",
-            count: enriched.length,
-            items: enriched,
-          });
+        let extracted = false;
+        for (const model of GEMINI_MODELS) {
+          console.log("[scan] trying:", model);
+          const result = await callGeminiVision(model, geminiKey, mimeType, cleanB64);
+          if (result.ok) { extractedAll.push(...result.items); extracted = true; break; }
+          if (result.error) allErrors.push(result.error);
         }
-      } catch (visionErr) {
-        console.error("Vision processing error, falling back to NLP regex parser:", visionErr);
+        if (!extracted) console.warn("[scan] all models failed. errors:", allErrors);
+      }
+
+      if (extractedAll.length > 0) {
+        const enriched = enrichRawExtractedItems(extractedAll, existingItems);
+        return NextResponse.json({ success: true, source: "gemini_vision", count: enriched.length, items: enriched });
+      }
+
+      if (allErrors.length > 0) {
+        return NextResponse.json(
+          { success: false, error: "Gemini Vision failed", details: allErrors[0], allErrors },
+          { status: 502 }
+        );
       }
     }
 
-    // Fallback: If raw text provided or no vision output, run NLP regex extractor
-    const textToParse = rawText || "";
-    const parsed = parseMenuOcrText(textToParse, existingItems);
+    if (rawText) {
+      const parsed = parseMenuOcrText(rawText, existingItems);
+      return NextResponse.json({ success: true, source: "nlp_engine", count: parsed.length, items: parsed });
+    }
 
-    return NextResponse.json({
-      success: true,
-      source: "nlp_engine",
-      count: parsed.length,
-      items: parsed,
-    });
+    return NextResponse.json({ success: false, error: "No image, text, or GEMINI_API_KEY provided." }, { status: 400 });
   } catch (err: unknown) {
-    console.error("Scan menu API error:", err);
-    return NextResponse.json(
-      { success: false, error: err instanceof Error ? err.message : "Internal Server Error" },
-      { status: 500 }
-    );
+    console.error("[scan] unhandled:", err);
+    return NextResponse.json({ success: false, error: err instanceof Error ? err.message : "Server error" }, { status: 500 });
   }
 }
