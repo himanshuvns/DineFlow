@@ -60,10 +60,21 @@ func (s *Scope) InsertOne(ctx context.Context, doc interface{}) (*mongo.InsertOn
 	return s.coll.InsertOne(ctx, doc)
 }
 
+// InsertMany inserts multiple documents within the tenant scope.
+func (s *Scope) InsertMany(ctx context.Context, docs []interface{}) (*mongo.InsertManyResult, error) {
+	return s.coll.InsertMany(ctx, docs)
+}
+
 // UpdateOne updates a single document matching the filter within the tenant scope.
 func (s *Scope) UpdateOne(ctx context.Context, filter bson.M, update bson.M) (*mongo.UpdateResult, error) {
 	update = ensureUpdatedAt(update)
 	return s.coll.UpdateOne(ctx, s.scopedFilter(filter), update)
+}
+
+// UpdateMany updates multiple documents matching the filter within the tenant scope.
+func (s *Scope) UpdateMany(ctx context.Context, filter bson.M, update bson.M) (*mongo.UpdateResult, error) {
+	update = ensureUpdatedAt(update)
+	return s.coll.UpdateMany(ctx, s.scopedFilter(filter), update)
 }
 
 // UpdateByID updates a single document by its ObjectID within the tenant scope.
@@ -81,6 +92,11 @@ func (s *Scope) SoftDelete(ctx context.Context, id bson.ObjectID) (*mongo.Update
 // DeleteOne removes a single document matching the filter within the tenant scope.
 func (s *Scope) DeleteOne(ctx context.Context, filter bson.M) (*mongo.DeleteResult, error) {
 	return s.coll.DeleteOne(ctx, s.scopedFilter(filter))
+}
+
+// DeleteMany removes multiple documents matching the filter within the tenant scope.
+func (s *Scope) DeleteMany(ctx context.Context, filter bson.M) (*mongo.DeleteResult, error) {
+	return s.coll.DeleteMany(ctx, s.scopedFilter(filter))
 }
 
 // DeleteByID removes a document by its ID within the tenant scope.

@@ -112,8 +112,12 @@ func Setup(
 
 				menuGroup.GET("/items", menuHandler.ListItems)
 				menuGroup.POST("/items", middleware.OwnerOrManager(), menuHandler.CreateItem)
+				menuGroup.POST("/items/bulk", middleware.OwnerOrManager(), menuHandler.BulkCreateItems)
+				menuGroup.PATCH("/items/bulk", middleware.OwnerOrManager(), menuHandler.BulkUpdateItems)
+				menuGroup.POST("/items/bulk-delete", middleware.OwnerOrManager(), menuHandler.BulkDeleteItems)
 				menuGroup.PATCH("/items/:id/availability", menuHandler.ToggleAvailability)
 				menuGroup.DELETE("/items/:id", middleware.OwnerOrManager(), menuHandler.DeleteItem)
+				menuGroup.POST("/scan", middleware.OwnerOrManager(), menuHandler.ScanMenu)
 			}
 
 			// ── Table Management (Phase 2) ─────────────────────────────────

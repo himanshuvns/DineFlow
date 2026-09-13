@@ -74,6 +74,10 @@ type MenuItem struct {
 	ModifierGroups  []ModifierGroup  `bson:"modifierGroups,omitempty" json:"modifierGroups,omitempty"`
 	TaxRatePercent  float64          `bson:"taxRatePercent" json:"taxRatePercent"`
 	DisplayOrder    int              `bson:"displayOrder" json:"displayOrder"`
+	IsBestseller    bool             `bson:"isBestseller,omitempty" json:"isBestseller"`
+	IsRecommended   bool             `bson:"isRecommended,omitempty" json:"isRecommended"`
+	SpicyLevel      int              `bson:"spicyLevel,omitempty" json:"spicyLevel"`
+	HindiName       string           `bson:"hindiName,omitempty" json:"hindiName,omitempty"`
 	CreatedAt       time.Time        `bson:"createdAt" json:"createdAt"`
 	UpdatedAt       time.Time        `bson:"updatedAt" json:"updatedAt"`
 }

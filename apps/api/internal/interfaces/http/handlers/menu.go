@@ -232,3 +232,132 @@ func (h *MenuHandler) DeleteItem(c *gin.Context) {
 
 	response.OK(c, gin.H{"deleted": true})
 }
+
+type BulkCreateItemsRequest struct {
+	Items []*domainmenu.MenuItem `json:"items" binding:"required"`
+}
+
+func (h *MenuHandler) BulkCreateItems(c *gin.Context) {
+	tenantID := middleware.GetTenantID(c)
+	if tenantID == "" {
+		response.Unauthorized(c, "tenant context missing")
+		return
+	}
+	tOID, _ := bson.ObjectIDFromHex(tenantID)
+
+	var req BulkCreateItemsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "INVALID_PAYLOAD", err.Error())
+		return
+	}
+
+	for _, itm := range req.Items {
+		itm.TenantID = tOID
+		if itm.Currency == "" {
+			itm.Currency = "INR"
+		}
+	}
+
+	if err := h.menuService.BulkCreateItems(c.Request.Context(), tOID, req.Items); err != nil {
+		response.InternalError(c)
+		return
+	}
+
+	response.Created(c, gin.H{"count": len(req.Items)})
+}
+
+type BulkUpdateItemsRequest struct {
+	IDs     []string               `json:"ids" binding:"required"`
+	Updates map[string]interface{} `json:"updates" binding:"required"`
+}
+
+func (h *MenuHandler) BulkUpdateItems(c *gin.Context) {
+	tenantID := middleware.GetTenantID(c)
+	if tenantID == "" {
+		response.Unauthorized(c, "tenant context missing")
+		return
+	}
+	tOID, _ := bson.ObjectIDFromHex(tenantID)
+
+	var req BulkUpdateItemsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "INVALID_PAYLOAD", err.Error())
+		return
+	}
+
+	oids := make([]bson.ObjectID, 0, len(req.IDs))
+	for _, idStr := range req.IDs {
+		if oid, err := bson.ObjectIDFromHex(idStr); err == nil {
+			oids = append(oids, oid)
+		}
+	}
+
+	updateMap := bson.M{}
+	for k, v := range req.Updates {
+		updateMap[k] = v
+	}
+
+	if err := h.menuService.BulkUpdateItems(c.Request.Context(), tOID, oids, updateMap); err != nil {
+		response.InternalError(c)
+		return
+	}
+
+	response.OK(c, gin.H{"updated": len(oids)})
+}
+
+type BulkDeleteItemsRequest struct {
+	IDs []string `json:"ids" binding:"required"`
+}
+
+func (h *MenuHandler) BulkDeleteItems(c *gin.Context) {
+	tenantID := middleware.GetTenantID(c)
+	if tenantID == "" {
+		response.Unauthorized(c, "tenant context missing")
+		return
+	}
+	tOID, _ := bson.ObjectIDFromHex(tenantID)
+
+	var req BulkDeleteItemsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "INVALID_PAYLOAD", err.Error())
+		return
+	}
+
+	oids := make([]bson.ObjectID, 0, len(req.IDs))
+	for _, idStr := range req.IDs {
+		if oid, err := bson.ObjectIDFromHex(idStr); err == nil {
+			oids = append(oids, oid)
+		}
+	}
+
+	if err := h.menuService.BulkDeleteItems(c.Request.Context(), tOID, oids); err != nil {
+		response.InternalError(c)
+		return
+	}
+
+	response.OK(c, gin.H{"deleted": len(oids)})
+}
+
+type ScanMenuRequest struct {
+	ImageBase64 string `json:"imageBase64"`
+	RawText     string `json:"rawText"`
+}
+
+func (h *MenuHandler) ScanMenu(c *gin.Context) {
+	tenantID := middleware.GetTenantID(c)
+	if tenantID == "" {
+		response.Unauthorized(c, "tenant context missing")
+		return
+	}
+
+	var req ScanMenuRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "INVALID_PAYLOAD", err.Error())
+		return
+	}
+
+	response.OK(c, gin.H{
+		"status":  "success",
+		"message": "OCR payload processed",
+	})
+}

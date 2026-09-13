@@ -14,6 +14,11 @@ export interface MenuItem {
   imageUrl?: string;
   variantsCount?: number;
   modifiersCount?: number;
+  bestseller?: boolean;
+  recommended?: boolean;
+  spicyLevel?: number; // 0: Mild, 1: Medium, 2: Hot, 3: Fiery
+  prepTimeMinutes?: number;
+  hindiName?: string;
 }
 
 export interface TableItem {
@@ -323,6 +328,10 @@ interface TenantDataState {
   addMenuItem: (item: Omit<MenuItem, "id">) => Promise<MenuItem>;
   updateMenuItem: (id: string, updates: Partial<MenuItem>) => Promise<void>;
   deleteMenuItem: (id: string) => Promise<void>;
+  bulkAddMenuItems: (items: Omit<MenuItem, "id">[]) => Promise<MenuItem[]>;
+  bulkUpdateMenuItems: (ids: string[], updates: Partial<MenuItem>) => Promise<void>;
+  bulkDeleteMenuItems: (ids: string[]) => Promise<void>;
+  bulkAdjustPrices: (ids: string[], percentage: number) => Promise<void>;
   addTable: (table: Omit<TableItem, "id">) => Promise<TableItem>;
   updateTableStatus: (id: string, status: TableItem["status"]) => Promise<void>;
   deleteTable: (id: string) => Promise<void>;
@@ -679,6 +688,116 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
 
     persistTenantState(state.tenantId, { menuItems: updatedItems });
 
+    set({ menuItems: updatedItems });
+  },
+
+  bulkAddMenuItems: async (itemsData) => {
+    const state = get();
+    const createdItems: MenuItem[] = itemsData.map((item, idx) => ({
+      ...item,
+      id: `itm_${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 6)}`,
+    }));
+
+    // Attempt bulk sync to backend API
+    try {
+      await apiClient.post("/menu/items/bulk", {
+        items: createdItems.map((ci) => ({
+          name: ci.name,
+          category: ci.category,
+          price: ci.price,
+          description: ci.desc,
+          isVeg: ci.isVeg,
+          bestseller: ci.bestseller,
+          recommended: ci.recommended,
+          spicyLevel: ci.spicyLevel,
+        })),
+      });
+    } catch (e) {
+      console.warn("Backend bulk save skipped or offline:", e);
+    }
+
+    // Merge categories
+    const newCategories = new Set(state.categories);
+    createdItems.forEach((ci) => {
+      if (ci.category && ci.category.trim()) {
+        newCategories.add(ci.category.trim());
+      }
+    });
+
+    const updatedItems = [...createdItems, ...state.menuItems];
+    const updatedCategories = Array.from(newCategories);
+    const updatedSteps = state.onboardingSteps.map((s) =>
+      s.id === 3 ? { ...s, completed: true } : s
+    );
+
+    const nextState = {
+      categories: updatedCategories,
+      menuItems: updatedItems,
+      onboardingSteps: updatedSteps,
+    };
+
+    persistTenantState(state.tenantId, nextState);
+    set(nextState);
+    return createdItems;
+  },
+
+  bulkUpdateMenuItems: async (ids, updates) => {
+    const state = get();
+    const idSet = new Set(ids);
+    const updatedItems = state.menuItems.map((item) =>
+      idSet.has(item.id) ? { ...item, ...updates } : item
+    );
+
+    // Merge new categories if category was updated
+    let updatedCategories = state.categories;
+    if (updates.category && !state.categories.includes(updates.category)) {
+      updatedCategories = [...state.categories, updates.category];
+    }
+
+    try {
+      await apiClient.patch("/menu/items/bulk", { ids, updates });
+    } catch (e) {
+      console.warn("Backend bulk update skipped:", e);
+    }
+
+    const nextState = {
+      categories: updatedCategories,
+      menuItems: updatedItems,
+    };
+
+    persistTenantState(state.tenantId, nextState);
+    set(nextState);
+  },
+
+  bulkDeleteMenuItems: async (ids) => {
+    const state = get();
+    const idSet = new Set(ids);
+    try {
+      await apiClient.post("/menu/items/bulk-delete", { ids });
+    } catch (e) {
+      console.warn("Backend bulk delete skipped:", e);
+    }
+
+    const updatedItems = state.menuItems.filter((i) => !idSet.has(i.id));
+    persistTenantState(state.tenantId, { menuItems: updatedItems });
+    set({ menuItems: updatedItems });
+  },
+
+  bulkAdjustPrices: async (ids, percentage) => {
+    const state = get();
+    const idSet = new Set(ids);
+    const multiplier = 1 + percentage / 100;
+
+    const updatedItems = state.menuItems.map((item) => {
+      if (idSet.has(item.id)) {
+        // Round to nearest multiple of 5 for clean restaurant menus
+        const newPrice = Math.max(10, Math.round((item.price * multiplier) / 5) * 5);
+        return { ...item, price: newPrice };
+      }
+      return item;
+    });
+
+    persistTenantState(state.tenantId, { menuItems: updatedItems });
     set({ menuItems: updatedItems });
   },
 

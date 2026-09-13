@@ -172,6 +172,53 @@ func (s *Service) DeleteItem(ctx context.Context, tenantID, id bson.ObjectID) er
 	return nil
 }
 
+func (s *Service) BulkCreateItems(ctx context.Context, tenantID bson.ObjectID, items []*domainmenu.MenuItem) error {
+	if len(items) == 0 {
+		return nil
+	}
+	docs := make([]interface{}, len(items))
+	now := time.Now().UTC()
+	for i, itm := range items {
+		itm.ID = bson.NewObjectID()
+		itm.TenantID = tenantID
+		itm.Slug = strings.ToLower(strings.ReplaceAll(strings.TrimSpace(itm.Name), " ", "-"))
+		itm.CreatedAt = now
+		itm.UpdatedAt = now
+		if itm.Currency == "" {
+			itm.Currency = "INR"
+		}
+		docs[i] = itm
+	}
+
+	coll := s.db.Collection("menu_items")
+	scope := mongoinfra.NewScope(coll, tenantID)
+	_, err := scope.InsertMany(ctx, docs)
+	return err
+}
+
+func (s *Service) BulkUpdateItems(ctx context.Context, tenantID bson.ObjectID, ids []bson.ObjectID, updates bson.M) error {
+	if len(ids) == 0 || len(updates) == 0 {
+		return nil
+	}
+	coll := s.db.Collection("menu_items")
+	scope := mongoinfra.NewScope(coll, tenantID)
+	updates["updatedAt"] = time.Now().UTC()
+
+	_, err := scope.UpdateMany(ctx, bson.M{"_id": bson.M{"$in": ids}}, bson.M{"$set": updates})
+	return err
+}
+
+func (s *Service) BulkDeleteItems(ctx context.Context, tenantID bson.ObjectID, ids []bson.ObjectID) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	coll := s.db.Collection("menu_items")
+	scope := mongoinfra.NewScope(coll, tenantID)
+
+	_, err := scope.DeleteMany(ctx, bson.M{"_id": bson.M{"$in": ids}})
+	return err
+}
+
 // ─── Public QR Menu Query ─────────────────────────────────────────────────────
 
 type PublicMenuResponse struct {
