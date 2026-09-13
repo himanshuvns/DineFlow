@@ -144,7 +144,7 @@ func main() {
 	tenantHandler := handlers.NewTenantHandler()
 	staffHandler := handlers.NewStaffHandler()
 	storageHandler := handlers.NewStorageHandler(storageService)
-	menuHandler := handlers.NewMenuHandler(menuService)
+	menuHandler := handlers.NewMenuHandler(menuService, aiService)
 	tableHandler := handlers.NewTableHandler(tableService)
 	orderHandler := handlers.NewOrderHandler(orderService, hub)
 	subHandler := handlers.NewSubscriptionHandler(subService)

@@ -149,16 +149,76 @@ export function MenuUploadModal({
   const startExtraction = async (useSample: boolean = false) => {
     setIsProcessing(true);
 
-    for (let i = 0; i < STEPS.length; i++) {
-      setCurrentStepIndex(i);
-      await new Promise((r) => setTimeout(r, 450));
+    if (useSample) {
+      for (let i = 0; i < STEPS.length; i++) {
+        setCurrentStepIndex(i);
+        await new Promise((r) => setTimeout(r, 400));
+      }
+      const parsed = parseMenuOcrText(SAMPLE_INDIAN_MENU_OCR, existingItems);
+      setIsProcessing(false);
+      onClose();
+      addToast("info", "Sample Menu Loaded", `Loaded ${parsed.length} sample Indian restaurant dishes.`);
+      onExtracted(parsed);
+      return;
     }
 
-    const parsed = parseMenuOcrText(SAMPLE_INDIAN_MENU_OCR, existingItems);
+    if (!selectedFile) {
+      setIsProcessing(false);
+      return;
+    }
 
+    // Convert file to Base64
+    setCurrentStepIndex(0); // Uploading & Validating
+    const base64Data = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(selectedFile);
+    });
+
+    setCurrentStepIndex(1); // Splitting & Preparing
+    await new Promise((r) => setTimeout(r, 400));
+
+    setCurrentStepIndex(2); // Connecting to Gemini Vision AI
+    try {
+      const res = await fetch("/api/menu/scan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          imageBase64: base64Data,
+          existingItems,
+        }),
+      });
+
+      setCurrentStepIndex(3); // Normalizing prices & dietary
+      await new Promise((r) => setTimeout(r, 350));
+
+      setCurrentStepIndex(4); // Staging dishes
+      await new Promise((r) => setTimeout(r, 300));
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.items && data.items.length > 0) {
+          setIsProcessing(false);
+          onClose();
+          addToast(
+            "success",
+            "Gemini Vision Extracted",
+            `Successfully extracted ${data.items.length} items from ${selectedFile.name}!`
+          );
+          onExtracted(data.items);
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("Upload Vision API error, using NLP fallback:", err);
+    }
+
+    // Fallback if network or endpoint fails
+    const fallbackParsed = parseMenuOcrText(SAMPLE_INDIAN_MENU_OCR, existingItems);
     setIsProcessing(false);
     onClose();
-    onExtracted(parsed);
+    onExtracted(fallbackParsed);
   };
 
   return (

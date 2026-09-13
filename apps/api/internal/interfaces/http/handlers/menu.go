@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	appai "github.com/dineflow/api/internal/application/ai"
 	appmenu "github.com/dineflow/api/internal/application/menu"
 	domainmenu "github.com/dineflow/api/internal/domain/menu"
 	"github.com/dineflow/api/internal/interfaces/http/middleware"
@@ -11,10 +12,11 @@ import (
 
 type MenuHandler struct {
 	menuService *appmenu.Service
+	aiService   *appai.Service
 }
 
-func NewMenuHandler(s *appmenu.Service) *MenuHandler {
-	return &MenuHandler{menuService: s}
+func NewMenuHandler(s *appmenu.Service, ai *appai.Service) *MenuHandler {
+	return &MenuHandler{menuService: s, aiService: ai}
 }
 
 // ─── Public Customer QR Menu Endpoint ─────────────────────────────────────────
@@ -356,8 +358,23 @@ func (h *MenuHandler) ScanMenu(c *gin.Context) {
 		return
 	}
 
+	if h.aiService != nil && req.ImageBase64 != "" {
+		dishes, err := h.aiService.ScanMenuWithVision(c.Request.Context(), req.ImageBase64)
+		if err == nil && len(dishes) > 0 {
+			response.OK(c, gin.H{
+				"status": "success",
+				"source": "gemini_vision",
+				"count":  len(dishes),
+				"items":  dishes,
+			})
+			return
+		}
+	}
+
 	response.OK(c, gin.H{
 		"status":  "success",
-		"message": "OCR payload processed",
+		"source":  "fallback",
+		"message": "Processed payload",
+		"items":   []interface{}{},
 	})
 }

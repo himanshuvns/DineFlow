@@ -202,6 +202,130 @@ Return ONLY the JSON, no markdown.`,
 	return &res, nil
 }
 
+// ─── Multimodal Vision Menu Scanner ──────────────────────────────────────────
+
+type ScannedDish struct {
+	Name        string  `json:"name"`
+	HindiName   string  `json:"hindiName,omitempty"`
+	Category    string  `json:"category"`
+	Price       float64 `json:"price"`
+	IsVeg       bool    `json:"isVeg"`
+	Description string  `json:"description,omitempty"`
+	SpicyLevel  int     `json:"spicyLevel"`
+}
+
+func (s *Service) ScanMenuWithVision(ctx context.Context, imageBase64 string) ([]ScannedDish, error) {
+	if s.IsMockMode() {
+		return mockScannedDishes(), nil
+	}
+
+	cleanB64 := imageBase64
+	mimeType := "image/jpeg"
+	if idx := strings.Index(imageBase64, ";base64,"); idx != -1 {
+		prefix := imageBase64[:idx]
+		if strings.HasPrefix(prefix, "data:") {
+			mimeType = strings.TrimPrefix(prefix, "data:")
+		}
+		cleanB64 = imageBase64[idx+8:]
+	}
+
+	prompt := `You are an expert Indian restaurant menu digitizer.
+Analyze this restaurant menu image and extract EVERY single food item across all columns and sections.
+Return ONLY a valid JSON array of objects with this schema:
+[
+  {
+    "name": "Dish Name in English",
+    "hindiName": "Dish Name in Hindi Devanagari script",
+    "category": "Category name from menu (e.g. Breakfast, South Indian, Street Food, North Indian, Biryani, Indian Chinese, Snacks, Pizza, Burgers, Beverages, Desserts)",
+    "price": 280,
+    "isVeg": true,
+    "description": "Short appetizing description",
+    "spicyLevel": 1
+  }
+]
+Critical Instructions:
+1. Scan all columns thoroughly from top to bottom, left to right.
+2. Extract every single item listed on the menu without skipping.
+3. If an item has no printed price, set "price": 0.
+4. Green dot/box indicates vegetarian (isVeg: true). Red/brown dot/box indicates non-vegetarian (isVeg: false).
+5. Output ONLY the raw JSON array. Do not include markdown code fences or conversational text.`
+
+	payload := map[string]interface{}{
+		"contents": []map[string]interface{}{
+			{
+				"parts": []map[string]interface{}{
+					{"text": prompt},
+					{
+						"inline_data": map[string]string{
+							"mime_type": mimeType,
+							"data":      cleanB64,
+						},
+					},
+				},
+			},
+		},
+		"generationConfig": map[string]interface{}{
+			"temperature":     0.1,
+			"maxOutputTokens": 8192,
+		},
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+
+	url := fmt.Sprintf("%s?key=%s", geminiEndpoint, s.geminiKey)
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+
+	resp, err := s.httpClient.Do(httpReq)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("gemini vision error %d: %s", resp.StatusCode, string(b))
+	}
+
+	var gemResp geminiResponse
+	if err := json.NewDecoder(resp.Body).Decode(&gemResp); err != nil {
+		return nil, err
+	}
+
+	if len(gemResp.Candidates) == 0 || len(gemResp.Candidates[0].Content.Parts) == 0 {
+		return nil, fmt.Errorf("empty gemini vision response")
+	}
+
+	rawText := gemResp.Candidates[0].Content.Parts[0].Text
+	rawText = strings.TrimPrefix(rawText, "```json")
+	rawText = strings.TrimPrefix(rawText, "```")
+	rawText = strings.TrimSuffix(rawText, "```")
+	rawText = strings.TrimSpace(rawText)
+
+	var dishes []ScannedDish
+	if err := json.Unmarshal([]byte(rawText), &dishes); err != nil {
+		return nil, fmt.Errorf("failed to parse extracted dishes: %w", err)
+	}
+
+	return dishes, nil
+}
+
+func mockScannedDishes() []ScannedDish {
+	return []ScannedDish{
+		{Name: "Paneer Butter Masala", HindiName: "पनीर बटर मसाला", Category: "North Indian", Price: 280, IsVeg: true, Description: "Cottage cheese cubes in rich tomato-butter gravy", SpicyLevel: 1},
+		{Name: "Dal Makhani", HindiName: "दाल मखनी", Category: "North Indian", Price: 220, IsVeg: true, Description: "Slow-cooked black lentils simmered with cream and butter", SpicyLevel: 1},
+		{Name: "Butter Chicken", HindiName: "बटर चिकन", Category: "North Indian", Price: 320, IsVeg: false, Description: "Tender chicken cooked in velvety tomato gravy", SpicyLevel: 2},
+		{Name: "Masala Dosa", HindiName: "मसाला डोसा", Category: "South Indian", Price: 120, IsVeg: true, Description: "Crispy crepe served with potato masala and chutneys", SpicyLevel: 1},
+		{Name: "Hyderabadi Chicken Biryani", HindiName: "हैदराबादी चिकन बिरयानी", Category: "Biryani", Price: 340, IsVeg: false, Description: "Fragrant basmati rice layered with spiced marinated chicken", SpicyLevel: 2},
+	}
+}
+
 // ─── Gemini REST helper ────────────────────────────────────────────────────────
 
 type geminiRequest struct {

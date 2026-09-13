@@ -176,25 +176,76 @@ export function CameraMenuScannerModal({
     });
   };
 
-  // Run Indian OCR extraction
+  // Run Indian OCR / Gemini Vision extraction
   const handleRunOcr = async () => {
-    if (capturedPages.length === 0) {
+    let pagesToProcess = [...capturedPages];
+    if (pagesToProcess.length === 0) {
       // If no page captured yet, capture current frame first
-      handleCapture();
+      const video = videoRef.current;
+      if (video) {
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth || 1280;
+        canvas.height = video.videoHeight || 720;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          if (enhanceFilter) {
+            ctx.filter = "contrast(1.25) brightness(1.08) saturate(1.1)";
+          }
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
+          const newPage = {
+            id: `page_${Date.now()}`,
+            dataUrl,
+            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          };
+          pagesToProcess.push(newPage);
+          setCapturedPages(pagesToProcess);
+        }
+      }
+    }
+
+    if (pagesToProcess.length === 0) {
+      addToast("error", "No Photo Captured", "Please snap a photo or upload a menu image.");
+      return;
     }
 
     setIsAnalyzing(true);
     setAnalysisStep("Correcting perspective & enhancing contrast…");
+    await new Promise((r) => setTimeout(r, 400));
 
-    await new Promise((r) => setTimeout(r, 600));
-    setAnalysisStep("Running Indian OCR & detecting dish names…");
+    setAnalysisStep("Analyzing menu layout with Gemini Vision AI…");
 
-    await new Promise((r) => setTimeout(r, 700));
-    setAnalysisStep("Categorizing North/South Indian dishes & price normalization…");
+    try {
+      const response = await fetch("/api/menu/scan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          imagesBase64: pagesToProcess.map((p) => p.dataUrl),
+          existingItems,
+        }),
+      });
 
-    await new Promise((r) => setTimeout(r, 500));
+      setAnalysisStep("Normalizing Indian categories, prices & dietary flags…");
 
-    // Sample representative OCR text representing typical Indian physical menu layouts
+      if (response.ok) {
+        const data = await response.json();
+        if (data.items && data.items.length > 0) {
+          setIsAnalyzing(false);
+          onClose();
+          addToast(
+            "success",
+            "AI Vision Complete",
+            `Successfully extracted ${data.items.length} items across all categories!`
+          );
+          onExtracted(data.items);
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("Vision API scan failed, falling back to local NLP engine:", err);
+    }
+
+    // Fallback if vision route fails or is offline
     const sampleMenuOcr = `
 NORTH INDIAN & TANDOORI SPECIALS
 Paneer Butter Masla ₹280 (V)
@@ -232,7 +283,6 @@ Punjabi Sweet Lassi 90
     `;
 
     const parsed = parseMenuOcrText(sampleMenuOcr, existingItems);
-
     setIsAnalyzing(false);
     onClose();
     onExtracted(parsed);

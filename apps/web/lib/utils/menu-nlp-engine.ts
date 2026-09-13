@@ -311,3 +311,65 @@ export function parseMenuOcrText(
 
   return results;
 }
+
+/**
+ * Enriches raw items extracted via Gemini Multimodal Vision with catalog presets and duplicate detection.
+ */
+export function enrichRawExtractedItems(
+  items: Array<{
+    name: string;
+    hindiName?: string;
+    category?: string;
+    price?: number;
+    isVeg?: boolean;
+    description?: string;
+    spicyLevel?: number;
+  }>,
+  existingItems: MenuItem[] = []
+): ParsedMenuItem[] {
+  return items.map((raw) => {
+    const cleanName = normalizeDishText(raw.name);
+    const catalogMatch = matchCatalogDish(cleanName);
+
+    const name = catalogMatch ? catalogMatch.name : (raw.name || cleanName);
+    const hindiName = raw.hindiName || catalogMatch?.hindiName || "";
+    const category = raw.category || catalogMatch?.category || "North Indian";
+    const price = typeof raw.price === "number" && !isNaN(raw.price) ? raw.price : 0;
+    const isVeg = typeof raw.isVeg === "boolean" ? raw.isVeg : (catalogMatch?.isVeg ?? detectIsVeg(cleanName));
+    const spicyLevel = typeof raw.spicyLevel === "number" ? raw.spicyLevel : (catalogMatch?.spicyLevel ?? (isVeg ? 1 : 2));
+    const prepTimeMinutes = catalogMatch?.prepTimeMinutes ?? 15;
+    const desc = raw.description || catalogMatch?.desc || "Authentic recipe prepared fresh to order.";
+    const imageUrl = catalogMatch?.imageUrl;
+
+    // Check duplicate against existing menu items
+    let isDuplicate = false;
+    let matchedExisting: MenuItem | undefined;
+
+    for (const existing of existingItems) {
+      const sim = calculateSimilarity(name, existing.name);
+      if (sim >= 0.78) {
+        isDuplicate = true;
+        matchedExisting = existing;
+        break;
+      }
+    }
+
+    return {
+      tempId: `parsed_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      name,
+      hindiName,
+      category,
+      price,
+      isVeg,
+      spicyLevel,
+      prepTimeMinutes,
+      desc,
+      imageUrl,
+      rawText: `${name} ${price > 0 ? `₹${price}` : ""}`,
+      confidence: 0.98,
+      isDuplicate,
+      duplicateAction: isDuplicate ? "merge" : "distinct",
+      matchedExistingItem: matchedExisting,
+    };
+  });
+}
