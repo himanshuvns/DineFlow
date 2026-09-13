@@ -153,8 +153,8 @@ export function MenuStagingPreviewModal({
       });
       addToast(
         "success",
-        "Menu Successfully Updated!",
-        `Imported ${stagedItems.length} dishes to your live menu.`
+        "Menu Imported Successfully!",
+        `Imported ${stagedItems.length} dishes to your live menu. You can now edit any item with the "Edit" button on its card.`
       );
       onClose();
     } catch (err: any) {
