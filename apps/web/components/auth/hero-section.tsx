@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { ChefMascot } from "./chef-mascot";
 import { FloatingCard } from "./floating-card";
-import { RevolvingFoodOrbit } from "./revolving-food-orbit";
+import { ScatteredFoodParticles } from "./scattered-food-particles";
 
 interface HeroSectionProps {
   isPasswordFocused?: boolean;
@@ -44,6 +44,11 @@ export function HeroSection({ isPasswordFocused = false }: HeroSectionProps) {
           }}
         />
       </div>
+
+      {/* ======================================================== */}
+      {/* SCATTERED FOOD PARTICLES (CORRELATED BG COLOR -> HOVER)  */}
+      {/* ======================================================== */}
+      <ScatteredFoodParticles />
 
       {/* ======================================================== */}
       {/* TOP HEADER: DINEFLOW LOGO + NEXT-GEN BADGE               */}
@@ -89,17 +94,14 @@ export function HeroSection({ isPasswordFocused = false }: HeroSectionProps) {
       </div>
 
       {/* ======================================================== */}
-      {/* MASCOT AREA: CHEF + REVOLVING FOOD ORBIT + 4 CARDS       */}
+      {/* MASCOT AREA: CHEF + 4 SURROUNDING FLOATING CARDS         */}
       {/* ======================================================== */}
       <div className="relative z-10 my-auto py-2 flex flex-col items-center justify-center">
         {/* Subtle Kitchen Counter Surface Glow behind chef */}
         <div className="absolute bottom-4 w-[85%] max-w-[480px] h-12 bg-gradient-to-r from-transparent via-emerald-500/15 dark:via-[#14F1C7]/15 to-transparent blur-xl pointer-events-none" />
 
         <div className="relative flex items-center justify-center w-full max-w-xl min-h-[380px] sm:min-h-[400px]">
-          {/* 1. Revolving Food Orbit (Pizza, Burger, Fries, Sushi, Taco, Coffee, Croissant, Ramen) */}
-          <RevolvingFoodOrbit radius={175} duration={48} direction={1} />
-
-          {/* 2. Chef Mascot (Centered, Rock-solid seated, zero position jump) */}
+          {/* Chef Mascot (Centered, rock-solid seated on counter) */}
           <div className="relative z-10">
             <ChefMascot isPasswordFocused={isPasswordFocused} />
           </div>

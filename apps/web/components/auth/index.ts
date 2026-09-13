@@ -5,4 +5,4 @@ export * from "./business-category-selector";
 export * from "./form-input";
 export * from "./password-field";
 export * from "./cta-button";
-export * from "./revolving-food-orbit";
+export * from "./scattered-food-particles";
