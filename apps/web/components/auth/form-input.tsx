@@ -64,7 +64,7 @@ export const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(
             ref={ref}
             className={cn(
               "w-full bg-transparent text-[14px] text-slate-900 dark:text-[#F8FAFC] placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition-colors",
-              "py-2.5",
+              "py-2 sm:py-2.5",
               leftIcon ? "pl-2" : "pl-3.5",
               rightIcon ? "pr-2" : "pr-3.5",
               className

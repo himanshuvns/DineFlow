@@ -111,50 +111,51 @@ export default function RegisterPage() {
       {/* ======================================================== */}
       {/* FLOATING REGISTRATION CARD                               */}
       {/* ======================================================== */}
-      <div className="relative rounded-[28px] sm:rounded-[32px] bg-white/85 dark:bg-[#0F172A]/70 backdrop-blur-2xl border border-slate-200/90 dark:border-white/10 p-5 sm:p-7 shadow-[0_16px_40px_rgba(0,0,0,0.06)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.6)] text-slate-900 dark:text-[#F8FAFC] transition-colors duration-200">
+      <div className="relative rounded-[28px] sm:rounded-[32px] bg-white/85 dark:bg-[#0F172A]/70 backdrop-blur-2xl border border-slate-200/90 dark:border-white/10 p-4 sm:p-5 lg:p-5 shadow-[0_16px_40px_rgba(0,0,0,0.06)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.6)] text-slate-900 dark:text-[#F8FAFC] transition-colors duration-200">
         {/* Subtle glossy top reflection */}
         <div className="absolute inset-x-8 top-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-500/20 dark:via-[#14F1C7]/30 to-transparent pointer-events-none rounded-t-[32px]" />
 
         {/* Card Header */}
-        <div className="text-center pb-3.5 sm:pb-4">
-          <h2 className="text-xl sm:text-2xl font-display font-extrabold text-slate-900 dark:text-white tracking-tight">
+        <div className="text-center pb-2 sm:pb-2.5">
+          <h2 className="text-lg sm:text-xl font-display font-extrabold text-slate-900 dark:text-white tracking-tight">
             Create your DineFlow Workspace
           </h2>
-          <p className="mt-1 text-xs sm:text-[13px] font-body text-slate-600 dark:text-[#94A3B8] max-w-sm mx-auto leading-normal">
-            Get started with contactless QR menus, live KDS, and WhatsApp marketing in minutes.
+          <p className="mt-0.5 text-xs font-body text-slate-600 dark:text-[#94A3B8] max-w-sm mx-auto leading-tight">
+            Get started with contactless QR menus, live KDS, and WhatsApp marketing.
           </p>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="space-y-2.5 sm:space-y-3">
+        <form onSubmit={handleSubmit} className="space-y-2 sm:space-y-2.5">
           {/* 1. Business Category Selector */}
           <BusinessCategorySelector
             value={businessType}
             onChange={setBusinessType}
           />
 
-          {/* 2. Business Name */}
+          {/* 2. Business Name with inline QR Slug Preview */}
           <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 select-none">
+                Business Name
+              </label>
+              {slug && (
+                <span className="text-[10.5px] font-mono text-emerald-600 dark:text-[#14F1C7] font-medium truncate max-w-[180px]">
+                  dineflow.app/m/{slug}
+                </span>
+              )}
+            </div>
             <FormInput
-              label="Business Name"
               placeholder="e.g. The Grand Bistro"
               value={businessName}
               onChange={(e) => setBusinessName(e.target.value)}
               required
               leftIcon={<Store className="h-4 w-4" />}
             />
-            {slug && (
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 pl-1 font-mono">
-                Customer QR URL:{" "}
-                <span className="text-emerald-600 dark:text-[#14F1C7] font-semibold">
-                  dineflow.app/m/{slug}
-                </span>
-              </p>
-            )}
           </div>
 
           {/* 3. First Name & Last Name (2 Columns) */}
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-2 gap-2">
             <FormInput
               label="First Name"
               placeholder="First name"
@@ -175,12 +176,17 @@ export default function RegisterPage() {
 
           {/* 4. Mobile Number with +91 segmented pill */}
           <div className="w-full space-y-1">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block select-none">
-              Mobile Number
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 select-none">
+                Mobile Number
+              </label>
+              <span className="text-[10.5px] text-slate-500 dark:text-[#94A3B8]">
+                6-digit OTP verification
+              </span>
+            </div>
             <div className="group relative flex items-center rounded-2xl border border-slate-200 dark:border-slate-700/60 bg-slate-100/90 dark:bg-[#0F172A]/70 backdrop-blur-md transition-all duration-200 hover:border-slate-300 dark:hover:border-slate-600 focus-within:border-emerald-500 dark:focus-within:border-[#14F1C7] focus-within:ring-2 focus-within:ring-emerald-500/20 dark:focus-within:ring-[#14F1C7]/40 focus-within:shadow-[0_0_15px_rgba(16,185,129,0.15)] dark:focus-within:shadow-[0_0_20px_rgba(20,241,199,0.22)]">
               {/* Country Code Pill */}
-              <div className="flex items-center gap-1 pl-3.5 pr-2.5 py-2.5 border-r border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 font-medium text-[13.5px] select-none shrink-0">
+              <div className="flex items-center gap-1 pl-3.5 pr-2.5 py-2 border-r border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 font-medium text-[13.5px] select-none shrink-0">
                 <Phone className="h-4 w-4 text-slate-400 mr-1" />
                 <span>+91</span>
                 <ChevronDown className="h-3 w-3 text-slate-400" />
@@ -197,12 +203,9 @@ export default function RegisterPage() {
                 }}
                 required
                 maxLength={10}
-                className="w-full bg-transparent text-[14px] text-slate-900 dark:text-[#F8FAFC] placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none px-3 py-2.5"
+                className="w-full bg-transparent text-[14px] text-slate-900 dark:text-[#F8FAFC] placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none px-3 py-2"
               />
             </div>
-            <p className="text-xs text-slate-500 dark:text-[#94A3B8] pl-1">
-              A 6-digit OTP will be sent to this mobile number.
-            </p>
           </div>
 
           {/* 5. Password Field with Mascot Event Trigger */}
@@ -211,10 +214,11 @@ export default function RegisterPage() {
             onChange={(e) => setPassword(e.target.value)}
             required
             minLength={8}
+            helperText=""
           />
 
           {/* 6. Emerald Gradient CTA Button */}
-          <div className="pt-1.5">
+          <div className="pt-1">
             <CTAButton isLoading={isLoading}>
               Create Workspace & Verify Mobile
             </CTAButton>
@@ -222,7 +226,7 @@ export default function RegisterPage() {
         </form>
 
         {/* Footer: Already have an account */}
-        <div className="mt-3.5 text-center">
+        <div className="mt-2.5 text-center">
           <p className="text-xs text-slate-600 dark:text-slate-400">
             Already have an account?{" "}
             <Link
@@ -237,16 +241,16 @@ export default function RegisterPage() {
         {/* ======================================================== */}
         {/* BOTTOM TRUST SECTION                                     */}
         {/* ======================================================== */}
-        <div className="mt-4 pt-3 border-t border-slate-200/80 dark:border-white/10 grid grid-cols-3 gap-2 text-center select-none">
-          <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-400 font-medium">
+        <div className="mt-2.5 pt-2 border-t border-slate-200/80 dark:border-white/10 grid grid-cols-3 gap-2 text-center select-none">
+          <div className="flex items-center justify-center gap-1.5 text-[10.5px] text-slate-600 dark:text-slate-400 font-medium">
             <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 dark:text-[#14F1C7] shrink-0" />
             <span className="truncate">Secure & Encrypted</span>
           </div>
-          <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-400 font-medium">
+          <div className="flex items-center justify-center gap-1.5 text-[10.5px] text-slate-600 dark:text-slate-400 font-medium">
             <Headphones className="h-3.5 w-3.5 text-emerald-600 dark:text-[#14F1C7] shrink-0" />
             <span className="truncate">24/7 Support</span>
           </div>
-          <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-400 font-medium">
+          <div className="flex items-center justify-center gap-1.5 text-[10.5px] text-slate-600 dark:text-slate-400 font-medium">
             <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-[#14F1C7] shrink-0" />
             <span className="truncate">No Setup Fees</span>
           </div>
