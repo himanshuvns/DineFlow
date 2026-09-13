@@ -2,6 +2,7 @@ import * as React from "react";
 import { create } from "zustand";
 import { apiClient } from "@/lib/api";
 import { useAuthStore, Tenant, User } from "./auth-store";
+import { formatCategoryName, deduplicateCategories, isCategoryMatch } from "@/lib/utils/category-utils";
 
 export interface MenuItem {
   id: string;
@@ -359,17 +360,30 @@ const persistTenantState = (
     const key = getStorageKey(tenantId);
     const existingRaw = localStorage.getItem(key);
     const existing = existingRaw ? JSON.parse(existingRaw) : {};
+    const rawCategories = Array.isArray(data.categories)
+      ? data.categories
+      : Array.isArray(existing.categories)
+      ? existing.categories
+      : [];
+    const rawMenuItems = Array.isArray(data.menuItems)
+      ? data.menuItems
+      : Array.isArray(existing.menuItems)
+      ? existing.menuItems
+      : [];
+
+    const normalizedMenuItems = rawMenuItems.map((item: MenuItem) => ({
+      ...item,
+      category: formatCategoryName(item.category || "General"),
+    }));
+
+    const itemCats = normalizedMenuItems.map((i: MenuItem) => i.category);
+    const cleanCategories = deduplicateCategories([...rawCategories, ...itemCats], {
+      removePlaceholderGeneral: true,
+    });
+
     const merged = {
-      categories: Array.isArray(data.categories)
-        ? data.categories
-        : Array.isArray(existing.categories)
-        ? existing.categories
-        : [],
-      menuItems: Array.isArray(data.menuItems)
-        ? data.menuItems
-        : Array.isArray(existing.menuItems)
-        ? existing.menuItems
-        : [],
+      categories: cleanCategories,
+      menuItems: normalizedMenuItems,
       tables: Array.isArray(data.tables)
         ? data.tables
         : Array.isArray(existing.tables)
@@ -441,9 +455,20 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
     }
 
     if (cachedData && typeof cachedData === "object") {
+      const rawCachedItems = Array.isArray(cachedData.menuItems) ? cachedData.menuItems : [];
+      const normalizedItems: MenuItem[] = rawCachedItems.map((item: MenuItem) => ({
+        ...item,
+        category: formatCategoryName(item.category || "General"),
+      }));
+      const rawCats = Array.isArray(cachedData.categories) ? cachedData.categories : [];
+      const cleanCats = deduplicateCategories(
+        [...rawCats, ...normalizedItems.map((i) => i.category)],
+        { removePlaceholderGeneral: true }
+      );
+
       set({
-        categories: Array.isArray(cachedData.categories) ? cachedData.categories : [],
-        menuItems: Array.isArray(cachedData.menuItems) ? cachedData.menuItems : [],
+        categories: cleanCats,
+        menuItems: normalizedItems,
         tables: Array.isArray(cachedData.tables) ? cachedData.tables : [],
         orders: Array.isArray(cachedData.orders) ? cachedData.orders : [],
         onboardingSteps: Array.isArray(cachedData.onboardingSteps)
@@ -519,10 +544,15 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
 
       // If backend returned data, use it!
       if (remoteItems.length > 0 || remoteTables.length > 0 || remoteOrders.length > 0) {
-        const finalCategories = remoteCategories.length > 0 ? remoteCategories : ["General"];
+        const normalizedRemoteItems = remoteItems.map((item) => ({
+          ...item,
+          category: formatCategoryName(item.category || "General"),
+        }));
+        const rawCats = remoteCategories.length > 0 ? remoteCategories : normalizedRemoteItems.map((i) => i.category);
+        const finalCategories = deduplicateCategories(rawCats, { removePlaceholderGeneral: true });
         const stateToSave = {
           categories: finalCategories,
-          menuItems: remoteItems,
+          menuItems: normalizedRemoteItems,
           tables: remoteTables,
           orders: remoteOrders,
           onboardingSteps: DEFAULT_ONBOARDING.map((s) => {
@@ -629,6 +659,7 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
     const createdItem: MenuItem = {
       ...newItemData,
       id,
+      category: formatCategoryName(newItemData.category),
     };
 
     // Try posting to API
@@ -644,9 +675,10 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
       console.warn("Backend save skipped or offline:", e);
     }
 
-    const updatedCategories = state.categories.includes(createdItem.category)
-      ? state.categories
-      : [...state.categories, createdItem.category];
+    const updatedCategories = deduplicateCategories(
+      [...state.categories, createdItem.category],
+      { removePlaceholderGeneral: true }
+    );
 
     const updatedItems = [createdItem, ...state.menuItems];
     const updatedSteps = state.onboardingSteps.map((s) =>
@@ -667,13 +699,26 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
 
   updateMenuItem: async (id, updates) => {
     const state = get();
+    const cleanUpdates = { ...updates };
+    if (cleanUpdates.category) {
+      cleanUpdates.category = formatCategoryName(cleanUpdates.category);
+    }
+
     const updatedItems = state.menuItems.map((item) =>
-      item.id === id ? { ...item, ...updates } : item
+      item.id === id ? { ...item, ...cleanUpdates } : item
     );
 
-    persistTenantState(state.tenantId, { menuItems: updatedItems });
+    let updatedCategories = state.categories;
+    if (cleanUpdates.category) {
+      updatedCategories = deduplicateCategories(
+        [...state.categories, cleanUpdates.category],
+        { removePlaceholderGeneral: true }
+      );
+    }
 
-    set({ menuItems: updatedItems });
+    const nextState = { categories: updatedCategories, menuItems: updatedItems };
+    persistTenantState(state.tenantId, nextState);
+    set(nextState);
   },
 
   deleteMenuItem: async (id) => {
@@ -695,6 +740,7 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
     const state = get();
     const createdItems: MenuItem[] = itemsData.map((item, idx) => ({
       ...item,
+      category: formatCategoryName(item.category),
       id: `itm_${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 6)}`,
     }));
 
@@ -716,16 +762,14 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
       console.warn("Backend bulk save skipped or offline:", e);
     }
 
-    // Merge categories
-    const newCategories = new Set(state.categories);
-    createdItems.forEach((ci) => {
-      if (ci.category && ci.category.trim()) {
-        newCategories.add(ci.category.trim());
-      }
-    });
+    // Merge categories with deduplication
+    const newCats = createdItems.map((ci) => ci.category);
+    const updatedCategories = deduplicateCategories(
+      [...state.categories, ...newCats],
+      { removePlaceholderGeneral: true }
+    );
 
     const updatedItems = [...createdItems, ...state.menuItems];
-    const updatedCategories = Array.from(newCategories);
     const updatedSteps = state.onboardingSteps.map((s) =>
       s.id === 3 ? { ...s, completed: true } : s
     );
@@ -744,14 +788,22 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
   bulkUpdateMenuItems: async (ids, updates) => {
     const state = get();
     const idSet = new Set(ids);
+    const cleanUpdates = { ...updates };
+    if (cleanUpdates.category) {
+      cleanUpdates.category = formatCategoryName(cleanUpdates.category);
+    }
+
     const updatedItems = state.menuItems.map((item) =>
-      idSet.has(item.id) ? { ...item, ...updates } : item
+      idSet.has(item.id) ? { ...item, ...cleanUpdates } : item
     );
 
     // Merge new categories if category was updated
     let updatedCategories = state.categories;
-    if (updates.category && !state.categories.includes(updates.category)) {
-      updatedCategories = [...state.categories, updates.category];
+    if (cleanUpdates.category) {
+      updatedCategories = deduplicateCategories(
+        [...state.categories, cleanUpdates.category],
+        { removePlaceholderGeneral: true }
+      );
     }
 
     try {

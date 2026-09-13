@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
-import { INDIAN_CATEGORIES } from "@/lib/data/indian-food-database";
+import { deduplicateCategories } from "@/lib/utils/category-utils";
 
 interface MenuBulkToolbarProps {
   selectedIds: string[];
@@ -49,8 +49,7 @@ export function MenuBulkToolbar({
   const [customPricePercent, setCustomPricePercent] = React.useState("10");
 
   const categoryOptions = React.useMemo(() => {
-    const set = new Set([...existingCategories, ...INDIAN_CATEGORIES]);
-    return Array.from(set);
+    return deduplicateCategories(existingCategories, { removePlaceholderGeneral: true });
   }, [existingCategories]);
 
   if (selectedIds.length === 0) return null;

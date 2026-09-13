@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { enrichRawExtractedItems, parseMenuOcrText } from "@/lib/utils/menu-nlp-engine";
+import { formatCategoryName } from "@/lib/utils/category-utils";
 import type { MenuItem } from "@/lib/stores/tenant-data-store";
 
 export const maxDuration = 60;
@@ -27,7 +28,7 @@ Return ONLY a valid JSON array — no markdown fences, no extra text:
   {
     "name": "Item name in English",
     "hindiName": "optional Hindi name in Devanagari",
-    "category": "Exact category heading from menu (Coffee, Tea & More, Cold Drinks, Breakfast, Sandwiches, Salads, Snacks & Bites, Desserts, North Indian, South Indian, Biryani, Beverages, etc.)",
+    "category": "Section header from menu in clean Title Case (e.g. Coffee, Tea & More, Cold Drinks, Breakfast, Sandwiches, Salads, Snacks & Bites, Desserts, Starters, Main Course, etc.)",
     "price": 140,
     "isVeg": true,
     "description": "Short appetizing description",
@@ -37,9 +38,10 @@ Return ONLY a valid JSON array — no markdown fences, no extra text:
 Rules:
 1. Scan ALL columns top-to-bottom, left-to-right. Do NOT miss any section.
 2. Extract EVERY item — never truncate.
-3. Use the EXACT category name printed in the menu.
-4. Set price to 0 if not visible.
-5. Output ONLY the raw JSON array, nothing else.`;
+3. Group each item under its REAL printed section or category header from the menu. Format in clean Title Case (not ALL-CAPS).
+4. Do NOT force predefined Indian categories if the restaurant is a Cafe, Bakery, Continental, Bar, etc. Use the restaurant's actual category headers.
+5. Set price to 0 if not visible.
+6. Output ONLY the raw JSON array, nothing else.`;
 
 type RawMenuItem = {
   name: string;
@@ -104,8 +106,12 @@ async function callGeminiVision(
   try {
     const parsed = JSON.parse(text.slice(s, e + 1)) as RawMenuItem[];
     if (Array.isArray(parsed) && parsed.length > 0) {
-      console.log(`[scan] ${model} ✓ ${parsed.length} items`);
-      return { ok: true, items: parsed };
+      const normalizedItems = parsed.map((item) => ({
+        ...item,
+        category: formatCategoryName(item.category || "General"),
+      }));
+      console.log(`[scan] ${model} ✓ ${normalizedItems.length} items`);
+      return { ok: true, items: normalizedItems };
     }
     return { ok: false, items: [], error: `${model}: parsed array empty` };
   } catch (err) {

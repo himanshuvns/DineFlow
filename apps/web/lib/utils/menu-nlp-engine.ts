@@ -4,6 +4,7 @@ import {
   OCR_TYPO_CORRECTIONS,
   IndianDishEntry,
 } from "../data/indian-food-database";
+import { formatCategoryName } from "./category-utils";
 import type { MenuItem } from "../stores/tenant-data-store";
 
 export interface ParsedMenuItem {
@@ -242,18 +243,28 @@ export function parseMenuOcrText(
   const lines = rawOcrText.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
   const results: ParsedMenuItem[] = [];
 
-  let currentCategory = "North Indian";
+  let currentCategory = "General";
 
   for (const line of lines) {
     // 1. Check if the line is a section/category header
-    const cleanHeader = line.replace(/^[#\*\-—\s]+|[#\*\-—\s]+$/g, "").trim();
+    const cleanHeader = line.replace(/^[#\*\-—:_\|\s]+|[#\*\-—:_\|\s]+$/g, "").trim();
     const matchedCategory = INDIAN_CATEGORIES.find(
       (cat) => cat.toLowerCase() === cleanHeader.toLowerCase() ||
                cleanHeader.toLowerCase().includes(cat.toLowerCase())
     );
 
     if (matchedCategory && !/[0-9]/.test(cleanHeader)) {
-      currentCategory = matchedCategory;
+      currentCategory = formatCategoryName(matchedCategory);
+      continue;
+    } else if (
+      !/[0-9]/.test(cleanHeader) &&
+      cleanHeader.length >= 3 &&
+      cleanHeader.length <= 40 &&
+      !cleanHeader.includes("₹") &&
+      !/^(special|chef|welcome|menu|table|order)/i.test(cleanHeader) &&
+      (cleanHeader === cleanHeader.toUpperCase() || cleanHeader.endsWith(":") || cleanHeader.startsWith("---"))
+    ) {
+      currentCategory = formatCategoryName(cleanHeader);
       continue;
     }
 
@@ -269,7 +280,9 @@ export function parseMenuOcrText(
 
     // 3. Match against catalog for rich defaults
     const catalogMatch = matchCatalogDish(normalizedName);
-    const category = catalogMatch ? catalogMatch.category : inferCategory(normalizedName, catalogMatch) || currentCategory;
+    const category = currentCategory !== "General"
+      ? currentCategory
+      : (catalogMatch ? formatCategoryName(catalogMatch.category) : formatCategoryName(inferCategory(normalizedName)));
     const isVeg = catalogMatch ? catalogMatch.isVeg : detectIsVeg(line);
     const spicyLevel = catalogMatch ? catalogMatch.spicyLevel : (isVeg ? 1 : 2);
     const prepTimeMinutes = catalogMatch ? catalogMatch.prepTimeMinutes : 15;
@@ -331,9 +344,20 @@ export function enrichRawExtractedItems(
     const cleanName = normalizeDishText(raw.name);
     const catalogMatch = matchCatalogDish(cleanName);
 
-    const name = catalogMatch ? catalogMatch.name : (raw.name || cleanName);
+    // Always preserve the actual menu's dish name from the image
+    const name = raw.name && raw.name.trim() ? raw.name.trim() : (catalogMatch?.name || cleanName);
     const hindiName = raw.hindiName || catalogMatch?.hindiName || "";
-    const category = raw.category || catalogMatch?.category || "North Indian";
+
+    // Always prioritize the real category from the menu, formatted to clean Title Case
+    let category = "General";
+    if (raw.category && raw.category.trim()) {
+      category = formatCategoryName(raw.category);
+    } else if (catalogMatch?.category) {
+      category = formatCategoryName(catalogMatch.category);
+    } else {
+      category = formatCategoryName(inferCategory(cleanName));
+    }
+
     const price = typeof raw.price === "number" && !isNaN(raw.price) ? raw.price : 0;
     const isVeg = typeof raw.isVeg === "boolean" ? raw.isVeg : (catalogMatch?.isVeg ?? detectIsVeg(cleanName));
     const spicyLevel = typeof raw.spicyLevel === "number" ? raw.spicyLevel : (catalogMatch?.spicyLevel ?? (isVeg ? 1 : 2));

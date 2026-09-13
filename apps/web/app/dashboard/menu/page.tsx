@@ -33,7 +33,7 @@ import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
 import { formatCurrency } from "@/lib/utils";
 import { useTenantData, STARTER_TEMPLATES, MenuItem } from "@/lib/stores/tenant-data-store";
-import { INDIAN_CATEGORIES } from "@/lib/data/indian-food-database";
+import { formatCategoryName, deduplicateCategories, isCategoryMatch } from "@/lib/utils/category-utils";
 import { ParsedMenuItem } from "@/lib/utils/menu-nlp-engine";
 import { CameraMenuScannerModal } from "@/components/menu/camera-menu-scanner-modal";
 import { MenuUploadModal } from "@/components/menu/menu-upload-modal";
@@ -88,17 +88,20 @@ export default function MenuManagementPage() {
   const [isStagingOpen, setIsStagingOpen] = React.useState(false);
   const [stagedExtractedItems, setStagedExtractedItems] = React.useState<ParsedMenuItem[]>([]);
 
-  // Category fallback if empty
+  // Dynamic category list derived from actual dishes and user-added categories
   const categoryList = React.useMemo(() => {
-    const combined = new Set([...categories, ...INDIAN_CATEGORIES]);
-    return Array.from(combined);
-  }, [categories]);
+    const itemCats = menuItems.map((i) => i.category);
+    const combined = deduplicateCategories([...itemCats, ...categories], {
+      removePlaceholderGeneral: menuItems.length > 0,
+    });
+    return combined.length > 0 ? combined : ["General"];
+  }, [menuItems, categories]);
 
   // Modal State for New Dish
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
   const [newDishName, setNewDishName] = React.useState("");
   const [newDishHindiName, setNewDishHindiName] = React.useState("");
-  const [newDishCategory, setNewDishCategory] = React.useState(categoryList[0] || "North Indian");
+  const [newDishCategory, setNewDishCategory] = React.useState(categoryList[0] || "General");
   const [newDishPrice, setNewDishPrice] = React.useState("");
   const [newDishDesc, setNewDishDesc] = React.useState("");
   const [newDishImageUrl, setNewDishImageUrl] = React.useState("");
@@ -114,16 +117,21 @@ export default function MenuManagementPage() {
   const [isCategoryModalOpen, setIsCategoryModalOpen] = React.useState(false);
   const [newCategoryName, setNewCategoryName] = React.useState("");
 
-  const categoriesTabs = [
-    { id: "all", label: "All Items", badge: menuItems.length },
-    ...categoryList
-      .filter((cat) => menuItems.some((i) => i.category === cat) || categories.includes(cat))
-      .map((cat) => ({
-        id: cat,
-        label: cat,
-        badge: menuItems.filter((i) => i.category === cat).length,
-      })),
-  ];
+  const categoriesTabs = React.useMemo(() => {
+    return [
+      { id: "all", label: "All Items", badge: menuItems.length },
+      ...categoryList
+        .filter((cat) => {
+          const badgeCount = menuItems.filter((i) => isCategoryMatch(i.category, cat)).length;
+          return badgeCount > 0 || categories.some((c) => isCategoryMatch(c, cat));
+        })
+        .map((cat) => ({
+          id: cat,
+          label: cat,
+          badge: menuItems.filter((i) => isCategoryMatch(i.category, cat)).length,
+        })),
+    ];
+  }, [categoryList, menuItems, categories]);
 
   // Instant 86 / Out of Stock Toggle
   const handleToggleAvailability = async (dishId: string, current: boolean) => {
@@ -188,7 +196,7 @@ export default function MenuManagementPage() {
 
     const created = await addMenuItem({
       name: newDishName.trim(),
-      category: newDishCategory,
+      category: formatCategoryName(newDishCategory),
       price: parseFloat(newDishPrice),
       available: true,
       isVeg: newDishIsVeg,
@@ -226,17 +234,17 @@ export default function MenuManagementPage() {
 
   const handleAddCategory = (e: React.FormEvent) => {
     e.preventDefault();
-    const catTrimmed = newCategoryName.trim();
-    if (!catTrimmed) return;
-    if (categoryList.includes(catTrimmed)) {
-      addToast("error", "Duplicate Category", "This category already exists.");
+    const formatted = formatCategoryName(newCategoryName);
+    if (!formatted || formatted === "General") return;
+    if (categoryList.some((c) => isCategoryMatch(c, formatted))) {
+      addToast("error", "Duplicate Category", `Category "${formatted}" already exists.`);
       return;
     }
 
-    setNewDishCategory(catTrimmed);
+    setNewDishCategory(formatted);
     setIsCategoryModalOpen(false);
     setNewCategoryName("");
-    addToast("success", "Category Added", `Category "${catTrimmed}" created.`);
+    addToast("success", "Category Added", `Category "${formatted}" created.`);
   };
 
   const handleApplyPreset = (key: keyof typeof STARTER_TEMPLATES) => {
@@ -259,11 +267,12 @@ export default function MenuManagementPage() {
     const toCreate: Omit<MenuItem, "id">[] = [];
 
     for (const item of approvedItems) {
+      const cleanCategory = formatCategoryName(item.category);
       if (item.isDuplicate && item.duplicateAction === "merge" && item.matchedExistingItem) {
         // Merge & update existing item's price
         await updateMenuItem(item.matchedExistingItem.id, {
           price: item.price,
-          category: item.category,
+          category: cleanCategory,
           isVeg: item.isVeg,
           desc: item.desc,
           spicyLevel: item.spicyLevel,
@@ -271,7 +280,7 @@ export default function MenuManagementPage() {
       } else {
         toCreate.push({
           name: item.name,
-          category: item.category,
+          category: cleanCategory,
           price: item.price,
           available: true,
           isVeg: item.isVeg,
@@ -292,8 +301,8 @@ export default function MenuManagementPage() {
   // Filtered & Sorted items
   const filteredItems = React.useMemo(() => {
     let result = menuItems.filter((item) => {
-      // Category filter
-      if (activeCategory !== "all" && item.category !== activeCategory) return false;
+      // Category filter (case-insensitive)
+      if (activeCategory !== "all" && !isCategoryMatch(item.category, activeCategory)) return false;
 
       // Dietary filter
       if (dietaryFilter === "veg" && !item.isVeg) return false;

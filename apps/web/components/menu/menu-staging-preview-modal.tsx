@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
 import { formatCurrency } from "@/lib/utils";
-import { INDIAN_CATEGORIES } from "@/lib/data/indian-food-database";
+import { formatCategoryName, deduplicateCategories } from "@/lib/utils/category-utils";
 import type { ParsedMenuItem } from "@/lib/utils/menu-nlp-engine";
 import type { MenuItem } from "@/lib/stores/tenant-data-store";
 
@@ -44,23 +44,63 @@ export function MenuStagingPreviewModal({
   const [stagedItems, setStagedItems] = React.useState<ParsedMenuItem[]>([]);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  // Available categories list
+  // Dynamic category state to allow on-the-fly category creation
+  const [customCategories, setCustomCategories] = React.useState<string[]>([]);
+  const [isAddingCategory, setIsAddingCategory] = React.useState(false);
+  const [newCategoryName, setNewCategoryName] = React.useState("");
+  const [targetItemForCategory, setTargetItemForCategory] = React.useState<string | null>(null);
+
+  // Available categories list: dynamically combines all categories detected from the food menu,
+  // custom user categories, and existing store categories — fully deduplicated into Title Case
   const categoryOptions = React.useMemo(() => {
-    const set = new Set([...existingCategories, ...INDIAN_CATEGORIES]);
-    return Array.from(set);
-  }, [existingCategories]);
+    const stagedCats = stagedItems.map((i) => i.category);
+    const initialCats = initialItems.map((i) => i.category);
+    return deduplicateCategories([
+      ...stagedCats,
+      ...initialCats,
+      ...customCategories,
+      ...existingCategories,
+    ]);
+  }, [stagedItems, initialItems, customCategories, existingCategories]);
 
   React.useEffect(() => {
     if (initialItems.length > 0) {
-      setStagedItems(initialItems);
+      setStagedItems(
+        initialItems.map((i) => ({
+          ...i,
+          category: formatCategoryName(i.category || "General"),
+        }))
+      );
     }
   }, [initialItems]);
 
   // Update item field
   const handleUpdateItem = (tempId: string, updates: Partial<ParsedMenuItem>) => {
     setStagedItems((prev) =>
-      prev.map((item) => (item.tempId === tempId ? { ...item, ...updates } : item))
+      prev.map((item) => {
+        if (item.tempId !== tempId) return item;
+        const updated = { ...item, ...updates };
+        if (updates.category) {
+          updated.category = formatCategoryName(updates.category);
+        }
+        return updated;
+      })
     );
+  };
+
+  // Create new category handler
+  const handleCreateCategorySubmit = () => {
+    const trimmed = newCategoryName.trim();
+    if (!trimmed) return;
+    const formatted = formatCategoryName(trimmed);
+    setCustomCategories((prev) => deduplicateCategories([...prev, formatted]));
+    if (targetItemForCategory) {
+      handleUpdateItem(targetItemForCategory, { category: formatted });
+    }
+    setIsAddingCategory(false);
+    setNewCategoryName("");
+    setTargetItemForCategory(null);
+    addToast("success", "Category Added", `Category "${formatted}" created.`);
   };
 
   // Remove single item
@@ -72,13 +112,13 @@ export function MenuStagingPreviewModal({
   const handleAddBlankRow = () => {
     const newItem: ParsedMenuItem = {
       tempId: `manual_${Date.now()}`,
-      name: "New Indian Specialty",
-      category: categoryOptions[0] || "North Indian",
+      name: "New Specialty Dish",
+      category: categoryOptions[0] || "General",
       price: 250,
       isVeg: true,
       spicyLevel: 1,
       prepTimeMinutes: 15,
-      desc: "Prepared fresh with chef's signature spices.",
+      desc: "Prepared fresh with chef's signature recipe.",
       rawText: "Manual entry",
       confidence: 1,
       isDuplicate: false,
@@ -200,19 +240,81 @@ export function MenuStagingPreviewModal({
         )}
 
         {/* Top actions */}
-        <div className="flex items-center justify-between pt-1">
-          <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-            Staged Menu Items
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-7 text-xs"
-            leftIcon={<Plus className="h-3.5 w-3.5" />}
-            onClick={handleAddBlankRow}
-          >
-            Add Item
-          </Button>
+        <div className="flex flex-col gap-2 pt-1">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                Staged Menu Items
+              </span>
+              <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-medium">
+                {categoryOptions.length} categories
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"
+                leftIcon={<Plus className="h-3.5 w-3.5" />}
+                onClick={() => {
+                  setTargetItemForCategory(null);
+                  setIsAddingCategory(true);
+                }}
+              >
+                Category
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs"
+                leftIcon={<Plus className="h-3.5 w-3.5" />}
+                onClick={handleAddBlankRow}
+              >
+                Add Item
+              </Button>
+            </div>
+          </div>
+
+          {/* Inline Create Category Bar */}
+          {isAddingCategory && (
+            <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
+              <input
+                type="text"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                placeholder={
+                  targetItemForCategory
+                    ? "Enter new category for this item (e.g. Artisanal Breads, Mocktails...)"
+                    : "Enter new category name..."
+                }
+                className="flex-1 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-emerald-500/40 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleCreateCategorySubmit();
+                  }
+                }}
+              />
+              <div className="flex items-center gap-1.5 justify-end">
+                <Button size="sm" className="h-7 text-xs bg-emerald-600 hover:bg-emerald-500 text-white" onClick={handleCreateCategorySubmit}>
+                  Add Category
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => {
+                    setIsAddingCategory(false);
+                    setNewCategoryName("");
+                    setTargetItemForCategory(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Staging List */}
@@ -305,15 +407,25 @@ export function MenuStagingPreviewModal({
                 {/* Category Dropdown */}
                 <div className="col-span-6 sm:col-span-3">
                   <select
-                    value={item.category}
-                    onChange={(e) => handleUpdateItem(item.tempId, { category: e.target.value })}
-                    className="w-full px-2 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                    value={formatCategoryName(item.category)}
+                    onChange={(e) => {
+                      if (e.target.value === "__create_new__") {
+                        setTargetItemForCategory(item.tempId);
+                        setIsAddingCategory(true);
+                      } else {
+                        handleUpdateItem(item.tempId, { category: e.target.value });
+                      }
+                    }}
+                    className="w-full px-2 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 font-medium"
                   >
                     {categoryOptions.map((cat) => (
                       <option key={cat} value={cat}>
                         {cat}
                       </option>
                     ))}
+                    <option value="__create_new__" className="text-emerald-600 dark:text-emerald-400 font-bold">
+                      + Add New Category…
+                    </option>
                   </select>
                 </div>
 
