@@ -24,6 +24,14 @@ import {
   Filter,
   Check,
   ChevronDown,
+  ArrowUp,
+  ArrowDown,
+  ImagePlus,
+  AlertTriangle,
+  Layers,
+  CheckCircle2,
+  IndianRupee,
+  X,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -67,6 +75,10 @@ export default function MenuManagementPage() {
     bulkDeleteMenuItems,
     bulkAdjustPrices,
     applyStarterTemplate,
+    addCategory,
+    renameCategory,
+    deleteCategory,
+    reorderCategories,
   } = useTenantData();
 
   // Search & Navigation
@@ -77,7 +89,7 @@ export default function MenuManagementPage() {
   const [dietaryFilter, setDietaryFilter] = React.useState<"all" | "veg" | "non_veg">("all");
   const [availabilityFilter, setAvailabilityFilter] = React.useState<"all" | "available" | "unavailable">("all");
   const [highlightFilter, setHighlightFilter] = React.useState<"all" | "bestseller" | "recommended">("all");
-  const [priceSort, setPriceSort] = React.useState<"none" | "low_to_high" | "high_to_low">("none");
+  const [priceSort, setPriceSort] = React.useState<"none" | "low_to_high" | "high_to_low" | "name_asc" | "name_desc">("none");
 
   // Multi-Select State
   const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
@@ -97,6 +109,25 @@ export default function MenuManagementPage() {
     return combined.length > 0 ? combined : ["General"];
   }, [menuItems, categories]);
 
+  // KPI Metrics calculation
+  const kpiStats = React.useMemo(() => {
+    const total = menuItems.length;
+    const inStock = menuItems.filter((i) => i.available).length;
+    const outOfStock = total - inStock;
+    const veg = menuItems.filter((i) => i.isVeg).length;
+    const nonVeg = total - veg;
+    const avg = total > 0 ? Math.round(menuItems.reduce((acc, i) => acc + (i.price || 0), 0) / total) : 0;
+    return {
+      total,
+      inStock,
+      outOfStock,
+      veg,
+      nonVeg,
+      avg,
+      categoriesCount: categoryList.length,
+    };
+  }, [menuItems, categoryList]);
+
   // Modal State for New Dish
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
   const [newDishName, setNewDishName] = React.useState("");
@@ -113,9 +144,42 @@ export default function MenuManagementPage() {
   const [hasVariants, setHasVariants] = React.useState(false);
   const [hasModifiers, setHasModifiers] = React.useState(false);
 
-  // Modal State for New Category
-  const [isCategoryModalOpen, setIsCategoryModalOpen] = React.useState(false);
-  const [newCategoryName, setNewCategoryName] = React.useState("");
+  // Category Manager Modal State
+  const [isCategoryManagerOpen, setIsCategoryManagerOpen] = React.useState(false);
+  const [newCatInput, setNewCatInput] = React.useState("");
+  const [editingCategoryOld, setEditingCategoryOld] = React.useState<string | null>(null);
+  const [editingCategoryNew, setEditingCategoryNew] = React.useState("");
+
+  // Delete Dish Confirmation State
+  const [dishToDelete, setDishToDelete] = React.useState<{ id: string; name: string } | null>(null);
+
+  // File Input References for Direct Image Upload
+  const addDishFileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const editDishFileInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  const handleDishPhotoSelect = (e: React.ChangeEvent<HTMLInputElement>, isEdit: boolean) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      addToast("error", "Invalid File", "Please upload a valid image file (JPEG, PNG, WEBP).");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      addToast("error", "File Too Large", "Dish photography must be under 5MB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      if (isEdit) {
+        setEditDishImageUrl(dataUrl);
+      } else {
+        setNewDishImageUrl(dataUrl);
+      }
+      addToast("info", "Photo Loaded", "Dish photo ready to save.");
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Modal State for Edit Dish
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
@@ -156,16 +220,41 @@ export default function MenuManagementPage() {
 
   const handleUpdateDish = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editDishName.trim() || !editDishPrice) {
-      addToast("error", "Missing Fields", "Please enter dish name and valid price.");
+    const cleanName = editDishName.trim();
+    if (!cleanName) {
+      addToast("error", "Dish Name Required", "Please enter a name for the dish.");
+      return;
+    }
+    if (cleanName.length > 100) {
+      addToast("error", "Name Too Long", "Dish name must be 100 characters or fewer.");
+      return;
+    }
+
+    const priceNum = parseFloat(editDishPrice);
+    if (isNaN(priceNum) || priceNum < 0) {
+      addToast("error", "Invalid Price", "Price must be a valid non-negative number.");
+      return;
+    }
+    if (priceNum > 50000) {
+      addToast("error", "Price Exceeds Limit", "Price cannot exceed ₹50,000.");
+      return;
+    }
+
+    if (editDishPrepTime < 1 || editDishPrepTime > 180) {
+      addToast("error", "Invalid Prep Time", "Preparation time must be between 1 and 180 minutes.");
+      return;
+    }
+
+    if (editDishDesc.trim().length > 400) {
+      addToast("error", "Description Too Long", "Description must be 400 characters or fewer.");
       return;
     }
 
     const cleanCategory = formatCategoryName(editDishCategory);
     await updateMenuItem(editDishId, {
-      name: editDishName.trim(),
+      name: cleanName,
       category: cleanCategory,
-      price: parseFloat(editDishPrice) || 0,
+      price: priceNum,
       available: editDishAvailable,
       isVeg: editDishIsVeg,
       desc: editDishDesc.trim() || "Prepared fresh by the culinary team.",
@@ -183,7 +272,7 @@ export default function MenuManagementPage() {
     addToast(
       "success",
       "Dish Updated",
-      `${editDishName.trim()} updated in ${cleanCategory}. Available on QR menu.`
+      `${cleanName} updated in ${cleanCategory}. Available on QR menu.`
     );
   };
 
@@ -213,16 +302,18 @@ export default function MenuManagementPage() {
     }
   };
 
-  const handleDelete = async (dishId: string, name: string) => {
-    await deleteMenuItem(dishId);
-    setSelectedIds((prev) => prev.filter((id) => id !== dishId));
-    addToast("info", "Dish Deleted", `${name} was removed from the menu.`);
+  const confirmDeleteDish = async () => {
+    if (!dishToDelete) return;
+    await deleteMenuItem(dishToDelete.id);
+    setSelectedIds((prev) => prev.filter((id) => id !== dishToDelete.id));
+    addToast("info", "Dish Deleted", `${dishToDelete.name} was removed from the menu.`);
+    setDishToDelete(null);
   };
 
   // Duplicate Dish
   const handleDuplicateDish = async (dish: MenuItem) => {
     const copyName = `${dish.name} (Copy)`;
-    const created = await addMenuItem({
+    await addMenuItem({
       name: copyName,
       category: dish.category,
       price: dish.price,
@@ -259,15 +350,40 @@ export default function MenuManagementPage() {
   // Create Dish Handler
   const handleCreateDish = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newDishName.trim() || !newDishPrice) {
-      addToast("error", "Missing Fields", "Please enter dish name and valid price.");
+    const cleanName = newDishName.trim();
+    if (!cleanName) {
+      addToast("error", "Dish Name Required", "Please enter a name for the dish.");
+      return;
+    }
+    if (cleanName.length > 100) {
+      addToast("error", "Name Too Long", "Dish name must be 100 characters or fewer.");
+      return;
+    }
+
+    const priceNum = parseFloat(newDishPrice);
+    if (isNaN(priceNum) || priceNum < 0) {
+      addToast("error", "Invalid Price", "Price must be a valid non-negative number.");
+      return;
+    }
+    if (priceNum > 50000) {
+      addToast("error", "Price Exceeds Limit", "Price cannot exceed ₹50,000.");
+      return;
+    }
+
+    if (newDishPrepTime < 1 || newDishPrepTime > 180) {
+      addToast("error", "Invalid Prep Time", "Preparation time must be between 1 and 180 minutes.");
+      return;
+    }
+
+    if (newDishDesc.trim().length > 400) {
+      addToast("error", "Description Too Long", "Description must be 400 characters or fewer.");
       return;
     }
 
     const created = await addMenuItem({
-      name: newDishName.trim(),
+      name: cleanName,
       category: formatCategoryName(newDishCategory),
-      price: parseFloat(newDishPrice),
+      price: priceNum,
       available: true,
       isVeg: newDishIsVeg,
       desc: newDishDesc.trim() || "Prepared fresh by the culinary team.",
@@ -302,19 +418,75 @@ export default function MenuManagementPage() {
     );
   };
 
-  const handleAddCategory = (e: React.FormEvent) => {
+  const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault();
-    const formatted = formatCategoryName(newCategoryName);
-    if (!formatted || formatted === "General") return;
+    const formatted = formatCategoryName(newCatInput);
+    if (!formatted || formatted === "General") {
+      addToast("error", "Invalid Name", "Please enter a valid category name.");
+      return;
+    }
     if (categoryList.some((c) => isCategoryMatch(c, formatted))) {
       addToast("error", "Duplicate Category", `Category "${formatted}" already exists.`);
       return;
     }
 
+    await addCategory(formatted);
     setNewDishCategory(formatted);
-    setIsCategoryModalOpen(false);
-    setNewCategoryName("");
+    setNewCatInput("");
     addToast("success", "Category Added", `Category "${formatted}" created.`);
+  };
+
+  const handleStartRenameCategory = (cat: string) => {
+    setEditingCategoryOld(cat);
+    setEditingCategoryNew(cat);
+  };
+
+  const handleSaveRenameCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCategoryOld) return;
+    const formatted = formatCategoryName(editingCategoryNew);
+    if (!formatted || formatted === "General") {
+      addToast("error", "Invalid Name", "Please enter a valid category name.");
+      return;
+    }
+    if (
+      !isCategoryMatch(editingCategoryOld, formatted) &&
+      categoryList.some((c) => isCategoryMatch(c, formatted))
+    ) {
+      addToast("error", "Duplicate Category", `Category "${formatted}" already exists.`);
+      return;
+    }
+
+    await renameCategory(editingCategoryOld, formatted);
+    if (activeCategory === editingCategoryOld) {
+      setActiveCategory(formatted);
+    }
+    setEditingCategoryOld(null);
+    setEditingCategoryNew("");
+    addToast("success", "Category Renamed", `Updated "${editingCategoryOld}" to "${formatted}".`);
+  };
+
+  const handleDeleteCategory = async (cat: string) => {
+    const dishCount = menuItems.filter((i) => isCategoryMatch(i.category, cat)).length;
+    await deleteCategory(cat);
+    if (activeCategory === cat) {
+      setActiveCategory("all");
+    }
+    if (dishCount > 0) {
+      addToast("info", "Category Deleted", `"${cat}" deleted. ${dishCount} dishes reassigned to General.`);
+    } else {
+      addToast("info", "Category Deleted", `"${cat}" was deleted.`);
+    }
+  };
+
+  const handleMoveCategory = async (index: number, direction: "up" | "down") => {
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= categoryList.length) return;
+    const newOrder = [...categoryList];
+    const [removed] = newOrder.splice(index, 1);
+    newOrder.splice(targetIndex, 0, removed);
+    await reorderCategories(newOrder);
+    addToast("success", "Order Updated", "Menu category sequence updated.");
   };
 
   const handleApplyPreset = (key: keyof typeof STARTER_TEMPLATES) => {
@@ -399,11 +571,15 @@ export default function MenuManagementPage() {
       return true;
     });
 
-    // Price sort
+    // Sort
     if (priceSort === "low_to_high") {
       result = [...result].sort((a, b) => a.price - b.price);
     } else if (priceSort === "high_to_low") {
       result = [...result].sort((a, b) => b.price - a.price);
+    } else if (priceSort === "name_asc") {
+      result = [...result].sort((a, b) => a.name.localeCompare(b.name));
+    } else if (priceSort === "name_desc") {
+      result = [...result].sort((a, b) => b.name.localeCompare(a.name));
     }
 
     return result;
@@ -471,14 +647,117 @@ export default function MenuManagementPage() {
           </Button>
 
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
-            leftIcon={<FolderPlus className="h-4 w-4" />}
-            onClick={() => setIsCategoryModalOpen(true)}
-            className="text-slate-600 dark:text-slate-400"
+            leftIcon={<Layers className="h-4 w-4 text-indigo-500" />}
+            onClick={() => setIsCategoryManagerOpen(true)}
+            className="border-indigo-500/30 hover:bg-indigo-500/10 text-slate-800 dark:text-white"
           >
-            Category
+            Manage Categories
           </Button>
+        </div>
+      </div>
+
+      {/* ======================================================== */}
+      {/* 1.5. MENU KPI METRICS BAR                               */}
+      {/* ======================================================== */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Total Dishes</span>
+            <div className="h-7 w-7 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+              <Utensils className="h-3.5 w-3.5" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+              {kpiStats.total}
+            </span>
+            <span className="text-[11px] text-slate-500 font-medium">items</span>
+          </div>
+          <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+            Across {kpiStats.categoriesCount} categories
+          </p>
+        </div>
+
+        <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Categories</span>
+            <div className="h-7 w-7 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+              <Layers className="h-3.5 w-3.5" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+              {kpiStats.categoriesCount}
+            </span>
+            <span className="text-[11px] text-slate-500 font-medium">sections</span>
+          </div>
+          <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+            Live menu taxonomy
+          </p>
+        </div>
+
+        <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Live Availability</span>
+            <div className="h-7 w-7 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
+              {kpiStats.inStock}
+            </span>
+            <span className="text-[11px] text-slate-500 font-medium">In Stock</span>
+          </div>
+          <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+            {kpiStats.outOfStock > 0 ? (
+              <span className="text-amber-500 font-semibold">{kpiStats.outOfStock} dishes 86&apos;d</span>
+            ) : (
+              <span className="text-emerald-600 dark:text-emerald-400 font-semibold">100% available</span>
+            )}
+          </p>
+        </div>
+
+        <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Dietary Ratio</span>
+            <div className="h-7 w-7 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+              <Flame className="h-3.5 w-3.5" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-1.5">
+            <span className="text-xl font-black text-emerald-600 dark:text-emerald-400">
+              {kpiStats.veg}
+            </span>
+            <span className="text-xs text-slate-400 font-medium">Veg</span>
+            <span className="text-xs text-slate-300 dark:text-slate-700">/</span>
+            <span className="text-xl font-black text-rose-600 dark:text-rose-400">
+              {kpiStats.nonVeg}
+            </span>
+            <span className="text-xs text-slate-400 font-medium">Non</span>
+          </div>
+          <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+            {kpiStats.total > 0 ? `${Math.round((kpiStats.veg / kpiStats.total) * 100)}% Pure Veg` : "No dishes"}
+          </p>
+        </div>
+
+        <div className="col-span-2 sm:col-span-1 p-3.5 rounded-2xl bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Average Price</span>
+            <div className="h-7 w-7 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+              <IndianRupee className="h-3.5 w-3.5" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-1">
+            <span className="text-2xl font-black text-slate-900 dark:text-white font-mono tracking-tight">
+              ₹{kpiStats.avg}
+            </span>
+          </div>
+          <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+            Across entire catalog
+          </p>
         </div>
       </div>
 
@@ -576,6 +855,8 @@ export default function MenuManagementPage() {
             <option value="none">Sort by: Default</option>
             <option value="low_to_high">Price: Low to High</option>
             <option value="high_to_low">Price: High to Low</option>
+            <option value="name_asc">Name: A to Z</option>
+            <option value="name_desc">Name: Z to A</option>
           </select>
         </div>
       </div>
@@ -669,7 +950,14 @@ export default function MenuManagementPage() {
                 {/* Thumbnail banner if available */}
                 {item.imageUrl ? (
                   <div className="h-36 -mx-6 -mt-6 mb-4 relative overflow-hidden bg-slate-100 dark:bg-slate-950">
-                    <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                    <img
+                      src={item.imageUrl}
+                      alt={item.name}
+                      onError={(e) => {
+                        (e.currentTarget as HTMLElement).style.display = "none";
+                      }}
+                      className="w-full h-full object-cover"
+                    />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent dark:from-slate-900" />
                   </div>
                 ) : null}
@@ -805,7 +1093,7 @@ export default function MenuManagementPage() {
                     {/* Delete Action */}
                     <button
                       type="button"
-                      onClick={() => handleDelete(item.id, item.name)}
+                      onClick={() => setDishToDelete({ id: item.id, name: item.name })}
                       className="h-8 w-8 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-500/10 flex items-center justify-center transition-colors cursor-pointer"
                       title="Delete dish"
                     >
@@ -872,38 +1160,174 @@ export default function MenuManagementPage() {
         existingCategories={categoryList}
       />
 
-      {/* Add Category Modal */}
+      {/* Category Manager Modal */}
       <Modal
-        isOpen={isCategoryModalOpen}
-        onClose={() => setIsCategoryModalOpen(false)}
-        title="Add Menu Category"
-        description="Create a new section for your digital menu (e.g. Tandoori Starters, Biryani, Artisanal Beverages)."
+        isOpen={isCategoryManagerOpen}
+        onClose={() => {
+          setIsCategoryManagerOpen(false);
+          setEditingCategoryOld(null);
+          setEditingCategoryNew("");
+          setNewCatInput("");
+        }}
+        title="Manage Menu Categories"
+        description="Organize, rename, reorder, or delete categories. The sequence below directly affects customer QR ordering."
+        className="max-w-xl"
         footer={
-          <div className="flex items-center justify-end gap-2 w-full">
-            <Button variant="ghost" size="sm" onClick={() => setIsCategoryModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" form="add-category-form" variant="glow" size="sm">
-              Create Category
+          <div className="flex items-center justify-end w-full">
+            <Button
+              variant="glow"
+              size="sm"
+              onClick={() => {
+                setIsCategoryManagerOpen(false);
+                setEditingCategoryOld(null);
+                setEditingCategoryNew("");
+              }}
+            >
+              Done
             </Button>
           </div>
         }
       >
-        <form id="add-category-form" onSubmit={handleAddCategory} className="space-y-4 py-2">
-          <div>
-            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1">
-              Category Name *
-            </label>
+        <div className="space-y-4 py-1">
+          {/* Add Category Form */}
+          <form onSubmit={handleAddCategory} className="flex gap-2">
             <input
               type="text"
-              required
-              placeholder="e.g. Tandoori Breads or South Indian Tiffin"
-              value={newCategoryName}
-              onChange={(e) => setNewCategoryName(e.target.value)}
-              className="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 shadow-xs"
+              placeholder="e.g. Artisanal Breads or Mocktails"
+              value={newCatInput}
+              onChange={(e) => setNewCatInput(e.target.value)}
+              className="flex-1 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 shadow-xs"
             />
+            <Button type="submit" variant="glow" size="sm" leftIcon={<Plus className="h-4 w-4" />}>
+              Add
+            </Button>
+          </form>
+
+          {/* Categories List */}
+          <div className="space-y-2 max-h-[340px] overflow-y-auto pr-1">
+            {categoryList.map((cat, idx) => {
+              const dishCount = menuItems.filter((i) => isCategoryMatch(i.category, cat)).length;
+              const isEditing = editingCategoryOld === cat;
+
+              return (
+                <div
+                  key={cat}
+                  className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800"
+                >
+                  {isEditing ? (
+                    <form onSubmit={handleSaveRenameCategory} className="flex-1 flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={editingCategoryNew}
+                        onChange={(e) => setEditingCategoryNew(e.target.value)}
+                        autoFocus
+                        className="flex-1 px-2.5 py-1 rounded-lg bg-white dark:bg-slate-950 border border-emerald-500 text-xs text-slate-900 dark:text-white focus:outline-none"
+                      />
+                      <Button type="submit" variant="glow" size="sm" className="h-7 px-2.5 text-xs">
+                        Save
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => setEditingCategoryOld(null)}
+                      >
+                        Cancel
+                      </Button>
+                    </form>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2 min-w-0">
+                        {/* Reorder Buttons */}
+                        <div className="flex flex-col gap-0.5">
+                          <button
+                            type="button"
+                            disabled={idx === 0}
+                            onClick={() => handleMoveCategory(idx, "up")}
+                            className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 disabled:opacity-20 disabled:cursor-not-allowed"
+                            title="Move category up"
+                          >
+                            <ArrowUp className="h-3 w-3" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={idx === categoryList.length - 1}
+                            onClick={() => handleMoveCategory(idx, "down")}
+                            className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 disabled:opacity-20 disabled:cursor-not-allowed"
+                            title="Move category down"
+                          >
+                            <ArrowDown className="h-3 w-3" />
+                          </button>
+                        </div>
+
+                        <div>
+                          <span className="text-xs font-bold text-slate-900 dark:text-white">
+                            {cat}
+                          </span>
+                          <span className="ml-2 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                            ({dishCount} {dishCount === 1 ? "dish" : "dishes"})
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleStartRenameCategory(cat)}
+                          className="h-7 w-7 rounded-lg text-slate-500 hover:text-emerald-600 hover:bg-emerald-500/10 flex items-center justify-center transition-colors cursor-pointer"
+                          title="Rename category"
+                        >
+                          <Edit2 className="h-3 w-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteCategory(cat)}
+                          className="h-7 w-7 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-500/10 flex items-center justify-center transition-colors cursor-pointer"
+                          title="Delete category"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })}
           </div>
-        </form>
+        </div>
+      </Modal>
+
+      {/* Delete Dish Confirmation Modal */}
+      <Modal
+        isOpen={!!dishToDelete}
+        onClose={() => setDishToDelete(null)}
+        title="Delete Menu Dish"
+        description="Are you sure you want to permanently remove this dish?"
+        footer={
+          <div className="flex items-center justify-end gap-2 w-full">
+            <Button variant="ghost" size="sm" onClick={() => setDishToDelete(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-rose-600 hover:bg-rose-700 text-white border-transparent"
+              onClick={confirmDeleteDish}
+            >
+              Delete Dish
+            </Button>
+          </div>
+        }
+      >
+        <div className="py-2 space-y-2">
+          <p className="text-xs text-slate-600 dark:text-slate-300">
+            You are about to delete <strong className="text-slate-900 dark:text-white font-bold">{dishToDelete?.name}</strong>.
+          </p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            This will immediately remove it from all active customer QR menus, waiter POS terminals, and kitchen displays.
+          </p>
+        </div>
       </Modal>
 
       {/* Extended Manual Add New Dish Modal */}
@@ -1088,20 +1512,75 @@ export default function MenuManagementPage() {
             </label>
           </div>
 
-          {/* Image URL & Quick Indian Presets */}
+          {/* Dish Photography Upload, Dropzone & Presets */}
           <div>
-            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1">
-              Food Photography (Optional)
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                Food Photography (Optional)
+              </label>
+              <input
+                ref={addDishFileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={(e) => handleDishPhotoSelect(e, false)}
+              />
+            </div>
+
+            {newDishImageUrl ? (
+              <div className="relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 mb-2 group">
+                <div className="h-32 w-full bg-slate-950">
+                  <img
+                    src={newDishImageUrl}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLElement).style.display = "none";
+                    }}
+                  />
+                </div>
+                <div className="absolute top-2 right-2 flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => addDishFileInputRef.current?.click()}
+                    className="px-2.5 py-1 rounded-lg bg-slate-900/80 hover:bg-slate-900 text-white text-xs font-semibold backdrop-blur cursor-pointer shadow-md"
+                  >
+                    Replace Photo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNewDishImageUrl("")}
+                    className="h-7 w-7 rounded-lg bg-rose-600/80 hover:bg-rose-600 text-white flex items-center justify-center backdrop-blur cursor-pointer shadow-md"
+                    title="Remove Photo"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div
+                onClick={() => addDishFileInputRef.current?.click()}
+                className="border-2 border-dashed border-slate-300 dark:border-slate-800 hover:border-emerald-500 dark:hover:border-emerald-500/70 rounded-2xl p-4 text-center cursor-pointer transition-colors bg-slate-50/50 dark:bg-slate-950/50 mb-2"
+              >
+                <ImagePlus className="h-6 w-6 text-slate-400 mx-auto mb-1.5" />
+                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
+                  Click to upload high-res food photo
+                </span>
+                <span className="text-[11px] text-slate-400 block mt-0.5">
+                  PNG, JPG or WEBP up to 5MB
+                </span>
+              </div>
+            )}
+
             <input
               type="url"
-              placeholder="https://images.unsplash.com/..."
+              placeholder="Or paste image URL (https://...)"
               value={newDishImageUrl}
               onChange={(e) => setNewDishImageUrl(e.target.value)}
-              className="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 shadow-xs"
+              className="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 shadow-xs"
             />
             <div className="flex items-center gap-1.5 mt-2 overflow-x-auto scrollbar-none pb-1">
-              <span className="text-[10px] text-slate-500 shrink-0">Indian presets:</span>
+              <span className="text-[10px] text-slate-500 shrink-0">Presets:</span>
               {IMAGE_PRESETS.map((p) => (
                 <button
                   key={p.label}
@@ -1169,7 +1648,7 @@ export default function MenuManagementPage() {
               className="text-rose-600 dark:text-rose-400 border-rose-500/30 hover:bg-rose-500/10"
               onClick={() => {
                 setIsEditModalOpen(false);
-                handleDelete(editDishId, editDishName);
+                setDishToDelete({ id: editDishId, name: editDishName });
               }}
             >
               Delete Dish
@@ -1225,17 +1704,17 @@ export default function MenuManagementPage() {
                 </label>
                 <button
                   type="button"
-                  onClick={() => setIsCategoryModalOpen(true)}
+                  onClick={() => setIsCategoryManagerOpen(true)}
                   className="text-[11px] text-emerald-600 dark:text-[#14F1C7] hover:underline font-semibold cursor-pointer"
                 >
-                  + New Category
+                  Manage Categories
                 </button>
               </div>
               <select
                 value={editDishCategory}
                 onChange={(e) => {
                   if (e.target.value === "__create_new__") {
-                    setIsCategoryModalOpen(true);
+                    setIsCategoryManagerOpen(true);
                   } else {
                     setEditDishCategory(e.target.value);
                   }
@@ -1248,7 +1727,7 @@ export default function MenuManagementPage() {
                   </option>
                 ))}
                 <option value="__create_new__" className="text-emerald-600 font-bold">
-                  + Create New Category…
+                  + Manage Categories…
                 </option>
               </select>
             </div>
@@ -1401,17 +1880,72 @@ export default function MenuManagementPage() {
             </label>
           </div>
 
-          {/* Image URL & Quick Presets */}
+          {/* Dish Photography Upload, Dropzone & Presets */}
           <div>
-            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1">
-              Food Photography (Optional)
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                Food Photography (Optional)
+              </label>
+              <input
+                ref={editDishFileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={(e) => handleDishPhotoSelect(e, true)}
+              />
+            </div>
+
+            {editDishImageUrl ? (
+              <div className="relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 mb-2 group">
+                <div className="h-32 w-full bg-slate-950">
+                  <img
+                    src={editDishImageUrl}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLElement).style.display = "none";
+                    }}
+                  />
+                </div>
+                <div className="absolute top-2 right-2 flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => editDishFileInputRef.current?.click()}
+                    className="px-2.5 py-1 rounded-lg bg-slate-900/80 hover:bg-slate-900 text-white text-xs font-semibold backdrop-blur cursor-pointer shadow-md"
+                  >
+                    Replace Photo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditDishImageUrl("")}
+                    className="h-7 w-7 rounded-lg bg-rose-600/80 hover:bg-rose-600 text-white flex items-center justify-center backdrop-blur cursor-pointer shadow-md"
+                    title="Remove Photo"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div
+                onClick={() => editDishFileInputRef.current?.click()}
+                className="border-2 border-dashed border-slate-300 dark:border-slate-800 hover:border-emerald-500 dark:hover:border-emerald-500/70 rounded-2xl p-4 text-center cursor-pointer transition-colors bg-slate-50/50 dark:bg-slate-950/50 mb-2"
+              >
+                <ImagePlus className="h-6 w-6 text-slate-400 mx-auto mb-1.5" />
+                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
+                  Click to upload high-res food photo
+                </span>
+                <span className="text-[11px] text-slate-400 block mt-0.5">
+                  PNG, JPG or WEBP up to 5MB
+                </span>
+              </div>
+            )}
+
             <input
               type="url"
-              placeholder="https://images.unsplash.com/..."
+              placeholder="Or paste image URL (https://...)"
               value={editDishImageUrl}
               onChange={(e) => setEditDishImageUrl(e.target.value)}
-              className="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 shadow-xs"
+              className="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 shadow-xs"
             />
             <div className="flex items-center gap-1.5 mt-2 overflow-x-auto scrollbar-none pb-1">
               <span className="text-[10px] text-slate-500 shrink-0">Presets:</span>

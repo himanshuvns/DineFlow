@@ -61,6 +61,7 @@ type MenuItem struct {
 	ID              bson.ObjectID    `bson:"_id,omitempty" json:"id"`
 	TenantID        bson.ObjectID    `bson:"tenantId" json:"tenantId"`
 	CategoryID      bson.ObjectID    `bson:"categoryId" json:"categoryId"`
+	CategoryName    string           `bson:"categoryName,omitempty" json:"category,omitempty"`
 	Name            string           `bson:"name" json:"name"`
 	Slug            string           `bson:"slug" json:"slug"`
 	Description     string           `bson:"description,omitempty" json:"description,omitempty"`

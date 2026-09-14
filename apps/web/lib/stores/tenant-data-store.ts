@@ -326,6 +326,10 @@ interface TenantDataState {
 
   // Actions
   initializeTenant: (tenant: Tenant | null, user: User | null) => Promise<void>;
+  addCategory: (name: string) => Promise<string>;
+  renameCategory: (oldName: string, newName: string) => Promise<void>;
+  deleteCategory: (name: string) => Promise<void>;
+  reorderCategories: (categories: string[]) => Promise<void>;
   addMenuItem: (item: Omit<MenuItem, "id">) => Promise<MenuItem>;
   updateMenuItem: (id: string, updates: Partial<MenuItem>) => Promise<void>;
   deleteMenuItem: (id: string) => Promise<void>;
@@ -482,8 +486,9 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
 
     // Try to fetch from backend API if user is authenticated
     try {
-      const [itemsRes, tablesRes, ordersRes] = await Promise.allSettled([
+      const [itemsRes, categoriesRes, tablesRes, ordersRes] = await Promise.allSettled([
         apiClient.get("/menu/items"),
+        apiClient.get("/menu/categories"),
         apiClient.get("/tables"),
         apiClient.get("/orders"),
       ]);
@@ -493,20 +498,35 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
       let remoteTables: TableItem[] = [];
       let remoteOrders: KdsOrder[] = [];
 
+      if (categoriesRes.status === "fulfilled" && categoriesRes.value.data?.data) {
+        const cats = categoriesRes.value.data.data;
+        if (Array.isArray(cats) && cats.length > 0) {
+          remoteCategories = cats.map((c: any) => formatCategoryName(c.name || c));
+        }
+      }
+
       if (itemsRes.status === "fulfilled" && itemsRes.value.data?.data) {
         const items = itemsRes.value.data.data;
         if (Array.isArray(items) && items.length > 0) {
           remoteItems = items.map((i: any) => ({
-            id: i.id || i._id,
-            name: i.name,
-            category: i.category || "General",
-            price: i.price,
-            available: i.available !== false,
-            isVeg: i.isVeg ?? true,
-            desc: i.description || i.desc || "",
+            id: String(i.id || i._id),
+            name: i.name || "Untitled Dish",
+            category: formatCategoryName(i.category || i.categoryName || "General"),
+            price: typeof i.price === "number" ? i.price : (typeof i.basePrice === "number" ? i.basePrice : 0),
+            available: i.available !== undefined ? i.available : (i.isAvailable !== false),
+            isVeg: i.isVeg !== undefined ? i.isVeg : (Array.isArray(i.dietaryTags) ? (i.dietaryTags.includes("veg") || !i.dietaryTags.includes("non_veg")) : true),
+            desc: i.desc || i.description || "",
             imageUrl: i.imageUrl || i.image,
+            variantsCount: Array.isArray(i.variants) ? i.variants.length : (i.variantsCount || 0),
+            modifiersCount: Array.isArray(i.modifierGroups) ? i.modifierGroups.length : (i.modifiersCount || 0),
+            bestseller: i.bestseller || i.isBestseller || false,
+            recommended: i.recommended || i.isRecommended || false,
+            spicyLevel: typeof i.spicyLevel === "number" ? i.spicyLevel : 1,
+            prepTimeMinutes: typeof i.prepTimeMinutes === "number" ? i.prepTimeMinutes : 15,
+            hindiName: i.hindiName || "",
           }));
-          remoteCategories = Array.from(new Set(remoteItems.map((i) => i.category)));
+          const extractedCats = remoteItems.map((i) => i.category);
+          remoteCategories = deduplicateCategories([...remoteCategories, ...extractedCats]);
         }
       }
 
@@ -653,6 +673,96 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
 
   },
 
+  addCategory: async (name: string) => {
+    const state = get();
+    const formatted = formatCategoryName(name);
+    if (!formatted || formatted === "General") return formatted;
+    const updated = deduplicateCategories([...state.categories, formatted], {
+      removePlaceholderGeneral: true,
+    });
+
+    try {
+      await apiClient.post("/menu/categories", {
+        name: formatted,
+        displayOrder: updated.length,
+        isActive: true,
+      });
+    } catch (e) {
+      console.warn("Backend create category skipped:", e);
+    }
+
+    const nextState = { categories: updated };
+    persistTenantState(state.tenantId, nextState);
+    set(nextState);
+    return formatted;
+  },
+
+  renameCategory: async (oldName: string, newName: string) => {
+    const state = get();
+    const formattedOld = formatCategoryName(oldName);
+    const formattedNew = formatCategoryName(newName);
+    if (!formattedNew || formattedOld === formattedNew) return;
+
+    // Update categories list
+    const updatedCategories = deduplicateCategories(
+      state.categories.map((c) => (isCategoryMatch(c, formattedOld) ? formattedNew : c)),
+      { removePlaceholderGeneral: true }
+    );
+
+    // Update all dishes assigned to old category
+    const updatedItems = state.menuItems.map((item) =>
+      isCategoryMatch(item.category, formattedOld) ? { ...item, category: formattedNew } : item
+    );
+
+    const affectedDishIds = updatedItems
+      .filter((item) => isCategoryMatch(item.category, formattedNew))
+      .map((item) => item.id);
+
+    try {
+      if (affectedDishIds.length > 0) {
+        await apiClient.patch("/menu/items/bulk", {
+          ids: affectedDishIds,
+          updates: { category: formattedNew },
+        });
+      }
+    } catch (e) {
+      console.warn("Backend rename category dishes update skipped:", e);
+    }
+
+    const nextState = { categories: updatedCategories, menuItems: updatedItems };
+    persistTenantState(state.tenantId, nextState);
+    set(nextState);
+  },
+
+  deleteCategory: async (name: string) => {
+    const state = get();
+    const formatted = formatCategoryName(name);
+
+    const remainingCats = state.categories.filter((c) => !isCategoryMatch(c, formatted));
+    const fallbackCategory = remainingCats[0] || "General";
+    const cleanCats = deduplicateCategories(
+      remainingCats.length > 0 ? remainingCats : ["General"],
+      { removePlaceholderGeneral: false }
+    );
+
+    // Reassign items from deleted category to fallback category
+    const updatedItems = state.menuItems.map((item) =>
+      isCategoryMatch(item.category, formatted) ? { ...item, category: fallbackCategory } : item
+    );
+
+    const nextState = { categories: cleanCats, menuItems: updatedItems };
+    persistTenantState(state.tenantId, nextState);
+    set(nextState);
+  },
+
+  reorderCategories: async (newOrder: string[]) => {
+    const state = get();
+    const cleanCats = deduplicateCategories(newOrder, { removePlaceholderGeneral: true });
+    const nextState = { categories: cleanCats };
+    persistTenantState(state.tenantId, nextState);
+    set(nextState);
+  },
+
   addMenuItem: async (newItemData) => {
     const state = get();
     const id = `itm_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
@@ -662,15 +772,25 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
       category: formatCategoryName(newItemData.category),
     };
 
-    // Try posting to API
+    // Post to backend API
     try {
-      await apiClient.post("/menu/items", {
+      const res = await apiClient.post("/menu/items", {
         name: createdItem.name,
         category: createdItem.category,
         price: createdItem.price,
         description: createdItem.desc,
         isVeg: createdItem.isVeg,
+        available: createdItem.available,
+        imageUrl: createdItem.imageUrl,
+        bestseller: createdItem.bestseller,
+        recommended: createdItem.recommended,
+        spicyLevel: createdItem.spicyLevel,
+        prepTimeMinutes: createdItem.prepTimeMinutes,
+        hindiName: createdItem.hindiName,
       });
+      if (res.data?.data?.id) {
+        createdItem.id = String(res.data.data.id);
+      }
     } catch (e) {
       console.warn("Backend save skipped or offline:", e);
     }
@@ -692,7 +812,6 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
     };
 
     persistTenantState(state.tenantId, nextState);
-
     set(nextState);
     return createdItem;
   },
@@ -716,6 +835,26 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
       );
     }
 
+    // Call backend PUT endpoint to persist
+    try {
+      await apiClient.put(`/menu/items/${id}`, {
+        name: cleanUpdates.name,
+        category: cleanUpdates.category,
+        price: cleanUpdates.price,
+        description: cleanUpdates.desc,
+        isVeg: cleanUpdates.isVeg,
+        available: cleanUpdates.available,
+        imageUrl: cleanUpdates.imageUrl,
+        bestseller: cleanUpdates.bestseller,
+        recommended: cleanUpdates.recommended,
+        spicyLevel: cleanUpdates.spicyLevel,
+        prepTimeMinutes: cleanUpdates.prepTimeMinutes,
+        hindiName: cleanUpdates.hindiName,
+      });
+    } catch (e) {
+      console.warn("Backend update skipped or offline:", e);
+    }
+
     const nextState = { categories: updatedCategories, menuItems: updatedItems };
     persistTenantState(state.tenantId, nextState);
     set(nextState);
@@ -730,9 +869,7 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
     }
 
     const updatedItems = state.menuItems.filter((i) => i.id !== id);
-
     persistTenantState(state.tenantId, { menuItems: updatedItems });
-
     set({ menuItems: updatedItems });
   },
 

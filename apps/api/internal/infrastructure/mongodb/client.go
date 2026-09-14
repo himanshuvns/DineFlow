@@ -111,6 +111,10 @@ func (c *Client) EnsureIndexes(ctx context.Context) error {
 			{Keys: bson.D{{Key: "shortCode", Value: 1}}, Options: options.Index().SetUnique(true).SetName("idx_short_code")},
 			{Keys: bson.D{{Key: "tenantId", Value: 1}, {Key: "tableId", Value: 1}}, Options: options.Index().SetUnique(true).SetName("idx_tenant_table")},
 		},
+		"menu_categories": {
+			{Keys: bson.D{{Key: "tenantId", Value: 1}, {Key: "displayOrder", Value: 1}}, Options: options.Index().SetName("idx_tenant_cat_order")},
+			{Keys: bson.D{{Key: "tenantId", Value: 1}, {Key: "slug", Value: 1}}, Options: options.Index().SetName("idx_tenant_cat_slug")},
+		},
 		"menu_items": {
 			{Keys: bson.D{{Key: "tenantId", Value: 1}, {Key: "menuId", Value: 1}, {Key: "categoryId", Value: 1}}, Options: options.Index().SetName("idx_tenant_menu_cat")},
 			{Keys: bson.D{{Key: "tenantId", Value: 1}, {Key: "isAvailable", Value: 1}}, Options: options.Index().SetName("idx_tenant_available")},

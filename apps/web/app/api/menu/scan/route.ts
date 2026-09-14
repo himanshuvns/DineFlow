@@ -12,13 +12,13 @@ interface ScanMenuRequestBody {
   existingItems?: MenuItem[];
 }
 
-// Ordered fallback chain — starts with fastest model (~7s), then larger reasoning models
+// Ordered fallback chain — starts with fastest active models, then larger reasoning models
 const GEMINI_MODELS = [
+  "gemini-2.0-flash",
+  "gemini-2.0-flash-lite",
+  "gemini-1.5-flash",
+  "gemini-2.5-flash",
   "gemini-3.5-flash-lite",
-  "gemini-3.5-flash",
-  "gemini-3.6-flash",
-  "gemini-3.7-flash",
-  "gemini-3.8-flash",
 ];
 
 const MENU_PROMPT = `You are an expert restaurant menu digitizer.

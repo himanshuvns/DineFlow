@@ -24,6 +24,8 @@ import {
 } from "@/components/customer/dish-customizer-sheet";
 import { CustomerCartDrawer } from "@/components/customer/customer-cart-drawer";
 import { useCartStore } from "@/lib/stores/cart-store";
+import { useTenantDataStore } from "@/lib/stores/tenant-data-store";
+import { isCategoryMatch } from "@/lib/utils/category-utils";
 
 // Gourmet mock menu with rich data and high-res photography
 const MENU_DATA: {
@@ -213,8 +215,88 @@ export default function CustomerMenuPage() {
   const tenantSlug = (params?.tenantSlug as string) || "the-grand-bistro";
   const tableId = (params?.tableId as string) || "t-04";
 
+  const { menuItems, categories, tenantName: storeTenantName, tenantSlug: storeTenantSlug } = useTenantDataStore();
+
+  const dynamicMenuData = React.useMemo(() => {
+    // If tenant has menu items in store, transform and group them dynamically
+    if (menuItems && menuItems.length > 0) {
+      const catMap = new Map<string, CustomizerDish[]>();
+
+      menuItems.forEach((item) => {
+        // Customers only see and order available (non-86'd) dishes
+        if (!item.available) return;
+        const cat = item.category || "General";
+        if (!catMap.has(cat)) {
+          catMap.set(cat, []);
+        }
+        catMap.get(cat)!.push({
+          id: item.id,
+          name: item.name,
+          description:
+            item.desc ||
+            (item.hindiName ? item.hindiName : "Freshly prepared by our culinary team."),
+          basePrice: item.price,
+          imageUrl: item.imageUrl,
+          isVeg: item.isVeg,
+          variants:
+            item.variantsCount && item.variantsCount > 0
+              ? [
+                  { name: "Regular Portion", price: item.price },
+                  { name: "Large / Sharing", price: Math.round(item.price * 1.5) },
+                ]
+              : undefined,
+          modifierGroups:
+            item.modifiersCount && item.modifiersCount > 0
+              ? [
+                  {
+                    id: `mod-${item.id}`,
+                    name: "Add-ons & Accompaniments",
+                    minSelections: 0,
+                    maxSelections: 2,
+                    options: [
+                      { name: "Extra Sauce / Chutney", price: 30 },
+                      { name: "Extra Cheese / Butter", price: 60 },
+                    ],
+                  },
+                ]
+              : undefined,
+        });
+      });
+
+      if (catMap.size > 0) {
+        const result: { category: string; items: CustomizerDish[] }[] = [];
+        const seen = new Set<string>();
+
+        // First add categories in configured order
+        categories.forEach((c) => {
+          for (const [catName, items] of catMap.entries()) {
+            if (isCategoryMatch(catName, c) && !seen.has(catName)) {
+              result.push({ category: catName, items });
+              seen.add(catName);
+            }
+          }
+        });
+
+        // Add any remaining categories not explicitly ordered
+        for (const [catName, items] of catMap.entries()) {
+          if (!seen.has(catName)) {
+            result.push({ category: catName, items });
+            seen.add(catName);
+          }
+        }
+
+        return result;
+      }
+    }
+
+    // Fallback to static gourmet demo menu
+    return MENU_DATA;
+  }, [menuItems, categories]);
+
   const restaurantDisplayName =
-    tenantSlug === "the-grand-bistro"
+    storeTenantSlug === tenantSlug && storeTenantName && storeTenantName !== "Your Restaurant"
+      ? storeTenantName
+      : tenantSlug === "the-grand-bistro"
       ? "The Grand Bistro & Lounge"
       : tenantSlug
           .split("-")
@@ -237,7 +319,13 @@ export default function CustomerMenuPage() {
   // Filtering & Search
   const [searchQuery, setSearchQuery] = React.useState("");
   const [dietaryFilter, setDietaryFilter] = React.useState<"all" | "veg" | "non-veg">("all");
-  const [activeCategory, setActiveCategory] = React.useState(MENU_DATA[0].category);
+  const [activeCategory, setActiveCategory] = React.useState(dynamicMenuData[0]?.category || "");
+
+  React.useEffect(() => {
+    if (dynamicMenuData.length > 0 && !activeCategory) {
+      setActiveCategory(dynamicMenuData[0].category);
+    }
+  }, [dynamicMenuData, activeCategory]);
 
   // Customizer sheet modal state
   const [customizingDish, setCustomizingDish] = React.useState<CustomizerDish | null>(null);
@@ -259,12 +347,12 @@ export default function CustomerMenuPage() {
   };
 
   const handleOpenWhatsApp = () => {
-    const msg = `Hi The Grand Bistro! 👋 I am browsing the digital menu for ${tableName}. Could I get some recommendations or assistance?`;
+    const msg = `Hi ${restaurantDisplayName}! 👋 I am browsing the digital menu for ${tableName}. Could I get some recommendations or assistance?`;
     window.open(`https://wa.me/919876543210?text=${encodeURIComponent(msg)}`, "_blank");
   };
 
   // Filtered dishes
-  const filteredCategories = MENU_DATA.map((cat) => {
+  const filteredCategories = dynamicMenuData.map((cat) => {
     const items = cat.items.filter((item) => {
       // Dietary filter
       if (dietaryFilter === "veg" && !item.isVeg) return false;
@@ -494,6 +582,9 @@ export default function CustomerMenuPage() {
                         <img
                           src={dish.imageUrl}
                           alt={dish.name}
+                          onError={(e) => {
+                            (e.currentTarget as HTMLElement).style.display = "none";
+                          }}
                           className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                       </div>

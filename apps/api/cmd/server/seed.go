@@ -19,7 +19,7 @@ import (
 func seedDefaultData(ctx context.Context, db *mongoinfra.Client, log *zap.Logger) error {
 	tenantsColl := db.Collection("tenants")
 	usersColl := db.Collection("users")
-	categoriesColl := db.Collection("categories")
+	categoriesColl := db.Collection("menu_categories")
 	itemsColl := db.Collection("menu_items")
 	tablesColl := db.Collection("tables")
 
@@ -410,7 +410,7 @@ func runStartupCleanup(ctx context.Context, db *mongoinfra.Client, log *zap.Logg
 	}
 
 	// ── Compact all collections to reclaim disk ─────────────────────────────
-	collections := []string{"tenants", "users", "menu_items", "categories", "tables", "orders", "qr_codes"}
+	collections := []string{"tenants", "users", "menu_items", "menu_categories", "tables", "orders", "qr_codes"}
 	for _, coll := range collections {
 		var result bson.M
 		err := db.DB().RunCommand(ctx, bson.D{{Key: "compact", Value: coll}}).Decode(&result)

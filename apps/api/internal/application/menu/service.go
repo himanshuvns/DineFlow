@@ -3,6 +3,7 @@ package menu
 import (
 	"context"
 	"errors"
+	"regexp"
 	"strings"
 	"time"
 
@@ -83,6 +84,39 @@ func (s *Service) UpdateCategory(ctx context.Context, tenantID, id bson.ObjectID
 	return nil
 }
 
+func (s *Service) FindOrCreateCategoryByName(ctx context.Context, tenantID bson.ObjectID, name string) (bson.ObjectID, string, error) {
+	trimmed := strings.TrimSpace(name)
+	if trimmed == "" {
+		trimmed = "General"
+	}
+
+	coll := s.db.Collection("menu_categories")
+	scope := mongoinfra.NewScope(coll, tenantID)
+
+	filter := bson.M{"name": bson.M{"$regex": "^" + regexp.QuoteMeta(trimmed) + "$", "$options": "i"}}
+	var cat domainmenu.Category
+	err := scope.FindOne(ctx, filter, &cat)
+	if err == nil {
+		return cat.ID, cat.Name, nil
+	}
+
+	newCat := domainmenu.Category{
+		ID:           bson.NewObjectID(),
+		TenantID:     tenantID,
+		Name:         trimmed,
+		Slug:         strings.ToLower(strings.ReplaceAll(trimmed, " ", "-")),
+		DisplayOrder: 99,
+		IsActive:     true,
+		CreatedAt:    time.Now().UTC(),
+		UpdatedAt:    time.Now().UTC(),
+	}
+	_, err = scope.InsertOne(ctx, newCat)
+	if err != nil {
+		return bson.NilObjectID, "", err
+	}
+	return newCat.ID, newCat.Name, nil
+}
+
 func (s *Service) DeleteCategory(ctx context.Context, tenantID, id bson.ObjectID) error {
 	coll := s.db.Collection("menu_categories")
 	scope := mongoinfra.NewScope(coll, tenantID)
@@ -93,6 +127,19 @@ func (s *Service) DeleteCategory(ctx context.Context, tenantID, id bson.ObjectID
 	if res.DeletedCount == 0 {
 		return errors.New("category not found")
 	}
+
+	// Reassign items from deleted category to General category
+	genID, genName, err := s.FindOrCreateCategoryByName(ctx, tenantID, "General")
+	if err == nil && !genID.IsZero() && genID != id {
+		itemsColl := s.db.Collection("menu_items")
+		itemsScope := mongoinfra.NewScope(itemsColl, tenantID)
+		_, _ = itemsScope.UpdateMany(ctx, bson.M{"categoryId": id}, bson.M{"$set": bson.M{
+			"categoryId":   genID,
+			"categoryName": genName,
+			"updatedAt":    time.Now().UTC(),
+		}})
+	}
+
 	return nil
 }
 
@@ -121,6 +168,23 @@ func (s *Service) ListItems(ctx context.Context, tenantID bson.ObjectID, categor
 	if items == nil {
 		items = []domainmenu.MenuItem{}
 	}
+
+	// Enrich category name from categories map if missing
+	cats, err := s.ListCategories(ctx, tenantID)
+	if err == nil && len(cats) > 0 {
+		catMap := make(map[bson.ObjectID]string, len(cats))
+		for _, c := range cats {
+			catMap[c.ID] = c.Name
+		}
+		for i := range items {
+			if items[i].CategoryName == "" {
+				if cName, exists := catMap[items[i].CategoryID]; exists {
+					items[i].CategoryName = cName
+				}
+			}
+		}
+	}
+
 	return items, nil
 }
 
@@ -129,6 +193,20 @@ func (s *Service) CreateItem(ctx context.Context, item *domainmenu.MenuItem) err
 	item.Slug = strings.ToLower(strings.ReplaceAll(strings.TrimSpace(item.Name), " ", "-"))
 	item.CreatedAt = time.Now().UTC()
 	item.UpdatedAt = item.CreatedAt
+
+	if item.CategoryID.IsZero() {
+		catName := item.CategoryName
+		if catName == "" {
+			catName = "General"
+		}
+		catID, resolvedName, err := s.FindOrCreateCategoryByName(ctx, item.TenantID, catName)
+		if err != nil {
+			return err
+		}
+		item.CategoryID = catID
+		item.CategoryName = resolvedName
+	}
+
 	if err := item.Validate(); err != nil {
 		return err
 	}
@@ -137,6 +215,49 @@ func (s *Service) CreateItem(ctx context.Context, item *domainmenu.MenuItem) err
 	scope := mongoinfra.NewScope(coll, item.TenantID)
 	_, err := scope.InsertOne(ctx, item)
 	return err
+}
+
+func (s *Service) UpdateItem(ctx context.Context, tenantID, id bson.ObjectID, item *domainmenu.MenuItem) error {
+	coll := s.db.Collection("menu_items")
+	scope := mongoinfra.NewScope(coll, tenantID)
+
+	updateFields := bson.M{
+		"name":            item.Name,
+		"slug":            strings.ToLower(strings.ReplaceAll(strings.TrimSpace(item.Name), " ", "-")),
+		"description":     item.Description,
+		"basePrice":       item.BasePrice,
+		"currency":        item.Currency,
+		"imageUrl":        item.ImageURL,
+		"isAvailable":     item.IsAvailable,
+		"prepTimeMinutes": item.PrepTimeMinutes,
+		"dietaryTags":     item.DietaryTags,
+		"variants":        item.Variants,
+		"modifierGroups":  item.ModifierGroups,
+		"isBestseller":    item.IsBestseller,
+		"isRecommended":   item.IsRecommended,
+		"spicyLevel":      item.SpicyLevel,
+		"hindiName":       item.HindiName,
+		"updatedAt":       time.Now().UTC(),
+	}
+
+	if !item.CategoryID.IsZero() {
+		updateFields["categoryId"] = item.CategoryID
+	}
+	if item.CategoryName != "" {
+		updateFields["categoryName"] = item.CategoryName
+	}
+	if item.DisplayOrder > 0 {
+		updateFields["displayOrder"] = item.DisplayOrder
+	}
+
+	res, err := scope.UpdateByID(ctx, id, bson.M{"$set": updateFields})
+	if err != nil {
+		return err
+	}
+	if res.MatchedCount == 0 {
+		return errors.New("menu item not found")
+	}
+	return nil
 }
 
 func (s *Service) ToggleAvailability(ctx context.Context, tenantID, id bson.ObjectID, isAvailable bool) error {
@@ -178,6 +299,8 @@ func (s *Service) BulkCreateItems(ctx context.Context, tenantID bson.ObjectID, i
 	}
 	docs := make([]interface{}, len(items))
 	now := time.Now().UTC()
+	catCache := make(map[string]bson.ObjectID)
+
 	for i, itm := range items {
 		itm.ID = bson.NewObjectID()
 		itm.TenantID = tenantID
@@ -186,6 +309,22 @@ func (s *Service) BulkCreateItems(ctx context.Context, tenantID bson.ObjectID, i
 		itm.UpdatedAt = now
 		if itm.Currency == "" {
 			itm.Currency = "INR"
+		}
+		if itm.CategoryID.IsZero() {
+			cName := itm.CategoryName
+			if cName == "" {
+				cName = "General"
+			}
+			if cachedID, ok := catCache[strings.ToLower(cName)]; ok {
+				itm.CategoryID = cachedID
+			} else {
+				cID, resolvedName, err := s.FindOrCreateCategoryByName(ctx, tenantID, cName)
+				if err == nil {
+					itm.CategoryID = cID
+					itm.CategoryName = resolvedName
+					catCache[strings.ToLower(cName)] = cID
+				}
+			}
 		}
 		docs[i] = itm
 	}

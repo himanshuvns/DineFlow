@@ -108,10 +108,12 @@ func Setup(
 			{
 				menuGroup.GET("/categories", menuHandler.ListCategories)
 				menuGroup.POST("/categories", middleware.OwnerOrManager(), menuHandler.CreateCategory)
+				menuGroup.PUT("/categories/:id", middleware.OwnerOrManager(), menuHandler.UpdateCategory)
 				menuGroup.DELETE("/categories/:id", middleware.OwnerOrManager(), menuHandler.DeleteCategory)
 
 				menuGroup.GET("/items", menuHandler.ListItems)
 				menuGroup.POST("/items", middleware.OwnerOrManager(), menuHandler.CreateItem)
+				menuGroup.PUT("/items/:id", middleware.OwnerOrManager(), menuHandler.UpdateItem)
 				menuGroup.POST("/items/bulk", middleware.OwnerOrManager(), menuHandler.BulkCreateItems)
 				menuGroup.PATCH("/items/bulk", middleware.OwnerOrManager(), menuHandler.BulkUpdateItems)
 				menuGroup.POST("/items/bulk-delete", middleware.OwnerOrManager(), menuHandler.BulkDeleteItems)

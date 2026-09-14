@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"context"
+
 	appai "github.com/dineflow/api/internal/application/ai"
 	appmenu "github.com/dineflow/api/internal/application/menu"
 	domainmenu "github.com/dineflow/api/internal/domain/menu"
@@ -102,6 +104,39 @@ func (h *MenuHandler) CreateCategory(c *gin.Context) {
 	response.Created(c, cat)
 }
 
+func (h *MenuHandler) UpdateCategory(c *gin.Context) {
+	tenantID := middleware.GetTenantID(c)
+	if tenantID == "" {
+		response.Unauthorized(c, "tenant context missing")
+		return
+	}
+	tOID, err := bson.ObjectIDFromHex(tenantID)
+	if err != nil {
+		response.BadRequest(c, "INVALID_TENANT", "invalid tenant ID")
+		return
+	}
+
+	catID := c.Param("id")
+	cOID, err := bson.ObjectIDFromHex(catID)
+	if err != nil {
+		response.BadRequest(c, "INVALID_ID", "invalid category ID")
+		return
+	}
+
+	var req CreateCategoryRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "INVALID_PAYLOAD", err.Error())
+		return
+	}
+
+	if err := h.menuService.UpdateCategory(c.Request.Context(), tOID, cOID, req.Name, req.Description, req.DisplayOrder, req.IsActive); err != nil {
+		response.BadRequest(c, "UPDATE_FAILED", err.Error())
+		return
+	}
+
+	response.OK(c, gin.H{"id": catID, "name": req.Name, "updated": true})
+}
+
 func (h *MenuHandler) DeleteCategory(c *gin.Context) {
 	tenantID := middleware.GetTenantID(c)
 	if tenantID == "" {
@@ -151,6 +186,121 @@ func (h *MenuHandler) ListItems(c *gin.Context) {
 	response.OK(c, items)
 }
 
+type UpsertItemRequest struct {
+	CategoryID      string                     `json:"categoryId"`
+	Category        string                     `json:"category"`
+	Name            string                     `json:"name" binding:"required"`
+	Description     string                     `json:"description"`
+	Desc            string                     `json:"desc"`
+	BasePrice       float64                    `json:"basePrice"`
+	Price           float64                    `json:"price"`
+	Currency        string                     `json:"currency"`
+	ImageURL        string                     `json:"imageUrl"`
+	IsAvailable     *bool                      `json:"isAvailable"`
+	Available       *bool                      `json:"available"`
+	PrepTimeMinutes int                        `json:"prepTimeMinutes"`
+	DietaryTags     []domainmenu.DietaryTag    `json:"dietaryTags"`
+	IsVeg           *bool                      `json:"isVeg"`
+	Variants        []domainmenu.Variant       `json:"variants"`
+	ModifierGroups  []domainmenu.ModifierGroup `json:"modifierGroups"`
+	TaxRatePercent  float64                    `json:"taxRatePercent"`
+	DisplayOrder    int                        `json:"displayOrder"`
+	IsBestseller    bool                       `json:"isBestseller"`
+	Bestseller      bool                       `json:"bestseller"`
+	IsRecommended   bool                       `json:"isRecommended"`
+	Recommended     bool                       `json:"recommended"`
+	SpicyLevel      int                        `json:"spicyLevel"`
+	HindiName       string                     `json:"hindiName"`
+}
+
+func buildMenuItemFromUpsertRequest(req *UpsertItemRequest, tOID bson.ObjectID, menuService *appmenu.Service, ctx context.Context) (*domainmenu.MenuItem, error) {
+	price := req.BasePrice
+	if price == 0 && req.Price > 0 {
+		price = req.Price
+	}
+
+	desc := req.Description
+	if desc == "" && req.Desc != "" {
+		desc = req.Desc
+	}
+
+	isAvailable := true
+	if req.IsAvailable != nil {
+		isAvailable = *req.IsAvailable
+	} else if req.Available != nil {
+		isAvailable = *req.Available
+	}
+
+	isBestseller := req.IsBestseller || req.Bestseller
+	isRecommended := req.IsRecommended || req.Recommended
+
+	tags := req.DietaryTags
+	if req.IsVeg != nil {
+		hasVegTag := false
+		hasNonVegTag := false
+		for _, t := range tags {
+			if t == domainmenu.TagVeg {
+				hasVegTag = true
+			}
+			if t == domainmenu.TagNonVeg {
+				hasNonVegTag = true
+			}
+		}
+		if *req.IsVeg && !hasVegTag {
+			tags = append(tags, domainmenu.TagVeg)
+		} else if !*req.IsVeg && !hasNonVegTag {
+			tags = append(tags, domainmenu.TagNonVeg)
+		}
+	}
+
+	currency := req.Currency
+	if currency == "" {
+		currency = "INR"
+	}
+
+	var catOID bson.ObjectID
+	catName := req.Category
+	if req.CategoryID != "" {
+		if oid, err := bson.ObjectIDFromHex(req.CategoryID); err == nil {
+			catOID = oid
+		}
+	}
+	if catOID.IsZero() {
+		if catName == "" {
+			catName = "General"
+		}
+		resolvedID, resolvedName, err := menuService.FindOrCreateCategoryByName(ctx, tOID, catName)
+		if err != nil {
+			return nil, err
+		}
+		catOID = resolvedID
+		catName = resolvedName
+	}
+
+	item := &domainmenu.MenuItem{
+		TenantID:        tOID,
+		CategoryID:      catOID,
+		CategoryName:    catName,
+		Name:            req.Name,
+		Description:     desc,
+		BasePrice:       price,
+		Currency:        currency,
+		ImageURL:        req.ImageURL,
+		IsAvailable:     isAvailable,
+		PrepTimeMinutes: req.PrepTimeMinutes,
+		DietaryTags:     tags,
+		Variants:        req.Variants,
+		ModifierGroups:  req.ModifierGroups,
+		TaxRatePercent:  req.TaxRatePercent,
+		DisplayOrder:    req.DisplayOrder,
+		IsBestseller:    isBestseller,
+		IsRecommended:   isRecommended,
+		SpicyLevel:      req.SpicyLevel,
+		HindiName:       req.HindiName,
+	}
+	return item, nil
+}
+
 func (h *MenuHandler) CreateItem(c *gin.Context) {
 	tenantID := middleware.GetTenantID(c)
 	if tenantID == "" {
@@ -159,24 +309,60 @@ func (h *MenuHandler) CreateItem(c *gin.Context) {
 	}
 	tOID, _ := bson.ObjectIDFromHex(tenantID)
 
-	var item domainmenu.MenuItem
-	if err := c.ShouldBindJSON(&item); err != nil {
+	var req UpsertItemRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "INVALID_PAYLOAD", err.Error())
 		return
 	}
 
-	item.TenantID = tOID
-	item.IsAvailable = true
-	if item.Currency == "" {
-		item.Currency = "INR"
+	item, err := buildMenuItemFromUpsertRequest(&req, tOID, h.menuService, c.Request.Context())
+	if err != nil {
+		response.BadRequest(c, "CREATION_FAILED", err.Error())
+		return
 	}
 
-	if err := h.menuService.CreateItem(c.Request.Context(), &item); err != nil {
+	if err := h.menuService.CreateItem(c.Request.Context(), item); err != nil {
 		response.BadRequest(c, "CREATION_FAILED", err.Error())
 		return
 	}
 
 	response.Created(c, item)
+}
+
+func (h *MenuHandler) UpdateItem(c *gin.Context) {
+	tenantID := middleware.GetTenantID(c)
+	if tenantID == "" {
+		response.Unauthorized(c, "tenant context missing")
+		return
+	}
+	tOID, _ := bson.ObjectIDFromHex(tenantID)
+
+	itemID := c.Param("id")
+	iOID, err := bson.ObjectIDFromHex(itemID)
+	if err != nil {
+		response.BadRequest(c, "INVALID_ID", "invalid item ID")
+		return
+	}
+
+	var req UpsertItemRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "INVALID_PAYLOAD", err.Error())
+		return
+	}
+
+	item, err := buildMenuItemFromUpsertRequest(&req, tOID, h.menuService, c.Request.Context())
+	if err != nil {
+		response.BadRequest(c, "UPDATE_FAILED", err.Error())
+		return
+	}
+	item.ID = iOID
+
+	if err := h.menuService.UpdateItem(c.Request.Context(), tOID, iOID, item); err != nil {
+		response.BadRequest(c, "UPDATE_FAILED", err.Error())
+		return
+	}
+
+	response.OK(c, item)
 }
 
 type ToggleStockRequest struct {
