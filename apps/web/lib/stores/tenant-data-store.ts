@@ -424,9 +424,9 @@ const persistTenantState = (
 
 export const useTenantDataStore = create<TenantDataState>((set, get) => ({
   tenantId: null,
-  tenantName: "Your Restaurant",
-  tenantSlug: "restaurant",
-  isDemoTenant: false,
+  tenantName: "The Grand Bistro",
+  tenantSlug: "the-grand-bistro",
+  isDemoTenant: true,
   categories: [],
   menuItems: [],
   tables: [],
@@ -436,14 +436,15 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
   initialized: false,
 
   initializeTenant: async (tenant: Tenant | null, user: User | null) => {
-    const tenantId = tenant?.id || "demo-tenant";
-    const tenantName = tenant?.name || "Your Restaurant";
-    const tenantSlug = tenant?.slug || "dineflow";
+    const tenantId = tenant?.id || "6aa52dd1187698227bc298ae";
+    const tenantName = tenant?.name || "The Grand Bistro";
     const isDemoTenant =
       !tenant ||
       tenantId === "demo-tenant" ||
+      tenantId === "6aa52dd1187698227bc298ae" ||
       user?.phone === "+91 98765 43210" ||
       tenantName.toLowerCase().includes("grand bistro");
+    const tenantSlug = tenant?.slug || "the-grand-bistro";
 
     // Don't reinitialize if already loaded for same tenant
     if (get().initialized && get().tenantId === tenantId) {
@@ -1212,9 +1213,9 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
   clearTenantData: () => {
     set({
       tenantId: null,
-      tenantName: "Your Restaurant",
-      tenantSlug: "restaurant",
-      isDemoTenant: false,
+      tenantName: "The Grand Bistro",
+      tenantSlug: "the-grand-bistro",
+      isDemoTenant: true,
       categories: [],
       menuItems: [],
       tables: [],

@@ -221,14 +221,20 @@ export default function CustomerMenuPage() {
   const [remoteTenant, setRemoteTenant] = React.useState<{ name?: string; slug?: string } | null>(null);
   const [isLiveSyncing, setIsLiveSyncing] = React.useState(false);
 
-  const fetchPublicMenu = React.useCallback(async (slug: string) => {
-    if (!slug) return;
+  const fetchPublicMenu = React.useCallback(async (rawSlug: string) => {
+    if (!rawSlug) return;
+    const slug =
+      rawSlug.toLowerCase() === "dineflow" || rawSlug.toLowerCase() === "restaurant"
+        ? "the-grand-bistro"
+        : rawSlug;
     setIsLiveSyncing(true);
 
     // 1. Instant preview from localStorage cache if present
     if (typeof window !== "undefined") {
       try {
-        const cached = localStorage.getItem(`dineflow_public_menu_${slug.toLowerCase()}`);
+        const cached =
+          localStorage.getItem(`dineflow_public_menu_${slug.toLowerCase()}`) ||
+          localStorage.getItem(`dineflow_public_menu_${rawSlug.toLowerCase()}`);
         if (cached) {
           const parsed = JSON.parse(cached);
           if (parsed?.sections && Array.isArray(parsed.sections) && parsed.sections.length > 0) {
@@ -388,7 +394,9 @@ export default function CustomerMenuPage() {
     // 2. Second priority: Local tenant store if matching current restaurant
     const isSameTenant =
       storeTenantSlug?.toLowerCase() === tenantSlug.toLowerCase() ||
-      (tenantSlug === "the-grand-bistro" && isDemoTenant);
+      (tenantSlug.toLowerCase() === "the-grand-bistro" && isDemoTenant) ||
+      (tenantSlug.toLowerCase() === "dineflow" && isDemoTenant) ||
+      (tenantSlug.toLowerCase() === "restaurant" && isDemoTenant);
 
     if (isSameTenant && menuItems && menuItems.length > 0) {
       const catMap = new Map<string, CustomizerDish[]>();

@@ -14,6 +14,12 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  // Alias demo slugs so public customer menus always load seamlessly
+  const resolvedSlug =
+    slug.toLowerCase() === "dineflow" || slug.toLowerCase() === "restaurant"
+      ? "the-grand-bistro"
+      : slug;
+
   const apiBase =
     process.env.NEXT_PUBLIC_API_URL ||
     (process.env.NODE_ENV === "production"
@@ -21,7 +27,7 @@ export async function GET(req: NextRequest) {
       : "http://localhost:8080/api/v1");
 
   try {
-    const res = await fetch(`${apiBase}/public/m/${encodeURIComponent(slug)}`, {
+    const res = await fetch(`${apiBase}/public/m/${encodeURIComponent(resolvedSlug)}`, {
       cache: "no-store",
       headers: {
         Accept: "application/json",
