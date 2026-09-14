@@ -422,7 +422,7 @@ func (h *MenuHandler) DeleteItem(c *gin.Context) {
 }
 
 type BulkCreateItemsRequest struct {
-	Items []*domainmenu.MenuItem `json:"items" binding:"required"`
+	Items []*UpsertItemRequest `json:"items" binding:"required"`
 }
 
 func (h *MenuHandler) BulkCreateItems(c *gin.Context) {
@@ -439,19 +439,22 @@ func (h *MenuHandler) BulkCreateItems(c *gin.Context) {
 		return
 	}
 
-	for _, itm := range req.Items {
-		itm.TenantID = tOID
-		if itm.Currency == "" {
-			itm.Currency = "INR"
+	domainItems := make([]*domainmenu.MenuItem, 0, len(req.Items))
+	for _, itmReq := range req.Items {
+		itm, err := buildMenuItemFromUpsertRequest(itmReq, tOID, h.menuService, c.Request.Context())
+		if err != nil {
+			response.BadRequest(c, "INVALID_ITEM", err.Error())
+			return
 		}
+		domainItems = append(domainItems, itm)
 	}
 
-	if err := h.menuService.BulkCreateItems(c.Request.Context(), tOID, req.Items); err != nil {
+	if err := h.menuService.BulkCreateItems(c.Request.Context(), tOID, domainItems); err != nil {
 		response.InternalError(c)
 		return
 	}
 
-	response.Created(c, gin.H{"count": len(req.Items)})
+	response.Created(c, gin.H{"count": len(domainItems), "items": domainItems})
 }
 
 type BulkUpdateItemsRequest struct {

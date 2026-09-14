@@ -302,10 +302,16 @@ func (s *Service) BulkCreateItems(ctx context.Context, tenantID bson.ObjectID, i
 	catCache := make(map[string]bson.ObjectID)
 
 	for i, itm := range items {
-		itm.ID = bson.NewObjectID()
+		if itm.ID.IsZero() {
+			itm.ID = bson.NewObjectID()
+		}
 		itm.TenantID = tenantID
-		itm.Slug = strings.ToLower(strings.ReplaceAll(strings.TrimSpace(itm.Name), " ", "-"))
-		itm.CreatedAt = now
+		if itm.Slug == "" {
+			itm.Slug = strings.ToLower(strings.ReplaceAll(strings.TrimSpace(itm.Name), " ", "-"))
+		}
+		if itm.CreatedAt.IsZero() {
+			itm.CreatedAt = now
+		}
 		itm.UpdatedAt = now
 		if itm.Currency == "" {
 			itm.Currency = "INR"
@@ -366,15 +372,22 @@ type PublicMenuResponse struct {
 }
 
 type PublicCategorySection struct {
-	Category domainmenu.Category     `json:"category"`
-	Items    []domainmenu.MenuItem   `json:"items"`
+	Category domainmenu.Category   `json:"category"`
+	Items    []domainmenu.MenuItem `json:"items"`
 }
 
 func (s *Service) GetPublicMenuBySlug(ctx context.Context, slug string) (*PublicMenuResponse, error) {
-	// Find tenant
+	// Find tenant (case-insensitive slug match or fallback to hex ID match)
 	tenantColl := s.db.Collection("tenants")
 	var t tenant.Tenant
-	err := tenantColl.FindOne(ctx, bson.M{"slug": slug}).Decode(&t)
+
+	filter := bson.M{"slug": bson.M{"$regex": "^" + regexp.QuoteMeta(slug) + "$", "$options": "i"}}
+	err := tenantColl.FindOne(ctx, filter).Decode(&t)
+	if err == mongo.ErrNoDocuments {
+		if oid, parseErr := bson.ObjectIDFromHex(slug); parseErr == nil {
+			err = tenantColl.FindOne(ctx, bson.M{"_id": oid}).Decode(&t)
+		}
+	}
 	if err == mongo.ErrNoDocuments {
 		return nil, errors.New("restaurant not found")
 	}
@@ -396,9 +409,13 @@ func (s *Service) GetPublicMenuBySlug(ctx context.Context, slug string) (*Public
 
 	// Group items into categories
 	itemsByCat := make(map[bson.ObjectID][]domainmenu.MenuItem)
+	assignedItemIDs := make(map[bson.ObjectID]bool)
+
 	for _, itm := range items {
 		if itm.IsAvailable {
-			itemsByCat[itm.CategoryID] = append(itemsByCat[itm.CategoryID], itm)
+			if !itm.CategoryID.IsZero() {
+				itemsByCat[itm.CategoryID] = append(itemsByCat[itm.CategoryID], itm)
+			}
 		}
 	}
 
@@ -409,11 +426,46 @@ func (s *Service) GetPublicMenuBySlug(ctx context.Context, slug string) (*Public
 			if catItems == nil {
 				catItems = []domainmenu.MenuItem{}
 			}
+			for _, itm := range catItems {
+				assignedItemIDs[itm.ID] = true
+			}
 			sections = append(sections, PublicCategorySection{
 				Category: cat,
 				Items:    catItems,
 			})
 		}
+	}
+
+	// Group any unassigned or dynamically categorized items so none are dropped
+	unassignedByCatName := make(map[string][]domainmenu.MenuItem)
+	var unassignedCatNames []string
+	for _, itm := range items {
+		if itm.IsAvailable && !assignedItemIDs[itm.ID] {
+			cName := strings.TrimSpace(itm.CategoryName)
+			if cName == "" {
+				cName = "General"
+			}
+			if _, exists := unassignedByCatName[cName]; !exists {
+				unassignedCatNames = append(unassignedCatNames, cName)
+			}
+			unassignedByCatName[cName] = append(unassignedByCatName[cName], itm)
+		}
+	}
+
+	for _, cName := range unassignedCatNames {
+		catItems := unassignedByCatName[cName]
+		virtualCat := domainmenu.Category{
+			ID:           bson.NewObjectID(),
+			TenantID:     t.ID,
+			Name:         cName,
+			Slug:         strings.ToLower(strings.ReplaceAll(cName, " ", "-")),
+			DisplayOrder: len(sections) + 1,
+			IsActive:     true,
+		}
+		sections = append(sections, PublicCategorySection{
+			Category: virtualCat,
+			Items:    catItems,
+		})
 	}
 
 	return &PublicMenuResponse{

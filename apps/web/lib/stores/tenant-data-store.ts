@@ -343,9 +343,21 @@ interface TenantDataState {
   addOrder: (order: Partial<KdsOrder>) => Promise<KdsOrder>;
   updateOrderStatus: (id: string, status: KdsOrder["status"]) => Promise<void>;
   toggleOnboardingStep: (id: number) => void;
-  applyStarterTemplate: (templateKey: keyof typeof STARTER_TEMPLATES) => void;
+  applyStarterTemplate: (templateKey: keyof typeof STARTER_TEMPLATES) => Promise<void> | void;
   clearTenantData: () => void;
 }
+
+export const broadcastMenuChange = (tenantSlug?: string) => {
+  if (typeof window !== "undefined") {
+    try {
+      const channel = new BroadcastChannel("dineflow_menu_sync");
+      channel.postMessage({ type: "MENU_UPDATED", slug: tenantSlug, timestamp: Date.now() });
+      channel.close();
+    } catch {
+      // BroadcastChannel unsupported or closed
+    }
+  }
+};
 
 const getStorageKey = (tenantId: string) => `dineflow_data_v2_${tenantId}`;
 
@@ -481,7 +493,7 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
         isLoading: false,
         initialized: true,
       });
-      return;
+      // Do not return early: allow SWR background fetch to sync latest database items
     }
 
     // Try to fetch from backend API if user is authenticated
@@ -595,6 +607,12 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
       console.warn("Failed to fetch initial data from backend API:", apiErr);
     }
 
+    // If cached data was already loaded and remote returned empty, keep the cache
+    if (cachedData && typeof cachedData === "object") {
+      set({ isLoading: false, initialized: true });
+      return;
+    }
+
     // Default Fallback:
     // If it's a demo account, load Bistro preset
     // If it's a new tenant, initialize clean/empty state with real dynamic metadata
@@ -694,6 +712,7 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
     const nextState = { categories: updated };
     persistTenantState(state.tenantId, nextState);
     set(nextState);
+    broadcastMenuChange(state.tenantSlug);
     return formatted;
   },
 
@@ -732,6 +751,7 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
     const nextState = { categories: updatedCategories, menuItems: updatedItems };
     persistTenantState(state.tenantId, nextState);
     set(nextState);
+    broadcastMenuChange(state.tenantSlug);
   },
 
   deleteCategory: async (name: string) => {
@@ -753,6 +773,7 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
     const nextState = { categories: cleanCats, menuItems: updatedItems };
     persistTenantState(state.tenantId, nextState);
     set(nextState);
+    broadcastMenuChange(state.tenantSlug);
   },
 
   reorderCategories: async (newOrder: string[]) => {
@@ -761,6 +782,7 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
     const nextState = { categories: cleanCats };
     persistTenantState(state.tenantId, nextState);
     set(nextState);
+    broadcastMenuChange(state.tenantSlug);
   },
 
   addMenuItem: async (newItemData) => {
@@ -813,6 +835,7 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
 
     persistTenantState(state.tenantId, nextState);
     set(nextState);
+    broadcastMenuChange(state.tenantSlug);
     return createdItem;
   },
 
@@ -858,6 +881,7 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
     const nextState = { categories: updatedCategories, menuItems: updatedItems };
     persistTenantState(state.tenantId, nextState);
     set(nextState);
+    broadcastMenuChange(state.tenantSlug);
   },
 
   deleteMenuItem: async (id) => {
@@ -871,6 +895,7 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
     const updatedItems = state.menuItems.filter((i) => i.id !== id);
     persistTenantState(state.tenantId, { menuItems: updatedItems });
     set({ menuItems: updatedItems });
+    broadcastMenuChange(state.tenantSlug);
   },
 
   bulkAddMenuItems: async (itemsData) => {
@@ -881,20 +906,34 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
       id: `itm_${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 6)}`,
     }));
 
-    // Attempt bulk sync to backend API
+    // Attempt bulk sync to backend API with complete attributes
     try {
-      await apiClient.post("/menu/items/bulk", {
+      const res = await apiClient.post("/menu/items/bulk", {
         items: createdItems.map((ci) => ({
           name: ci.name,
           category: ci.category,
           price: ci.price,
+          basePrice: ci.price,
           description: ci.desc,
+          desc: ci.desc,
+          available: ci.available !== false,
+          isAvailable: ci.available !== false,
           isVeg: ci.isVeg,
-          bestseller: ci.bestseller,
-          recommended: ci.recommended,
-          spicyLevel: ci.spicyLevel,
+          imageUrl: ci.imageUrl,
+          bestseller: ci.bestseller || false,
+          recommended: ci.recommended || false,
+          spicyLevel: ci.spicyLevel || 1,
+          prepTimeMinutes: ci.prepTimeMinutes || 15,
+          hindiName: ci.hindiName || "",
         })),
       });
+      if (res.data?.data?.items && Array.isArray(res.data.data.items)) {
+        res.data.data.items.forEach((srvItm: any, idx: number) => {
+          if (createdItems[idx] && (srvItm.id || srvItm._id)) {
+            createdItems[idx].id = String(srvItm.id || srvItm._id);
+          }
+        });
+      }
     } catch (e) {
       console.warn("Backend bulk save skipped or offline:", e);
     }
@@ -919,6 +958,7 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
 
     persistTenantState(state.tenantId, nextState);
     set(nextState);
+    broadcastMenuChange(state.tenantSlug);
     return createdItems;
   },
 
@@ -956,6 +996,7 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
 
     persistTenantState(state.tenantId, nextState);
     set(nextState);
+    broadcastMenuChange(state.tenantSlug);
   },
 
   bulkDeleteMenuItems: async (ids) => {
@@ -970,6 +1011,7 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
     const updatedItems = state.menuItems.filter((i) => !idSet.has(i.id));
     persistTenantState(state.tenantId, { menuItems: updatedItems });
     set({ menuItems: updatedItems });
+    broadcastMenuChange(state.tenantSlug);
   },
 
   bulkAdjustPrices: async (ids, percentage) => {
@@ -986,8 +1028,28 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
       return item;
     });
 
+    try {
+      await Promise.all(
+        updatedItems
+          .filter((item) => idSet.has(item.id))
+          .map((item) =>
+            apiClient.put(`/menu/items/${item.id}`, {
+              name: item.name,
+              category: item.category,
+              price: item.price,
+              description: item.desc,
+              available: item.available,
+              isVeg: item.isVeg,
+            })
+          )
+      );
+    } catch (e) {
+      console.warn("Backend bulk adjust prices skipped:", e);
+    }
+
     persistTenantState(state.tenantId, { menuItems: updatedItems });
     set({ menuItems: updatedItems });
+    broadcastMenuChange(state.tenantSlug);
   },
 
   addTable: async (tableData) => {
@@ -1098,7 +1160,7 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
     set({ onboardingSteps: updated });
   },
 
-  applyStarterTemplate: (templateKey) => {
+  applyStarterTemplate: async (templateKey) => {
     const state = get();
     const template = STARTER_TEMPLATES[templateKey];
     if (!template) return;
@@ -1115,8 +1177,36 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
     };
 
     persistTenantState(state.tenantId, nextState);
-
     set(nextState);
+    broadcastMenuChange(state.tenantSlug);
+
+    // Sync template items and categories to backend
+    try {
+      if (template.menuItems.length > 0) {
+        await apiClient.post("/menu/items/bulk", {
+          items: template.menuItems.map((ci) => ({
+            name: ci.name,
+            category: ci.category,
+            price: ci.price,
+            basePrice: ci.price,
+            description: ci.desc,
+            desc: ci.desc,
+            available: ci.available !== false,
+            isAvailable: ci.available !== false,
+            isVeg: ci.isVeg,
+            imageUrl: ci.imageUrl,
+          })),
+        });
+      }
+      for (const cat of template.categories) {
+        await apiClient.post("/menu/categories", {
+          name: cat,
+          isActive: true,
+        }).catch(() => {});
+      }
+    } catch (e) {
+      console.warn("Backend starter template sync skipped:", e);
+    }
   },
 
   clearTenantData: () => {

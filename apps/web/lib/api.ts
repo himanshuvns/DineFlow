@@ -1,7 +1,17 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { useAuthStore } from "./stores/auth-store";
 
-const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
+export const getBaseURL = () => {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  if (typeof window !== "undefined" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
+    return "https://api-production-f170.up.railway.app/api/v1";
+  }
+  return "http://localhost:8080/api/v1";
+};
+
+const baseURL = getBaseURL();
 
 export const apiClient = axios.create({
   baseURL,

@@ -215,11 +215,182 @@ export default function CustomerMenuPage() {
   const tenantSlug = (params?.tenantSlug as string) || "the-grand-bistro";
   const tableId = (params?.tableId as string) || "t-04";
 
-  const { menuItems, categories, tenantName: storeTenantName, tenantSlug: storeTenantSlug } = useTenantDataStore();
+  const { menuItems, categories, tenantName: storeTenantName, tenantSlug: storeTenantSlug, isDemoTenant } = useTenantDataStore();
+
+  const [remoteMenuData, setRemoteMenuData] = React.useState<{ category: string; items: CustomizerDish[] }[] | null>(null);
+  const [remoteTenant, setRemoteTenant] = React.useState<{ name?: string; slug?: string } | null>(null);
+  const [isLiveSyncing, setIsLiveSyncing] = React.useState(false);
+
+  const fetchPublicMenu = React.useCallback(async (slug: string) => {
+    if (!slug) return;
+    setIsLiveSyncing(true);
+
+    // 1. Instant preview from localStorage cache if present
+    if (typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem(`dineflow_public_menu_${slug.toLowerCase()}`);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed?.sections && Array.isArray(parsed.sections) && parsed.sections.length > 0) {
+            setRemoteMenuData(parsed.sections);
+            if (parsed.tenant) setRemoteTenant(parsed.tenant);
+          }
+        }
+      } catch {}
+    }
+
+    try {
+      // 2. Fetch fresh menu data from API route proxy or direct Go backend
+      let json: any = null;
+      try {
+        const res = await fetch(`/api/menu/public?slug=${encodeURIComponent(slug)}&_t=${Date.now()}`, {
+          cache: "no-store",
+        });
+        if (res.ok) {
+          json = await res.json();
+        }
+      } catch {}
+
+      if (!json || !json.data) {
+        const apiBase =
+          process.env.NEXT_PUBLIC_API_URL ||
+          (typeof window !== "undefined" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1"
+            ? "https://api-production-f170.up.railway.app/api/v1"
+            : "http://localhost:8080/api/v1");
+
+        const directRes = await fetch(`${apiBase}/public/m/${encodeURIComponent(slug)}?_t=${Date.now()}`, {
+          cache: "no-store",
+        });
+        if (directRes.ok) {
+          json = await directRes.json();
+        }
+      }
+
+      if (json?.data) {
+        const tenantInfo = json.data.tenant;
+        const rawCategories = Array.isArray(json.data.categories) ? json.data.categories : [];
+
+        const sections: { category: string; items: CustomizerDish[] }[] = [];
+        for (const sec of rawCategories) {
+          const catName = sec.category?.name || "General";
+          const rawItems = Array.isArray(sec.items) ? sec.items : [];
+          const dishItems: CustomizerDish[] = rawItems
+            .filter((itm: any) => itm.isAvailable !== false && itm.available !== false)
+            .map((itm: any) => ({
+              id: String(itm.id || itm._id),
+              name: itm.name,
+              description:
+                itm.description ||
+                itm.desc ||
+                (itm.hindiName ? itm.hindiName : "Freshly prepared by our culinary team."),
+              basePrice:
+                typeof itm.basePrice === "number" && itm.basePrice > 0
+                  ? itm.basePrice
+                  : typeof itm.price === "number"
+                  ? itm.price
+                  : 0,
+              imageUrl: itm.imageUrl || itm.image,
+              isVeg:
+                Array.isArray(itm.dietaryTags)
+                  ? itm.dietaryTags.includes("veg") || !itm.dietaryTags.includes("non_veg")
+                  : itm.isVeg !== false,
+              variants:
+                Array.isArray(itm.variants) && itm.variants.length > 0
+                  ? itm.variants.map((v: any) => ({ name: v.name, price: v.price }))
+                  : undefined,
+              modifierGroups:
+                Array.isArray(itm.modifierGroups) && itm.modifierGroups.length > 0
+                  ? itm.modifierGroups.map((mg: any) => ({
+                      id: mg.id || mg.name,
+                      name: mg.name,
+                      minSelections: mg.minSelections ?? 0,
+                      maxSelections: mg.maxSelections ?? 1,
+                      options: (mg.options || []).map((o: any) => ({
+                        name: o.name,
+                        price: o.price,
+                      })),
+                    }))
+                  : undefined,
+            }));
+
+          if (dishItems.length > 0) {
+            sections.push({ category: catName, items: dishItems });
+          }
+        }
+
+        if (sections.length > 0) {
+          setRemoteMenuData(sections);
+          if (tenantInfo) setRemoteTenant(tenantInfo);
+          try {
+            localStorage.setItem(
+              `dineflow_public_menu_${slug.toLowerCase()}`,
+              JSON.stringify({ tenant: tenantInfo, sections })
+            );
+          } catch {}
+        }
+      }
+    } catch (e) {
+      console.warn("[CustomerMenu] Live fetch public menu error:", e);
+    } finally {
+      setIsLiveSyncing(false);
+    }
+  }, []);
+
+  // Multi-channel real-time synchronization
+  React.useEffect(() => {
+    fetchPublicMenu(tenantSlug);
+
+    let channel: BroadcastChannel | null = null;
+    try {
+      channel = new BroadcastChannel("dineflow_menu_sync");
+      channel.onmessage = (event) => {
+        if (
+          event.data?.type === "MENU_UPDATED" &&
+          (!event.data.slug || event.data.slug.toLowerCase() === tenantSlug.toLowerCase())
+        ) {
+          fetchPublicMenu(tenantSlug);
+        }
+      };
+    } catch {}
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key?.startsWith("dineflow_data_v2_") || e.key?.startsWith("dineflow_public_menu_")) {
+        fetchPublicMenu(tenantSlug);
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        fetchPublicMenu(tenantSlug);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    const interval = setInterval(() => {
+      fetchPublicMenu(tenantSlug);
+    }, 25000);
+
+    return () => {
+      channel?.close();
+      window.removeEventListener("storage", handleStorage);
+      document.removeEventListener("visibilitychange", handleVisibility);
+      clearInterval(interval);
+    };
+  }, [tenantSlug, fetchPublicMenu]);
 
   const dynamicMenuData = React.useMemo(() => {
-    // If tenant has menu items in store, transform and group them dynamically
-    if (menuItems && menuItems.length > 0) {
+    // 1. Highest priority: Live remote menu from database
+    if (remoteMenuData && remoteMenuData.length > 0) {
+      return remoteMenuData;
+    }
+
+    // 2. Second priority: Local tenant store if matching current restaurant
+    const isSameTenant =
+      storeTenantSlug?.toLowerCase() === tenantSlug.toLowerCase() ||
+      (tenantSlug === "the-grand-bistro" && isDemoTenant);
+
+    if (isSameTenant && menuItems && menuItems.length > 0) {
       const catMap = new Map<string, CustomizerDish[]>();
 
       menuItems.forEach((item) => {
@@ -289,19 +460,22 @@ export default function CustomerMenuPage() {
       }
     }
 
-    // Fallback to static gourmet demo menu
+    // 3. Fallback to static gourmet demo menu
     return MENU_DATA;
-  }, [menuItems, categories]);
+  }, [remoteMenuData, menuItems, categories, storeTenantSlug, tenantSlug, isDemoTenant]);
 
   const restaurantDisplayName =
-    storeTenantSlug === tenantSlug && storeTenantName && storeTenantName !== "Your Restaurant"
+    remoteTenant?.name ||
+    (storeTenantSlug?.toLowerCase() === tenantSlug.toLowerCase() &&
+    storeTenantName &&
+    storeTenantName !== "Your Restaurant"
       ? storeTenantName
       : tenantSlug === "the-grand-bistro"
       ? "The Grand Bistro & Lounge"
       : tenantSlug
           .split("-")
           .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-          .join(" ");
+          .join(" "));
 
   // Table display name
   const tableName =
@@ -322,8 +496,11 @@ export default function CustomerMenuPage() {
   const [activeCategory, setActiveCategory] = React.useState(dynamicMenuData[0]?.category || "");
 
   React.useEffect(() => {
-    if (dynamicMenuData.length > 0 && !activeCategory) {
-      setActiveCategory(dynamicMenuData[0].category);
+    if (dynamicMenuData.length > 0) {
+      const exists = dynamicMenuData.some((sec) => sec.category === activeCategory);
+      if (!exists) {
+        setActiveCategory(dynamicMenuData[0].category);
+      }
     }
   }, [dynamicMenuData, activeCategory]);
 
