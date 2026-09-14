@@ -304,8 +304,18 @@ export default function KDSOrdersPage() {
     }
 
     // Station Filter
-    if (stationFilter !== "all" && o.station !== stationFilter) {
-      return false;
+    if (stationFilter !== "all") {
+      if (stationFilter === "room_service") {
+        const isRoom =
+          o.station === "room_service" ||
+          o.destination === "room_service" ||
+          o.id.includes("IRD") ||
+          o.table.toLowerCase().includes("suite") ||
+          o.table.toLowerCase().includes("room");
+        if (!isRoom) return false;
+      } else if (o.station !== stationFilter) {
+        return false;
+      }
     }
 
     return true;

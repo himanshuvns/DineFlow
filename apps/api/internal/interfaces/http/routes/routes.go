@@ -26,6 +26,7 @@ func Setup(
 	waHandler *handlers.WhatsAppHandler,
 	analyticsHandler *handlers.AnalyticsHandler,
 	aiHandler *handlers.AIHandler,
+	roomHandler *handlers.RoomHandler,
 ) {
 	// Auth middleware (used on protected routes)
 	authMiddleware := middleware.Auth(tokenMaker)
@@ -49,6 +50,8 @@ func Setup(
 			publicGroup.GET("/m/:slug", menuHandler.GetPublicMenu)
 			publicGroup.POST("/orders", orderHandler.CreateCustomerOrder)
 			publicGroup.GET("/orders/:orderId", orderHandler.GetCustomerOrder)
+			publicGroup.GET("/rooms/:tenantSlug/:roomNumber", roomHandler.GetPublicRoom)
+			publicGroup.POST("/rooms/:tenantSlug/:roomNumber/amenity", roomHandler.RequestPublicAmenity)
 		}
 
 		// ── Public WhatsApp Webhook (Meta Cloud API) ──────────────────────
@@ -131,15 +134,25 @@ func Setup(
 				tableGroup.DELETE("/:id", middleware.OwnerOnly(), tableHandler.Delete)
 			}
 
-			// ── Hotel Rooms & Suites (Phase 3) ─────────────────────────────
+			// ── Hotel Rooms & PMS ───────────────────────────────────────────
 			roomGroup := protected.Group("/rooms")
 			{
-				roomGroup.GET("", tableHandler.ListRooms)
-				roomGroup.POST("", middleware.OwnerOrManager(), tableHandler.Create)
-				roomGroup.POST("/bulk", middleware.OwnerOrManager(), tableHandler.CreateRoomsBulk)
-				roomGroup.PATCH("/:id/dnd", tableHandler.ToggleDND)
-				roomGroup.PATCH("/:id/status", tableHandler.UpdateStatus)
-				roomGroup.DELETE("/:id", middleware.OwnerOnly(), tableHandler.Delete)
+				roomGroup.GET("", roomHandler.List)
+				roomGroup.GET("/stats", roomHandler.GetStats)
+				roomGroup.GET("/tasks", roomHandler.ListTasks)
+				roomGroup.PATCH("/tasks/:taskId", roomHandler.UpdateTask)
+				roomGroup.POST("", middleware.OwnerOrManager(), roomHandler.Create)
+				roomGroup.POST("/bulk", middleware.OwnerOrManager(), roomHandler.BulkCreate)
+				roomGroup.GET("/:id", roomHandler.Get)
+				roomGroup.PUT("/:id", middleware.OwnerOrManager(), roomHandler.Update)
+				roomGroup.DELETE("/:id", middleware.OwnerOnly(), roomHandler.Delete)
+				roomGroup.PATCH("/:id/dnd", roomHandler.ToggleDND)
+				roomGroup.PATCH("/:id/status", roomHandler.UpdateStatus)
+				roomGroup.POST("/:id/check-in", middleware.OwnerOrManager(), roomHandler.CheckIn)
+				roomGroup.POST("/:id/check-out", middleware.OwnerOrManager(), roomHandler.CheckOut)
+				roomGroup.GET("/:id/orders", roomHandler.GetOrders)
+				roomGroup.GET("/:id/tasks", roomHandler.ListTasks)
+				roomGroup.POST("/:id/tasks", roomHandler.CreateTask)
 			}
 
 			// ── Live Orders & KDS (Phase 2 & 3) ───────────────────────────

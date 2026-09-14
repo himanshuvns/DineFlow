@@ -123,29 +123,34 @@ export default function OrderTrackingPage() {
     return `${mins}m ${remainder < 10 ? "0" : ""}${remainder}s`;
   };
 
+  const isRoomService =
+    orderId.toUpperCase().includes("IRD") ||
+    tableName.toLowerCase().includes("suite") ||
+    tableName.toLowerCase().includes("room");
+
   const steps = [
     {
       id: "pending",
-      label: "Order Placed",
-      sublabel: "Received by Kitchen",
+      label: isRoomService ? "Order Received" : "Order Placed",
+      sublabel: isRoomService ? "Private dining station alerted" : "Received by Kitchen",
       icon: CheckCircle2,
     },
     {
       id: "preparing",
-      label: "Cooking in Kitchen",
-      sublabel: "Chef is crafting your meal",
+      label: isRoomService ? "Culinary Prep" : "Cooking in Kitchen",
+      sublabel: isRoomService ? "Chef crafting private suite course" : "Chef is crafting your meal",
       icon: ChefHat,
     },
     {
       id: "ready",
-      label: "Plated & Ready",
-      sublabel: "Steward dispatching to table",
+      label: isRoomService ? "Butler En Route" : "Plated & Ready",
+      sublabel: isRoomService ? "Silver tray delivery to your door" : "Steward dispatching to table",
       icon: BellRing,
     },
     {
       id: "served",
-      label: "Served",
-      sublabel: "Bon appétit!",
+      label: isRoomService ? "Delivered to Suite" : "Served",
+      sublabel: isRoomService ? "Enjoy your in-room dining!" : "Bon appétit!",
       icon: Sparkles,
     },
   ];
@@ -170,16 +175,20 @@ export default function OrderTrackingPage() {
   const handleCallSteward = () => {
     addToast(
       "success",
-      "Steward Alerted",
-      `A server has been requested for ${tableName}. Arriving in ~60 seconds.`
+      isRoomService ? "Butler Alerted" : "Steward Alerted",
+      isRoomService
+        ? `In-room concierge alerted for ${tableName}. Steward arriving shortly.`
+        : `A server has been requested for ${tableName}. Arriving in ~60 seconds.`
     );
   };
 
   const handleRequestBill = () => {
     addToast(
       "info",
-      "Bill Requested",
-      `Printed bill with cash/card/UPI terminal requested for ${tableName}.`
+      isRoomService ? "Folio Billing" : "Bill Requested",
+      isRoomService
+        ? `This order has been automatically charged to ${tableName} folio.`
+        : `Printed bill with cash/card/UPI terminal requested for ${tableName}.`
     );
   };
 
@@ -190,6 +199,13 @@ export default function OrderTrackingPage() {
         <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
           <button
             onClick={() => {
+              if (isRoomService) {
+                const rNum = tableName.replace(/[^0-9]/g, "");
+                if (rNum) {
+                  router.push(`/m/${tenantSlug}/room/${rNum}`);
+                  return;
+                }
+              }
               if (urlTable) {
                 router.push(`/m/${tenantSlug}/${encodeURIComponent(urlTable.toLowerCase().replace(/\s+/g, "-"))}`);
               } else {
@@ -204,7 +220,7 @@ export default function OrderTrackingPage() {
 
           <div className="text-center">
             <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-400 font-bold block">
-              DineFlow Live Tracking
+              {isRoomService ? "Suite Service Live Tracking" : "DineFlow Live Tracking"}
             </span>
             <span className="text-xs font-bold text-white">{orderId}</span>
           </div>
@@ -228,18 +244,28 @@ export default function OrderTrackingPage() {
             </div>
 
             <h1 className="text-2xl font-black text-white tracking-tight">
-              {status === "pending" && "Sending to Kitchen..."}
-              {status === "preparing" && "Chef is Preparing Your Food"}
-              {status === "ready" && "Your Food is Ready!"}
-              {status === "served" && "Served at Your Table"}
+              {status === "pending" && (isRoomService ? "Dispatching to Suite Chef..." : "Sending to Kitchen...")}
+              {status === "preparing" && (isRoomService ? "Chef Preparing Your Suite Dining" : "Chef is Preparing Your Food")}
+              {status === "ready" && (isRoomService ? "Butler En Route to Your Suite" : "Your Food is Ready!")}
+              {status === "served" && (isRoomService ? "Delivered to Your Door" : "Served at Your Table")}
             </h1>
 
             <p className="text-xs text-slate-400 mt-1.5 max-w-xs mx-auto">
               {status === "preparing"
-                ? "Your order was sent directly to the kitchen display. Fresh ingredients are on the flame."
+                ? (isRoomService
+                    ? "Your order was sent directly to the room service station. Fresh course is being plated on a silver tray."
+                    : "Your order was sent directly to the kitchen display. Fresh ingredients are on the flame.")
                 : status === "ready"
-                ? "Your dishes have been plated and are being escorted by a steward right now."
-                : "Enjoy your dining experience! Need anything else? Use the actions below."}
+                ? (isRoomService
+                    ? "Your meal has left the kitchen on a silver tray and is heading up to your suite door."
+                    : "Plated and hot. A server is bringing it directly to your table right now.")
+                : status === "served"
+                ? (isRoomService
+                    ? "Your in-room dining course has been delivered. Enjoy your meal!"
+                    : "Delivered to your table. Let us know if you need anything else.")
+                : (isRoomService
+                    ? "Your order is being queued by the private suite chef station."
+                    : "Your order is in the kitchen queue. Cooking starts momentarily.")}
             </p>
 
             {/* WhatsApp Alert Banner */}

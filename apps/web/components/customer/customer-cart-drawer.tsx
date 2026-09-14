@@ -26,12 +26,16 @@ interface CustomerCartDrawerProps {
   tenantSlug: string;
   tableSlug: string;
   tableName: string;
+  roomNumber?: string;
+  destination?: "dine_in" | "room_service" | "takeaway";
 }
 
 export function CustomerCartDrawer({
   tenantSlug,
   tableSlug,
   tableName,
+  roomNumber,
+  destination,
 }: CustomerCartDrawerProps) {
   const router = useRouter();
   const { addToast } = useToast();
@@ -61,23 +65,33 @@ export function CustomerCartDrawer({
   const tax = getTax();
   const total = getTotal();
 
-  const handleCheckout = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (items.length === 0) return;
-
-    if (!phoneInput.trim()) {
-      addToast("error", "Phone Required", "Please enter your WhatsApp phone number to receive live order updates.");
-      return;
-    }
+  const handleCheckout = async () => {
+    if (items.length === 0 || isSubmitting) return;
 
     setIsSubmitting(true);
     setCustomerInfo(nameInput, phoneInput, notesInput);
+
+    const isRoomService =
+      destination === "room_service" ||
+      tableSlug.toLowerCase().startsWith("room-") ||
+      tableSlug.toLowerCase().startsWith("suite-") ||
+      tableName.toLowerCase().includes("suite") ||
+      tableName.toLowerCase().includes("room");
+
+    const resolvedRoomNumber =
+      roomNumber ||
+      (isRoomService
+        ? tableSlug.replace(/^(room-|suite-)/i, "").toUpperCase()
+        : undefined);
 
     const payload = {
       tenantSlug,
       tableQRSlug: tableSlug,
       tableSlug,
-      customerName: nameInput.trim() || "Guest",
+      destination: isRoomService ? "room_service" : (destination || "dine_in"),
+      roomNumber: resolvedRoomNumber,
+      chargeToFolio: isRoomService,
+      customerName: nameInput.trim() || (isRoomService ? "Suite Guest" : "Guest"),
       customerPhone: phoneInput.trim(),
       specialInstructions: notesInput.trim(),
       items: items.map((i) => ({

@@ -20,6 +20,7 @@ import {
   Flame,
   Wine,
   HelpCircle,
+  Hotel,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -174,6 +175,14 @@ export default function DashboardOverviewPage() {
             asChild
           >
             <Link href="/dashboard/tables">Table QRs</Link>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            leftIcon={<Hotel className="h-4 w-4 text-emerald-500" />}
+            asChild
+          >
+            <Link href="/dashboard/rooms">Hotel Suites</Link>
           </Button>
           <Button
             variant="secondary"

@@ -42,6 +42,9 @@ type CreateOrderInput struct {
 	TenantSlug          string              `json:"tenantSlug"`
 	TableQRSlug         string              `json:"tableQRSlug"`
 	TableSlug           string              `json:"tableSlug"`
+	Destination         string              `json:"destination,omitempty"`
+	RoomNumber          string              `json:"roomNumber,omitempty"`
+	ChargeToFolio       bool                `json:"chargeToFolio,omitempty"`
 	CustomerName        string              `json:"customerName"`
 	CustomerPhone       string              `json:"customerPhone"`
 	Items               []CustomerItemInput `json:"items"`
@@ -189,22 +192,43 @@ func (s *Service) CreateCustomerOrder(ctx context.Context, input CreateOrderInpu
 		})
 	}
 
-	// 4. Generate human-readable order number #ORD-XXXX
+	// 4. Generate order number (#IRD-XXXX for In-Room Dining, #ORD-XXXX for Restaurant Tables)
 	rNum := rand.Intn(9000) + 1000
 	orderNum := fmt.Sprintf("#ORD-%d", rNum)
+	orderSource := domainorder.SourceQRTable
+	orderDest := domainorder.DestinationDineIn
+	roomNum := strings.TrimSpace(input.RoomNumber)
+
+	slugLower := strings.ToLower(targetTableSlug)
+	if input.Destination == "room_service" || roomNum != "" || strings.HasPrefix(slugLower, "room-") || strings.HasPrefix(slugLower, "suite-") {
+		orderDest = domainorder.DestinationRoomService
+		orderSource = domainorder.SourceQRRoom
+		orderNum = fmt.Sprintf("#IRD-%d", rNum)
+		if roomNum == "" {
+			roomNum = strings.TrimPrefix(strings.TrimPrefix(slugLower, "room-"), "suite-")
+		}
+	}
+
+	orderTimelineNote := "Order placed via digital QR menu"
+	if orderDest == domainorder.DestinationRoomService {
+		orderTimelineNote = fmt.Sprintf("In-Room Dining order placed for Suite %s", strings.ToUpper(roomNum))
+	}
 
 	now := time.Now().UTC()
 	ord := &domainorder.Order{
 		ID:                  bson.NewObjectID(),
 		TenantID:            t.ID,
 		OrderNumber:         orderNum,
+		Destination:         orderDest,
 		TableID:             tableID,
 		TableName:           tableName,
+		RoomNumber:          strings.ToUpper(roomNum),
+		ChargeToFolio:       input.ChargeToFolio,
 		CustomerName:        input.CustomerName,
 		CustomerPhone:       input.CustomerPhone,
 		Items:               orderItems,
 		Currency:            t.Currency,
-		Source:              domainorder.SourceQRTable,
+		Source:              orderSource,
 		Status:              domainorder.StatusPending,
 		PaymentStatus:       domainorder.PaymentUnpaid,
 		SpecialInstructions: input.SpecialInstructions,
@@ -212,7 +236,7 @@ func (s *Service) CreateCustomerOrder(ctx context.Context, input CreateOrderInpu
 			{
 				Status:    domainorder.StatusPending,
 				Timestamp: now,
-				Note:      "Order placed via digital QR menu",
+				Note:      orderTimelineNote,
 			},
 		},
 		CreatedAt: now,
@@ -229,7 +253,7 @@ func (s *Service) CreateCustomerOrder(ctx context.Context, input CreateOrderInpu
 		return nil, err
 	}
 
-	// 6. Update table active order and occupancy
+	// 6. Update table/room active order and occupancy
 	if tableID != nil {
 		tableColl := s.db.Collection("tables")
 		_, _ = tableColl.UpdateOne(ctx,
@@ -238,6 +262,19 @@ func (s *Service) CreateCustomerOrder(ctx context.Context, input CreateOrderInpu
 				"status":        domaintable.StatusOccupied,
 				"activeOrderId": ord.ID,
 				"updatedAt":     now,
+			}},
+		)
+	}
+	if roomNum != "" {
+		roomsColl := s.db.Collection("rooms")
+		_, _ = roomsColl.UpdateOne(ctx,
+			bson.M{"tenantId": t.ID, "$or": []bson.M{
+				{"roomNumber": strings.ToUpper(roomNum)},
+				{"roomNumber": roomNum},
+			}},
+			bson.M{"$set": bson.M{
+				"status":    "occupied",
+				"updatedAt": now,
 			}},
 		)
 	}
