@@ -21,7 +21,31 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
 import { formatCurrency } from "@/lib/utils";
 
-type OrderStatus = "pending" | "preparing" | "ready" | "served";
+type OrderStatus = "pending" | "preparing" | "ready" | "served" | "paid" | "cancelled";
+
+interface TrackingOrderItem {
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice?: number;
+  selectedVariant?: string;
+  selectedModifiers?: Array<{ name: string; price: number } | string>;
+  notes?: string;
+}
+
+interface TrackingOrder {
+  id?: string;
+  orderNumber?: string;
+  status: OrderStatus;
+  tableName?: string;
+  customerName?: string;
+  items: TrackingOrderItem[];
+  subtotal: number;
+  taxAmount: number;
+  roomServiceFee?: number;
+  totalAmount: number;
+  createdAt?: string;
+}
 
 export default function OrderTrackingPage() {
   const params = useParams();
@@ -31,12 +55,59 @@ export default function OrderTrackingPage() {
 
   const tenantSlug = (params?.tenantSlug as string) || "the-grand-bistro";
   const orderId = (params?.orderId as string) || "ORD-9421";
-  const tableName = searchParams.get("table") || "Table 04";
+  const urlTable = searchParams.get("table");
 
-  const [status, setStatus] = React.useState<OrderStatus>("preparing");
-  const [secondsElapsed, setSecondsElapsed] = React.useState(184); // ~3 mins
+  const [order, setOrder] = React.useState<TrackingOrder | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [status, setStatus] = React.useState<OrderStatus>("pending");
+  const [secondsElapsed, setSecondsElapsed] = React.useState(0);
   const [selectedRating, setSelectedRating] = React.useState(5);
   const [selectedTags, setSelectedTags] = React.useState<string[]>(["Delicious Food", "Lightning Fast"]);
+
+  const tableName = order?.tableName || urlTable || "Dine-in";
+
+  // Fetch real order from database via proxy route
+  const fetchOrder = React.useCallback(async () => {
+    try {
+      const res = await fetch(`/api/menu/order/${encodeURIComponent(orderId)}`, {
+        cache: "no-store",
+      });
+      if (res.ok) {
+        const json = await res.json();
+        const data = json.data || json.order || json;
+        if (data && (data.id || data.orderNumber)) {
+          setOrder({
+            id: data.id,
+            orderNumber: data.orderNumber || orderId,
+            status: data.status || "pending",
+            tableName: data.tableName || urlTable || "Dine-in",
+            customerName: data.customerName,
+            items: Array.isArray(data.items) ? data.items : [],
+            subtotal: data.subtotal || 0,
+            taxAmount: data.taxAmount || 0,
+            roomServiceFee: data.roomServiceFee || 0,
+            totalAmount: data.totalAmount || data.total || 0,
+            createdAt: data.createdAt,
+          });
+          setStatus(data.status || "pending");
+          if (data.createdAt) {
+            const elapsed = Math.max(0, Math.floor((Date.now() - new Date(data.createdAt).getTime()) / 1000));
+            setSecondsElapsed(elapsed);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("[order-track] Live fetch error:", e);
+    } finally {
+      setLoading(false);
+    }
+  }, [orderId, urlTable]);
+
+  React.useEffect(() => {
+    fetchOrder();
+    const interval = setInterval(fetchOrder, 4000);
+    return () => clearInterval(interval);
+  }, [fetchOrder]);
 
   // Live timer tick
   React.useEffect(() => {
@@ -45,14 +116,6 @@ export default function OrderTrackingPage() {
     }, 1000);
     return () => clearInterval(timer);
   }, []);
-
-  // Demo state simulation progression (pending -> preparing -> ready -> served)
-  React.useEffect(() => {
-    const t1 = setTimeout(() => {
-      if (status === "pending") setStatus("preparing");
-    }, 4000);
-    return () => clearTimeout(t1);
-  }, [status]);
 
   const formatTimer = (secs: number) => {
     const mins = Math.floor(secs / 60);
@@ -93,6 +156,8 @@ export default function OrderTrackingPage() {
       preparing: 1,
       ready: 2,
       served: 3,
+      paid: 4,
+      cancelled: -1,
     };
     const currentLevel = orderLevels[status];
     const stepLevel = orderLevels[stepId as OrderStatus];
@@ -124,7 +189,13 @@ export default function OrderTrackingPage() {
       <header className="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur sticky top-0 z-30">
         <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
           <button
-            onClick={() => router.push(`/m/${tenantSlug}/t-04`)}
+            onClick={() => {
+              if (urlTable) {
+                router.push(`/m/${tenantSlug}/${encodeURIComponent(urlTable.toLowerCase().replace(/\s+/g, "-"))}`);
+              } else {
+                router.push(`/m/${tenantSlug}`);
+              }
+            }}
             className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-white"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -245,50 +316,79 @@ export default function OrderTrackingPage() {
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
               Ordered Items
             </span>
-            <span className="text-xs font-mono text-slate-400">2 Items</span>
+            <span className="text-xs font-mono text-slate-400">
+              {order?.items?.length || 0} {order?.items?.length === 1 ? "Item" : "Items"}
+            </span>
           </div>
 
           <div className="space-y-3 pt-2">
-            <div className="flex items-start justify-between text-sm border-b border-slate-800/60 pb-3">
-              <div>
-                <span className="font-bold text-white">
-                  <span className="text-emerald-400 mr-2">1x</span>
-                  Diavola & Calabrian Hot Honey Pizza
-                </span>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  11-Inch Hand-Tossed • Double Mozzarella
-                </p>
-              </div>
-              <span className="font-mono font-semibold text-slate-200">₹940</span>
-            </div>
+            {order?.items && order.items.length > 0 ? (
+              order.items.map((it, idx) => {
+                const itemPrice = it.totalPrice || it.unitPrice * (it.quantity || 1);
+                const modNames = Array.isArray(it.selectedModifiers)
+                  ? it.selectedModifiers
+                      .map((m) => (typeof m === "string" ? m : m.name))
+                      .join(", ")
+                  : "";
 
-            <div className="flex items-start justify-between text-sm">
-              <div>
-                <span className="font-bold text-white">
-                  <span className="text-emerald-400 mr-2">2x</span>
-                  Valencia Orange & Rosemary Spritz
-                </span>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Extra ice, fresh citrus garnish
-                </p>
+                return (
+                  <div
+                    key={idx}
+                    className={`flex items-start justify-between text-sm ${
+                      idx < (order.items?.length || 0) - 1 ? "border-b border-slate-800/60 pb-3" : ""
+                    }`}
+                  >
+                    <div>
+                      <span className="font-bold text-white">
+                        <span className="text-emerald-400 mr-2">{it.quantity || 1}x</span>
+                        {it.name}
+                      </span>
+                      {(it.selectedVariant || modNames || it.notes) && (
+                        <p className="text-xs text-slate-400 mt-0.5">
+                          {[it.selectedVariant, modNames, it.notes]
+                            .filter(Boolean)
+                            .join(" • ")}
+                        </p>
+                      )}
+                    </div>
+                    <span className="font-mono font-semibold text-slate-200">
+                      ₹{itemPrice.toFixed(0)}
+                    </span>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="py-2 text-center text-xs text-slate-500">
+                {loading ? "Loading order details..." : "Items submitted to kitchen."}
               </div>
-              <span className="font-mono font-semibold text-slate-200">₹680</span>
-            </div>
+            )}
           </div>
 
           {/* Pricing Breakdown */}
           <div className="pt-3 border-t border-slate-800 space-y-1.5 text-xs text-slate-400">
             <div className="flex justify-between">
               <span>Subtotal</span>
-              <span className="font-mono">₹1,620.00</span>
+              <span className="font-mono">
+                ₹{(order?.subtotal || (order?.totalAmount ? order.totalAmount / 1.05 : 0)).toFixed(2)}
+              </span>
             </div>
             <div className="flex justify-between">
               <span>GST & Taxes (5%)</span>
-              <span className="font-mono">₹81.00</span>
+              <span className="font-mono">
+                ₹{(order?.taxAmount || (order?.totalAmount ? order.totalAmount - (order.totalAmount / 1.05) : 0)).toFixed(2)}
+              </span>
             </div>
+            {Boolean(order?.roomServiceFee) && (
+              <div className="flex justify-between">
+                <span>Room Service Fee</span>
+                <span className="font-mono">₹{order?.roomServiceFee?.toFixed(2)}</span>
+              </div>
+            )}
             <div className="pt-2 border-t border-slate-800/80 flex justify-between text-sm font-bold text-white">
               <span>Total Payable</span>
-              <span className="text-emerald-400 font-mono text-base">₹1,701.00</span>
+              <span className="text-emerald-400 font-mono text-base">
+                ₹{(order?.totalAmount || 0).toFixed(2)}
+              </span>
             </div>
           </div>
         </div>

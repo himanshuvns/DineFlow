@@ -24,6 +24,7 @@ import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
 import { QRCodeImage } from "@/components/ui/qr-code-image";
 import { useAuthStore } from "@/lib/stores/auth-store";
+import { apiClient } from "@/lib/api";
 
 interface RoomItem {
   id: string;
@@ -73,6 +74,34 @@ export default function RoomsDirectoryPage() {
     }
   }, []);
 
+  const fetchRooms = React.useCallback(async () => {
+    try {
+      const res = await apiClient.get("/rooms");
+      if (res.data?.data && Array.isArray(res.data.data) && res.data.data.length > 0) {
+        setRooms(
+          res.data.data.map((r: any) => ({
+            id: r.id || r._id,
+            name: r.name || `Room ${r.roomNumber}`,
+            roomNumber: r.roomNumber || "",
+            floor: r.floor || "Floor 1",
+            wing: r.wing || "Main",
+            type: r.type || "room",
+            status: r.status || "available",
+            doNotDisturb: Boolean(r.doNotDisturb),
+            folioEnabled: r.folioEnabled !== false,
+            activeGuest: r.activeGuest || undefined,
+          }))
+        );
+      }
+    } catch (e) {
+      console.warn("Rooms fetch error:", e);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    fetchRooms();
+  }, [fetchRooms]);
+
   // Single Add Form
   const [newRoomName, setNewRoomName] = React.useState("");
   const [newRoomNumber, setNewRoomNumber] = React.useState("");
@@ -89,7 +118,12 @@ export default function RoomsDirectoryPage() {
   const floors = ["all", "Floor 1", "Floor 2", "Floor 3", "Penthouse", "Ground"];
   const wings = ["all", "East Wing", "West Wing", "Lakeview", "Poolside"];
 
-  const handleToggleDND = (id: string, current: boolean) => {
+  const handleToggleDND = async (id: string, current: boolean) => {
+    try {
+      await apiClient.patch(`/rooms/${encodeURIComponent(id)}/dnd`, { doNotDisturb: !current });
+    } catch (e) {
+      console.warn("DND toggle api error:", e);
+    }
     setRooms((prev) =>
       prev.map((r) => (r.id === id ? { ...r, doNotDisturb: !current } : r))
     );
@@ -100,13 +134,34 @@ export default function RoomsDirectoryPage() {
     );
   };
 
-  const handleAddSingleRoom = (e: React.FormEvent) => {
+  const handleAddSingleRoom = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newRoomNumber.trim()) return;
 
+    let roomId = `rm-${newRoomNumber.toLowerCase()}`;
+    const roomName = newRoomName.trim() || `Suite ${newRoomNumber}`;
+
+    try {
+      const res = await apiClient.post("/rooms", {
+        name: roomName,
+        roomNumber: newRoomNumber.trim(),
+        floor: newRoomFloor,
+        wing: newRoomWing,
+        type: newRoomType,
+        seats: 2,
+        folioEnabled: true,
+        status: "available",
+      });
+      if (res.data?.data?.id || res.data?.data?._id) {
+        roomId = res.data.data.id || res.data.data._id;
+      }
+    } catch (e) {
+      console.warn("Backend room save error:", e);
+    }
+
     const newEntry: RoomItem = {
-      id: `rm-${newRoomNumber.toLowerCase()}`,
-      name: newRoomName.trim() || `Suite ${newRoomNumber}`,
+      id: roomId,
+      name: roomName,
       roomNumber: newRoomNumber.trim(),
       floor: newRoomFloor,
       wing: newRoomWing,
@@ -123,13 +178,25 @@ export default function RoomsDirectoryPage() {
     addToast("success", "Room Created", `${newEntry.name} added to the hotel directory.`);
   };
 
-  const handleBulkCreate = (e: React.FormEvent) => {
+  const handleBulkCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     const start = parseInt(bulkStart);
     const end = parseInt(bulkEnd);
     if (isNaN(start) || isNaN(end) || end < start) {
       addToast("error", "Invalid Range", "Start number must be less than or equal to End number.");
       return;
+    }
+
+    try {
+      await apiClient.post("/rooms/bulk", {
+        startRoom: start,
+        endRoom: end,
+        floor: bulkFloor,
+        wing: bulkWing,
+        type: "room",
+      });
+    } catch (e) {
+      console.warn("Backend bulk create error:", e);
     }
 
     const created: RoomItem[] = [];

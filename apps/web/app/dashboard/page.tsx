@@ -88,7 +88,7 @@ export default function DashboardOverviewPage() {
     (acc, o) => acc + (typeof o?.total === "number" ? o.total : 0),
     0
   );
-  const displayRevenue = calculatedRevenue > 0 ? calculatedRevenue : isDemoTenant ? 84250 : 0;
+  const displayRevenue = calculatedRevenue;
 
   const preparingCount = safeOrders.filter((o) => o?.status === "preparing").length;
   const readyCount = safeOrders.filter((o) => o?.status === "ready").length;

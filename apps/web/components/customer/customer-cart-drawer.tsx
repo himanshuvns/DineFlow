@@ -75,6 +75,7 @@ export function CustomerCartDrawer({
 
     const payload = {
       tenantSlug,
+      tableQRSlug: tableSlug,
       tableSlug,
       customerName: nameInput.trim() || "Guest",
       customerPhone: phoneInput.trim(),
@@ -85,43 +86,78 @@ export function CustomerCartDrawer({
         unitPrice: i.unitPrice,
         quantity: i.quantity,
         selectedVariant: i.selectedVariant,
-        selectedModifiers: i.selectedModifiers,
+        modifierNames: i.selectedModifiers || [],
+        selectedModifiers: i.selectedModifiers || [],
         notes: i.notes,
       })),
     };
 
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || "https://api-production-f170.up.railway.app/api/v1";
+    const apiBase =
+      process.env.NEXT_PUBLIC_API_URL ||
+      "https://api-production-f170.up.railway.app/api/v1";
+
     try {
-      // Send to Go backend public order endpoint
-      const res = await fetch(`${apiBase}/public/orders`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      let orderId = "";
 
-      let orderId = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.order && data.order.id) {
-          orderId = data.order.id;
+      // 1. Try local Next.js proxy route
+      try {
+        const res = await fetch("/api/menu/order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (res.ok) {
+          const resJson = await res.json();
+          const ord = resJson.data || resJson.order || resJson;
+          orderId = ord.orderNumber || ord.id || ord._id || "";
         }
+      } catch (proxyErr) {
+        console.warn("[cart-drawer] Next.js proxy order submission failed, trying direct API:", proxyErr);
+      }
+
+      // 2. Fallback to direct backend API
+      if (!orderId) {
+        const res = await fetch(`${apiBase}/public/orders`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (res.ok) {
+          const resJson = await res.json();
+          const ord = resJson.data || resJson.order || resJson;
+          orderId = ord.orderNumber || ord.id || ord._id || "";
+        } else {
+          const errData = await res.json().catch(() => null);
+          throw new Error(errData?.error || "Order rejected by server");
+        }
+      }
+
+      if (!orderId) {
+        throw new Error("Failed to obtain order reference from kitchen");
       }
 
       // Clear cart
       clearCart();
       setIsOpen(false);
-      addToast("success", "Order Placed!", `Your order ${orderId} was dispatched to the kitchen.`);
+      addToast(
+        "success",
+        "Order Placed!",
+        `Your order ${orderId} was dispatched to the kitchen.`
+      );
 
       // Navigate to live order tracking page
-      router.push(`/m/${tenantSlug}/order/${orderId}?table=${encodeURIComponent(tableName)}`);
-    } catch (err) {
-      // Fallback for offline/preview demo mode
-      const fallbackOrderId = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
-      clearCart();
-      setIsOpen(false);
-      addToast("success", "Order Placed!", `Your order ${fallbackOrderId} was sent to the kitchen.`);
-      router.push(`/m/${tenantSlug}/order/${fallbackOrderId}?table=${encodeURIComponent(tableName)}`);
+      router.push(
+        `/m/${tenantSlug}/order/${encodeURIComponent(orderId)}?table=${encodeURIComponent(
+          tableName
+        )}`
+      );
+    } catch (err: any) {
+      console.error("[cart-drawer] Order checkout error:", err);
+      addToast(
+        "error",
+        "Order Failed",
+        err?.message || "Could not reach the kitchen server. Please try again or alert your steward."
+      );
     } finally {
       setIsSubmitting(false);
     }

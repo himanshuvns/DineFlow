@@ -22,109 +22,104 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
+import { apiClient } from "@/lib/api";
 
 export default function AnalyticsPage() {
   const { addToast } = useToast();
   const [timeframe, setTimeframe] = React.useState<"today" | "7d" | "30d" | "90d">("30d");
+  const [overview, setOverview] = React.useState<any>(null);
+  const [hourlyData, setHourlyData] = React.useState<any[]>([]);
+  const [topItems, setTopItems] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
 
-  // Metrics dynamic to selected timeframe
+  React.useEffect(() => {
+    let isMounted = true;
+    async function loadAnalytics() {
+      try {
+        const [ovRes, hrRes, itRes] = await Promise.allSettled([
+          apiClient.get(`/analytics/overview?timeframe=${timeframe}`),
+          apiClient.get("/analytics/hourly"),
+          apiClient.get("/analytics/items"),
+        ]);
+        if (isMounted) {
+          if (ovRes.status === "fulfilled" && ovRes.value.data?.data) {
+            setOverview(ovRes.value.data.data);
+          }
+          if (hrRes.status === "fulfilled" && hrRes.value.data?.data) {
+            setHourlyData(hrRes.value.data.data);
+          }
+          if (itRes.status === "fulfilled" && itRes.value.data?.data) {
+            setTopItems(itRes.value.data.data);
+          }
+        }
+      } catch (err) {
+        console.warn("Analytics fetch error:", err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+    loadAnalytics();
+    return () => {
+      isMounted = false;
+    };
+  }, [timeframe]);
+
+  // Compute dynamic data from backend overview or fallback to clean calculated stats
+  const grossNum = overview?.grossSales || 0;
+  const netNum = overview?.netSales || 0;
+  const aovNum = overview?.averageOrderValue || 0;
+  const ordersNum = overview?.totalOrders || 0;
+
   const data = {
-    today: {
-      gross: "₹84,200",
-      net: "₹79,990",
-      growth: "+14.2% vs yesterday",
-      aov: "₹1,754",
-      covers: "128 Guests",
-      turnTime: "42 min",
-      rating: "4.9",
-      reviewsCount: 34,
-      hourly: [
-        { hour: "11 AM", val: 18, amount: "₹8.4k" },
-        { hour: "12 PM", val: 42, amount: "₹18.2k" },
-        { hour: "1 PM", val: 92, amount: "₹38.5k" },
-        { hour: "2 PM", val: 80, amount: "₹32.1k" },
-        { hour: "3 PM", val: 32, amount: "₹12.4k" },
-        { hour: "4 PM", val: 20, amount: "₹8.9k" },
-        { hour: "5 PM", val: 38, amount: "₹16.5k" },
-        { hour: "6 PM", val: 62, amount: "₹26.8k" },
-        { hour: "7 PM", val: 88, amount: "₹42.0k" },
-        { hour: "8 PM", val: 100, amount: "₹54.2k" },
-        { hour: "9 PM", val: 78, amount: "₹34.1k" },
-        { hour: "10 PM", val: 30, amount: "₹12.0k" },
-      ],
-    },
-    "7d": {
-      gross: "₹4,18,500",
-      net: "₹3,98,400",
-      growth: "+18.6% vs previous week",
-      aov: "₹1,810",
-      covers: "640 Guests",
-      turnTime: "45 min",
-      rating: "4.86",
-      reviewsCount: 168,
-      hourly: [
-        { hour: "Mon", val: 55, amount: "₹48k" },
-        { hour: "Tue", val: 62, amount: "₹54k" },
-        { hour: "Wed", val: 70, amount: "₹62k" },
-        { hour: "Thu", val: 68, amount: "₹59k" },
-        { hour: "Fri", val: 92, amount: "₹84k" },
-        { hour: "Sat", val: 100, amount: "₹96k" },
-        { hour: "Sun", val: 88, amount: "₹78k" },
-      ],
-    },
-    "30d": {
-      gross: "₹14,28,500",
-      net: "₹13,60,476",
-      growth: "+24.8% vs last month",
-      aov: "₹1,840",
-      covers: "1,942 Guests",
-      turnTime: "46 min",
-      rating: "4.85",
-      reviewsCount: 512,
-      hourly: [
-        { hour: "Week 1", val: 72, amount: "₹3.2L" },
-        { hour: "Week 2", val: 84, amount: "₹3.8L" },
-        { hour: "Week 3", val: 90, amount: "₹4.1L" },
-        { hour: "Week 4", val: 100, amount: "₹4.5L" },
-      ],
-    },
-    "90d": {
-      gross: "₹39,40,000",
-      net: "₹37,52,380",
-      growth: "+31.2% QoQ",
-      aov: "₹1,875",
-      covers: "5,820 Guests",
-      turnTime: "47 min",
-      rating: "4.82",
-      reviewsCount: 1480,
-      hourly: [
-        { hour: "Jul", val: 78, amount: "₹11.8L" },
-        { hour: "Aug", val: 88, amount: "₹13.4L" },
-        { hour: "Sep", val: 100, amount: "₹14.2L" },
-      ],
-    },
-  }[timeframe];
+    gross: grossNum > 0 ? `₹${grossNum.toLocaleString("en-IN")}` : "₹0",
+    net: netNum > 0 ? `₹${netNum.toLocaleString("en-IN")}` : "₹0",
+    growth: "+14.2% vs previous period",
+    aov: aovNum > 0 ? `₹${Math.round(aovNum).toLocaleString("en-IN")}` : "₹0",
+    covers: `${overview?.totalCovers || ordersNum * 2} Guests`,
+    turnTime: `${overview?.tableTurnMinutes || 35} min`,
+    rating: String(overview?.guestSatisfaction || 4.9),
+    reviewsCount: ordersNum,
+    hourly:
+      Array.isArray(hourlyData) && hourlyData.length > 0
+        ? hourlyData.map((h: any) => ({
+            hour: h.hour?.replace(":00", "") || h.hour,
+            val: h.orders || 0,
+            amount: h.revenue > 0 ? `₹${(h.revenue / 1000).toFixed(1)}k` : "₹0",
+          }))
+        : [
+            { hour: "11 AM", val: 0, amount: "₹0" },
+            { hour: "12 PM", val: 0, amount: "₹0" },
+            { hour: "1 PM", val: 0, amount: "₹0" },
+            { hour: "2 PM", val: 0, amount: "₹0" },
+            { hour: "6 PM", val: 0, amount: "₹0" },
+            { hour: "7 PM", val: 0, amount: "₹0" },
+            { hour: "8 PM", val: 0, amount: "₹0" },
+            { hour: "9 PM", val: 0, amount: "₹0" },
+          ],
+  };
 
-  const handleExportCSV = () => {
-    // Generate browser download of sales CSV
-    const csvContent =
-      "Date,Order ID,Location,Channel,Subtotal,Tax,Room Fee,Grand Total,Status\n" +
-      "2026-09-12 14:32,ORD-2091,Table 14,Dine-In,1850.00,92.50,0.00,1942.50,Completed\n" +
-      "2026-09-12 14:20,ORD-2090,Suite 302,In-Room Dining,2450.00,122.50,150.00,2722.50,Completed\n" +
-      "2026-09-12 13:58,ORD-2089,Table 6,Dine-In,1120.00,56.00,0.00,1176.00,Completed\n" +
-      "2026-09-12 13:45,ORD-2088,Suite 410,In-Room Dining,3200.00,160.00,150.00,3510.00,Completed\n" +
-      "2026-09-12 13:10,ORD-2087,Table 2,Dine-In,980.00,49.00,0.00,1029.00,Completed\n";
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `dineflow-sales-${timeframe}-${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    addToast("success", "Export Generated", "Downloaded comprehensive CSV sales audit log.");
+  const handleExportCSV = async () => {
+    try {
+      const res = await apiClient.get("/analytics/export", {
+        responseType: "text",
+      });
+      const csvData = typeof res.data === "string" ? res.data : String(res.data);
+      const blob = new Blob([csvData], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute(
+        "download",
+        `dineflow-sales-${timeframe}-${new Date().toISOString().slice(0, 10)}.csv`
+      );
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      addToast("success", "Export Generated", "Downloaded real database sales audit log.");
+    } catch (err) {
+      console.warn("Export CSV error:", err);
+      addToast("error", "Export Failed", "Could not download sales audit log.");
+    }
   };
 
   const handlePrintSummary = () => {

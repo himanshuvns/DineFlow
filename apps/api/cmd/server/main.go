@@ -13,6 +13,7 @@ import (
 	authapp "github.com/dineflow/api/internal/application/auth"
 	menuapp "github.com/dineflow/api/internal/application/menu"
 	orderapp "github.com/dineflow/api/internal/application/order"
+	staffapp "github.com/dineflow/api/internal/application/staff"
 	subapp "github.com/dineflow/api/internal/application/subscription"
 	tableapp "github.com/dineflow/api/internal/application/table"
 	whatsappapp "github.com/dineflow/api/internal/application/whatsapp"
@@ -135,6 +136,7 @@ func main() {
 	menuService := menuapp.NewService(mongoDB)
 	tableService := tableapp.NewService(mongoDB)
 	orderService := orderapp.NewService(mongoDB, hub)
+	staffService := staffapp.NewService(mongoDB)
 	subService := subapp.NewService(mongoDB)
 	waService := whatsappapp.NewService(mongoDB)
 	analyticsService := analyticsapp.NewService(mongoDB)
@@ -142,7 +144,7 @@ func main() {
 
 	authHandler := handlers.NewAuthHandler(authService)
 	tenantHandler := handlers.NewTenantHandler()
-	staffHandler := handlers.NewStaffHandler()
+	staffHandler := handlers.NewStaffHandler(staffService)
 	storageHandler := handlers.NewStorageHandler(storageService)
 	menuHandler := handlers.NewMenuHandler(menuService, aiService)
 	tableHandler := handlers.NewTableHandler(tableService)

@@ -342,6 +342,7 @@ interface TenantDataState {
   deleteTable: (id: string) => Promise<void>;
   addOrder: (order: Partial<KdsOrder>) => Promise<KdsOrder>;
   updateOrderStatus: (id: string, status: KdsOrder["status"]) => Promise<void>;
+  refreshOrders: () => Promise<void>;
   toggleOnboardingStep: (id: number) => void;
   applyStarterTemplate: (templateKey: keyof typeof STARTER_TEMPLATES) => Promise<void> | void;
   clearTenantData: () => void;
@@ -574,19 +575,33 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
 
       if (ordersRes.status === "fulfilled" && ordersRes.value.data?.data) {
         const ords = ordersRes.value.data.data;
-        if (Array.isArray(ords) && ords.length > 0) {
+        if (Array.isArray(ords)) {
           remoteOrders = ords.map((o: any) => ({
             id: o.orderNumber || o.id || o._id,
-            table: o.tableNumber ? `Table ${o.tableNumber}` : o.table || "Dine-in",
+            table: o.tableName || (o.tableNumber ? `Table ${o.tableNumber}` : o.table || "Dine-in"),
             customerName: o.customerName || "Customer",
             customerPhone: o.customerPhone || "",
-            secondsElapsed: 120,
-            station: "main_kitchen",
-            destination: "dine_in",
+            secondsElapsed: o.createdAt
+              ? Math.max(0, Math.floor((Date.now() - new Date(o.createdAt).getTime()) / 1000))
+              : 60,
+            station: o.station || "main_kitchen",
+            destination: o.destination || "dine_in",
             status: o.status || "pending",
-            items: o.items || [],
+            items: Array.isArray(o.items)
+              ? o.items.map((it: any) => ({
+                  name: it.name,
+                  qty: it.quantity || it.qty || 1,
+                  variant: it.selectedVariant,
+                  modifiers: Array.isArray(it.selectedModifiers)
+                    ? it.selectedModifiers.map((m: any) => (typeof m === "string" ? m : m.name))
+                    : [],
+                  notes: it.notes,
+                }))
+              : [],
             total: o.totalAmount || o.total || 0,
-            time: "Just now",
+            time: o.createdAt
+              ? new Date(o.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+              : "Just now",
           }));
         }
       }
@@ -1213,18 +1228,23 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
 
   addTable: async (tableData) => {
     const state = get();
-    const id = tableData.name.toUpperCase().replace(/\s+/g, "-");
-    const createdTable: TableItem = {
+    const fallbackId = tableData.name.toUpperCase().replace(/\s+/g, "-");
+    let createdTable: TableItem = {
       ...tableData,
-      id,
+      id: fallbackId,
     };
 
     try {
-      await apiClient.post("/tables", {
+      const res = await apiClient.post("/tables", {
         name: createdTable.name,
         capacity: createdTable.seats,
+        seats: createdTable.seats,
         zone: createdTable.zone,
+        status: createdTable.status || "available",
       });
+      if (res.data?.data?.id || res.data?.data?._id) {
+        createdTable.id = res.data.data.id || res.data.data._id;
+      }
     } catch (e) {
       console.warn("Backend table save skipped or offline:", e);
     }
@@ -1247,6 +1267,12 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
 
   updateTableStatus: async (id, status) => {
     const state = get();
+    try {
+      await apiClient.patch(`/tables/${encodeURIComponent(id)}/status`, { status });
+    } catch (e) {
+      console.warn("Backend table status update failed:", e);
+    }
+
     const updatedTables = state.tables.map((tbl) =>
       tbl.id === id ? { ...tbl, status } : tbl
     );
@@ -1259,7 +1285,7 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
   deleteTable: async (id) => {
     const state = get();
     try {
-      await apiClient.delete(`/tables/${id}`);
+      await apiClient.delete(`/tables/${encodeURIComponent(id)}`);
     } catch (e) {
       console.warn("Backend table delete skipped:", e);
     }
@@ -1273,9 +1299,37 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
 
   addOrder: async (orderData) => {
     const state = get();
-    const id = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
+    let orderId = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    try {
+      const res = await apiClient.post("/public/orders", {
+        tenantSlug: state.tenantSlug,
+        tableSlug: orderData.table || "Dine-in",
+        tableQRSlug: orderData.table || "Dine-in",
+        customerName: orderData.customerName || "Customer",
+        customerPhone: orderData.customerPhone || "",
+        items: (orderData.items || []).map((it) => {
+          const matchedItem = state.menuItems.find(
+            (m) => m.name.toLowerCase() === it.name.toLowerCase()
+          );
+          return {
+            menuItemId: matchedItem?.id || it.name,
+            quantity: it.qty || 1,
+            selectedVariant: it.variant,
+            modifierNames: it.modifiers || [],
+            notes: it.notes,
+          };
+        }),
+      });
+      if (res.data?.data?.orderNumber || res.data?.data?.id) {
+        orderId = res.data.data.orderNumber || res.data.data.id;
+      }
+    } catch (e) {
+      console.warn("Backend manual order creation failed:", e);
+    }
+
     const newOrder: KdsOrder = {
-      id,
+      id: orderId,
       table: orderData.table || "Table 01",
       customerName: orderData.customerName || "Customer",
       customerPhone: orderData.customerPhone || "",
@@ -1299,13 +1353,71 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
 
   updateOrderStatus: async (id, status) => {
     const state = get();
+    try {
+      await apiClient.patch(`/orders/${encodeURIComponent(id)}/status`, { status });
+    } catch (e) {
+      console.warn("Backend order status update failed:", e);
+    }
+
     const updatedOrders = state.orders.map((o) =>
       o.id === id ? { ...o, status } : o
     );
 
-    persistTenantState(state.tenantId, { orders: updatedOrders });
+    // If order is served, free up table occupancy
+    let updatedTables = state.tables;
+    if (status === "served") {
+      const order = state.orders.find((o) => o.id === id);
+      if (order && order.table) {
+        updatedTables = state.tables.map((t) =>
+          t.name === order.table || t.id === order.table
+            ? { ...t, status: "available" }
+            : t
+        );
+      }
+    }
 
-    set({ orders: updatedOrders });
+    persistTenantState(state.tenantId, { orders: updatedOrders, tables: updatedTables });
+
+    set({ orders: updatedOrders, tables: updatedTables });
+  },
+
+  refreshOrders: async () => {
+    try {
+      const ordersRes = await apiClient.get("/orders");
+      if (ordersRes.data?.data && Array.isArray(ordersRes.data.data)) {
+        const remoteOrders: KdsOrder[] = ordersRes.data.data.map((o: any) => ({
+          id: o.orderNumber || o.id || o._id,
+          table: o.tableName || (o.tableNumber ? `Table ${o.tableNumber}` : o.table || "Dine-in"),
+          customerName: o.customerName || "Customer",
+          customerPhone: o.customerPhone || "",
+          secondsElapsed: o.createdAt
+            ? Math.max(0, Math.floor((Date.now() - new Date(o.createdAt).getTime()) / 1000))
+            : 60,
+          station: o.station || "main_kitchen",
+          destination: o.destination || "dine_in",
+          status: o.status || "pending",
+          items: Array.isArray(o.items)
+            ? o.items.map((it: any) => ({
+                name: it.name,
+                qty: it.quantity || it.qty || 1,
+                variant: it.selectedVariant,
+                modifiers: Array.isArray(it.selectedModifiers)
+                  ? it.selectedModifiers.map((m: any) => (typeof m === "string" ? m : m.name))
+                  : [],
+                notes: it.notes,
+              }))
+            : [],
+          total: o.totalAmount || o.total || 0,
+          time: o.createdAt
+            ? new Date(o.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+            : "Just now",
+        }));
+
+        set({ orders: remoteOrders });
+      }
+    } catch (e) {
+      console.warn("Failed to refresh orders from backend:", e);
+    }
   },
 
   toggleOnboardingStep: (stepId) => {

@@ -55,68 +55,7 @@ interface KdsOrder {
   total: number;
 }
 
-const INITIAL_KDS_ORDERS: KdsOrder[] = [
-  {
-    id: "ORD-9422",
-    table: "Table 02",
-    customerName: "Aarav Sharma",
-    customerPhone: "+91 98765 43210",
-    secondsElapsed: 120, // 2m
-    station: "main_kitchen",
-    destination: "dine_in",
-    status: "pending",
-    total: 1850,
-    items: [
-      { name: "Smoked Salmon Crostini", qty: 1, variant: "Regular (3 pcs)" },
-      { name: "Diavola Pizza", qty: 1, variant: "11-Inch", modifiers: ["Double Mozzarella"], notes: "Crispy crust please" },
-    ],
-  },
-  {
-    id: "ORD-9421",
-    table: "Table 04",
-    customerName: "Priya Patel",
-    customerPhone: "+91 98234 56789",
-    secondsElapsed: 512, // ~8.5m (amber)
-    station: "main_kitchen",
-    destination: "dine_in",
-    status: "preparing",
-    total: 2190,
-    items: [
-      { name: "Handmade Truffle Tagliolini", qty: 2, notes: "Extra parmigiano on side" },
-      { name: "Valencia Orange & Rosemary Spritz", qty: 2 },
-    ],
-  },
-  {
-    id: "ORD-9420",
-    table: "Table 12",
-    customerName: "Rohan Verma",
-    customerPhone: "+91 97112 34567",
-    secondsElapsed: 980, // ~16.3m (red / urgent)
-    station: "main_kitchen",
-    destination: "dine_in",
-    status: "preparing",
-    total: 1540,
-    items: [
-      { name: "Truffle Burrata & Heirloom Salad", qty: 1, modifiers: ["Extra Burrata (100g)"] },
-      { name: "Wild Mushroom Arancini", qty: 1 },
-    ],
-  },
-  {
-    id: "ORD-9419",
-    table: "Suite 302",
-    customerName: "Dr. Vikram Seth",
-    customerPhone: "+91 99887 65432",
-    secondsElapsed: 1140, // 19m
-    station: "room_service",
-    destination: "room_service",
-    status: "ready",
-    total: 1930,
-    items: [
-      { name: "Herb-Crusted NZ Lamb Chops", qty: 1, notes: "Medium well, room service silver tray" },
-      { name: "Cold Brew Tonic with Yuzu", qty: 1 },
-    ],
-  },
-];
+const INITIAL_KDS_ORDERS: KdsOrder[] = [];
 
 const MENU_PRESETS = [
   { name: "Wood-Fired Margherita", price: 750 },
@@ -136,9 +75,21 @@ export default function KDSOrdersPage() {
     orders,
     addOrder,
     updateOrderStatus,
+    refreshOrders,
     menuItems,
     tables,
   } = useTenantData();
+
+  const prevOrderCountRef = React.useRef(orders.length);
+
+  // Poll for incoming orders every 5s
+  React.useEffect(() => {
+    if (refreshOrders) {
+      refreshOrders();
+      const interval = setInterval(refreshOrders, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [refreshOrders]);
 
   const [activeTab, setActiveTab] = React.useState("all");
   const [stationFilter, setStationFilter] = React.useState("all");

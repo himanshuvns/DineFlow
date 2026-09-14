@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
+import { apiClient } from "@/lib/api";
 
 interface MessageLogItem {
   id: string;
@@ -82,6 +83,33 @@ export default function WhatsAppPage() {
   const [testGuestName, setTestGuestName] = React.useState("Alex Rivera");
   const [logs, setLogs] = React.useState<MessageLogItem[]>(INITIAL_LOGS);
 
+  const fetchLogs = React.useCallback(async () => {
+    try {
+      const res = await apiClient.get("/whatsapp/logs");
+      if (res.data?.data && Array.isArray(res.data.data) && res.data.data.length > 0) {
+        setLogs(
+          res.data.data.map((l: any) => ({
+            id: l.id || l._id,
+            phone: l.recipient,
+            customerName: l.customerName || "Guest",
+            template: l.template || "Order Confirmed",
+            status: l.status || "delivered",
+            time: l.createdAt
+              ? new Date(l.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+              : "Just now",
+            location: "Dine-in",
+          }))
+        );
+      }
+    } catch (e) {
+      console.warn("WhatsApp logs fetch error:", e);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    fetchLogs();
+  }, [fetchLogs]);
+
   // Simulation chat messages
   const [chatMessages, setChatMessages] = React.useState<Array<{ sender: "bot" | "user"; text: string; time: string }>>([
     {
@@ -130,9 +158,19 @@ export default function WhatsAppPage() {
   };
 
 
-  const handleSendTest = (e: React.FormEvent) => {
+  const handleSendTest = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!testNumber) return;
+
+    try {
+      await apiClient.post("/whatsapp/send-test", {
+        recipientPhone: testNumber,
+        customerName: testGuestName,
+        template: "order_confirmed",
+      });
+    } catch (err) {
+      console.warn("Backend send-test error:", err);
+    }
 
     const newLog: MessageLogItem = {
       id: `wam-${Date.now().toString().slice(-4)}`,

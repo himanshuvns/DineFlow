@@ -93,6 +93,7 @@ type Order struct {
 	Subtotal            float64         `bson:"subtotal" json:"subtotal"`
 	TaxAmount           float64         `bson:"taxAmount" json:"taxAmount"`
 	TotalAmount         float64         `bson:"totalAmount" json:"totalAmount"`
+	Total               float64         `bson:"total,omitempty" json:"total"`
 	Currency            string          `bson:"currency" json:"currency"`
 	Source              OrderSource     `bson:"source" json:"source"`
 	Status              OrderStatus     `bson:"status" json:"status"`
@@ -126,12 +127,16 @@ func (o *Order) CalculateTotals(taxRatePercent float64) {
 		o.TaxAmount = 0
 	}
 	o.TotalAmount = round(o.Subtotal + o.TaxAmount + o.RoomServiceFee)
+	o.Total = o.TotalAmount
 }
 
 // CanTransitionTo validates state machine transitions.
 func (o *Order) CanTransitionTo(next OrderStatus) bool {
 	if o.Status == StatusCancelled || o.Status == StatusPaid {
 		return false // terminal states
+	}
+	if o.Status == next {
+		return true
 	}
 
 	switch o.Status {

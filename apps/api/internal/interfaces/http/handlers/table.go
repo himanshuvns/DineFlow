@@ -62,6 +62,7 @@ type CreateTableRequest struct {
 	Wing         string                   `json:"wing"`
 	RoomNumber   string                   `json:"roomNumber"`
 	Seats        int                      `json:"seats"`
+	Capacity     int                      `json:"capacity"`
 	FolioEnabled bool                     `json:"folioEnabled"`
 	Status       domaintable.TableStatus  `json:"status"`
 }
@@ -80,8 +81,12 @@ func (h *TableHandler) Create(c *gin.Context) {
 		return
 	}
 
-	if req.Seats <= 0 {
-		req.Seats = 2
+	seats := req.Seats
+	if seats <= 0 && req.Capacity > 0 {
+		seats = req.Capacity
+	}
+	if seats <= 0 {
+		seats = 2
 	}
 
 	t := &domaintable.Table{
@@ -92,7 +97,7 @@ func (h *TableHandler) Create(c *gin.Context) {
 		Floor:        req.Floor,
 		Wing:         req.Wing,
 		RoomNumber:   req.RoomNumber,
-		Seats:        req.Seats,
+		Seats:        seats,
 		FolioEnabled: req.FolioEnabled,
 		Status:       req.Status,
 	}
@@ -149,8 +154,7 @@ func (h *TableHandler) ToggleDND(c *gin.Context) {
 	tOID, _ := bson.ObjectIDFromHex(tenantID)
 
 	id := c.Param("id")
-	oid, err := bson.ObjectIDFromHex(id)
-	if err != nil {
+	if id == "" {
 		response.BadRequest(c, "INVALID_ID", "invalid room ID")
 		return
 	}
@@ -161,7 +165,7 @@ func (h *TableHandler) ToggleDND(c *gin.Context) {
 		return
 	}
 
-	if err := h.tableService.ToggleDND(c.Request.Context(), tOID, oid, req.DoNotDisturb); err != nil {
+	if err := h.tableService.ToggleDND(c.Request.Context(), tOID, id, req.DoNotDisturb); err != nil {
 		response.BadRequest(c, "UPDATE_FAILED", err.Error())
 		return
 	}
@@ -182,8 +186,7 @@ func (h *TableHandler) UpdateStatus(c *gin.Context) {
 	tOID, _ := bson.ObjectIDFromHex(tenantID)
 
 	id := c.Param("id")
-	oid, err := bson.ObjectIDFromHex(id)
-	if err != nil {
+	if id == "" {
 		response.BadRequest(c, "INVALID_ID", "invalid table ID")
 		return
 	}
@@ -194,7 +197,7 @@ func (h *TableHandler) UpdateStatus(c *gin.Context) {
 		return
 	}
 
-	if err := h.tableService.UpdateStatus(c.Request.Context(), tOID, oid, req.Status); err != nil {
+	if err := h.tableService.UpdateStatus(c.Request.Context(), tOID, id, req.Status); err != nil {
 		response.BadRequest(c, "UPDATE_FAILED", err.Error())
 		return
 	}
@@ -211,13 +214,12 @@ func (h *TableHandler) Delete(c *gin.Context) {
 	tOID, _ := bson.ObjectIDFromHex(tenantID)
 
 	id := c.Param("id")
-	oid, err := bson.ObjectIDFromHex(id)
-	if err != nil {
+	if id == "" {
 		response.BadRequest(c, "INVALID_ID", "invalid table ID")
 		return
 	}
 
-	if err := h.tableService.DeleteTable(c.Request.Context(), tOID, oid); err != nil {
+	if err := h.tableService.DeleteTable(c.Request.Context(), tOID, id); err != nil {
 		response.BadRequest(c, "DELETE_FAILED", err.Error())
 		return
 	}

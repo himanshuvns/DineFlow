@@ -139,7 +139,34 @@ func (s *Service) CreateRoomsBulk(ctx context.Context, tenantID bson.ObjectID, s
 	return created, nil
 }
 
-func (s *Service) ToggleDND(ctx context.Context, tenantID, id bson.ObjectID, dnd bool) error {
+func (s *Service) ResolveTableID(ctx context.Context, tenantID bson.ObjectID, identifier string) (bson.ObjectID, error) {
+	cleanID := strings.TrimSpace(identifier)
+	if oid, err := bson.ObjectIDFromHex(cleanID); err == nil {
+		return oid, nil
+	}
+
+	coll := s.db.Collection("tables")
+	var tbl domaintable.Table
+	err := coll.FindOne(ctx, bson.M{
+		"tenantId": tenantID,
+		"$or": []bson.M{
+			{"qrSlug": cleanID},
+			{"qrSlug": strings.ToLower(cleanID)},
+			{"name": bson.M{"$regex": "^" + cleanID + "$", "$options": "i"}},
+		},
+	}).Decode(&tbl)
+	if err == nil {
+		return tbl.ID, nil
+	}
+	return bson.NilObjectID, errors.New("table not found")
+}
+
+func (s *Service) ToggleDND(ctx context.Context, tenantID bson.ObjectID, identifier string, dnd bool) error {
+	id, err := s.ResolveTableID(ctx, tenantID, identifier)
+	if err != nil {
+		return err
+	}
+
 	coll := s.db.Collection("tables")
 	scope := mongoinfra.NewScope(coll, tenantID)
 
@@ -159,7 +186,12 @@ func (s *Service) ToggleDND(ctx context.Context, tenantID, id bson.ObjectID, dnd
 	return nil
 }
 
-func (s *Service) UpdateStatus(ctx context.Context, tenantID, id bson.ObjectID, status domaintable.TableStatus) error {
+func (s *Service) UpdateStatus(ctx context.Context, tenantID bson.ObjectID, identifier string, status domaintable.TableStatus) error {
+	id, err := s.ResolveTableID(ctx, tenantID, identifier)
+	if err != nil {
+		return err
+	}
+
 	coll := s.db.Collection("tables")
 	scope := mongoinfra.NewScope(coll, tenantID)
 
@@ -179,7 +211,12 @@ func (s *Service) UpdateStatus(ctx context.Context, tenantID, id bson.ObjectID, 
 	return nil
 }
 
-func (s *Service) DeleteTable(ctx context.Context, tenantID, id bson.ObjectID) error {
+func (s *Service) DeleteTable(ctx context.Context, tenantID bson.ObjectID, identifier string) error {
+	id, err := s.ResolveTableID(ctx, tenantID, identifier)
+	if err != nil {
+		return err
+	}
+
 	coll := s.db.Collection("tables")
 	scope := mongoinfra.NewScope(coll, tenantID)
 	res, err := scope.DeleteOne(ctx, bson.M{"_id": id})

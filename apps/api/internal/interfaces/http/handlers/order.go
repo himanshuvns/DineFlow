@@ -43,13 +43,12 @@ func (h *OrderHandler) CreateCustomerOrder(c *gin.Context) {
 
 func (h *OrderHandler) GetCustomerOrder(c *gin.Context) {
 	orderID := c.Param("orderId")
-	oid, err := bson.ObjectIDFromHex(orderID)
-	if err != nil {
-		response.BadRequest(c, "INVALID_ID", "invalid order ID")
+	if orderID == "" {
+		response.BadRequest(c, "INVALID_ID", "order ID is required")
 		return
 	}
 
-	ord, err := h.orderService.GetOrderByID(c.Request.Context(), oid)
+	ord, err := h.orderService.GetOrderByID(c.Request.Context(), orderID)
 	if err != nil {
 		response.NotFound(c, err.Error())
 		return
@@ -97,9 +96,8 @@ func (h *OrderHandler) UpdateStatus(c *gin.Context) {
 	tOID, _ := bson.ObjectIDFromHex(tenantID)
 
 	orderID := c.Param("orderId")
-	oid, err := bson.ObjectIDFromHex(orderID)
-	if err != nil {
-		response.BadRequest(c, "INVALID_ID", "invalid order ID")
+	if orderID == "" {
+		response.BadRequest(c, "INVALID_ID", "order ID is required")
 		return
 	}
 
@@ -109,7 +107,7 @@ func (h *OrderHandler) UpdateStatus(c *gin.Context) {
 		return
 	}
 
-	ord, err := h.orderService.UpdateOrderStatus(c.Request.Context(), tOID, oid, req.Status, req.Note)
+	ord, err := h.orderService.UpdateOrderStatus(c.Request.Context(), tOID, orderID, req.Status, req.Note)
 	if err != nil {
 		response.BadRequest(c, "STATUS_UPDATE_FAILED", err.Error())
 		return
