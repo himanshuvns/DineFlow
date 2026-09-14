@@ -505,12 +505,15 @@ export default function MenuManagementPage() {
   };
 
   // Commit approved staged items
-  const handleCommitStagedItems = async (approvedItems: ParsedMenuItem[]) => {
+  const handleCommitStagedItems = async (
+    approvedItems: ParsedMenuItem[],
+    replaceExisting?: boolean
+  ) => {
     const toCreate: Omit<MenuItem, "id">[] = [];
 
     for (const item of approvedItems) {
       const cleanCategory = formatCategoryName(item.category);
-      if (item.isDuplicate && item.duplicateAction === "merge" && item.matchedExistingItem) {
+      if (!replaceExisting && item.isDuplicate && item.duplicateAction === "merge" && item.matchedExistingItem) {
         // Merge & update existing item's price
         await updateMenuItem(item.matchedExistingItem.id, {
           price: item.price,
@@ -536,7 +539,7 @@ export default function MenuManagementPage() {
     }
 
     if (toCreate.length > 0) {
-      await bulkAddMenuItems(toCreate);
+      await bulkAddMenuItems(toCreate, { replaceExisting });
     }
   };
 

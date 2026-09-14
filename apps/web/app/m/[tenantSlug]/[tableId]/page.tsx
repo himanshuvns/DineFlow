@@ -27,185 +27,6 @@ import { useCartStore } from "@/lib/stores/cart-store";
 import { useTenantDataStore } from "@/lib/stores/tenant-data-store";
 import { isCategoryMatch } from "@/lib/utils/category-utils";
 
-// Gourmet mock menu with rich data and high-res photography
-const MENU_DATA: {
-  category: string;
-  items: CustomizerDish[];
-}[] = [
-  {
-    category: "Chef's Signatures & Starters",
-    items: [
-      {
-        id: "dish-1",
-        name: "Truffle Burrata & Heirloom Salad",
-        description:
-          "Artisanal Pugliese burrata on roasted heirloom tomatoes, Modena aged balsamic caviar, basil emulsion, and toasted pine nuts.",
-        basePrice: 680,
-        imageUrl:
-          "https://images.unsplash.com/photo-1592417817098-8f3d6910985c?auto=format&fit=crop&w=800&q=80",
-        isVeg: true,
-        modifierGroups: [
-          {
-            id: "mod-cheese",
-            name: "Cheese & Additions",
-            minSelections: 0,
-            maxSelections: 2,
-            options: [
-              { name: "Extra Burrata (100g)", price: 220 },
-              { name: "Shaved Black Truffle", price: 350 },
-            ],
-          },
-        ],
-      },
-      {
-        id: "dish-2",
-        name: "Smoked Salmon Crostini",
-        description:
-          "Norwegian cold-smoked salmon on sourdough crisps with whipped dill ricotta, caper berries, and lemon zest.",
-        basePrice: 720,
-        imageUrl:
-          "https://images.unsplash.com/photo-1541544741938-0af808871cc0?auto=format&fit=crop&w=800&q=80",
-        isVeg: false,
-        variants: [
-          { name: "Regular (3 pcs)", price: 720 },
-          { name: "Platter (6 pcs)", price: 1280 },
-        ],
-      },
-      {
-        id: "dish-3",
-        name: "Wild Mushroom Arancini",
-        description:
-          "Crispy saffron risotto balls stuffed with smoked provolone and porcini mushrooms, served with roasted garlic aioli.",
-        basePrice: 540,
-        imageUrl:
-          "https://images.unsplash.com/photo-1541529086526-db283c563270?auto=format&fit=crop&w=800&q=80",
-        isVeg: true,
-      },
-    ],
-  },
-  {
-    category: "Artisanal Wood-Fired Pizzas",
-    items: [
-      {
-        id: "dish-4",
-        name: "Diavola & Calabrian Hot Honey",
-        description:
-          "San Marzano tomato sauce, fior di latte mozzarella, spicy spianata calabrese, and a generous drizzle of hot chili honey.",
-        basePrice: 820,
-        imageUrl:
-          "https://images.unsplash.com/photo-1534308983496-4fabb1a015ee?auto=format&fit=crop&w=800&q=80",
-        isVeg: false,
-        variants: [
-          { name: "11-Inch Hand-Tossed", price: 820 },
-          { name: "14-Inch Sharing Size", price: 1190 },
-        ],
-        modifierGroups: [
-          {
-            id: "mod-crust",
-            name: "Crust Selection",
-            minSelections: 0,
-            maxSelections: 1,
-            options: [
-              { name: "Classic Neapolitan Crust", price: 0 },
-              { name: "Gluten-Free Cauliflower Crust", price: 150 },
-            ],
-          },
-          {
-            id: "mod-cheese-toppings",
-            name: "Extra Toppings",
-            minSelections: 0,
-            maxSelections: 3,
-            options: [
-              { name: "Double Mozzarella", price: 120 },
-              { name: "Fresh Jalapeños", price: 60 },
-              { name: "Gorgonzola Crumbles", price: 140 },
-            ],
-          },
-        ],
-      },
-      {
-        id: "dish-5",
-        name: "Tartufata Bianca (White Truffle)",
-        description:
-          "Taleggio and fontina cream base, roasted wild mushrooms, thyme, white truffle oil, and baby arugula.",
-        basePrice: 890,
-        imageUrl:
-          "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80",
-        isVeg: true,
-        variants: [
-          { name: "11-Inch Hand-Tossed", price: 890 },
-          { name: "14-Inch Sharing Size", price: 1250 },
-        ],
-      },
-    ],
-  },
-  {
-    category: "Mains & Pastas",
-    items: [
-      {
-        id: "dish-6",
-        name: "Handmade Truffle Tagliolini",
-        description:
-          "Egg ribbon pasta spun in 24-month aged Parmigiano wheel with European butter and freshly shaved seasonal truffle.",
-        basePrice: 940,
-        imageUrl:
-          "https://images.unsplash.com/photo-1621996346565-e3d5d6281691?auto=format&fit=crop&w=800&q=80",
-        isVeg: true,
-      },
-      {
-        id: "dish-7",
-        name: "Herb-Crusted New Zealand Lamb Chops",
-        description:
-          "Sous-vide and seared lamb chops with rosemary jus, parsnip purée, and glazed baby carrots.",
-        basePrice: 1450,
-        imageUrl:
-          "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80",
-        isVeg: false,
-      },
-    ],
-  },
-  {
-    category: "Craft Drinks & Beverages",
-    items: [
-      {
-        id: "dish-8",
-        name: "Valencia Orange & Rosemary Spritz",
-        description:
-          "Fresh pressed Valencia citrus, craft rosemary syrup, sparkling tonic water, and charred rosemary sprig.",
-        basePrice: 340,
-        imageUrl:
-          "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=800&q=80",
-        isVeg: true,
-      },
-      {
-        id: "dish-9",
-        name: "Cold Brew Tonic with Yuzu",
-        description:
-          "Single-estate Chikmagalur arabica brewed cold for 20 hours, topped with Japanese yuzu essence and crisp soda.",
-        basePrice: 320,
-        imageUrl:
-          "https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=800&q=80",
-        isVeg: true,
-      },
-    ],
-  },
-  {
-    category: "Artisanal Desserts",
-    items: [
-      {
-        id: "dish-10",
-        name: "Valrhona Molten Chocolate Sphere",
-        description:
-          "Dark chocolate dome with molten center, accompanied by Madagascar bourbon vanilla bean gelato.",
-        basePrice: 480,
-        imageUrl:
-          "https://images.unsplash.com/photo-1579372786545-d24232daf58c?auto=format&fit=crop&w=800&q=80",
-        isVeg: true,
-      },
-    ],
-  },
-];
-
 export default function CustomerMenuPage() {
   const params = useParams();
   const searchParams = useSearchParams();
@@ -468,8 +289,8 @@ export default function CustomerMenuPage() {
       }
     }
 
-    // 3. Fallback to static gourmet demo menu
-    return MENU_DATA;
+    // 3. Return actual dishes only — no pre-defined mock menus
+    return [];
   }, [remoteMenuData, menuItems, categories, storeTenantSlug, tenantSlug, isDemoTenant]);
 
   const restaurantDisplayName =
@@ -692,9 +513,19 @@ export default function CustomerMenuPage() {
         {filteredCategories.length === 0 ? (
           <div className="p-8 text-center bg-slate-900/50 rounded-2xl border border-slate-800/80 my-8">
             <Sparkles className="h-8 w-8 text-slate-500 mx-auto mb-2" />
-            <p className="text-sm font-semibold text-slate-300">No dishes found</p>
+            <p className="text-sm font-semibold text-slate-300">
+              {searchQuery || dietaryFilter !== "all"
+                ? "No matching dishes found"
+                : isLiveSyncing
+                ? "Loading restaurant menu…"
+                : "Menu is being updated"}
+            </p>
             <p className="text-xs text-slate-500 mt-1">
-              Try adjusting your search query or dietary filters.
+              {searchQuery || dietaryFilter !== "all"
+                ? "Try adjusting your search query or dietary filters."
+                : isLiveSyncing
+                ? "Fetching the latest live dishes from the kitchen…"
+                : "This restaurant's digital menu is currently being prepared. Please ask your server for assistance."}
             </p>
           </div>
         ) : (

@@ -51,7 +51,9 @@ export default function TablesManagementPage() {
 
   React.useEffect(() => {
     if (typeof window !== "undefined" && window.location.origin) {
-      setBaseUrl(window.location.origin);
+      if (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
+        setBaseUrl(window.location.origin);
+      }
     }
   }, []);
 

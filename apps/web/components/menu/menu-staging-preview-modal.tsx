@@ -29,7 +29,7 @@ interface MenuStagingPreviewModalProps {
   isOpen: boolean;
   onClose: () => void;
   items: ParsedMenuItem[];
-  onCommit: (approvedItems: ParsedMenuItem[]) => Promise<void>;
+  onCommit: (approvedItems: ParsedMenuItem[], replaceExisting?: boolean) => Promise<void>;
   existingCategories: string[];
 }
 
@@ -42,6 +42,7 @@ export function MenuStagingPreviewModal({
 }: MenuStagingPreviewModalProps) {
   const { addToast } = useToast();
   const [stagedItems, setStagedItems] = React.useState<ParsedMenuItem[]>([]);
+  const [replaceExisting, setReplaceExisting] = React.useState(true);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   // Dynamic category state to allow on-the-fly category creation
@@ -144,7 +145,7 @@ export function MenuStagingPreviewModal({
 
     setIsSubmitting(true);
     try {
-      await onCommit(stagedItems);
+      await onCommit(stagedItems, replaceExisting);
       confetti({
         particleCount: 60,
         spread: 70,
@@ -238,6 +239,28 @@ export function MenuStagingPreviewModal({
             </div>
           </div>
         )}
+
+        {/* Active QR menu replace toggle */}
+        <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-between gap-3 text-xs">
+          <div className="space-y-0.5">
+            <p className="font-semibold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              Make this the primary QR menu (replaces demo &amp; placeholder dishes)
+            </p>
+            <p className="text-[11.5px] text-emerald-700/80 dark:text-emerald-400/80">
+              When enabled, your customer table QR codes will display only these imported items.
+            </p>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer shrink-0">
+            <input
+              type="checkbox"
+              checked={replaceExisting}
+              onChange={(e) => setReplaceExisting(e.target.checked)}
+              className="sr-only peer"
+            />
+            <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-slate-600 peer-checked:bg-emerald-500" />
+          </label>
+        </div>
 
         {/* Top actions */}
         <div className="flex flex-col gap-2 pt-1">

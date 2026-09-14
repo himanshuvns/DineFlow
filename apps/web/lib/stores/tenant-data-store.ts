@@ -333,7 +333,7 @@ interface TenantDataState {
   addMenuItem: (item: Omit<MenuItem, "id">) => Promise<MenuItem>;
   updateMenuItem: (id: string, updates: Partial<MenuItem>) => Promise<void>;
   deleteMenuItem: (id: string) => Promise<void>;
-  bulkAddMenuItems: (items: Omit<MenuItem, "id">[]) => Promise<MenuItem[]>;
+  bulkAddMenuItems: (items: Omit<MenuItem, "id">[], options?: { replaceExisting?: boolean }) => Promise<MenuItem[]>;
   bulkUpdateMenuItems: (ids: string[], updates: Partial<MenuItem>) => Promise<void>;
   bulkDeleteMenuItems: (ids: string[]) => Promise<void>;
   bulkAdjustPrices: (ids: string[], percentage: number) => Promise<void>;
@@ -499,6 +499,22 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
 
     // Try to fetch from backend API if user is authenticated
     try {
+      // Auto-authenticate demo session if unauthenticated so backend data syncs to MongoDB
+      if (!useAuthStore.getState().accessToken && isDemoTenant) {
+        try {
+          const loginRes = await apiClient.post("/auth/login", {
+            phone: "+919876543210",
+            password: "DineFlow@2026",
+          });
+          if (loginRes.data?.data?.accessToken) {
+            const { user: authedUser, tenant: authedTenant, accessToken } = loginRes.data.data;
+            useAuthStore.getState().setAuth(authedUser, authedTenant, accessToken);
+          }
+        } catch (authErr) {
+          console.warn("[tenant-store] Auto-auth for demo tenant skipped:", authErr);
+        }
+      }
+
       const [itemsRes, categoriesRes, tablesRes, ordersRes] = await Promise.allSettled([
         apiClient.get("/menu/items"),
         apiClient.get("/menu/categories"),
@@ -581,16 +597,78 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
           ...item,
           category: formatCategoryName(item.category || "General"),
         }));
-        const rawCats = remoteCategories.length > 0 ? remoteCategories : normalizedRemoteItems.map((i) => i.category);
-        const finalCategories = deduplicateCategories(rawCats, { removePlaceholderGeneral: true });
+
+        // Check if user previously imported dishes locally that need to be published to database
+        const hasCustomLocalItems =
+          Array.isArray(cachedData?.menuItems) &&
+          cachedData.menuItems.some(
+            (i: any) =>
+              typeof i.id === "string" &&
+              i.id.startsWith("itm_") &&
+              !i.id.startsWith("itm_b") &&
+              !i.id.startsWith("itm_c") &&
+              !i.id.startsWith("itm_p") &&
+              !i.id.startsWith("itm_fd")
+          );
+
+        let finalMenuItems = normalizedRemoteItems;
+        if (hasCustomLocalItems && cachedData?.menuItems) {
+          const customOnly: MenuItem[] = cachedData.menuItems.filter(
+            (i: any) =>
+              !i.id.startsWith("itm_b") &&
+              !i.id.startsWith("itm_c") &&
+              !i.id.startsWith("itm_p") &&
+              !i.id.startsWith("itm_fd")
+          );
+          if (customOnly.length > 0) {
+            finalMenuItems = customOnly;
+            // Purge old remote items that are not in customOnly
+            const seedIds = remoteItems
+              .map((i) => i.id)
+              .filter((id) => typeof id === "string" && id.length === 24);
+            if (seedIds.length > 0) {
+              apiClient.post("/menu/items/bulk-delete", { ids: seedIds }).catch(() => {});
+            }
+            // Auto-persist user's custom imported items to database for customer QR scans
+            apiClient
+              .post("/menu/items/bulk", {
+                items: customOnly.map((ci) => ({
+                  name: ci.name,
+                  category: ci.category,
+                  price: ci.price,
+                  basePrice: ci.price,
+                  description: ci.desc,
+                  desc: ci.desc,
+                  available: ci.available !== false,
+                  isAvailable: ci.available !== false,
+                  isVeg: ci.isVeg,
+                  imageUrl: ci.imageUrl,
+                  bestseller: ci.bestseller || false,
+                  recommended: ci.recommended || false,
+                  spicyLevel: ci.spicyLevel || 1,
+                  prepTimeMinutes: ci.prepTimeMinutes || 15,
+                  hindiName: ci.hindiName || "",
+                })),
+              })
+              .catch(() => {});
+          }
+        }
+
+        const rawCats =
+          remoteCategories.length > 0
+            ? remoteCategories
+            : finalMenuItems.map((i) => i.category);
+        const finalCategories = deduplicateCategories(rawCats, {
+          removePlaceholderGeneral: true,
+        });
         const stateToSave = {
           categories: finalCategories,
-          menuItems: normalizedRemoteItems,
+          menuItems: finalMenuItems,
           tables: remoteTables,
           orders: remoteOrders,
           onboardingSteps: DEFAULT_ONBOARDING.map((s) => {
             if (s.id === 2) return { ...s, completed: remoteTables.length > 0 };
-            if (s.id === 3) return { ...s, completed: remoteItems.length > 0 };
+            if (s.id === 3) return { ...s, completed: finalMenuItems.length > 0 };
             return s;
           }),
         };
@@ -899,15 +977,60 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
     broadcastMenuChange(state.tenantSlug);
   },
 
-  bulkAddMenuItems: async (itemsData) => {
+  bulkAddMenuItems: async (itemsData, options) => {
     const state = get();
+    // Default replaceExisting to true if all current items are starter template items or explicitly requested
+    const isOnlyStarterItems =
+      state.menuItems.length > 0 &&
+      state.menuItems.every((i) =>
+        i.id.startsWith("itm_b") ||
+        i.id.startsWith("itm_c") ||
+        i.id.startsWith("itm_p") ||
+        i.id.startsWith("itm_fd")
+      );
+    const shouldReplace = options?.replaceExisting ?? (isOnlyStarterItems || state.menuItems.length === 0);
+
+    // 1. Ensure authenticated session so sync persists to MongoDB
+    if (!useAuthStore.getState().accessToken && state.isDemoTenant) {
+      try {
+        const loginRes = await apiClient.post("/auth/login", {
+          phone: "+919876543210",
+          password: "DineFlow@2026",
+        });
+        if (loginRes.data?.data?.accessToken) {
+          const { user: authedUser, tenant: authedTenant, accessToken } = loginRes.data.data;
+          useAuthStore.getState().setAuth(authedUser, authedTenant, accessToken);
+        }
+      } catch (authErr) {
+        console.warn("[tenant-store] Auto-auth before bulk save skipped:", authErr);
+      }
+    }
+
+    // 2. If replacing existing menu, purge old items from backend database
+    if (shouldReplace) {
+      try {
+        const existingRes = await apiClient.get("/menu/items");
+        const existingItems = existingRes.data?.data;
+        if (Array.isArray(existingItems) && existingItems.length > 0) {
+          const idsToDelete = existingItems
+            .map((i: any) => i.id || i._id)
+            .filter((id: string) => typeof id === "string" && id.length === 24);
+          if (idsToDelete.length > 0) {
+            await apiClient.post("/menu/items/bulk-delete", { ids: idsToDelete });
+          }
+        }
+      } catch (delErr) {
+        console.warn("[tenant-store] Bulk-delete existing backend items skipped:", delErr);
+      }
+    }
+
     const createdItems: MenuItem[] = itemsData.map((item, idx) => ({
       ...item,
       category: formatCategoryName(item.category),
       id: `itm_${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 6)}`,
     }));
 
-    // Attempt bulk sync to backend API with complete attributes
+    // 3. Bulk sync new items to backend MongoDB
     try {
       const res = await apiClient.post("/menu/items/bulk", {
         items: createdItems.map((ci) => ({
@@ -939,14 +1062,17 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
       console.warn("Backend bulk save skipped or offline:", e);
     }
 
-    // Merge categories with deduplication
+    // 4. Update categories and items in state
     const newCats = createdItems.map((ci) => ci.category);
     const updatedCategories = deduplicateCategories(
-      [...state.categories, ...newCats],
+      shouldReplace ? newCats : [...state.categories, ...newCats],
       { removePlaceholderGeneral: true }
     );
 
-    const updatedItems = [...createdItems, ...state.menuItems];
+    const updatedItems = shouldReplace
+      ? createdItems
+      : [...createdItems, ...state.menuItems];
+
     const updatedSteps = state.onboardingSteps.map((s) =>
       s.id === 3 ? { ...s, completed: true } : s
     );
@@ -959,6 +1085,38 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
 
     persistTenantState(state.tenantId, nextState);
     set(nextState);
+
+    // 5. Update local public menu cache for instant UI and tab sync
+    try {
+      if (typeof window !== "undefined") {
+        const catMap = new Map<string, any[]>();
+        updatedItems.forEach((itm) => {
+          if (!itm.available) return;
+          const c = itm.category || "General";
+          if (!catMap.has(c)) catMap.set(c, []);
+          catMap.get(c)!.push({
+            id: itm.id,
+            name: itm.name,
+            description: itm.desc || "Freshly prepared by our culinary team.",
+            basePrice: itm.price,
+            imageUrl: itm.imageUrl,
+            isVeg: itm.isVeg,
+          });
+        });
+        const sections = Array.from(catMap.entries()).map(([category, items]) => ({
+          category,
+          items,
+        }));
+        localStorage.setItem(
+          `dineflow_public_menu_${state.tenantSlug.toLowerCase()}`,
+          JSON.stringify({
+            tenant: { name: state.tenantName, slug: state.tenantSlug },
+            sections,
+          })
+        );
+      }
+    } catch {}
+
     broadcastMenuChange(state.tenantSlug);
     return createdItems;
   },
