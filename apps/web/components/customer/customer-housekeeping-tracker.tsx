@@ -35,6 +35,7 @@ export interface HousekeepingTaskItem {
   assignedTo?: string;
   notes?: string;
   createdAt?: string;
+  updatedAt?: string;
   completedAt?: string;
 }
 
@@ -120,18 +121,33 @@ export function CustomerHousekeepingTracker({
         const serverTasks: HousekeepingTaskItem[] = json.data?.tasks || json.tasks || [];
         if (Array.isArray(serverTasks)) {
           setTasks((prev) => {
-            // Merge server tasks with any recent local tasks
+            // SERVER DATA IS AUTHORITATIVE for status/progress.
+            // Server tasks are placed in the map first (definitive).
             const map = new Map<string, HousekeepingTaskItem>();
+            const serverIds = new Set<string>();
             serverTasks.forEach((t) => {
-              if (t.id) map.set(t.id, t);
-            });
-            prev.forEach((t) => {
-              if (t.id && !map.has(t.id)) {
-                // Keep local task if created recently (< 1h)
-                const age = Date.now() - new Date(t.createdAt || "").getTime();
-                if (age < 3600000) map.set(t.id, t);
+              if (t.id) {
+                map.set(t.id, t);
+                serverIds.add(t.id);
               }
             });
+
+            // Only keep local tasks that are:
+            // 1. Temp IDs not yet confirmed by server (created < 2 min ago)
+            // 2. NOT already present on the server (server wins on status)
+            const TWO_MINUTES = 2 * 60 * 1000;
+            prev.forEach((t) => {
+              if (!t.id) return;
+              // If the server already has this ID, server wins — skip local
+              if (serverIds.has(t.id)) return;
+              // Only keep very recent temp tasks (< 2 min)
+              const age = Date.now() - new Date(t.createdAt || "").getTime();
+              const isTemp = t.id.startsWith("task_temp_") || t.id.startsWith("task_");
+              if (isTemp && age < TWO_MINUTES) {
+                map.set(t.id, t);
+              }
+            });
+
             const merged = Array.from(map.values()).sort((a, b) => {
               const ta = new Date(a.createdAt || "").getTime();
               const tb = new Date(b.createdAt || "").getTime();
@@ -139,7 +155,9 @@ export function CustomerHousekeepingTracker({
             });
 
             try {
-              localStorage.setItem(storageKey, JSON.stringify(merged));
+              // Only write server-confirmed tasks to localStorage (no optimistic temp IDs)
+              const confirmed = merged.filter((t) => !t.id?.startsWith("task_temp_"));
+              localStorage.setItem(storageKey, JSON.stringify(confirmed));
             } catch (err) {
               // Ignore
             }
@@ -182,10 +200,10 @@ export function CustomerHousekeepingTracker({
     };
   }, [storageKey, fetchTasks]);
 
-  // Initial fetch and 3.5-second live polling
+  // Initial fetch and 2-second live polling (fast enough to catch staff status updates)
   React.useEffect(() => {
     fetchTasks();
-    const interval = setInterval(fetchTasks, 3500);
+    const interval = setInterval(fetchTasks, 2000);
     return () => clearInterval(interval);
   }, [fetchTasks, refreshSignal]);
 
@@ -262,17 +280,23 @@ export function CustomerHousekeepingTracker({
     }
   };
 
-  // Filter tasks: active tasks (pending or in_progress) or tasks completed in last 4 hours
+  // Filter tasks: active tasks (pending or in_progress) or tasks completed/updated in last 4 hours
   const relevantTasks = tasks.filter((t) => {
-    if (t.status === "pending" || t.status === "in_progress") return true;
-    if (t.status === "completed") {
-      const refTime = new Date(t.completedAt || t.createdAt || "").getTime();
+    // Normalize status — backend may return "done" or "complete" in future
+    const s = (t.status || "").toLowerCase().trim();
+    if (s === "pending" || s === "in_progress") return true;
+    if (s === "completed" || s === "done") {
+      // Use completedAt → updatedAt → createdAt for recency check
+      const refTime = new Date(t.completedAt || t.updatedAt || t.createdAt || "").getTime();
       return now - refTime < 4 * 60 * 60 * 1000;
     }
     return false;
   });
 
-  const activeTasks = relevantTasks.filter((t) => t.status !== "completed");
+  const activeTasks = relevantTasks.filter((t) => {
+    const s = (t.status || "").toLowerCase().trim();
+    return s !== "completed" && s !== "done";
+  });
   const activeCount = activeTasks.length;
 
   const STEPS = [
@@ -297,9 +321,10 @@ export function CustomerHousekeepingTracker({
   ];
 
   const getStepIndex = (status: string) => {
-    if (status === "completed") return 2;
-    if (status === "in_progress") return 1;
-    return 0; // pending
+    const s = (status || "").toLowerCase().replace(/[^a-z]/g, "");
+    if (s === "completed" || s === "done" || s === "complete" || s === "finished") return 2;
+    if (s === "inprogress" || s === "active" || s === "attending" || s === "started") return 1;
+    return 0; // pending / unknown
   };
 
   const getLiveTimer = (isoDate?: string) => {

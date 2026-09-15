@@ -516,6 +516,18 @@ export default function RoomDetailPage() {
     }
   };
 
+  const handleApproveTask = async (taskId: string) => {
+    try {
+      await apiClient.patch(`/rooms/tasks/${encodeURIComponent(taskId)}`, {
+        status: "in_progress",
+      });
+      addToast("success", "Task Approved", "Steward has been assigned and is attending to the suite.");
+      fetchRoomData();
+    } catch (e) {
+      console.warn("Approve task error:", e);
+    }
+  };
+
   const handleCompleteTask = async (taskId: string) => {
     try {
       await apiClient.patch(`/rooms/tasks/${encodeURIComponent(taskId)}`, {
@@ -995,8 +1007,30 @@ export default function RoomDetailPage() {
                       </span>
                     </div>
 
-                    <div>
-                      {!isDone && (
+                    <div className="flex flex-col gap-1.5 items-end">
+                      {t.status === "pending" && (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className="h-7 px-2.5 text-xs text-amber-600 dark:text-amber-400 border-amber-500/30"
+                          onClick={() => handleApproveTask(t.id)}
+                        >
+                          <Clock className="h-3.5 w-3.5 mr-1" />
+                          <span>Approve</span>
+                        </Button>
+                      )}
+                      {t.status === "in_progress" && (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className="h-7 px-2.5 text-xs text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
+                          onClick={() => handleCompleteTask(t.id)}
+                        >
+                          <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                          <span>Done</span>
+                        </Button>
+                      )}
+                      {!isDone && t.status !== "pending" && t.status !== "in_progress" && (
                         <Button
                           variant="secondary"
                           size="sm"
