@@ -58,10 +58,11 @@ type Room struct {
 	Status            RoomStatus     `bson:"status" json:"status"`
 	DoNotDisturb      bool           `bson:"doNotDisturb" json:"doNotDisturb"`
 	FolioEnabled      bool           `bson:"folioEnabled" json:"folioEnabled"`
-	CurrentGuestID    *bson.ObjectID `bson:"currentGuestId,omitempty" json:"currentGuestId,omitempty"`
-	CurrentGuestName  string         `bson:"currentGuestName,omitempty" json:"currentGuestName,omitempty"`
-	CurrentGuestPhone string         `bson:"currentGuestPhone,omitempty" json:"currentGuestPhone,omitempty"`
-	QRSlug            string         `bson:"qrSlug" json:"qrSlug"`
+	CurrentGuestID      *bson.ObjectID `bson:"currentGuestId,omitempty" json:"currentGuestId,omitempty"`
+	CurrentGuestName    string         `bson:"currentGuestName,omitempty" json:"currentGuestName,omitempty"`
+	CurrentGuestPhone   string         `bson:"currentGuestPhone,omitempty" json:"currentGuestPhone,omitempty"`
+	CurrentGuestCheckIn *time.Time     `bson:"currentGuestCheckIn,omitempty" json:"currentGuestCheckIn,omitempty"`
+	QRSlug              string         `bson:"qrSlug" json:"qrSlug"`
 	Amenities         []string       `bson:"amenities" json:"amenities"`
 	Images            []string       `bson:"images,omitempty" json:"images,omitempty"`
 	CreatedAt         time.Time      `bson:"createdAt" json:"createdAt"`

@@ -204,10 +204,19 @@ export default function RoomDetailPage() {
 
       // Collect and merge orders from both the room-specific endpoint and the tenant KDS queue
       const orderMap = new Map<string, RoomOrder>();
+      const isOccupied = (loadedRoom?.status || room?.status) === "occupied";
+      const guestCheckInStr = loadedRoom?.currentGuestCheckIn || room?.currentGuestCheckIn;
+      const guestCheckInTime = guestCheckInStr ? new Date(guestCheckInStr).getTime() : null;
 
       // 1. Process orders returned by /rooms/:id/orders
       if (ordersRes.status === "fulfilled" && Array.isArray(ordersRes.value.data?.data)) {
         for (const o of ordersRes.value.data.data) {
+          // If room is occupied, only show orders placed during THIS active guest's stay
+          if (isOccupied && guestCheckInTime) {
+            const oTime = new Date(o.createdAt || "").getTime();
+            if (oTime < guestCheckInTime) continue;
+          }
+
           const key = o.orderNumber || o.id || o._id;
           if (key) {
             orderMap.set(key, {
@@ -238,6 +247,12 @@ export default function RoomDetailPage() {
         const currentRoomId = (loadedRoom?.id || roomId || "").trim();
 
         for (const o of allOrdersRes.value.data.data) {
+          // If room is occupied, do NOT show orders placed before this guest checked in
+          if (isOccupied && guestCheckInTime) {
+            const oTime = new Date(o.createdAt || "").getTime();
+            if (oTime < guestCheckInTime) continue;
+          }
+
           const oRoomId = String(o.roomId || o.tableId || "").trim();
           const oRoomNum = String(o.roomNumber || "").toUpperCase().trim();
           const oTable = String(o.tableName || o.table || "").toUpperCase().trim();
@@ -283,8 +298,17 @@ export default function RoomDetailPage() {
         const targetRoomNum = (loadedRoom?.roomNumber || room?.roomNumber || "").toUpperCase().trim();
         const targetRoomId = (loadedRoom?.id || roomId || "").trim();
 
-        // Strictly isolate tasks to this room only
+        // Strictly isolate tasks to this room only and to the current guest's stay
         const roomSpecificTasks = tasksRes.value.data.data.filter((t: any) => {
+          // If room is occupied, NEVER show turnover checkout cleaning tasks from prior guest
+          if (isOccupied && (t.title.includes("Checkout Deep Clean") || t.title.includes("Linen Refresh"))) {
+            return false;
+          }
+          if (isOccupied && guestCheckInTime) {
+            const tTime = new Date(t.createdAt || "").getTime();
+            if (tTime < guestCheckInTime) return false;
+          }
+
           const tRoomId = String(t.roomId || "").trim();
           const tRoomNum = String(t.roomNumber || "").toUpperCase().trim();
           const tTitle = String(t.title || "").toUpperCase().trim();
@@ -395,6 +419,16 @@ export default function RoomDetailPage() {
         });
       }
 
+      setOrders([]);
+      setTasks([]);
+      try {
+        const cleanNum = (room.roomNumber || "").toUpperCase().replace(/^(ROOM-|SUITE-)/, "");
+        localStorage.removeItem(`dineflow_tasks_${tenantSlug}_${cleanNum}`);
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("dineflow_task_created"));
+        }
+      } catch (_) {}
+
       setIsCheckInOpen(false);
       setGuestName("");
       setGuestPhone("");
@@ -407,6 +441,27 @@ export default function RoomDetailPage() {
       fetchRoomData();
     } catch (e: any) {
       addToast("error", "Check-In Failed", e?.response?.data?.message || "Could not check in guest.");
+    }
+  };
+
+  const handleClearStayHistory = async () => {
+    if (!room) return;
+    if (!confirm("Are you sure you want to purge all prior stay orders and housekeeping tasks for this suite?")) return;
+    try {
+      await apiClient.delete(`/rooms/${encodeURIComponent(room.id)}/history`);
+      setOrders([]);
+      setTasks([]);
+      try {
+        const cleanNum = (room.roomNumber || "").toUpperCase().replace(/^(ROOM-|SUITE-)/, "");
+        localStorage.removeItem(`dineflow_tasks_${tenantSlug}_${cleanNum}`);
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("dineflow_task_created"));
+        }
+      } catch (_) {}
+      addToast("success", "Stay Records Purged", "Previous orders and housekeeping tasks have been purged.");
+      fetchRoomData();
+    } catch (e: any) {
+      addToast("error", "Purge Failed", e?.response?.data?.message || "Could not purge history.");
     }
   };
 
@@ -468,13 +523,24 @@ export default function RoomDetailPage() {
       const res = await apiClient.post(`/rooms/${encodeURIComponent(room.id)}/check-out`, {});
       const summary = res.data?.data?.staySummary || currentStaySummary;
       setCompletedInvoice(summary);
+      setOrders([]);
+      setTasks([]);
       setRoom({
         ...room,
         status: "cleaning",
         currentGuestId: undefined,
         currentGuestName: undefined,
         currentGuestPhone: undefined,
+        currentGuestCheckIn: undefined,
       });
+      // Purge local task storage for this suite so guest portal resets to 0
+      try {
+        const cleanNum = (room.roomNumber || "").toUpperCase().replace(/^(ROOM-|SUITE-)/, "");
+        localStorage.removeItem(`dineflow_tasks_${tenantSlug}_${cleanNum}`);
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("dineflow_task_created"));
+        }
+      } catch (_) {}
       setIsCheckOutOpen(false);
       addToast("success", "Guest Checked Out", `${room.name} marked for Housekeeping. Stay summary generated.`);
       fetchRoomData();
@@ -889,12 +955,23 @@ export default function RoomDetailPage() {
                   <span>Suite In-Room Dining Orders</span>
                 </CardTitle>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Live tickets and historical dining bills charged to this room.
+                  Live tickets and dining orders placed during this guest stay.
                 </p>
               </div>
-              <Badge variant="neutral" size="sm" className="font-mono">
-                {orders.length} {orders.length === 1 ? "Order" : "Orders"}
-              </Badge>
+              <div className="flex items-center gap-2">
+                {orders.length > 0 && (
+                  <button
+                    onClick={handleClearStayHistory}
+                    title="Purge Historical Stay Records"
+                    className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-400 hover:text-rose-500 hover:border-rose-500/30 transition-colors"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                )}
+                <Badge variant="neutral" size="sm" className="font-mono">
+                  {orders.length} {orders.length === 1 ? "Order" : "Orders"}
+                </Badge>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -984,15 +1061,26 @@ export default function RoomDetailPage() {
                   Sanitization, linen changes, and amenity requests.
                 </p>
               </div>
-              <Button
-                variant="secondary"
-                size="sm"
-                className="text-xs"
-                leftIcon={<Plus className="h-3 w-3" />}
-                onClick={() => setIsNewTaskOpen(true)}
-              >
-                Add Task
-              </Button>
+              <div className="flex items-center gap-2">
+                {tasks.length > 0 && (
+                  <button
+                    onClick={handleClearStayHistory}
+                    title="Purge Historical Stay Records"
+                    className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-400 hover:text-rose-500 hover:border-rose-500/30 transition-colors"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                )}
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="text-xs"
+                  leftIcon={<Plus className="h-3 w-3" />}
+                  onClick={() => setIsNewTaskOpen(true)}
+                >
+                  Add Task
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-3">

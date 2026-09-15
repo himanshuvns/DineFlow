@@ -183,6 +183,22 @@ func (s *Service) GetRoomByID(ctx context.Context, tenantID bson.ObjectID, ident
 	if err != nil {
 		return nil, err
 	}
+
+	if r.CurrentGuestCheckIn == nil {
+		if r.CurrentGuestID != nil && !r.CurrentGuestID.IsZero() {
+			var g domainroom.Guest
+			if err := s.db.Collection("guests").FindOne(ctx, bson.M{"_id": r.CurrentGuestID, "tenantId": tenantID}).Decode(&g); err == nil && !g.CheckIn.IsZero() {
+				r.CurrentGuestCheckIn = &g.CheckIn
+			}
+		}
+		if r.CurrentGuestCheckIn == nil && r.Status == domainroom.StatusOccupied {
+			var g domainroom.Guest
+			if err := s.db.Collection("guests").FindOne(ctx, bson.M{"roomId": r.ID, "status": domainroom.GuestCheckedIn}, options.FindOne().SetSort(bson.D{{Key: "checkIn", Value: -1}})).Decode(&g); err == nil && !g.CheckIn.IsZero() {
+				r.CurrentGuestCheckIn = &g.CheckIn
+			}
+		}
+	}
+
 	return &r, nil
 }
 
@@ -455,16 +471,46 @@ func (s *Service) CheckInGuest(ctx context.Context, tenantID bson.ObjectID, iden
 		return nil, nil, err
 	}
 
+	// Purge any stale housekeeping tasks and past orders from previous stays for this room
+	tasksColl := s.db.Collection("housekeeping_tasks")
+	_, _ = tasksColl.DeleteMany(ctx, bson.M{
+		"tenantId": tenantID,
+		"$or": []bson.M{
+			{"roomId": roomID},
+			{"roomNumber": r.RoomNumber},
+			{"roomNumber": strings.ToUpper(r.RoomNumber)},
+			{"roomNumber": strings.ToLower(r.RoomNumber)},
+		},
+	})
+
+	ordersColl := s.db.Collection("orders")
+	rmNum := r.RoomNumber
+	_, _ = ordersColl.DeleteMany(ctx, bson.M{
+		"tenantId": tenantID,
+		"$or": []bson.M{
+			{"roomId": roomID},
+			{"roomNumber": rmNum},
+			{"roomNumber": strings.ToUpper(rmNum)},
+			{"roomNumber": strings.ToLower(rmNum)},
+			{"tableName": rmNum},
+			{"tableName": "Suite " + rmNum},
+			{"tableName": "Room " + rmNum},
+			{"tableSlug": fmt.Sprintf("room-%s", strings.ToLower(rmNum))},
+			{"tableSlug": fmt.Sprintf("suite-%s", strings.ToLower(rmNum))},
+		},
+	})
+
 	// Update Room
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
 	var updatedRoom domainroom.Room
 	err = roomsColl.FindOneAndUpdate(ctx, bson.M{"_id": roomID, "tenantId": tenantID}, bson.M{
 		"$set": bson.M{
-			"status":            domainroom.StatusOccupied,
-			"currentGuestId":    guest.ID,
-			"currentGuestName":  guest.Name,
-			"currentGuestPhone": guest.Phone,
-			"updatedAt":         now,
+			"status":              domainroom.StatusOccupied,
+			"currentGuestId":      guest.ID,
+			"currentGuestName":    guest.Name,
+			"currentGuestPhone":   guest.Phone,
+			"currentGuestCheckIn": &checkInTime,
+			"updatedAt":           now,
 		},
 	}, opts).Decode(&updatedRoom)
 	if err != nil {
@@ -613,17 +659,48 @@ func (s *Service) CheckOutGuest(ctx context.Context, tenantID bson.ObjectID, ide
 		})
 	}
 
+	// Delete all previous housekeeping tasks for this room
+	tasksColl := s.db.Collection("housekeeping_tasks")
+	_, _ = tasksColl.DeleteMany(ctx, bson.M{
+		"tenantId": tenantID,
+		"$or": []bson.M{
+			{"roomId": roomID},
+			{"roomNumber": r.RoomNumber},
+			{"roomNumber": strings.ToUpper(r.RoomNumber)},
+			{"roomNumber": strings.ToLower(r.RoomNumber)},
+		},
+	})
+
+	// Delete all food orders associated with this checked-out room stay
+	ordersColl := s.db.Collection("orders")
+	rmNum := r.RoomNumber
+	_, _ = ordersColl.DeleteMany(ctx, bson.M{
+		"tenantId": tenantID,
+		"$or": []bson.M{
+			{"roomId": roomID},
+			{"roomNumber": rmNum},
+			{"roomNumber": strings.ToUpper(rmNum)},
+			{"roomNumber": strings.ToLower(rmNum)},
+			{"tableName": rmNum},
+			{"tableName": "Suite " + rmNum},
+			{"tableName": "Room " + rmNum},
+			{"tableSlug": fmt.Sprintf("room-%s", strings.ToLower(rmNum))},
+			{"tableSlug": fmt.Sprintf("suite-%s", strings.ToLower(rmNum))},
+		},
+	})
+
 	// Update room to cleaning and clear current guest
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
 	var updatedRoom domainroom.Room
 	err = roomsColl.FindOneAndUpdate(ctx, bson.M{"_id": roomID, "tenantId": tenantID}, bson.M{
 		"$set": bson.M{
-			"status":            domainroom.StatusCleaning,
-			"currentGuestId":    nil,
-			"currentGuestName":  "",
-			"currentGuestPhone": "",
-			"doNotDisturb":      false,
-			"updatedAt":         now,
+			"status":              domainroom.StatusCleaning,
+			"currentGuestId":      nil,
+			"currentGuestName":    "",
+			"currentGuestPhone":   "",
+			"currentGuestCheckIn": nil,
+			"doNotDisturb":        false,
+			"updatedAt":           now,
 		},
 	}, opts).Decode(&updatedRoom)
 	if err != nil {
@@ -631,7 +708,6 @@ func (s *Service) CheckOutGuest(ctx context.Context, tenantID bson.ObjectID, ide
 	}
 
 	// Create Housekeeping cleaning task
-	tasksColl := s.db.Collection("housekeeping_tasks")
 	task := &domainroom.HousekeepingTask{
 		ID:         bson.NewObjectID(),
 		TenantID:   tenantID,
@@ -713,6 +789,34 @@ func (s *Service) ListHousekeepingTasks(ctx context.Context, tenantID bson.Objec
 			filter["$or"] = orList
 		} else {
 			filter["roomId"] = bson.NilObjectID
+		}
+
+		// When room is occupied, only show tasks created for THIS active guest stay
+		if matchedRoom.Status == domainroom.StatusOccupied {
+			var checkInTime *time.Time = matchedRoom.CurrentGuestCheckIn
+			if checkInTime == nil && matchedRoom.CurrentGuestID != nil && !matchedRoom.CurrentGuestID.IsZero() {
+				var g domainroom.Guest
+				if err := s.db.Collection("guests").FindOne(ctx, bson.M{"_id": matchedRoom.CurrentGuestID, "tenantId": tenantID}).Decode(&g); err == nil && !g.CheckIn.IsZero() {
+					checkInTime = &g.CheckIn
+				}
+			}
+			if checkInTime == nil && !matchedRoom.ID.IsZero() {
+				var g domainroom.Guest
+				if err := s.db.Collection("guests").FindOne(ctx, bson.M{"roomId": matchedRoom.ID, "status": domainroom.GuestCheckedIn}, options.FindOne().SetSort(bson.D{{Key: "checkIn", Value: -1}})).Decode(&g); err == nil && !g.CheckIn.IsZero() {
+					checkInTime = &g.CheckIn
+				}
+			}
+			if checkInTime != nil && !checkInTime.IsZero() {
+				filter["createdAt"] = bson.M{"$gte": *checkInTime}
+				// Automatically purge any stale tasks created before this guest checked in
+				if len(orList) > 0 {
+					_, _ = coll.DeleteMany(ctx, bson.M{
+						"tenantId":  tenantID,
+						"$or":       orList,
+						"createdAt": bson.M{"$lt": *checkInTime},
+					})
+				}
+			}
 		}
 	}
 	if status != "" && status != "all" {
@@ -913,6 +1017,34 @@ func (s *Service) GetRoomOrders(ctx context.Context, tenantID bson.ObjectID, idO
 		"$or":      orClauses,
 	}
 
+	// When room is occupied, only show orders placed during THIS active guest stay
+	if matchedRoom.Status == domainroom.StatusOccupied {
+		var checkInTime *time.Time = matchedRoom.CurrentGuestCheckIn
+		if checkInTime == nil && matchedRoom.CurrentGuestID != nil && !matchedRoom.CurrentGuestID.IsZero() {
+			var g domainroom.Guest
+			if err := s.db.Collection("guests").FindOne(ctx, bson.M{"_id": matchedRoom.CurrentGuestID, "tenantId": tenantID}).Decode(&g); err == nil && !g.CheckIn.IsZero() {
+				checkInTime = &g.CheckIn
+			}
+		}
+		if checkInTime == nil && !matchedRoom.ID.IsZero() {
+			var g domainroom.Guest
+			if err := s.db.Collection("guests").FindOne(ctx, bson.M{"roomId": matchedRoom.ID, "status": domainroom.GuestCheckedIn}, options.FindOne().SetSort(bson.D{{Key: "checkIn", Value: -1}})).Decode(&g); err == nil && !g.CheckIn.IsZero() {
+				checkInTime = &g.CheckIn
+			}
+		}
+		if checkInTime != nil && !checkInTime.IsZero() {
+			filter["createdAt"] = bson.M{"$gte": *checkInTime}
+			// Automatically purge any stale room service orders created before this guest checked in
+			if len(orClauses) > 0 {
+				_, _ = ordersColl.DeleteMany(ctx, bson.M{
+					"tenantId":  tenantID,
+					"$or":       orClauses,
+					"createdAt": bson.M{"$lt": *checkInTime},
+				})
+			}
+		}
+	}
+
 	opts := options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}}).SetLimit(100)
 	cursor, err := ordersColl.Find(ctx, filter, opts)
 	if err != nil {
@@ -928,6 +1060,48 @@ func (s *Service) GetRoomOrders(ctx context.Context, tenantID bson.ObjectID, idO
 		orders = []domainorder.Order{}
 	}
 	return orders, nil
+}
+
+// ClearRoomHistory purges all past housekeeping tasks and room food orders for a room.
+func (s *Service) ClearRoomHistory(ctx context.Context, tenantID bson.ObjectID, identifier string) error {
+	roomID, err := s.ResolveRoomID(ctx, tenantID, identifier)
+	if err != nil {
+		return err
+	}
+
+	roomsColl := s.db.Collection("rooms")
+	var r domainroom.Room
+	_ = roomsColl.FindOne(ctx, bson.M{"_id": roomID, "tenantId": tenantID}).Decode(&r)
+
+	rmNum := r.RoomNumber
+	tasksColl := s.db.Collection("housekeeping_tasks")
+	_, _ = tasksColl.DeleteMany(ctx, bson.M{
+		"tenantId": tenantID,
+		"$or": []bson.M{
+			{"roomId": roomID},
+			{"roomNumber": rmNum},
+			{"roomNumber": strings.ToUpper(rmNum)},
+			{"roomNumber": strings.ToLower(rmNum)},
+		},
+	})
+
+	ordersColl := s.db.Collection("orders")
+	_, _ = ordersColl.DeleteMany(ctx, bson.M{
+		"tenantId": tenantID,
+		"$or": []bson.M{
+			{"roomId": roomID},
+			{"roomNumber": rmNum},
+			{"roomNumber": strings.ToUpper(rmNum)},
+			{"roomNumber": strings.ToLower(rmNum)},
+			{"tableName": rmNum},
+			{"tableName": "Suite " + rmNum},
+			{"tableName": "Room " + rmNum},
+			{"tableSlug": fmt.Sprintf("room-%s", strings.ToLower(rmNum))},
+			{"tableSlug": fmt.Sprintf("suite-%s", strings.ToLower(rmNum))},
+		},
+	})
+
+	return nil
 }
 
 // GetHotelStats calculates real-time PMS KPIs.

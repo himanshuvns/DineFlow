@@ -155,6 +155,23 @@ export default function RoomServiceMenuPage() {
           const json = await res.json();
           if (json.data?.room) {
             const r = json.data.room;
+            // Purge previous guest's cached requests if a new/different guest is now checked in
+            try {
+              const guestKey = `dineflow_guest_${tenantSlug}_${cleanRoomNum}`;
+              const lastKnownGuest = localStorage.getItem(guestKey);
+              const currentGuest = r.currentGuestName || "";
+              if (lastKnownGuest && lastKnownGuest !== currentGuest) {
+                const storageKey = `dineflow_tasks_${tenantSlug}_${cleanRoomNum}`;
+                localStorage.removeItem(storageKey);
+                window.dispatchEvent(new CustomEvent("dineflow_task_created"));
+              }
+              if (currentGuest) {
+                localStorage.setItem(guestKey, currentGuest);
+              } else {
+                localStorage.removeItem(guestKey);
+              }
+            } catch (_) {}
+
             setRoomInfo({
               roomNumber: r.roomNumber,
               name: r.name || `Suite ${r.roomNumber}`,

@@ -158,6 +158,7 @@ func Setup(
 				roomGroup.GET("/:id/tasks", roomHandler.ListTasks)
 				roomGroup.POST("/:id/tasks", roomHandler.CreateTask)
 				roomGroup.PATCH("/:id/tasks/:taskId", roomHandler.UpdateTask)
+				roomGroup.DELETE("/:id/history", middleware.OwnerOrManager(), roomHandler.ClearHistory)
 			}
 
 			// ── Live Orders & KDS (Phase 2 & 3) ───────────────────────────

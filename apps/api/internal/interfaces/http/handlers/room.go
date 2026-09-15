@@ -663,3 +663,34 @@ func (h *RoomHandler) GetPublicRoomTasks(c *gin.Context) {
 	})
 }
 
+// ClearHistory purges historical orders and housekeeping tasks for a room.
+func (h *RoomHandler) ClearHistory(c *gin.Context) {
+	tenantID := middleware.GetTenantID(c)
+	if tenantID == "" {
+		response.Unauthorized(c, "tenant context missing")
+		return
+	}
+	tOID, err := bson.ObjectIDFromHex(tenantID)
+	if err != nil {
+		response.BadRequest(c, "INVALID_TENANT_ID", "invalid tenant ID")
+		return
+	}
+
+	id := c.Param("id")
+	if id == "" {
+		response.BadRequest(c, "INVALID_ID", "room ID is required")
+		return
+	}
+
+	if err := h.roomService.ClearRoomHistory(c.Request.Context(), tOID, id); err != nil {
+		response.InternalError(c)
+		return
+	}
+
+	response.OK(c, gin.H{
+		"success": true,
+		"message": "Room history cleared successfully",
+	})
+}
+
+
