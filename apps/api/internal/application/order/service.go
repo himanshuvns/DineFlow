@@ -200,12 +200,41 @@ func (s *Service) CreateCustomerOrder(ctx context.Context, input CreateOrderInpu
 	roomNum := strings.TrimSpace(input.RoomNumber)
 
 	slugLower := strings.ToLower(targetTableSlug)
+	var matchedRoomID *bson.ObjectID
+	var matchedGuestID *bson.ObjectID
 	if input.Destination == "room_service" || roomNum != "" || strings.HasPrefix(slugLower, "room-") || strings.HasPrefix(slugLower, "suite-") {
 		orderDest = domainorder.DestinationRoomService
 		orderSource = domainorder.SourceQRRoom
 		orderNum = fmt.Sprintf("#IRD-%d", rNum)
 		if roomNum == "" {
 			roomNum = strings.TrimPrefix(strings.TrimPrefix(slugLower, "room-"), "suite-")
+		}
+
+		// Look up Room in rooms collection to link RoomID, GuestID, and GuestName
+		roomsColl := s.db.Collection("rooms")
+		var rm struct {
+			ID               bson.ObjectID  `bson:"_id"`
+			RoomNumber       string         `bson:"roomNumber"`
+			Name             string         `bson:"name"`
+			CurrentGuestID   *bson.ObjectID `bson:"currentGuestId"`
+			CurrentGuestName string         `bson:"currentGuestName"`
+		}
+		if err := roomsColl.FindOne(ctx, bson.M{
+			"tenantId": t.ID,
+			"$or": []bson.M{
+				{"roomNumber": strings.ToUpper(roomNum)},
+				{"roomNumber": roomNum},
+				{"qrSlug": fmt.Sprintf("room-%s", strings.ToLower(roomNum))},
+			},
+		}).Decode(&rm); err == nil {
+			matchedRoomID = &rm.ID
+			matchedGuestID = rm.CurrentGuestID
+			tableName = fmt.Sprintf("Suite %s", rm.RoomNumber)
+			if (strings.TrimSpace(input.CustomerName) == "" || input.CustomerName == "Guest" || input.CustomerName == "Suite Guest") && rm.CurrentGuestName != "" {
+				input.CustomerName = fmt.Sprintf("%s (Suite %s)", rm.CurrentGuestName, rm.RoomNumber)
+			}
+		} else {
+			tableName = fmt.Sprintf("Suite %s", strings.ToUpper(roomNum))
 		}
 	}
 
@@ -222,6 +251,8 @@ func (s *Service) CreateCustomerOrder(ctx context.Context, input CreateOrderInpu
 		Destination:         orderDest,
 		TableID:             tableID,
 		TableName:           tableName,
+		RoomID:              matchedRoomID,
+		GuestID:             matchedGuestID,
 		RoomNumber:          strings.ToUpper(roomNum),
 		ChargeToFolio:       input.ChargeToFolio,
 		CustomerName:        input.CustomerName,
@@ -253,7 +284,7 @@ func (s *Service) CreateCustomerOrder(ctx context.Context, input CreateOrderInpu
 		return nil, err
 	}
 
-	// 6. Update table/room active order and occupancy
+	// 6. Update table/room active order, occupancy, and guest folio
 	if tableID != nil {
 		tableColl := s.db.Collection("tables")
 		_, _ = tableColl.UpdateOne(ctx,
@@ -277,6 +308,18 @@ func (s *Service) CreateCustomerOrder(ctx context.Context, input CreateOrderInpu
 				"updatedAt": now,
 			}},
 		)
+
+		// Increment Folio Balance on Guest if charge to folio is selected
+		if ord.ChargeToFolio && ord.GuestID != nil && !ord.GuestID.IsZero() {
+			guestsColl := s.db.Collection("guests")
+			_, _ = guestsColl.UpdateOne(ctx,
+				bson.M{"_id": *ord.GuestID, "tenantId": t.ID},
+				bson.M{
+					"$inc": bson.M{"folioBalance": ord.TotalAmount},
+					"$set": bson.M{"updatedAt": now},
+				},
+			)
+		}
 	}
 
 	// 7. Upsert Customer in CRM Collection

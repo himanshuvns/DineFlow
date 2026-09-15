@@ -95,21 +95,70 @@ func (r *Room) Validate() error {
 
 // Guest represents an in-house or historical guest checked into a room.
 type Guest struct {
-	ID              bson.ObjectID `bson:"_id,omitempty" json:"id"`
-	TenantID        bson.ObjectID `bson:"tenantId" json:"tenantId"`
-	RoomID          bson.ObjectID `bson:"roomId" json:"roomId"`
-	RoomNumber      string        `bson:"roomNumber" json:"roomNumber"`
-	Name            string        `bson:"name" json:"name"`
-	Phone           string        `bson:"phone" json:"phone"`
-	Email           string        `bson:"email,omitempty" json:"email,omitempty"`
-	CheckIn         time.Time     `bson:"checkIn" json:"checkIn"`
-	CheckOut        *time.Time    `bson:"checkOut,omitempty" json:"checkOut,omitempty"`
-	Status          GuestStatus   `bson:"status" json:"status"`
-	IDProofType     string        `bson:"idProofType,omitempty" json:"idProofType,omitempty"`
-	SpecialRequests string        `bson:"specialRequests,omitempty" json:"specialRequests,omitempty"`
-	FolioBalance    float64       `bson:"folioBalance" json:"folioBalance"`
-	CreatedAt       time.Time     `bson:"createdAt" json:"createdAt"`
-	UpdatedAt       time.Time     `bson:"updatedAt" json:"updatedAt"`
+	ID                bson.ObjectID  `bson:"_id,omitempty" json:"id"`
+	TenantID          bson.ObjectID  `bson:"tenantId" json:"tenantId"`
+	RoomID            bson.ObjectID  `bson:"roomId" json:"roomId"`
+	RoomNumber        string         `bson:"roomNumber" json:"roomNumber"`
+	Name              string         `bson:"name" json:"name"`
+	Phone             string         `bson:"phone" json:"phone"`
+	Email             string         `bson:"email,omitempty" json:"email,omitempty"`
+	NumberOfGuests    int            `bson:"numberOfGuests,omitempty" json:"numberOfGuests,omitempty"`
+	CheckIn           time.Time      `bson:"checkIn" json:"checkIn"`
+	ExpectedCheckOut  *time.Time     `bson:"expectedCheckOut,omitempty" json:"expectedCheckOut,omitempty"`
+	CheckOut          *time.Time     `bson:"checkOut,omitempty" json:"checkOut,omitempty"`
+	Status            GuestStatus    `bson:"status" json:"status"`
+	Address           string         `bson:"address,omitempty" json:"address,omitempty"`
+	Nationality       string         `bson:"nationality,omitempty" json:"nationality,omitempty"`
+	IDProofType       string         `bson:"idProofType,omitempty" json:"idProofType,omitempty"` // "Aadhaar Card", "Driving License", "Passport", "Voter ID", "PAN Card"
+	IDProofURL        string         `bson:"idProofUrl,omitempty" json:"idProofUrl,omitempty"`
+	IDProofUploadedAt *time.Time     `bson:"idProofUploadedAt,omitempty" json:"idProofUploadedAt,omitempty"`
+	SpecialRequests   string         `bson:"specialRequests,omitempty" json:"specialRequests,omitempty"`
+	FolioBalance      float64        `bson:"folioBalance" json:"folioBalance"`
+	CreatedAt         time.Time      `bson:"createdAt" json:"createdAt"`
+	UpdatedAt         time.Time      `bson:"updatedAt" json:"updatedAt"`
+}
+
+// ValidateAndNormalizeIndianPhone validates an Indian mobile number and normalizes to E.164 (+91XXXXXXXXXX).
+func ValidateAndNormalizeIndianPhone(phone string) (string, error) {
+	trimmed := strings.TrimSpace(phone)
+	if trimmed == "" {
+		return "", errors.New("mobile number is required")
+	}
+
+	// Remove spaces, hyphens, parentheses
+	cleaned := strings.Map(func(r rune) rune {
+		if r >= '0' && r <= '9' || r == '+' {
+			return r
+		}
+		return -1
+	}, trimmed)
+
+	var digits string
+	if strings.HasPrefix(cleaned, "+91") {
+		digits = cleaned[3:]
+	} else if strings.HasPrefix(cleaned, "91") && len(cleaned) == 12 {
+		digits = cleaned[2:]
+	} else if strings.HasPrefix(cleaned, "0") && len(cleaned) == 11 {
+		digits = cleaned[1:]
+	} else if !strings.HasPrefix(cleaned, "+") {
+		digits = cleaned
+	} else {
+		return "", errors.New("invalid country code: only Indian numbers (+91) supported")
+	}
+
+	if len(digits) < 10 {
+		return "", fmt.Errorf("phone number is too short (%d/10 digits)", len(digits))
+	}
+	if len(digits) > 10 {
+		return "", fmt.Errorf("phone number exceeds 10 digits (%d digits)", len(digits))
+	}
+
+	firstDigit := digits[0]
+	if firstDigit != '6' && firstDigit != '7' && firstDigit != '8' && firstDigit != '9' {
+		return "", errors.New("invalid Indian mobile number: must start with 6, 7, 8, or 9")
+	}
+
+	return "+91" + digits, nil
 }
 
 func (g *Guest) Validate() error {
@@ -119,6 +168,13 @@ func (g *Guest) Validate() error {
 	if strings.TrimSpace(g.Phone) == "" {
 		return errors.New("guest phone is required")
 	}
+
+	// Normalize Indian phone number if applicable
+	normalizedPhone, err := ValidateAndNormalizeIndianPhone(g.Phone)
+	if err == nil {
+		g.Phone = normalizedPhone
+	}
+
 	if g.TenantID.IsZero() {
 		return errors.New("tenantId is required")
 	}
@@ -130,6 +186,9 @@ func (g *Guest) Validate() error {
 	}
 	if g.CheckIn.IsZero() {
 		g.CheckIn = time.Now().UTC()
+	}
+	if g.NumberOfGuests <= 0 {
+		g.NumberOfGuests = 1
 	}
 	return nil
 }

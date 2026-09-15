@@ -24,11 +24,45 @@ func NewService(db *mongoinfra.Client) *Service {
 
 // CheckInInput contains parameters for checking in a guest.
 type CheckInInput struct {
-	Name            string `json:"name" binding:"required"`
-	Phone           string `json:"phone" binding:"required"`
-	Email           string `json:"email"`
-	IDProofType     string `json:"idProofType"`
-	SpecialRequests string `json:"specialRequests"`
+	Name             string     `json:"name" binding:"required"`
+	Phone            string     `json:"phone" binding:"required"`
+	Email            string     `json:"email"`
+	NumberOfGuests   int        `json:"numberOfGuests"`
+	CheckIn          *time.Time `json:"checkIn"`
+	ExpectedCheckOut *time.Time `json:"expectedCheckOut"`
+	Address          string     `json:"address"`
+	Nationality      string     `json:"nationality"`
+	IDProofType      string     `json:"idProofType"` // "Aadhaar Card", "Driving License", "Passport", "Voter ID", "PAN Card"
+	IDProofURL       string     `json:"idProofUrl"`
+	SpecialRequests  string     `json:"specialRequests"`
+}
+
+// StaySummary aggregates the complete invoice and stay record of a guest upon checkout.
+type StaySummary struct {
+	GuestID           string      `json:"guestId,omitempty"`
+	GuestName         string      `json:"guestName"`
+	GuestPhone        string      `json:"guestPhone"`
+	GuestEmail        string      `json:"guestEmail,omitempty"`
+	NumberOfGuests    int         `json:"numberOfGuests"`
+	Address           string      `json:"address,omitempty"`
+	Nationality       string      `json:"nationality,omitempty"`
+	IDProofType       string      `json:"idProofType,omitempty"`
+	IDProofURL        string      `json:"idProofUrl,omitempty"`
+	RoomID            string      `json:"roomId"`
+	RoomNumber        string      `json:"roomNumber"`
+	RoomName          string      `json:"roomName"`
+	RoomType          string      `json:"roomType"`
+	Floor             string      `json:"floor"`
+	Wing              string      `json:"wing"`
+	CheckIn           time.Time   `json:"checkIn"`
+	CheckOut          time.Time   `json:"checkOut"`
+	StayDuration      string      `json:"stayDuration"`
+	RoomServiceOrders []bson.M    `json:"roomServiceOrders"`
+	TotalOrders       int         `json:"totalOrders"`
+	PendingOrders     int         `json:"pendingOrders"`
+	TotalFoodAmount   float64     `json:"totalFoodAmount"`
+	FolioBalance      float64     `json:"folioBalance"`
+	SettlementStatus  string      `json:"settlementStatus"` // "settled", "charged_to_folio"
 }
 
 // UpdateRoomInput contains fields that can be updated on a room.
@@ -368,21 +402,47 @@ func (s *Service) CheckInGuest(ctx context.Context, tenantID bson.ObjectID, iden
 	}
 
 	now := time.Now().UTC()
+	checkInTime := now
+	if input.CheckIn != nil && !input.CheckIn.IsZero() {
+		checkInTime = *input.CheckIn
+	}
+
+	numGuests := input.NumberOfGuests
+	if numGuests <= 0 {
+		numGuests = 1
+	}
+
+	nationality := strings.TrimSpace(input.Nationality)
+	if nationality == "" {
+		nationality = "Indian"
+	}
+
+	var idProofUploadedAt *time.Time
+	if input.IDProofURL != "" {
+		idProofUploadedAt = &now
+	}
+
 	guest := &domainroom.Guest{
-		ID:              bson.NewObjectID(),
-		TenantID:        tenantID,
-		RoomID:          roomID,
-		RoomNumber:      r.RoomNumber,
-		Name:            input.Name,
-		Phone:           input.Phone,
-		Email:           input.Email,
-		CheckIn:         now,
-		Status:          domainroom.GuestCheckedIn,
-		IDProofType:     input.IDProofType,
-		SpecialRequests: input.SpecialRequests,
-		FolioBalance:    0,
-		CreatedAt:       now,
-		UpdatedAt:       now,
+		ID:                bson.NewObjectID(),
+		TenantID:          tenantID,
+		RoomID:            roomID,
+		RoomNumber:        r.RoomNumber,
+		Name:              strings.TrimSpace(input.Name),
+		Phone:             strings.TrimSpace(input.Phone),
+		Email:             strings.TrimSpace(input.Email),
+		NumberOfGuests:    numGuests,
+		CheckIn:           checkInTime,
+		ExpectedCheckOut:  input.ExpectedCheckOut,
+		Status:            domainroom.GuestCheckedIn,
+		Address:           strings.TrimSpace(input.Address),
+		Nationality:       nationality,
+		IDProofType:       input.IDProofType,
+		IDProofURL:        input.IDProofURL,
+		IDProofUploadedAt: idProofUploadedAt,
+		SpecialRequests:   input.SpecialRequests,
+		FolioBalance:      0,
+		CreatedAt:         now,
+		UpdatedAt:         now,
 	}
 	if err := guest.Validate(); err != nil {
 		return nil, nil, err
@@ -412,19 +472,135 @@ func (s *Service) CheckInGuest(ctx context.Context, tenantID bson.ObjectID, iden
 	return guest, &updatedRoom, nil
 }
 
-// CheckOutGuest checks out the active guest, marks room as cleaning, and creates a housekeeping task.
-func (s *Service) CheckOutGuest(ctx context.Context, tenantID bson.ObjectID, identifier string) (*domainroom.Room, *domainroom.HousekeepingTask, error) {
+// GetStaySummary calculates an itemized stay statement and folio breakdown for checkout.
+func (s *Service) GetStaySummary(ctx context.Context, tenantID bson.ObjectID, identifier string) (*StaySummary, error) {
 	roomID, err := s.ResolveRoomID(ctx, tenantID, identifier)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	roomsColl := s.db.Collection("rooms")
 	var r domainroom.Room
 	err = roomsColl.FindOne(ctx, bson.M{"_id": roomID, "tenantId": tenantID}).Decode(&r)
 	if err != nil {
-		return nil, nil, errors.New("room not found")
+		return nil, errors.New("room not found")
 	}
+
+	var g domainroom.Guest
+	guestsColl := s.db.Collection("guests")
+	if r.CurrentGuestID != nil && !r.CurrentGuestID.IsZero() {
+		_ = guestsColl.FindOne(ctx, bson.M{"_id": *r.CurrentGuestID, "tenantId": tenantID}).Decode(&g)
+	}
+	if g.ID.IsZero() {
+		// Fallback: check most recent guest for this room
+		opts := options.FindOne().SetSort(bson.D{{Key: "createdAt", Value: -1}})
+		_ = guestsColl.FindOne(ctx, bson.M{"tenantId": tenantID, "roomId": roomID}, opts).Decode(&g)
+	}
+
+	// Fetch room orders
+	roomOrders, _ := s.GetRoomOrders(ctx, tenantID, r.RoomNumber)
+
+	checkInTime := g.CheckIn
+	if checkInTime.IsZero() {
+		checkInTime = r.UpdatedAt
+	}
+	checkOutTime := time.Now().UTC()
+	if g.CheckOut != nil && !g.CheckOut.IsZero() {
+		checkOutTime = *g.CheckOut
+	}
+
+	// Compute stay duration
+	diff := checkOutTime.Sub(checkInTime)
+	hours := int(diff.Hours())
+	days := hours / 24
+	remHours := hours % 24
+	var durationStr string
+	if days > 0 {
+		durationStr = fmt.Sprintf("%d night(s), %d hour(s)", days, remHours)
+	} else if remHours > 0 {
+		durationStr = fmt.Sprintf("%d hour(s)", remHours)
+	} else {
+		durationStr = "Just checked in (< 1 hour)"
+	}
+
+	var totalFood float64
+	var pendingCount int
+	for _, ord := range roomOrders {
+		status, _ := ord["status"].(string)
+		if status == "pending" || status == "preparing" || status == "ready" {
+			pendingCount++
+		}
+		if amt, ok := ord["totalAmount"].(float64); ok {
+			totalFood += amt
+		} else if amt, ok := ord["total"].(float64); ok {
+			totalFood += amt
+		}
+	}
+
+	guestName := g.Name
+	if guestName == "" {
+		guestName = r.CurrentGuestName
+	}
+	if guestName == "" {
+		guestName = "In-House Guest"
+	}
+
+	guestPhone := g.Phone
+	if guestPhone == "" {
+		guestPhone = r.CurrentGuestPhone
+	}
+
+	folio := g.FolioBalance
+	if folio <= 0 && totalFood > 0 {
+		folio = totalFood
+	}
+
+	summary := &StaySummary{
+		GuestID:           g.ID.Hex(),
+		GuestName:         guestName,
+		GuestPhone:        guestPhone,
+		GuestEmail:        g.Email,
+		NumberOfGuests:    g.NumberOfGuests,
+		Address:           g.Address,
+		Nationality:       g.Nationality,
+		IDProofType:       g.IDProofType,
+		IDProofURL:        g.IDProofURL,
+		RoomID:            r.ID.Hex(),
+		RoomNumber:        r.RoomNumber,
+		RoomName:          r.Name,
+		RoomType:          r.RoomType,
+		Floor:             r.Floor,
+		Wing:              r.Wing,
+		CheckIn:           checkInTime,
+		CheckOut:          checkOutTime,
+		StayDuration:      durationStr,
+		RoomServiceOrders: roomOrders,
+		TotalOrders:       len(roomOrders),
+		PendingOrders:     pendingCount,
+		TotalFoodAmount:   totalFood,
+		FolioBalance:      folio,
+		SettlementStatus:  "charged_to_folio",
+	}
+
+	return summary, nil
+}
+
+// CheckOutGuest checks out the active guest, marks room as cleaning, generates stay summary, and creates a housekeeping task.
+func (s *Service) CheckOutGuest(ctx context.Context, tenantID bson.ObjectID, identifier string) (*domainroom.Room, *domainroom.HousekeepingTask, *StaySummary, error) {
+	roomID, err := s.ResolveRoomID(ctx, tenantID, identifier)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	roomsColl := s.db.Collection("rooms")
+	var r domainroom.Room
+	err = roomsColl.FindOne(ctx, bson.M{"_id": roomID, "tenantId": tenantID}).Decode(&r)
+	if err != nil {
+		return nil, nil, nil, errors.New("room not found")
+	}
+
+	// Generate Stay Summary before clearing guest details
+	staySummary, _ := s.GetStaySummary(ctx, tenantID, identifier)
 
 	now := time.Now().UTC()
 
@@ -454,7 +630,7 @@ func (s *Service) CheckOutGuest(ctx context.Context, tenantID bson.ObjectID, ide
 		},
 	}, opts).Decode(&updatedRoom)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	// Create Housekeeping cleaning task
@@ -474,7 +650,11 @@ func (s *Service) CheckOutGuest(ctx context.Context, tenantID bson.ObjectID, ide
 	}
 	_, _ = tasksColl.InsertOne(ctx, task)
 
-	return &updatedRoom, task, nil
+	if staySummary != nil {
+		staySummary.CheckOut = now
+	}
+
+	return &updatedRoom, task, staySummary, nil
 }
 
 // ListHousekeepingTasks retrieves housekeeping tasks for a tenant.

@@ -532,6 +532,7 @@ export default function RoomServiceMenuPage() {
         tableName={`${roomDisplay} (In-Room Dining)`}
         roomNumber={cleanRoomNum}
         destination="room_service"
+        guestName={roomInfo?.currentGuestName}
       />
     </div>
   );

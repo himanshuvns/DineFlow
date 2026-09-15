@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/utils";
 import { useCartStore } from "@/lib/stores/cart-store";
 import { useToast } from "@/components/ui/toast";
+import { validateIndianPhone, formatIndianPhoneInput } from "@/lib/validation";
 
 interface CustomerCartDrawerProps {
   tenantSlug: string;
@@ -28,6 +29,8 @@ interface CustomerCartDrawerProps {
   tableName: string;
   roomNumber?: string;
   destination?: "dine_in" | "room_service" | "takeaway";
+  guestName?: string;
+  guestPhone?: string;
 }
 
 export function CustomerCartDrawer({
@@ -36,6 +39,8 @@ export function CustomerCartDrawer({
   tableName,
   roomNumber,
   destination,
+  guestName,
+  guestPhone,
 }: CustomerCartDrawerProps) {
   const router = useRouter();
   const { addToast } = useToast();
@@ -56,20 +61,26 @@ export function CustomerCartDrawer({
 
   const [isOpen, setIsOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [nameInput, setNameInput] = React.useState(customerName || "");
-  const [phoneInput, setPhoneInput] = React.useState(customerPhone || "");
+  const [nameInput, setNameInput] = React.useState(customerName || guestName || "");
+  const [phoneInput, setPhoneInput] = React.useState(customerPhone || guestPhone || "");
   const [notesInput, setNotesInput] = React.useState(specialInstructions || "");
+
+  React.useEffect(() => {
+    if (guestName && !nameInput) setNameInput(guestName);
+    if (guestPhone && !phoneInput) setPhoneInput(guestPhone);
+  }, [guestName, guestPhone]);
 
   const itemCount = getItemCount();
   const subtotal = getSubtotal();
   const tax = getTax();
   const total = getTotal();
 
-  const handleCheckout = async () => {
+  const handleCheckout = async (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     if (items.length === 0 || isSubmitting) return;
-
-    setIsSubmitting(true);
-    setCustomerInfo(nameInput, phoneInput, notesInput);
 
     const isRoomService =
       destination === "room_service" ||
@@ -77,6 +88,30 @@ export function CustomerCartDrawer({
       tableSlug.toLowerCase().startsWith("suite-") ||
       tableName.toLowerCase().includes("suite") ||
       tableName.toLowerCase().includes("room");
+
+    let validatedPhone = phoneInput.trim();
+    if (validatedPhone) {
+      const v = validateIndianPhone(validatedPhone);
+      if (!v.isValid) {
+        addToast(
+          "error",
+          "Invalid Indian Mobile",
+          v.error || "Please enter a valid 10-digit Indian mobile number."
+        );
+        return;
+      }
+      validatedPhone = v.normalized;
+    } else if (!isRoomService) {
+      addToast(
+        "error",
+        "Mobile Number Required",
+        "Please enter your WhatsApp mobile number to receive live updates."
+      );
+      return;
+    }
+
+    setIsSubmitting(true);
+    setCustomerInfo(nameInput, validatedPhone, notesInput);
 
     const resolvedRoomNumber =
       roomNumber ||
@@ -91,8 +126,14 @@ export function CustomerCartDrawer({
       destination: isRoomService ? "room_service" : (destination || "dine_in"),
       roomNumber: resolvedRoomNumber,
       chargeToFolio: isRoomService,
-      customerName: nameInput.trim() || (isRoomService ? "Suite Guest" : "Guest"),
-      customerPhone: phoneInput.trim(),
+      customerName:
+        nameInput.trim() ||
+        (isRoomService
+          ? guestName
+            ? `${guestName} (Suite ${resolvedRoomNumber})`
+            : "Suite Guest"
+          : "Guest"),
+      customerPhone: validatedPhone,
       specialInstructions: notesInput.trim(),
       items: items.map((i) => ({
         menuItemId: i.menuItemId,
@@ -100,8 +141,12 @@ export function CustomerCartDrawer({
         unitPrice: i.unitPrice,
         quantity: i.quantity,
         selectedVariant: i.selectedVariant,
-        modifierNames: i.selectedModifiers || [],
-        selectedModifiers: i.selectedModifiers || [],
+        modifierNames: (i.selectedModifiers || []).map((m: any) =>
+          typeof m === "string" ? m : m.name
+        ),
+        selectedModifiers: (i.selectedModifiers || []).map((m: any) =>
+          typeof m === "string" ? m : m.name
+        ),
         notes: i.notes,
       })),
     };
@@ -373,10 +418,10 @@ export function CustomerCartDrawer({
                     <Phone className="absolute left-3.5 top-3 h-4 w-4 text-emerald-400" />
                     <input
                       type="tel"
-                      required
-                      placeholder="WhatsApp Mobile Number *"
+                      inputMode="numeric"
+                      placeholder="WhatsApp Mobile (+91 98765 43210)"
                       value={phoneInput}
-                      onChange={(e) => setPhoneInput(e.target.value)}
+                      onChange={(e) => setPhoneInput(formatIndianPhoneInput(e.target.value))}
                       className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
                     />
                   </div>

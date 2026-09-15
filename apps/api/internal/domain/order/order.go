@@ -83,6 +83,8 @@ type Order struct {
 	Destination         DestinationType `bson:"destination,omitempty" json:"destination,omitempty"`
 	TableID             *bson.ObjectID  `bson:"tableId,omitempty" json:"tableId,omitempty"`
 	TableName           string          `bson:"tableName" json:"tableName"`
+	RoomID              *bson.ObjectID  `bson:"roomId,omitempty" json:"roomId,omitempty"`
+	GuestID             *bson.ObjectID  `bson:"guestId,omitempty" json:"guestId,omitempty"`
 	RoomNumber          string          `bson:"roomNumber,omitempty" json:"roomNumber,omitempty"`
 	ChargeToFolio       bool            `bson:"chargeToFolio,omitempty" json:"chargeToFolio,omitempty"`
 	RoomServiceFee      float64         `bson:"roomServiceFee,omitempty" json:"roomServiceFee,omitempty"`

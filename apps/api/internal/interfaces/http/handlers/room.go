@@ -1,6 +1,13 @@
 package handlers
 
 import (
+	"encoding/base64"
+	"fmt"
+	"io"
+	"path/filepath"
+	"strings"
+	"time"
+
 	roomapp "github.com/dineflow/api/internal/application/room"
 	domainroom "github.com/dineflow/api/internal/domain/room"
 	"github.com/dineflow/api/internal/interfaces/http/middleware"
@@ -283,7 +290,7 @@ func (h *RoomHandler) CheckIn(c *gin.Context) {
 	response.Created(c, gin.H{"guest": guest, "room": updatedRoom})
 }
 
-// CheckOut checks out the active guest and sends room to housekeeping.
+// CheckOut checks out the active guest, generates stay summary, and sends room to housekeeping.
 func (h *RoomHandler) CheckOut(c *gin.Context) {
 	tenantID := middleware.GetTenantID(c)
 	if tenantID == "" {
@@ -293,13 +300,96 @@ func (h *RoomHandler) CheckOut(c *gin.Context) {
 	tOID, _ := bson.ObjectIDFromHex(tenantID)
 
 	id := c.Param("id")
-	updatedRoom, task, err := h.roomService.CheckOutGuest(c.Request.Context(), tOID, id)
+	updatedRoom, task, staySummary, err := h.roomService.CheckOutGuest(c.Request.Context(), tOID, id)
 	if err != nil {
 		response.BadRequest(c, "CHECKOUT_FAILED", err.Error())
 		return
 	}
 
-	response.OK(c, gin.H{"room": updatedRoom, "task": task})
+	response.OK(c, gin.H{"room": updatedRoom, "task": task, "staySummary": staySummary})
+}
+
+// GetStaySummary returns the stay summary and itemized room service bill for a room.
+func (h *RoomHandler) GetStaySummary(c *gin.Context) {
+	tenantID := middleware.GetTenantID(c)
+	if tenantID == "" {
+		response.Unauthorized(c, "tenant context missing")
+		return
+	}
+	tOID, _ := bson.ObjectIDFromHex(tenantID)
+
+	id := c.Param("id")
+	summary, err := h.roomService.GetStaySummary(c.Request.Context(), tOID, id)
+	if err != nil {
+		response.BadRequest(c, "SUMMARY_FAILED", err.Error())
+		return
+	}
+
+	response.OK(c, summary)
+}
+
+// UploadIDProof handles guest ID proof uploads (Aadhaar, Passport, DL, Voter ID, PAN).
+func (h *RoomHandler) UploadIDProof(c *gin.Context) {
+	tenantID := middleware.GetTenantID(c)
+	if tenantID == "" {
+		response.Unauthorized(c, "tenant context missing")
+		return
+	}
+
+	file, err := c.FormFile("file")
+	if err != nil {
+		response.BadRequest(c, "INVALID_FILE", "file is required")
+		return
+	}
+
+	// 10MB limit
+	if file.Size > 10*1024*1024 {
+		response.BadRequest(c, "FILE_TOO_LARGE", "file exceeds 10MB maximum limit")
+		return
+	}
+
+	// Validate extension
+	ext := strings.ToLower(filepath.Ext(file.Filename))
+	allowedExts := map[string]bool{".jpg": true, ".jpeg": true, ".png": true, ".webp": true, ".pdf": true}
+	if !allowedExts[ext] {
+		response.BadRequest(c, "UNSUPPORTED_FORMAT", "supported formats: JPG, PNG, PDF, WEBP")
+		return
+	}
+
+	// Open and read file bytes
+	f, err := file.Open()
+	if err != nil {
+		response.InternalError(c)
+		return
+	}
+	defer f.Close()
+
+	data, err := io.ReadAll(f)
+	if err != nil {
+		response.InternalError(c)
+		return
+	}
+
+	mimeType := "image/jpeg"
+	switch ext {
+	case ".png":
+		mimeType = "image/png"
+	case ".webp":
+		mimeType = "image/webp"
+	case ".pdf":
+		mimeType = "application/pdf"
+	}
+
+	base64Data := base64.StdEncoding.EncodeToString(data)
+	dataURL := fmt.Sprintf("data:%s;base64,%s", mimeType, base64Data)
+
+	now := time.Now().UTC()
+	response.Created(c, gin.H{
+		"fileUrl":    dataURL,
+		"fileName":   file.Filename,
+		"fileSize":   file.Size,
+		"uploadedAt": now,
+	})
 }
 
 // GetOrders returns active and historical orders for a room.
