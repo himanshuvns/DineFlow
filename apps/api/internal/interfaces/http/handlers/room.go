@@ -402,7 +402,8 @@ func (h *RoomHandler) GetOrders(c *gin.Context) {
 	tOID, _ := bson.ObjectIDFromHex(tenantID)
 
 	id := c.Param("id")
-	orders, err := h.roomService.GetRoomOrders(c.Request.Context(), tOID, id)
+	roomNum := c.Query("roomNumber")
+	orders, err := h.roomService.GetRoomOrders(c.Request.Context(), tOID, id, roomNum)
 	if err != nil {
 		response.InternalError(c)
 		return

@@ -159,16 +159,18 @@ export default function RoomDetailPage() {
     if (!roomId) return;
     try {
       setLoading(true);
-      const [roomRes, ordersRes, tasksRes] = await Promise.allSettled([
+      const [roomRes, ordersRes, tasksRes, allOrdersRes] = await Promise.allSettled([
         apiClient.get(`/rooms/${encodeURIComponent(roomId)}`),
         apiClient.get(`/rooms/${encodeURIComponent(roomId)}/orders`),
         apiClient.get(`/rooms/${encodeURIComponent(roomId)}/tasks`),
+        apiClient.get("/orders"),
       ]);
 
+      let loadedRoom: RoomDetail | null = null;
       if (roomRes.status === "fulfilled" && roomRes.value.data?.data) {
         const r = roomRes.value.data.data;
         const currentGuest = r.currentGuest;
-        setRoom({
+        loadedRoom = {
           id: r.id || r._id,
           roomNumber: r.roomNumber || "",
           name: r.name || `Room ${r.roomNumber}`,
@@ -196,12 +198,86 @@ export default function RoomDetailPage() {
             ? r.amenities
             : ["King Bed", "Ocean View", "Jacuzzi", "Mini Bar", "High-Speed Wi-Fi"],
           createdAt: r.createdAt || new Date().toISOString(),
-        });
+        };
+        setRoom(loadedRoom);
       }
 
+      // Collect and merge orders from both the room-specific endpoint and the tenant KDS queue
+      const orderMap = new Map<string, RoomOrder>();
+
+      // 1. Process orders returned by /rooms/:id/orders
       if (ordersRes.status === "fulfilled" && Array.isArray(ordersRes.value.data?.data)) {
-        setOrders(ordersRes.value.data.data);
+        for (const o of ordersRes.value.data.data) {
+          const key = o.orderNumber || o.id || o._id;
+          if (key) {
+            orderMap.set(key, {
+              id: o.id || o._id,
+              _id: o._id,
+              orderNumber: o.orderNumber,
+              status: (o.status || "pending").toLowerCase(),
+              customerName: o.customerName,
+              items: Array.isArray(o.items)
+                ? o.items.map((it: any) => ({
+                    name: it.name,
+                    quantity: it.quantity || it.qty || 1,
+                    unitPrice: it.unitPrice || it.price || 0,
+                  }))
+                : [],
+              totalAmount: o.totalAmount || o.total || 0,
+              total: o.totalAmount || o.total || 0,
+              createdAt: o.createdAt || new Date().toISOString(),
+            });
+          }
+        }
       }
+
+      // 2. Process all tenant orders from KDS (/orders)
+      // This guarantees that any order displayed on KDS for this room is also visible in this suite section
+      if (allOrdersRes.status === "fulfilled" && Array.isArray(allOrdersRes.value.data?.data)) {
+        const roomNum = (loadedRoom?.roomNumber || room?.roomNumber || "").toUpperCase().trim();
+        const currentRoomId = (loadedRoom?.id || roomId || "").trim();
+
+        for (const o of allOrdersRes.value.data.data) {
+          const oRoomId = String(o.roomId || o.tableId || "").trim();
+          const oRoomNum = String(o.roomNumber || "").toUpperCase().trim();
+          const oTable = String(o.tableName || o.table || "").toUpperCase().trim();
+          const isRoomService = o.destination === "room_service" || oTable.startsWith("SUITE") || oTable.startsWith("ROOM");
+
+          const matchesRoom =
+            (currentRoomId && oRoomId === currentRoomId) ||
+            (roomNum && oRoomNum === roomNum) ||
+            (roomNum && (oTable === `SUITE ${roomNum}` || oTable === `ROOM ${roomNum}` || oTable.includes(roomNum))) ||
+            (isRoomService && roomNum && oTable.includes(roomNum));
+
+          if (matchesRoom) {
+            const key = o.orderNumber || o.id || o._id;
+            if (key && !orderMap.has(key)) {
+              orderMap.set(key, {
+                id: o.id || o._id,
+                _id: o._id,
+                orderNumber: o.orderNumber,
+                status: (o.status || "pending").toLowerCase(),
+                customerName: o.customerName,
+                items: Array.isArray(o.items)
+                  ? o.items.map((it: any) => ({
+                      name: it.name,
+                      quantity: it.quantity || it.qty || 1,
+                      unitPrice: it.unitPrice || it.price || 0,
+                    }))
+                  : [],
+                totalAmount: o.totalAmount || o.total || 0,
+                total: o.totalAmount || o.total || 0,
+                createdAt: o.createdAt || new Date().toISOString(),
+              });
+            }
+          }
+        }
+      }
+
+      const mergedOrders = Array.from(orderMap.values()).sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      setOrders(mergedOrders);
 
       if (tasksRes.status === "fulfilled" && Array.isArray(tasksRes.value.data?.data)) {
         setTasks(tasksRes.value.data.data);
@@ -211,7 +287,7 @@ export default function RoomDetailPage() {
     } finally {
       setLoading(false);
     }
-  }, [roomId]);
+  }, [roomId, room?.roomNumber, room?.id]);
 
   React.useEffect(() => {
     fetchRoomData();
@@ -316,10 +392,45 @@ export default function RoomDetailPage() {
     try {
       const res = await apiClient.get(`/rooms/${encodeURIComponent(room.id)}/stay-summary`);
       if (res.data?.data) {
-        setCurrentStaySummary(res.data.data);
+        const summary = res.data.data;
+        if ((!summary.roomServiceOrders || summary.roomServiceOrders.length === 0) && orders.length > 0) {
+          summary.roomServiceOrders = orders;
+          summary.totalOrders = orders.length;
+          let foodTotal = 0;
+          for (const o of orders) {
+            foodTotal += o.totalAmount || o.total || 0;
+          }
+          summary.totalFoodAmount = foodTotal;
+          if (summary.folioBalance <= 0) {
+            summary.folioBalance = foodTotal;
+          }
+        }
+        setCurrentStaySummary(summary);
       }
     } catch (e) {
       console.warn("Could not fetch stay summary preview:", e);
+      let foodTotal = 0;
+      for (const o of orders) {
+        foodTotal += o.totalAmount || o.total || 0;
+      }
+      setCurrentStaySummary({
+        guestName: room.currentGuestName || (orders.length > 0 ? orders[0].customerName : undefined) || "In-House Guest",
+        guestPhone: room.currentGuestPhone || "",
+        roomNumber: room.roomNumber,
+        roomName: room.name,
+        roomType: room.roomType,
+        floor: room.floor,
+        wing: room.wing,
+        checkIn: room.currentGuestCheckIn || room.createdAt,
+        checkOut: new Date().toISOString(),
+        stayDuration: "Current Stay",
+        roomServiceOrders: orders,
+        totalOrders: orders.length,
+        pendingOrders: orders.filter((o) => o.status === "pending" || o.status === "preparing").length,
+        totalFoodAmount: foodTotal,
+        folioBalance: room.currentGuestFolioBalance || foodTotal,
+        settlementStatus: "charged_to_folio",
+      });
     } finally {
       setStaySummaryLoading(false);
     }
@@ -524,17 +635,22 @@ export default function RoomDetailPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-3 text-xs pt-1">
-            {isOccupied && room.currentGuestName ? (
+            {isOccupied && (room.currentGuestName || orders.length > 0) ? (
               <>
                 <div className="p-3 rounded-2xl bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-2">
                   <div className="flex items-start justify-between gap-2">
                     <div className="font-bold text-slate-900 dark:text-white text-base">
-                      {room.currentGuestName}
+                      {room.currentGuestName || orders[0]?.customerName || "In-Room Dining Guest"}
                     </div>
-                    {room.currentGuestIdProofType && (
+                    {room.currentGuestIdProofType ? (
                       <Badge variant="success" size="sm" className="text-[10px] font-semibold shrink-0">
                         <FileCheck className="h-3 w-3 mr-1 text-emerald-500" />
                         {room.currentGuestIdProofType}
+                      </Badge>
+                    ) : (
+                      <Badge variant="glow" size="sm" className="text-[10px] font-semibold shrink-0">
+                        <UtensilsCrossed className="h-3 w-3 mr-1 text-emerald-500" />
+                        Dining Active
                       </Badge>
                     )}
                   </div>
@@ -550,26 +666,43 @@ export default function RoomDetailPage() {
                       <span className="truncate">{room.currentGuestAddress}</span>
                     </div>
                   )}
-                  {room.currentGuestCheckIn && (
+                  {room.currentGuestCheckIn ? (
                     <div className="flex items-center gap-2 text-slate-500 text-[10px] font-mono">
                       <Calendar className="h-3.5 w-3.5 shrink-0" />
                       <span>In: {new Date(room.currentGuestCheckIn).toLocaleDateString()}</span>
                     </div>
+                  ) : (
+                    <div className="flex items-center gap-2 text-slate-500 text-[10px] font-mono">
+                      <Clock className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                      <span>Active QR In-Room Dining Session</span>
+                    </div>
                   )}
                   <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
                     <ShieldCheck className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-                    <span>Verified Guest Session</span>
+                    <span>{room.currentGuestName ? "Verified Guest Session" : "Guest In-House • Folio Open"}</span>
                   </div>
                 </div>
 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full text-xs text-rose-600 dark:text-rose-400 border-rose-500/30 hover:bg-rose-500/10"
-                  onClick={handleInitiateCheckOut}
-                >
-                  Review Stay & Settle Check-Out
-                </Button>
+                <div className="space-y-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full text-xs text-rose-600 dark:text-rose-400 border-rose-500/30 hover:bg-rose-500/10"
+                    onClick={handleInitiateCheckOut}
+                  >
+                    Review Stay & Settle Check-Out
+                  </Button>
+                  {!room.currentGuestName && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="w-full text-xs"
+                      onClick={() => setIsCheckInOpen(true)}
+                    >
+                      Attach Government ID / Register Guest
+                    </Button>
+                  )}
+                </div>
               </>
             ) : (
               <div className="py-6 text-center text-slate-500 space-y-2">

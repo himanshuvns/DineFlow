@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	domainorder "github.com/dineflow/api/internal/domain/order"
 	domainroom "github.com/dineflow/api/internal/domain/room"
 	mongoinfra "github.com/dineflow/api/internal/infrastructure/mongodb"
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -33,37 +34,37 @@ type CheckInInput struct {
 	ExpectedCheckOut *time.Time `json:"expectedCheckOut"`
 	Address          string     `json:"address"`
 	Nationality      string     `json:"nationality"`
-	IDProofType      string     `json:"idProofType"` // "Aadhaar Card", "Driving License", "Passport", "Voter ID", "PAN Card"
+	IDProofType      string     `json:"idProofType"`
 	IDProofURL       string     `json:"idProofUrl"`
 	SpecialRequests  string     `json:"specialRequests"`
 }
 
-// StaySummary aggregates the complete invoice and stay record of a guest upon checkout.
+// StaySummary holds the itemized bill and folio statement upon guest check-out.
 type StaySummary struct {
-	GuestID           string      `json:"guestId,omitempty"`
-	GuestName         string      `json:"guestName"`
-	GuestPhone        string      `json:"guestPhone"`
-	GuestEmail        string      `json:"guestEmail,omitempty"`
-	NumberOfGuests    int         `json:"numberOfGuests"`
-	Address           string      `json:"address,omitempty"`
-	Nationality       string      `json:"nationality,omitempty"`
-	IDProofType       string      `json:"idProofType,omitempty"`
-	IDProofURL        string      `json:"idProofUrl,omitempty"`
-	RoomID            string      `json:"roomId"`
-	RoomNumber        string      `json:"roomNumber"`
-	RoomName          string      `json:"roomName"`
-	RoomType          string      `json:"roomType"`
-	Floor             string      `json:"floor"`
-	Wing              string      `json:"wing"`
-	CheckIn           time.Time   `json:"checkIn"`
-	CheckOut          time.Time   `json:"checkOut"`
-	StayDuration      string      `json:"stayDuration"`
-	RoomServiceOrders []bson.M    `json:"roomServiceOrders"`
-	TotalOrders       int         `json:"totalOrders"`
-	PendingOrders     int         `json:"pendingOrders"`
-	TotalFoodAmount   float64     `json:"totalFoodAmount"`
-	FolioBalance      float64     `json:"folioBalance"`
-	SettlementStatus  string      `json:"settlementStatus"` // "settled", "charged_to_folio"
+	GuestID           string              `json:"guestId"`
+	GuestName         string              `json:"guestName"`
+	GuestPhone        string              `json:"guestPhone"`
+	GuestEmail        string              `json:"guestEmail,omitempty"`
+	NumberOfGuests    int                 `json:"numberOfGuests"`
+	Address           string              `json:"address,omitempty"`
+	Nationality       string              `json:"nationality,omitempty"`
+	IDProofType       string              `json:"idProofType,omitempty"`
+	IDProofURL        string              `json:"idProofUrl,omitempty"`
+	RoomID            string              `json:"roomId"`
+	RoomNumber        string              `json:"roomNumber"`
+	RoomName          string              `json:"roomName"`
+	RoomType          string              `json:"roomType"`
+	Floor             string              `json:"floor"`
+	Wing              string              `json:"wing"`
+	CheckIn           time.Time           `json:"checkIn"`
+	CheckOut          time.Time           `json:"checkOut"`
+	StayDuration      string              `json:"stayDuration"`
+	RoomServiceOrders []domainorder.Order `json:"roomServiceOrders"`
+	TotalOrders       int                 `json:"totalOrders"`
+	PendingOrders     int                 `json:"pendingOrders"`
+	TotalFoodAmount   float64             `json:"totalFoodAmount"`
+	FolioBalance      float64             `json:"folioBalance"`
+	SettlementStatus  string              `json:"settlementStatus"` // "settled", "charged_to_folio"
 }
 
 // UpdateRoomInput contains fields that can be updated on a room.
@@ -527,15 +528,10 @@ func (s *Service) GetStaySummary(ctx context.Context, tenantID bson.ObjectID, id
 	var totalFood float64
 	var pendingCount int
 	for _, ord := range roomOrders {
-		status, _ := ord["status"].(string)
-		if status == "pending" || status == "preparing" || status == "ready" {
+		if ord.Status == domainorder.StatusPending || ord.Status == domainorder.StatusPreparing || ord.Status == domainorder.StatusReady {
 			pendingCount++
 		}
-		if amt, ok := ord["totalAmount"].(float64); ok {
-			totalFood += amt
-		} else if amt, ok := ord["total"].(float64); ok {
-			totalFood += amt
-		}
+		totalFood += ord.TotalAmount
 	}
 
 	guestName := g.Name
@@ -750,85 +746,137 @@ func (s *Service) UpdateHousekeepingTask(ctx context.Context, tenantID bson.Obje
 }
 
 // GetRoomOrders retrieves all active and historical room service orders for a room.
-func (s *Service) GetRoomOrders(ctx context.Context, tenantID bson.ObjectID, idOrNumber string) ([]bson.M, error) {
+func (s *Service) GetRoomOrders(ctx context.Context, tenantID bson.ObjectID, idOrNumber string, optRoomNum ...string) ([]domainorder.Order, error) {
 	ordersColl := s.db.Collection("orders")
 	rClean := strings.TrimSpace(idOrNumber)
+	if rClean == "" && len(optRoomNum) > 0 {
+		rClean = strings.TrimSpace(optRoomNum[0])
+	}
 	if rClean == "" {
-		return []bson.M{}, nil
+		return []domainorder.Order{}, nil
 	}
 
-	// Try to find the room first to get both its _id and its actual roomNumber
+	cleanNum := rClean
+	for _, prefix := range []string{"room-", "suite-", "Room-", "Suite-", "room ", "suite ", "Room ", "Suite "} {
+		cleanNum = strings.TrimPrefix(cleanNum, prefix)
+	}
+	cleanNum = strings.TrimSpace(cleanNum)
+
+	var extraRoomNum string
+	if len(optRoomNum) > 0 && strings.TrimSpace(optRoomNum[0]) != "" {
+		extraRoomNum = strings.TrimSpace(optRoomNum[0])
+		for _, prefix := range []string{"room-", "suite-", "Room-", "Suite-", "room ", "suite ", "Room ", "Suite "} {
+			extraRoomNum = strings.TrimPrefix(extraRoomNum, prefix)
+		}
+		extraRoomNum = strings.TrimSpace(extraRoomNum)
+	}
+
 	var matchedRoom domainroom.Room
 	roomsColl := s.db.Collection("rooms")
-	var findRoomFilter bson.M
 
+	var roomOid *bson.ObjectID
 	if oid, err := bson.ObjectIDFromHex(rClean); err == nil {
-		findRoomFilter = bson.M{"tenantId": tenantID, "_id": oid}
-	} else {
-		cleanNum := rClean
-		for _, prefix := range []string{"room-", "suite-", "Room-", "Suite-", "room ", "suite "} {
-			cleanNum = strings.TrimPrefix(cleanNum, prefix)
+		roomOid = &oid
+		_ = roomsColl.FindOne(ctx, bson.M{"_id": oid, "tenantId": tenantID}).Decode(&matchedRoom)
+	}
+
+	if matchedRoom.ID.IsZero() {
+		candidateNums := []string{cleanNum}
+		if extraRoomNum != "" && extraRoomNum != cleanNum {
+			candidateNums = append(candidateNums, extraRoomNum)
 		}
-		findRoomFilter = bson.M{
-			"tenantId": tenantID,
-			"$or": []bson.M{
-				{"roomNumber": cleanNum},
-				{"roomNumber": strings.ToUpper(cleanNum)},
-				{"roomNumber": strings.ToLower(cleanNum)},
-				{"qrSlug": fmt.Sprintf("room-%s", strings.ToLower(cleanNum))},
-				{"qrSlug": strings.ToLower(cleanNum)},
-				{"name": bson.M{"$regex": "^(Suite|Room)?[ ]*" + regexp.QuoteMeta(cleanNum) + "$", "$options": "i"}},
-			},
+		for _, num := range candidateNums {
+			if num == "" {
+				continue
+			}
+			err := roomsColl.FindOne(ctx, bson.M{
+				"tenantId": tenantID,
+				"$or": []bson.M{
+					{"roomNumber": num},
+					{"roomNumber": strings.ToUpper(num)},
+					{"roomNumber": strings.ToLower(num)},
+					{"qrSlug": fmt.Sprintf("room-%s", strings.ToLower(num))},
+					{"qrSlug": strings.ToLower(num)},
+					{"name": bson.M{"$regex": "^(Suite|Room)?[ ]*" + regexp.QuoteMeta(num) + "$", "$options": "i"}},
+				},
+			}).Decode(&matchedRoom)
+			if err == nil {
+				break
+			}
 		}
 	}
 
-	_ = roomsColl.FindOne(ctx, findRoomFilter).Decode(&matchedRoom)
+	if matchedRoom.ID.IsZero() && roomOid != nil {
+		_ = roomsColl.FindOne(ctx, bson.M{"_id": *roomOid}).Decode(&matchedRoom)
+	}
 
 	var orClauses []bson.M
 
-	// 1. If we matched a room in the DB:
+	// 1. Matched room document
 	if !matchedRoom.ID.IsZero() {
+		rmNum := matchedRoom.RoomNumber
 		orClauses = append(orClauses,
 			bson.M{"roomId": matchedRoom.ID},
-			bson.M{"roomNumber": matchedRoom.RoomNumber},
-			bson.M{"roomNumber": strings.ToUpper(matchedRoom.RoomNumber)},
-			bson.M{"roomNumber": strings.ToLower(matchedRoom.RoomNumber)},
-			bson.M{"tableName": bson.M{"$regex": matchedRoom.RoomNumber, "$options": "i"}},
-			bson.M{"tableSlug": fmt.Sprintf("room-%s", strings.ToLower(matchedRoom.RoomNumber))},
-			bson.M{"tableSlug": fmt.Sprintf("suite-%s", strings.ToLower(matchedRoom.RoomNumber))},
+			bson.M{"roomNumber": rmNum},
+			bson.M{"roomNumber": strings.ToUpper(rmNum)},
+			bson.M{"roomNumber": strings.ToLower(rmNum)},
+			bson.M{"tableName": bson.M{"$regex": rmNum, "$options": "i"}},
+			bson.M{"tableName": bson.M{"$regex": "Suite[ ]*" + regexp.QuoteMeta(rmNum), "$options": "i"}},
+			bson.M{"tableName": bson.M{"$regex": "Room[ ]*" + regexp.QuoteMeta(rmNum), "$options": "i"}},
+			bson.M{"tableSlug": fmt.Sprintf("room-%s", strings.ToLower(rmNum))},
+			bson.M{"tableSlug": fmt.Sprintf("suite-%s", strings.ToLower(rmNum))},
 		)
 	}
 
-	// 2. Also match directly with the input parameter:
-	if oid, err := bson.ObjectIDFromHex(rClean); err == nil {
-		orClauses = append(orClauses, bson.M{"roomId": oid})
+	// 2. Parsed ObjectID
+	if roomOid != nil {
+		orClauses = append(orClauses, bson.M{"roomId": *roomOid})
 	}
-	orClauses = append(orClauses,
-		bson.M{"roomNumber": rClean},
-		bson.M{"roomNumber": strings.ToUpper(rClean)},
-		bson.M{"roomNumber": strings.ToLower(rClean)},
-		bson.M{"tableName": bson.M{"$regex": rClean, "$options": "i"}},
-		bson.M{"tableSlug": fmt.Sprintf("room-%s", strings.ToLower(rClean))},
-	)
+
+	// 3. Parsed candidate room numbers
+	numsToMatch := []string{}
+	if cleanNum != "" && len(cleanNum) < 20 {
+		numsToMatch = append(numsToMatch, cleanNum)
+	}
+	if extraRoomNum != "" && extraRoomNum != cleanNum {
+		numsToMatch = append(numsToMatch, extraRoomNum)
+	}
+
+	for _, num := range numsToMatch {
+		orClauses = append(orClauses,
+			bson.M{"roomNumber": num},
+			bson.M{"roomNumber": strings.ToUpper(num)},
+			bson.M{"roomNumber": strings.ToLower(num)},
+			bson.M{"tableName": bson.M{"$regex": num, "$options": "i"}},
+			bson.M{"tableName": bson.M{"$regex": "Suite[ ]*" + regexp.QuoteMeta(num), "$options": "i"}},
+			bson.M{"tableName": bson.M{"$regex": "Room[ ]*" + regexp.QuoteMeta(num), "$options": "i"}},
+			bson.M{"tableSlug": fmt.Sprintf("room-%s", strings.ToLower(num))},
+			bson.M{"tableSlug": fmt.Sprintf("suite-%s", strings.ToLower(num))},
+		)
+	}
+
+	if len(orClauses) == 0 {
+		return []domainorder.Order{}, nil
+	}
 
 	filter := bson.M{
 		"tenantId": tenantID,
 		"$or":      orClauses,
 	}
 
-	opts := options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}}).SetLimit(50)
+	opts := options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}}).SetLimit(100)
 	cursor, err := ordersColl.Find(ctx, filter, opts)
 	if err != nil {
 		return nil, err
 	}
 	defer cursor.Close(ctx)
 
-	var orders []bson.M
+	var orders []domainorder.Order
 	if err := cursor.All(ctx, &orders); err != nil {
 		return nil, err
 	}
 	if orders == nil {
-		orders = []bson.M{}
+		orders = []domainorder.Order{}
 	}
 	return orders, nil
 }
