@@ -659,11 +659,60 @@ func (s *Service) ListHousekeepingTasks(ctx context.Context, tenantID bson.Objec
 	coll := s.db.Collection("housekeeping_tasks")
 	filter := bson.M{"tenantId": tenantID}
 
-	if roomIdentifier != "" && roomIdentifier != "all" {
-		if roomID, err := s.ResolveRoomID(ctx, tenantID, roomIdentifier); err == nil {
-			filter["roomId"] = roomID
+	cleanIdent := strings.TrimSpace(roomIdentifier)
+	if cleanIdent != "" && cleanIdent != "all" {
+		var matchedRoom domainroom.Room
+		var roomOid *bson.ObjectID
+		if oid, err := bson.ObjectIDFromHex(cleanIdent); err == nil {
+			roomOid = &oid
+			_ = s.db.Collection("rooms").FindOne(ctx, bson.M{"_id": oid, "tenantId": tenantID}).Decode(&matchedRoom)
+		}
+
+		cleanNum := cleanIdent
+		for _, prefix := range []string{"room-", "suite-", "Room-", "Suite-", "room ", "suite "} {
+			cleanNum = strings.TrimPrefix(cleanNum, prefix)
+		}
+		cleanNum = strings.TrimSpace(cleanNum)
+
+		if matchedRoom.ID.IsZero() && cleanNum != "" {
+			_ = s.db.Collection("rooms").FindOne(ctx, bson.M{
+				"tenantId": tenantID,
+				"$or": []bson.M{
+					{"roomNumber": cleanNum},
+					{"roomNumber": strings.ToUpper(cleanNum)},
+					{"roomNumber": strings.ToLower(cleanNum)},
+					{"qrSlug": fmt.Sprintf("room-%s", strings.ToLower(cleanNum))},
+					{"name": bson.M{"$regex": "^(Suite|Room)?[ ]*" + regexp.QuoteMeta(cleanNum) + "$", "$options": "i"}},
+				},
+			}).Decode(&matchedRoom)
+		}
+
+		var orList []bson.M
+		if !matchedRoom.ID.IsZero() {
+			orList = append(orList,
+				bson.M{"roomId": matchedRoom.ID},
+				bson.M{"roomNumber": matchedRoom.RoomNumber},
+				bson.M{"roomNumber": strings.ToUpper(matchedRoom.RoomNumber)},
+				bson.M{"roomNumber": strings.ToLower(matchedRoom.RoomNumber)},
+				bson.M{"title": bson.M{"$regex": "(Suite|Room)[ ]*" + regexp.QuoteMeta(matchedRoom.RoomNumber) + "($|[^0-9])", "$options": "i"}},
+			)
+		}
+		if roomOid != nil {
+			orList = append(orList, bson.M{"roomId": *roomOid})
+		}
+		if cleanNum != "" && len(cleanNum) < 20 {
+			orList = append(orList,
+				bson.M{"roomNumber": cleanNum},
+				bson.M{"roomNumber": strings.ToUpper(cleanNum)},
+				bson.M{"roomNumber": strings.ToLower(cleanNum)},
+				bson.M{"title": bson.M{"$regex": "(Suite|Room)[ ]*" + regexp.QuoteMeta(cleanNum) + "($|[^0-9])", "$options": "i"}},
+			)
+		}
+
+		if len(orList) > 0 {
+			filter["$or"] = orList
 		} else {
-			filter["roomNumber"] = roomIdentifier
+			filter["roomId"] = bson.NilObjectID
 		}
 	}
 	if status != "" && status != "all" {

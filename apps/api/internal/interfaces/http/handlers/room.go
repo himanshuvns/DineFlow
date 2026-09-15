@@ -421,7 +421,10 @@ func (h *RoomHandler) ListTasks(c *gin.Context) {
 	}
 	tOID, _ := bson.ObjectIDFromHex(tenantID)
 
-	roomID := c.Query("roomId")
+	roomID := c.Param("id")
+	if roomID == "" {
+		roomID = c.Query("roomId")
+	}
 	status := domainroom.TaskStatus(c.Query("status"))
 
 	tasks, err := h.roomService.ListHousekeepingTasks(c.Request.Context(), tOID, roomID, status)

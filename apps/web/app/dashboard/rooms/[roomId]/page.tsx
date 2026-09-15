@@ -280,7 +280,33 @@ export default function RoomDetailPage() {
       setOrders(mergedOrders);
 
       if (tasksRes.status === "fulfilled" && Array.isArray(tasksRes.value.data?.data)) {
-        setTasks(tasksRes.value.data.data);
+        const targetRoomNum = (loadedRoom?.roomNumber || room?.roomNumber || "").toUpperCase().trim();
+        const targetRoomId = (loadedRoom?.id || roomId || "").trim();
+
+        // Strictly isolate tasks to this room only
+        const roomSpecificTasks = tasksRes.value.data.data.filter((t: any) => {
+          const tRoomId = String(t.roomId || "").trim();
+          const tRoomNum = String(t.roomNumber || "").toUpperCase().trim();
+          const tTitle = String(t.title || "").toUpperCase().trim();
+
+          // Exclude tasks that explicitly belong to a different room
+          if (tRoomNum && targetRoomNum && tRoomNum !== targetRoomNum) return false;
+          const match = tTitle.match(/(SUITE|ROOM)\s+(\d+)/i);
+          if (match && targetRoomNum && match[2] !== targetRoomNum) return false;
+
+          // 1. Matches this room's ObjectID
+          if (targetRoomId && tRoomId === targetRoomId) return true;
+          // 2. Matches this room's number
+          if (targetRoomNum && tRoomNum === targetRoomNum) return true;
+          // 3. Title contains this suite/room designation
+          if (targetRoomNum && (tTitle.includes(`SUITE ${targetRoomNum}`) || tTitle.includes(`ROOM ${targetRoomNum}`))) {
+            return true;
+          }
+
+          return false;
+        });
+
+        setTasks(roomSpecificTasks);
       }
     } catch (e) {
       console.warn("Failed to load room details:", e);
