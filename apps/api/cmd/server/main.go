@@ -145,7 +145,7 @@ func main() {
 	aiService := aiapp.NewService(cfg.AI.GeminiAPIKey, mongoDB)
 
 	authHandler := handlers.NewAuthHandler(authService)
-	tenantHandler := handlers.NewTenantHandler()
+	tenantHandler := handlers.NewTenantHandler(mongoDB)
 	staffHandler := handlers.NewStaffHandler(staffService)
 	storageHandler := handlers.NewStorageHandler(storageService)
 	menuHandler := handlers.NewMenuHandler(menuService, aiService)

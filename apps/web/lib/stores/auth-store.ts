@@ -21,6 +21,7 @@ export interface Tenant {
   type: string;
   plan: string;
   logoUrl?: string;
+  logo?: string;
   currency: string;
   onboardingCompleted?: boolean;
 }
@@ -64,6 +65,8 @@ export const useAuthStore = create<AuthState>()(
           role: rawUser.role || "owner",
         };
 
+        const resolvedLogo = rawTenant?.logoUrl || rawTenant?.logo || "";
+
         const tenant: Tenant = rawTenant
           ? {
               ...rawTenant,
@@ -72,6 +75,8 @@ export const useAuthStore = create<AuthState>()(
               slug: rawTenant.slug || "dineflow",
               type: rawTenant.businessType || rawTenant.type || "restaurant",
               plan: rawTenant.plan || "growth",
+              logoUrl: resolvedLogo,
+              logo: resolvedLogo,
               currency: rawTenant.currency || "INR",
               onboardingCompleted: rawTenant.onboarding?.completed ?? rawTenant.onboardingCompleted ?? true,
             }

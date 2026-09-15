@@ -32,6 +32,8 @@ import {
   MenuItemModifierGroup,
 } from "@/components/customer/dish-customizer-sheet";
 import { CustomerCartDrawer } from "@/components/customer/customer-cart-drawer";
+import { CustomerHousekeepingSheet } from "@/components/customer/customer-housekeeping-sheet";
+import { CustomerHousekeepingTracker } from "@/components/customer/customer-housekeeping-tracker";
 import { useCartStore } from "@/lib/stores/cart-store";
 
 interface RoomInfo {
@@ -79,6 +81,8 @@ export default function RoomServiceMenuPage() {
   const [searchQuery, setSearchQuery] = React.useState("");
   const [customizingDish, setCustomizingDish] = React.useState<CustomizerDish | null>(null);
   const [amenityLoading, setAmenityLoading] = React.useState<string | null>(null);
+  const [isHousekeepingSheetOpen, setIsHousekeepingSheetOpen] = React.useState(false);
+  const [housekeepingRefreshSignal, setHousekeepingRefreshSignal] = React.useState(0);
 
   React.useEffect(() => {
     setContext(tenantSlug, `room-${cleanRoomNum.toLowerCase()}`);
@@ -328,32 +332,30 @@ export default function RoomServiceMenuPage() {
             <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-slate-800">
               <button
                 type="button"
-                disabled={amenityLoading === "housekeeping"}
-                onClick={() => handleRequestAmenity("housekeeping", "Housekeeping Service")}
-                className="p-2 rounded-xl bg-slate-950/60 border border-slate-800 hover:border-slate-700 flex flex-col items-center text-center transition-colors disabled:opacity-50"
+                onClick={() => setIsHousekeepingSheetOpen(true)}
+                className="p-2 rounded-xl bg-slate-950/60 border border-slate-800 hover:border-slate-700 flex flex-col items-center text-center transition-colors cursor-pointer group"
               >
-                <Bed className="h-4 w-4 text-emerald-400 mb-1" />
+                <Bed className="h-4 w-4 text-emerald-400 mb-1 group-hover:scale-110 transition-transform" />
                 <span className="text-[11px] font-semibold text-slate-200">Housekeeping</span>
                 <span className="text-[9px] text-slate-500">Towels / Linens</span>
               </button>
 
               <button
                 type="button"
-                disabled={amenityLoading === "ice_bucket"}
-                onClick={() => handleRequestAmenity("ice_bucket", "Ice Bucket Request")}
-                className="p-2 rounded-xl bg-slate-950/60 border border-slate-800 hover:border-slate-700 flex flex-col items-center text-center transition-colors disabled:opacity-50"
+                onClick={() => setIsHousekeepingSheetOpen(true)}
+                className="p-2 rounded-xl bg-slate-950/60 border border-slate-800 hover:border-slate-700 flex flex-col items-center text-center transition-colors cursor-pointer group"
               >
-                <Sparkles className="h-4 w-4 text-cyan-400 mb-1" />
-                <span className="text-[11px] font-semibold text-slate-200">Ice Bucket</span>
+                <Sparkles className="h-4 w-4 text-cyan-400 mb-1 group-hover:scale-110 transition-transform" />
+                <span className="text-[11px] font-semibold text-slate-200">Ice & Services</span>
                 <span className="text-[9px] text-slate-500">Fast delivery</span>
               </button>
 
               <button
                 type="button"
                 onClick={handleReception}
-                className="p-2 rounded-xl bg-slate-950/60 border border-slate-800 hover:border-slate-700 flex flex-col items-center text-center transition-colors"
+                className="p-2 rounded-xl bg-slate-950/60 border border-slate-800 hover:border-slate-700 flex flex-col items-center text-center transition-colors cursor-pointer group"
               >
-                <Phone className="h-4 w-4 text-amber-400 mb-1" />
+                <Phone className="h-4 w-4 text-amber-400 mb-1 group-hover:scale-110 transition-transform" />
                 <span className="text-[11px] font-semibold text-slate-200">Concierge</span>
                 <span className="text-[9px] text-slate-500">Reception Desk</span>
               </button>
@@ -373,6 +375,15 @@ export default function RoomServiceMenuPage() {
           </div>
         </div>
       </div>
+
+      {/* Real-time Customer Housekeeping & Suite Service Flow */}
+      <CustomerHousekeepingTracker
+        tenantSlug={tenantSlug}
+        roomNumber={cleanRoomNum}
+        roomDisplay={roomDisplay}
+        onRequestNewService={() => setIsHousekeepingSheetOpen(true)}
+        refreshSignal={housekeepingRefreshSignal}
+      />
 
       {/* Category Tabs */}
       {categories.length > 1 && (
@@ -533,6 +544,16 @@ export default function RoomServiceMenuPage() {
         roomNumber={cleanRoomNum}
         destination="room_service"
         guestName={roomInfo?.currentGuestName}
+      />
+
+      {/* Suite Housekeeping & Amenities Request Sheet */}
+      <CustomerHousekeepingSheet
+        isOpen={isHousekeepingSheetOpen}
+        onClose={() => setIsHousekeepingSheetOpen(false)}
+        tenantSlug={tenantSlug}
+        roomNumber={cleanRoomNum}
+        roomDisplay={roomDisplay}
+        onTaskCreated={() => setHousekeepingRefreshSignal((prev) => prev + 1)}
       />
     </div>
   );

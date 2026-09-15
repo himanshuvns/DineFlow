@@ -24,6 +24,9 @@ import {
   Moon,
   Laptop,
   Palette,
+  Upload,
+  Image as ImageIcon,
+  Trash2,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -35,6 +38,7 @@ import { useAuthStore } from "@/lib/stores/auth-store";
 import { useToast } from "@/components/ui/toast";
 import { useTheme } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
+import { GeminiLogoModal } from "@/components/settings/gemini-logo-modal";
 
 interface Invoice {
   id: string;
@@ -79,6 +83,15 @@ export default function SettingsPage() {
   // General settings state
   const [name, setName] = React.useState(tenant?.name || "The Grand Bistro");
   const [currency, setCurrency] = React.useState(tenant?.currency || "INR");
+  const [logoUrl, setLogoUrl] = React.useState(tenant?.logoUrl || tenant?.logo || "");
+  const [isLogoModalOpen, setIsLogoModalOpen] = React.useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  React.useEffect(() => {
+    if (tenant?.logoUrl || tenant?.logo) {
+      setLogoUrl(tenant.logoUrl || tenant.logo || "");
+    }
+  }, [tenant]);
 
   // Billing & Subscription state
   const currentPlan = tenant?.plan || "growth";
@@ -101,9 +114,103 @@ export default function SettingsPage() {
     price: 999,
   };
 
-  const handleSaveGeneral = (e: React.FormEvent) => {
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      addToast("error", "File Too Large", "Please select an image smaller than 5MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      const dataUri = evt.target?.result as string;
+      if (!dataUri) return;
+
+      setLogoUrl(dataUri);
+      updateTenant({ logoUrl: dataUri, logo: dataUri });
+
+      try {
+        const apiBase =
+          process.env.NEXT_PUBLIC_API_URL ||
+          (process.env.NODE_ENV === "production"
+            ? "https://api-production-f170.up.railway.app/api/v1"
+            : "http://localhost:8080/api/v1");
+        const token = useAuthStore.getState().accessToken;
+        if (token) {
+          await fetch(`${apiBase}/tenant/logo`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ logoUrl: dataUri }),
+          });
+        }
+      } catch (err) {
+        console.warn("Backend logo sync warning:", err);
+      }
+
+      addToast("success", "Logo Uploaded", "Your workspace logo has been updated.");
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  const handleRemoveLogo = async () => {
+    setLogoUrl("");
+    updateTenant({ logoUrl: "", logo: "" });
+
+    try {
+      const apiBase =
+        process.env.NEXT_PUBLIC_API_URL ||
+        (process.env.NODE_ENV === "production"
+          ? "https://api-production-f170.up.railway.app/api/v1"
+          : "http://localhost:8080/api/v1");
+      const token = useAuthStore.getState().accessToken;
+      if (token) {
+        await fetch(`${apiBase}/tenant/logo`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ logoUrl: "" }),
+        });
+      }
+    } catch (err) {
+      console.warn("Backend logo remove warning:", err);
+    }
+
+    addToast("info", "Logo Removed", "Reverted to default DineFlow logo.");
+  };
+
+  const handleSaveGeneral = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateTenant({ name, currency });
+    updateTenant({ name, currency, logoUrl, logo: logoUrl });
+
+    try {
+      const apiBase =
+        process.env.NEXT_PUBLIC_API_URL ||
+        (process.env.NODE_ENV === "production"
+          ? "https://api-production-f170.up.railway.app/api/v1"
+          : "http://localhost:8080/api/v1");
+      const token = useAuthStore.getState().accessToken;
+      if (token) {
+        await fetch(`${apiBase}/tenant`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ name, currency, logoUrl }),
+        });
+      }
+    } catch (err) {
+      console.warn("Backend tenant update warning:", err);
+    }
+
     addToast("success", "Settings Saved", "Your restaurant workspace profile was updated.");
   };
 
@@ -321,6 +428,105 @@ export default function SettingsPage() {
       {/* ── Tab: Business Details ────────────────────────────────────────── */}
       {activeTab === "general" && (
         <form onSubmit={handleSaveGeneral} className="space-y-6">
+          {/* ── Brand Logo & Visual Identity Card ───────────────────────────── */}
+          <Card variant="glass">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <ImageIcon className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                    Brand Logo & Visual Identity
+                  </CardTitle>
+                  <CardDescription className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+                    Displayed at the extreme top-left of your dashboard, guest QR digital menus, and tax receipts.
+                  </CardDescription>
+                </div>
+                {logoUrl && (
+                  <Badge variant="glow" size="sm">
+                    Custom Logo Active
+                  </Badge>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Hidden file input for logo upload */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                className="hidden"
+                onChange={handleLogoUpload}
+              />
+
+              <div className="flex flex-col sm:flex-row items-center gap-5 p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+                {/* Logo Display Box */}
+                <div className="h-24 w-24 rounded-2xl overflow-hidden border-2 border-emerald-500/30 bg-white dark:bg-[#0A0F1D] flex items-center justify-center p-2 shrink-0 shadow-md">
+                  {logoUrl ? (
+                    <img
+                      src={logoUrl}
+                      alt={name || "Client Logo"}
+                      className="h-full w-full object-contain"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center text-center p-2 text-slate-400">
+                      <UtensilsCrossed className="h-8 w-8 text-emerald-500/50 mb-1" />
+                      <span className="text-[10px] font-semibold">DineFlow</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Actions & Info */}
+                <div className="flex-1 min-w-0 space-y-2 text-center sm:text-left">
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                      {logoUrl ? "Active Workspace Logo" : "No Custom Logo Uploaded"}
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      {logoUrl
+                        ? "Your custom logo is currently visible at the extreme top-left of the sidebar and customer menu."
+                        : "Upload your official restaurant/hotel logo, or let Gemini AI design a bespoke vector logo for you."}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5 pt-1">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      leftIcon={<Upload className="h-3.5 w-3.5" />}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      {logoUrl ? "Upload New Logo" : "Upload Logo"}
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant="glow"
+                      size="sm"
+                      leftIcon={<Sparkles className="h-3.5 w-3.5" />}
+                      onClick={() => setIsLogoModalOpen(true)}
+                    >
+                      Generate with Gemini AI
+                    </Button>
+
+                    {logoUrl && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        leftIcon={<Trash2 className="h-3.5 w-3.5 text-rose-400" />}
+                        onClick={handleRemoveLogo}
+                        className="text-rose-600 hover:text-rose-700 dark:text-rose-400"
+                      >
+                        Remove Logo
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card variant="glass">
             <CardHeader>
               <CardTitle className="text-base font-bold text-slate-900 dark:text-white">General Information</CardTitle>
@@ -644,6 +850,13 @@ export default function SettingsPage() {
           </div>
         </div>
       </Modal>
+
+      {/* Gemini AI Logo Generation Studio Modal */}
+      <GeminiLogoModal
+        isOpen={isLogoModalOpen}
+        onClose={() => setIsLogoModalOpen(false)}
+        onLogoApplied={(newLogo) => setLogoUrl(newLogo)}
+      />
     </div>
   );
 }

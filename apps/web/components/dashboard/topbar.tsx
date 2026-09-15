@@ -47,6 +47,15 @@ export function TopBar() {
         </button>
 
         <div className="flex items-center gap-1.5 sm:gap-2 text-xs min-w-0">
+          {(tenant?.logoUrl || tenant?.logo) && (
+            <div className="h-6 w-6 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0A0F1D] flex items-center justify-center p-0.5 shrink-0 shadow-xs md:hidden">
+              <img
+                src={tenant.logoUrl || tenant.logo}
+                alt={tenant?.name || "Logo"}
+                className="h-full w-full object-contain"
+              />
+            </div>
+          )}
           <span className="text-slate-700 dark:text-slate-300 font-semibold truncate max-w-[120px] sm:max-w-[200px]">
             {tenant?.name || "Your Restaurant"}
           </span>

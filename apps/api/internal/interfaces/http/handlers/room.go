@@ -558,7 +558,9 @@ func (h *RoomHandler) GetPublicRoom(c *gin.Context) {
 }
 
 type PublicAmenityRequest struct {
-	AmenityType string `json:"amenityType" binding:"required"` // "housekeeping", "ice_bucket", "towels", "concierge"
+	AmenityType string `json:"amenityType"` // "housekeeping", "ice_bucket", "towels", "toiletries", "water", "turndown", "maintenance", etc.
+	Title       string `json:"title"`
+	Priority    string `json:"priority"` // "normal", "high", "urgent"
 	Notes       string `json:"notes"`
 }
 
@@ -581,22 +583,47 @@ func (h *RoomHandler) RequestPublicAmenity(c *gin.Context) {
 
 	titleMap := map[string]string{
 		"housekeeping": "Guest Requested Housekeeping",
+		"cleaning":     "Room Refresh & Deep Cleaning",
 		"ice_bucket":   "Guest Requested Ice Bucket",
-		"towels":       "Guest Requested Extra Fresh Towels",
+		"towels":       "Fresh Bath Towels & Mats",
+		"toiletries":   "Luxury Toiletries Restock",
+		"water":        "Complimentary Mineral Water",
+		"turndown":     "Evening Turndown Service",
+		"maintenance":  "Suite Maintenance Assistance",
 		"concierge":    "Guest Requested Concierge Assistance",
 	}
-	title := titleMap[req.AmenityType]
+
+	title := strings.TrimSpace(req.Title)
 	if title == "" {
-		title = "Guest Suite Request: " + req.AmenityType
+		title = titleMap[req.AmenityType]
+	}
+	if title == "" {
+		if req.AmenityType != "" {
+			title = "Guest Suite Request: " + req.AmenityType
+		} else {
+			title = "Guest Suite Service Request"
+		}
+	}
+
+	priority := strings.ToLower(strings.TrimSpace(req.Priority))
+	if priority != "urgent" && priority != "normal" && priority != "high" {
+		priority = "normal"
+	}
+
+	taskType := domainroom.TaskAmenityRequest
+	if req.AmenityType == "cleaning" || req.AmenityType == "housekeeping" {
+		taskType = domainroom.TaskCleaning
+	} else if req.AmenityType == "maintenance" {
+		taskType = domainroom.TaskMaintenance
 	}
 
 	task := &domainroom.HousekeepingTask{
 		TenantID:   room.TenantID,
 		RoomID:     room.ID,
 		RoomNumber: room.RoomNumber,
-		TaskType:   domainroom.TaskAmenityRequest,
+		TaskType:   taskType,
 		Title:      title,
-		Priority:   "high",
+		Priority:   priority,
 		Status:     domainroom.TaskPending,
 		Notes:      req.Notes,
 	}
@@ -612,3 +639,27 @@ func (h *RoomHandler) RequestPublicAmenity(c *gin.Context) {
 		"task":    task,
 	})
 }
+
+// GetPublicRoomTasks returns active and recent housekeeping/amenity tasks for a room.
+func (h *RoomHandler) GetPublicRoomTasks(c *gin.Context) {
+	tenantSlug := c.Param("tenantSlug")
+	roomNumber := c.Param("roomNumber")
+
+	room, _, err := h.roomService.GetPublicRoom(c.Request.Context(), tenantSlug, roomNumber)
+	if err != nil {
+		response.NotFound(c, "room not found")
+		return
+	}
+
+	tasks, err := h.roomService.ListHousekeepingTasks(c.Request.Context(), room.TenantID, room.ID.Hex(), "")
+	if err != nil {
+		response.InternalError(c)
+		return
+	}
+
+	response.OK(c, gin.H{
+		"roomNumber": room.RoomNumber,
+		"tasks":      tasks,
+	})
+}
+

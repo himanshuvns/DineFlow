@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Sidebar, NAV_ITEMS } from "@/components/dashboard/sidebar";
 import { TopBar } from "@/components/dashboard/topbar";
 import { useUIStore } from "@/lib/stores/ui-store";
+import { useAuthStore } from "@/lib/stores/auth-store";
 import { X, UtensilsCrossed } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -16,6 +17,7 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const { mobileMenuOpen, setMobileMenuOpen } = useUIStore();
+  const tenant = useAuthStore((state) => state.tenant);
 
   return (
     <div className="min-h-screen flex bg-slate-50 text-slate-900 dark:bg-[#090D16] dark:text-slate-100 transition-colors duration-200">
@@ -32,14 +34,24 @@ export default function DashboardLayout({
           <div className="relative w-72 max-w-[85vw] h-full bg-white dark:bg-[#0B0F19] border-r border-slate-200 dark:border-slate-800 p-5 flex flex-col justify-between z-10 animate-in slide-in-from-left duration-200 shadow-2xl overflow-y-auto pb-safe pt-safe">
             <div>
               <div className="flex items-center justify-between pb-6 border-b border-slate-200 dark:border-slate-800/80">
-                <div className="flex items-center gap-2.5">
-                  <div className="h-8 w-8 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 p-0.5 flex items-center justify-center shadow-sm">
-                    <div className="h-full w-full bg-slate-950 rounded-[10px] flex items-center justify-center">
-                      <UtensilsCrossed className="h-4 w-4 text-emerald-400" />
+                <div className="flex items-center gap-2.5 overflow-hidden">
+                  {tenant?.logoUrl || tenant?.logo ? (
+                    <div className="h-8 w-8 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0A0F1D] flex items-center justify-center p-0.5 shrink-0 shadow-sm">
+                      <img
+                        src={tenant.logoUrl || tenant.logo}
+                        alt={tenant.name || "Client Logo"}
+                        className="h-full w-full object-contain"
+                      />
                     </div>
-                  </div>
-                  <span className="text-base font-extrabold text-slate-900 dark:text-white">
-                    Dine<span className="text-emerald-500 dark:text-emerald-400">Flow</span>
+                  ) : (
+                    <div className="h-8 w-8 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 p-0.5 flex items-center justify-center shadow-sm shrink-0">
+                      <div className="h-full w-full bg-slate-950 rounded-[10px] flex items-center justify-center">
+                        <UtensilsCrossed className="h-4 w-4 text-emerald-400" />
+                      </div>
+                    </div>
+                  )}
+                  <span className="text-base font-extrabold text-slate-900 dark:text-white truncate">
+                    {tenant?.name || "DineFlow"}
                   </span>
                 </div>
                 <button

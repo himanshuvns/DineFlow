@@ -55,18 +55,31 @@ export function Sidebar() {
         {/* Logo & Workspace Title */}
         <div className="h-16 flex items-center justify-between px-5 border-b border-slate-200/80 dark:border-slate-800/60 shrink-0">
           <Link href="/dashboard" className="flex items-center gap-3 overflow-hidden">
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 p-0.5 shadow-md shadow-emerald-500/20 flex items-center justify-center shrink-0">
-              <div className="h-full w-full bg-slate-950 rounded-[10px] flex items-center justify-center">
-                <UtensilsCrossed className="h-4 w-4 text-emerald-400" />
+            {tenant?.logoUrl || tenant?.logo ? (
+              <div className="h-9 w-9 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0A0F1D] flex items-center justify-center p-1 shrink-0 shadow-sm">
+                <img
+                  src={tenant.logoUrl || tenant.logo}
+                  alt={tenant.name || "Client Logo"}
+                  className="h-full w-full object-contain"
+                />
               </div>
-            </div>
+            ) : (
+              <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 p-0.5 shadow-md shadow-emerald-500/20 flex items-center justify-center shrink-0">
+                <div className="h-full w-full bg-slate-950 rounded-[10px] flex items-center justify-center">
+                  <UtensilsCrossed className="h-4 w-4 text-emerald-400" />
+                </div>
+              </div>
+            )}
             {!sidebarCollapsed && (
               <div className="flex flex-col min-w-0">
                 <span className="text-base font-extrabold tracking-tight text-slate-900 dark:text-white truncate">
-                  Dine<span className="text-emerald-500 dark:text-emerald-400">Flow</span>
+                  {tenant?.name || "DineFlow"}
                 </span>
-                <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 truncate">
-                  {tenant?.name || "Your Restaurant"}
+                <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 truncate flex items-center gap-1">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  {tenant?.type
+                    ? `${tenant.type.charAt(0).toUpperCase() + tenant.type.slice(1).replace("_", " ")} OS`
+                    : "Restaurant OS"}
                 </span>
               </div>
             )}
