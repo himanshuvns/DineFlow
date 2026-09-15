@@ -187,6 +187,8 @@ export default function RoomsDirectoryPage() {
 
   React.useEffect(() => {
     fetchRooms();
+    const interval = setInterval(fetchRooms, 5000);
+    return () => clearInterval(interval);
   }, [fetchRooms]);
 
   // Single Add Form

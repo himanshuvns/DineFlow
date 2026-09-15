@@ -50,7 +50,7 @@ interface KdsOrder {
   secondsElapsed: number;
   station: "main_kitchen" | "bar" | "room_service";
   destination: "dine_in" | "room_service" | "takeaway";
-  status: "pending" | "preparing" | "ready" | "served";
+  status: "pending" | "preparing" | "ready" | "served" | "cancelled" | "paid";
   items: KdsItem[];
   total: number;
 }
@@ -223,8 +223,11 @@ export default function KDSOrdersPage() {
   };
 
   const handleRejectOrder = async (orderId: string) => {
-    await updateOrderStatus(orderId, "served");
-    addToast("warning", `Order ${orderId} Closed`, "Ticket cleared from active kitchen display.");
+    if (!window.confirm(`Are you sure you want to reject and cancel Order ${orderId}?`)) {
+      return;
+    }
+    await updateOrderStatus(orderId, "cancelled", "Rejected from KDS bump bar");
+    addToast("warning", `Order ${orderId} Rejected`, "Ticket rejected and removed from active kitchen display.");
   };
 
   const handleSimulateNewOrder = async () => {
@@ -298,7 +301,7 @@ export default function KDSOrdersPage() {
   const filteredOrders = orders.filter((o) => {
     // Status Filter
     if (activeTab === "all") {
-      if (o.status === "served") return false;
+      if (o.status === "served" || o.status === "cancelled" || o.status === "paid") return false;
     } else if (o.status !== activeTab) {
       return false;
     }
@@ -418,11 +421,12 @@ export default function KDSOrdersPage() {
       <div className="flex items-center justify-between">
         <Tabs
           tabs={[
-            { id: "all", label: "Active Tickets", badge: orders.filter((o) => o.status !== "served").length },
+            { id: "all", label: "Active Tickets", badge: orders.filter((o) => o.status !== "served" && o.status !== "cancelled" && o.status !== "paid").length },
             { id: "pending", label: "New / Pending", badge: orders.filter((o) => o.status === "pending").length },
             { id: "preparing", label: "Cooking / Plating", badge: orders.filter((o) => o.status === "preparing").length },
             { id: "ready", label: "Ready to Dispatch", badge: orders.filter((o) => o.status === "ready").length },
             { id: "served", label: "Served History", badge: orders.filter((o) => o.status === "served").length },
+            { id: "cancelled", label: "Rejected / Cancelled", badge: orders.filter((o) => o.status === "cancelled").length },
           ]}
           activeTab={activeTab}
           onChange={setActiveTab}
@@ -542,9 +546,11 @@ export default function KDSOrdersPage() {
                           ? "glow"
                           : order.status === "ready"
                           ? "info"
+                          : order.status === "cancelled"
+                          ? "danger"
                           : "success"
                       }
-                      dot
+                      dot={order.status !== "cancelled"}
                       size="sm"
                     >
                       {order.status === "pending"
@@ -553,17 +559,19 @@ export default function KDSOrdersPage() {
                         ? "Cooking"
                         : order.status === "ready"
                         ? "Ready"
+                        : order.status === "cancelled"
+                        ? "Rejected"
                         : "Served"}
                     </Badge>
                   </div>
 
                   <div className="flex items-center gap-1.5">
-                    {order.status === "pending" && (
+                    {(order.status === "pending" || order.status === "preparing") && (
                       <button
                         type="button"
                         onClick={() => handleRejectOrder(order.id)}
                         className="p-1.5 rounded-lg text-rose-500 dark:text-rose-400 hover:text-rose-600 dark:hover:text-rose-300 hover:bg-rose-500/10 transition-colors"
-                        title="Reject Order"
+                        title="Reject / Cancel Order"
                       >
                         <XCircle className="h-4 w-4" />
                       </button>
@@ -578,7 +586,11 @@ export default function KDSOrdersPage() {
                       <Printer className="h-4 w-4" />
                     </button>
 
-                    {order.status !== "served" ? (
+                    {order.status === "cancelled" ? (
+                      <span className="text-xs font-semibold text-rose-500 flex items-center gap-1">
+                        <XCircle className="h-3.5 w-3.5" /> Rejected
+                      </span>
+                    ) : order.status !== "served" ? (
                       <Button
                         variant={
                           order.status === "pending"

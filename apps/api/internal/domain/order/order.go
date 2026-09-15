@@ -134,11 +134,11 @@ func (o *Order) CalculateTotals(taxRatePercent float64) {
 
 // CanTransitionTo validates state machine transitions.
 func (o *Order) CanTransitionTo(next OrderStatus) bool {
-	if o.Status == StatusCancelled || o.Status == StatusPaid {
-		return false // terminal states
-	}
 	if o.Status == next {
 		return true
+	}
+	if o.Status == StatusCancelled || o.Status == StatusPaid {
+		return false // terminal states
 	}
 
 	switch o.Status {

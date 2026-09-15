@@ -47,7 +47,7 @@ export interface KdsOrder {
   secondsElapsed: number;
   station: "main_kitchen" | "bar" | "room_service";
   destination: "dine_in" | "room_service" | "takeaway";
-  status: "pending" | "preparing" | "ready" | "served";
+  status: "pending" | "preparing" | "ready" | "served" | "cancelled" | "paid";
   items: KdsOrderItem[];
   total: number;
   time?: string;
@@ -341,7 +341,7 @@ interface TenantDataState {
   updateTableStatus: (id: string, status: TableItem["status"]) => Promise<void>;
   deleteTable: (id: string) => Promise<void>;
   addOrder: (order: Partial<KdsOrder>) => Promise<KdsOrder>;
-  updateOrderStatus: (id: string, status: KdsOrder["status"]) => Promise<void>;
+  updateOrderStatus: (id: string, status: KdsOrder["status"], note?: string) => Promise<void>;
   refreshOrders: () => Promise<void>;
   toggleOnboardingStep: (id: number) => void;
   applyStarterTemplate: (templateKey: keyof typeof STARTER_TEMPLATES) => Promise<void> | void;
@@ -1351,10 +1351,10 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
     return newOrder;
   },
 
-  updateOrderStatus: async (id, status) => {
+  updateOrderStatus: async (id, status, note) => {
     const state = get();
     try {
-      await apiClient.patch(`/orders/${encodeURIComponent(id)}/status`, { status });
+      await apiClient.patch(`/orders/${encodeURIComponent(id)}/status`, { status, note });
     } catch (e) {
       console.warn("Backend order status update failed:", e);
     }
@@ -1363,9 +1363,9 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
       o.id === id ? { ...o, status } : o
     );
 
-    // If order is served, free up table occupancy
+    // If order is served or cancelled, free up table occupancy
     let updatedTables = state.tables;
-    if (status === "served") {
+    if (status === "served" || status === "cancelled") {
       const order = state.orders.find((o) => o.id === id);
       if (order && order.table) {
         updatedTables = state.tables.map((t) =>

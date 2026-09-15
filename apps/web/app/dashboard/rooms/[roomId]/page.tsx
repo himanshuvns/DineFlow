@@ -215,6 +215,8 @@ export default function RoomDetailPage() {
 
   React.useEffect(() => {
     fetchRoomData();
+    const interval = setInterval(fetchRoomData, 5000);
+    return () => clearInterval(interval);
   }, [fetchRoomData]);
 
   const handleToggleDND = async () => {
@@ -718,6 +720,8 @@ export default function RoomDetailPage() {
                               ? "success"
                               : ord.status === "preparing"
                               ? "warning"
+                              : ord.status === "cancelled"
+                              ? "danger"
                               : "neutral"
                           }
                           size="sm"

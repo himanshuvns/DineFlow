@@ -206,9 +206,16 @@ func (s *Service) CreateCustomerOrder(ctx context.Context, input CreateOrderInpu
 		orderDest = domainorder.DestinationRoomService
 		orderSource = domainorder.SourceQRRoom
 		orderNum = fmt.Sprintf("#IRD-%d", rNum)
-		if roomNum == "" {
-			roomNum = strings.TrimPrefix(strings.TrimPrefix(slugLower, "room-"), "suite-")
+
+		cleanNum := strings.TrimSpace(roomNum)
+		if cleanNum == "" {
+			cleanNum = slugLower
 		}
+		for _, prefix := range []string{"room-", "suite-", "Room-", "Suite-", "room ", "suite ", "Room ", "Suite "} {
+			cleanNum = strings.TrimPrefix(cleanNum, prefix)
+		}
+		cleanNum = strings.TrimSpace(cleanNum)
+		roomNum = cleanNum
 
 		// Look up Room in rooms collection to link RoomID, GuestID, and GuestName
 		roomsColl := s.db.Collection("rooms")
@@ -222,13 +229,17 @@ func (s *Service) CreateCustomerOrder(ctx context.Context, input CreateOrderInpu
 		if err := roomsColl.FindOne(ctx, bson.M{
 			"tenantId": t.ID,
 			"$or": []bson.M{
-				{"roomNumber": strings.ToUpper(roomNum)},
-				{"roomNumber": roomNum},
-				{"qrSlug": fmt.Sprintf("room-%s", strings.ToLower(roomNum))},
+				{"roomNumber": strings.ToUpper(cleanNum)},
+				{"roomNumber": cleanNum},
+				{"roomNumber": strings.ToLower(cleanNum)},
+				{"qrSlug": fmt.Sprintf("room-%s", strings.ToLower(cleanNum))},
+				{"qrSlug": strings.ToLower(cleanNum)},
+				{"name": bson.M{"$regex": "^(Suite|Room)?[ ]*" + regexp.QuoteMeta(cleanNum) + "$", "$options": "i"}},
 			},
 		}).Decode(&rm); err == nil {
 			matchedRoomID = &rm.ID
 			matchedGuestID = rm.CurrentGuestID
+			roomNum = rm.RoomNumber
 			tableName = fmt.Sprintf("Suite %s", rm.RoomNumber)
 			if (strings.TrimSpace(input.CustomerName) == "" || input.CustomerName == "Guest" || input.CustomerName == "Suite Guest") && rm.CurrentGuestName != "" {
 				input.CustomerName = fmt.Sprintf("%s (Suite %s)", rm.CurrentGuestName, rm.RoomNumber)
@@ -391,6 +402,14 @@ func (s *Service) UpdateOrderStatus(ctx context.Context, tenantID bson.ObjectID,
 	orderColl := s.db.Collection("orders")
 	cleanID := strings.TrimSpace(orderIDStr)
 
+	// Normalize rejected to cancelled
+	if strings.EqualFold(string(nextStatus), "rejected") {
+		nextStatus = domainorder.StatusCancelled
+	}
+	if nextStatus == domainorder.StatusCancelled && strings.TrimSpace(note) == "" {
+		note = "Order rejected by kitchen"
+	}
+
 	var ord domainorder.Order
 	var findErr error
 
@@ -423,15 +442,28 @@ func (s *Service) UpdateOrderStatus(ctx context.Context, tenantID bson.ObjectID,
 		return nil, err
 	}
 
+	now := time.Now().UTC()
 	update := bson.M{
 		"$set": bson.M{
 			"status":    ord.Status,
 			"timeline":  ord.Timeline,
-			"updatedAt": ord.UpdatedAt,
+			"updatedAt": now,
 		},
 	}
 	if _, err := orderColl.UpdateOne(ctx, bson.M{"_id": ord.ID}, update); err != nil {
 		return nil, err
+	}
+
+	// If cancelled/rejected and order was charged to room folio, revert folio balance on guest
+	if nextStatus == domainorder.StatusCancelled && ord.ChargeToFolio && ord.GuestID != nil && !ord.GuestID.IsZero() {
+		guestsColl := s.db.Collection("guests")
+		_, _ = guestsColl.UpdateOne(ctx,
+			bson.M{"_id": *ord.GuestID, "tenantId": tenantID},
+			bson.M{
+				"$inc": bson.M{"folioBalance": -ord.TotalAmount},
+				"$set": bson.M{"updatedAt": now},
+			},
+		)
 	}
 
 	// If served, completed, or cancelled, release the table

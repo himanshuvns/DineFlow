@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -749,18 +750,70 @@ func (s *Service) UpdateHousekeepingTask(ctx context.Context, tenantID bson.Obje
 }
 
 // GetRoomOrders retrieves all active and historical room service orders for a room.
-func (s *Service) GetRoomOrders(ctx context.Context, tenantID bson.ObjectID, roomNumber string) ([]bson.M, error) {
+func (s *Service) GetRoomOrders(ctx context.Context, tenantID bson.ObjectID, idOrNumber string) ([]bson.M, error) {
 	ordersColl := s.db.Collection("orders")
-	rClean := strings.TrimSpace(roomNumber)
+	rClean := strings.TrimSpace(idOrNumber)
+	if rClean == "" {
+		return []bson.M{}, nil
+	}
+
+	// Try to find the room first to get both its _id and its actual roomNumber
+	var matchedRoom domainroom.Room
+	roomsColl := s.db.Collection("rooms")
+	var findRoomFilter bson.M
+
+	if oid, err := bson.ObjectIDFromHex(rClean); err == nil {
+		findRoomFilter = bson.M{"tenantId": tenantID, "_id": oid}
+	} else {
+		cleanNum := rClean
+		for _, prefix := range []string{"room-", "suite-", "Room-", "Suite-", "room ", "suite "} {
+			cleanNum = strings.TrimPrefix(cleanNum, prefix)
+		}
+		findRoomFilter = bson.M{
+			"tenantId": tenantID,
+			"$or": []bson.M{
+				{"roomNumber": cleanNum},
+				{"roomNumber": strings.ToUpper(cleanNum)},
+				{"roomNumber": strings.ToLower(cleanNum)},
+				{"qrSlug": fmt.Sprintf("room-%s", strings.ToLower(cleanNum))},
+				{"qrSlug": strings.ToLower(cleanNum)},
+				{"name": bson.M{"$regex": "^(Suite|Room)?[ ]*" + regexp.QuoteMeta(cleanNum) + "$", "$options": "i"}},
+			},
+		}
+	}
+
+	_ = roomsColl.FindOne(ctx, findRoomFilter).Decode(&matchedRoom)
+
+	var orClauses []bson.M
+
+	// 1. If we matched a room in the DB:
+	if !matchedRoom.ID.IsZero() {
+		orClauses = append(orClauses,
+			bson.M{"roomId": matchedRoom.ID},
+			bson.M{"roomNumber": matchedRoom.RoomNumber},
+			bson.M{"roomNumber": strings.ToUpper(matchedRoom.RoomNumber)},
+			bson.M{"roomNumber": strings.ToLower(matchedRoom.RoomNumber)},
+			bson.M{"tableName": bson.M{"$regex": matchedRoom.RoomNumber, "$options": "i"}},
+			bson.M{"tableSlug": fmt.Sprintf("room-%s", strings.ToLower(matchedRoom.RoomNumber))},
+			bson.M{"tableSlug": fmt.Sprintf("suite-%s", strings.ToLower(matchedRoom.RoomNumber))},
+		)
+	}
+
+	// 2. Also match directly with the input parameter:
+	if oid, err := bson.ObjectIDFromHex(rClean); err == nil {
+		orClauses = append(orClauses, bson.M{"roomId": oid})
+	}
+	orClauses = append(orClauses,
+		bson.M{"roomNumber": rClean},
+		bson.M{"roomNumber": strings.ToUpper(rClean)},
+		bson.M{"roomNumber": strings.ToLower(rClean)},
+		bson.M{"tableName": bson.M{"$regex": rClean, "$options": "i"}},
+		bson.M{"tableSlug": fmt.Sprintf("room-%s", strings.ToLower(rClean))},
+	)
 
 	filter := bson.M{
 		"tenantId": tenantID,
-		"$or": []bson.M{
-			{"roomNumber": rClean},
-			{"roomNumber": strings.ToUpper(rClean)},
-			{"roomNumber": strings.ToLower(rClean)},
-			{"tableName": bson.M{"$regex": rClean, "$options": "i"}},
-		},
+		"$or":      orClauses,
 	}
 
 	opts := options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}}).SetLimit(50)
