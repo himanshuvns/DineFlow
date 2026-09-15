@@ -52,7 +52,6 @@ func Setup(
 			publicGroup.GET("/orders/:orderId", orderHandler.GetCustomerOrder)
 			publicGroup.GET("/rooms/:tenantSlug/:roomNumber", roomHandler.GetPublicRoom)
 			publicGroup.POST("/rooms/:tenantSlug/:roomNumber/amenity", roomHandler.RequestPublicAmenity)
-			publicGroup.GET("/rooms/:tenantSlug/:roomNumber/tasks", roomHandler.GetPublicRoomTasks)
 			publicGroup.GET("/room-tasks/:tenantSlug/:roomNumber", roomHandler.GetPublicRoomTasks)
 			publicGroup.POST("/room-tasks/:tenantSlug/:roomNumber", roomHandler.RequestPublicAmenity)
 		}
@@ -158,6 +157,7 @@ func Setup(
 				roomGroup.GET("/:id/orders", roomHandler.GetOrders)
 				roomGroup.GET("/:id/tasks", roomHandler.ListTasks)
 				roomGroup.POST("/:id/tasks", roomHandler.CreateTask)
+				roomGroup.PATCH("/:id/tasks/:taskId", roomHandler.UpdateTask)
 			}
 
 			// ── Live Orders & KDS (Phase 2 & 3) ───────────────────────────

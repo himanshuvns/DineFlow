@@ -518,11 +518,24 @@ export default function RoomDetailPage() {
 
   const handleApproveTask = async (taskId: string) => {
     try {
-      await apiClient.patch(`/rooms/tasks/${encodeURIComponent(taskId)}`, {
-        status: "in_progress",
-      });
+      try {
+        await apiClient.patch(`/rooms/tasks/${encodeURIComponent(taskId)}`, {
+          status: "in_progress",
+        });
+      } catch (patchErr) {
+        if (room?.id) {
+          await apiClient.patch(`/rooms/${encodeURIComponent(room.id)}/tasks/${encodeURIComponent(taskId)}`, {
+            status: "in_progress",
+          });
+        } else {
+          throw patchErr;
+        }
+      }
       addToast("success", "Task Approved", "Steward has been assigned and is attending to the suite.");
       fetchRoomData();
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("dineflow_task_created"));
+      }
     } catch (e) {
       console.warn("Approve task error:", e);
     }
@@ -530,11 +543,24 @@ export default function RoomDetailPage() {
 
   const handleCompleteTask = async (taskId: string) => {
     try {
-      await apiClient.patch(`/rooms/tasks/${encodeURIComponent(taskId)}`, {
-        status: "completed",
-      });
+      try {
+        await apiClient.patch(`/rooms/tasks/${encodeURIComponent(taskId)}`, {
+          status: "completed",
+        });
+      } catch (patchErr) {
+        if (room?.id) {
+          await apiClient.patch(`/rooms/${encodeURIComponent(room.id)}/tasks/${encodeURIComponent(taskId)}`, {
+            status: "completed",
+          });
+        } else {
+          throw patchErr;
+        }
+      }
       addToast("success", "Task Completed", "Housekeeping task marked as finished.");
       fetchRoomData();
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("dineflow_task_created"));
+      }
     } catch (e) {
       console.warn("Complete task error:", e);
     }

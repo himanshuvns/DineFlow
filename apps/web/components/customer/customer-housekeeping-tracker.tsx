@@ -121,30 +121,47 @@ export function CustomerHousekeepingTracker({
         const serverTasks: HousekeepingTaskItem[] = json.data?.tasks || json.tasks || [];
         if (Array.isArray(serverTasks)) {
           setTasks((prev) => {
-            // SERVER DATA IS AUTHORITATIVE for status/progress.
-            // Server tasks are placed in the map first (definitive source of truth).
+            // SERVER DATA IS AUTHORITATIVE for status and progression.
             const map = new Map<string, HousekeepingTaskItem>();
             const serverIds = new Set<string>();
+            const serverTitles = new Set<string>();
+
             serverTasks.forEach((t) => {
               if (t.id) {
                 map.set(t.id, t);
                 serverIds.add(t.id);
+                if (t.title) {
+                  serverTitles.add(t.title.trim().toLowerCase());
+                }
               }
             });
 
-            // Grace-window: keep ANY prev task (real-ID or temp) if:
-            //   a) server doesn't have it yet (could be transient empty response), AND
-            //   b) it was created less than 5 minutes ago
-            // This prevents a single empty server response from wiping freshly created tasks.
-            // Server wins for status: if serverIds already has the task, server's version is used.
-            const FIVE_MINUTES = 5 * 60 * 1000;
+            // Check previous local tasks:
+            // 1. Never keep real MongoDB IDs that are missing from server (server discarded/completed them)
+            // 2. For optimistic temp IDs (task_...):
+            //    - If server already returned a task with the same title -> DISCARD temp task (server replaced it)
+            //    - If server returned any active tasks -> DISCARD temp task to prevent shadowing
+            //    - Only keep fresh temp task (< 30s) if server returned zero tasks
+            const THIRTY_SECONDS = 30 * 1000;
             prev.forEach((t) => {
               if (!t.id) return;
-              // Server already has this task — server version is in the map, skip local copy
-              if (serverIds.has(t.id)) return;
-              // Keep any recent task that server didn't return (temp or real ID)
+              if (serverIds.has(t.id)) return; // Already in map with authoritative status
+
+              const isTemp = t.id.startsWith("task_temp_") || t.id.startsWith("task_");
+              if (!isTemp) {
+                // Real ID absent from server -> do not retain
+                return;
+              }
+
+              // Temp ID: if server returned ANY task with this title, server task has replaced it
+              const cleanTitle = (t.title || "").trim().toLowerCase();
+              if (serverTitles.has(cleanTitle)) {
+                return; // Purge zombie temp task!
+              }
+
+              // If server returned tasks, don't keep unconfirmed temp tasks older than 30s
               const age = Date.now() - new Date(t.createdAt || "").getTime();
-              if (age < FIVE_MINUTES) {
+              if (age < THIRTY_SECONDS && serverTasks.length === 0) {
                 map.set(t.id, t);
               }
             });
@@ -156,7 +173,7 @@ export function CustomerHousekeepingTracker({
             });
 
             try {
-              // Persist all tasks (temp ones may briefly appear; they'll be replaced on next poll)
+              // Write authoritative tasks to localStorage so suite tabs and badges update
               localStorage.setItem(storageKey, JSON.stringify(merged));
             } catch (_) {
               // Ignore storage errors
@@ -164,8 +181,14 @@ export function CustomerHousekeepingTracker({
             return merged;
           });
 
-          if (!expandedTaskId && serverTasks.length > 0) {
-            setExpandedTaskId(serverTasks[0].id || "0");
+          // Ensure expanded task tracks the latest server task instead of an orphaned temp ID
+          if (serverTasks.length > 0) {
+            setExpandedTaskId((prevExpanded) => {
+              if (!prevExpanded || prevExpanded.startsWith("task_") || !serverTasks.some((t) => t.id === prevExpanded)) {
+                return serverTasks[0].id || "0";
+              }
+              return prevExpanded;
+            });
           }
         }
       }

@@ -71,8 +71,8 @@ export async function POST(req: NextRequest) {
         ? "https://api-production-f170.up.railway.app/api/v1"
         : "http://localhost:8080/api/v1");
 
-    const res = await fetch(
-      `${apiBase}/public/rooms/${encodeURIComponent(slug)}/${encodeURIComponent(cleanRoom)}/amenity`,
+    let res = await fetch(
+      `${apiBase}/public/room-tasks/${encodeURIComponent(slug)}/${encodeURIComponent(cleanRoom)}`,
       {
         method: "POST",
         headers: {
@@ -82,6 +82,20 @@ export async function POST(req: NextRequest) {
         body: JSON.stringify({ amenityType, title, priority, notes }),
       }
     );
+
+    if (!res.ok) {
+      res = await fetch(
+        `${apiBase}/public/rooms/${encodeURIComponent(slug)}/${encodeURIComponent(cleanRoom)}/amenity`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({ amenityType, title, priority, notes }),
+        }
+      );
+    }
 
     const data = await res.json().catch(() => null);
 
