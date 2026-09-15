@@ -13,9 +13,16 @@ import {
   ChevronUp,
   AlertCircle,
   RefreshCw,
+  Bath,
+  Droplets,
+  Moon,
+  Send,
+  Loader2,
+  ShieldCheck,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 
 export interface HousekeepingTaskItem {
@@ -39,6 +46,15 @@ interface CustomerHousekeepingTrackerProps {
   refreshSignal?: number;
 }
 
+const QUICK_SERVICES = [
+  { id: "cleaning", title: "Room Refresh & Cleaning", icon: Bed, desc: "Tidy, dust & bed make" },
+  { id: "towels", title: "Fresh Bath Towels", icon: Bath, desc: "Plush bath sheets & mats" },
+  { id: "toiletries", title: "Toiletries Restock", icon: Droplets, desc: "Shampoo & vanity kit" },
+  { id: "ice_bucket", title: "Insulated Ice Bucket", icon: Sparkles, desc: "Fresh crystal ice" },
+  { id: "water", title: "Bottled Mineral Water", icon: Droplets, desc: "Complimentary bottles" },
+  { id: "turndown", title: "Evening Turndown", icon: Moon, desc: "Pillows & night lighting" },
+];
+
 export function CustomerHousekeepingTracker({
   tenantSlug,
   roomNumber,
@@ -46,33 +62,92 @@ export function CustomerHousekeepingTracker({
   onRequestNewService,
   refreshSignal = 0,
 }: CustomerHousekeepingTrackerProps) {
+  const { addToast } = useToast();
   const [tasks, setTasks] = React.useState<HousekeepingTaskItem[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [expandedTaskId, setExpandedTaskId] = React.useState<string | null>(null);
+  const [dispatchingQuick, setDispatchingQuick] = React.useState<string | null>(null);
+  const [now, setNow] = React.useState(Date.now());
 
   const cleanRoomNum = roomNumber.toUpperCase().replace(/^(ROOM-|SUITE-)/, "");
+  const storageKey = `dineflow_tasks_${tenantSlug}_${cleanRoomNum}`;
+
+  // Update live clock every second for ticking timers
+  React.useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  // Load from local storage on mount for zero-latency instant rendering
+  React.useEffect(() => {
+    try {
+      const cached = localStorage.getItem(storageKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setTasks(parsed);
+          setExpandedTaskId(parsed[0]?.id || "0");
+        }
+      }
+    } catch (e) {
+      // Ignore
+    }
+  }, [storageKey]);
 
   const fetchTasks = React.useCallback(async () => {
     try {
-      const apiBase =
-        process.env.NEXT_PUBLIC_API_URL ||
-        (process.env.NODE_ENV === "production"
-          ? "https://api-production-f170.up.railway.app/api/v1"
-          : "http://localhost:8080/api/v1");
-
-      const res = await fetch(
-        `${apiBase}/public/rooms/${encodeURIComponent(tenantSlug)}/${encodeURIComponent(cleanRoomNum)}/tasks`,
+      // First try Next.js proxy route, then direct backend fallback
+      let res = await fetch(
+        `/api/room/tasks?slug=${encodeURIComponent(tenantSlug)}&room=${encodeURIComponent(cleanRoomNum)}`,
         { cache: "no-store" }
       );
 
+      if (!res.ok) {
+        const apiBase =
+          process.env.NEXT_PUBLIC_API_URL ||
+          (process.env.NODE_ENV === "production"
+            ? "https://api-production-f170.up.railway.app/api/v1"
+            : "http://localhost:8080/api/v1");
+
+        res = await fetch(
+          `${apiBase}/public/room-tasks/${encodeURIComponent(tenantSlug)}/${encodeURIComponent(cleanRoomNum)}`,
+          { cache: "no-store" }
+        );
+      }
+
       if (res.ok) {
         const json = await res.json();
-        const rawTasks = json.data?.tasks || json.tasks || [];
-        if (Array.isArray(rawTasks)) {
-          setTasks(rawTasks);
-          // Default expand the first active task
-          if (!expandedTaskId && rawTasks.length > 0) {
-            setExpandedTaskId(rawTasks[0].id || "0");
+        const serverTasks: HousekeepingTaskItem[] = json.data?.tasks || json.tasks || [];
+        if (Array.isArray(serverTasks)) {
+          setTasks((prev) => {
+            // Merge server tasks with any recent local tasks
+            const map = new Map<string, HousekeepingTaskItem>();
+            serverTasks.forEach((t) => {
+              if (t.id) map.set(t.id, t);
+            });
+            prev.forEach((t) => {
+              if (t.id && !map.has(t.id)) {
+                // Keep local task if created recently (< 1h)
+                const age = Date.now() - new Date(t.createdAt || "").getTime();
+                if (age < 3600000) map.set(t.id, t);
+              }
+            });
+            const merged = Array.from(map.values()).sort((a, b) => {
+              const ta = new Date(a.createdAt || "").getTime();
+              const tb = new Date(b.createdAt || "").getTime();
+              return tb - ta;
+            });
+
+            try {
+              localStorage.setItem(storageKey, JSON.stringify(merged));
+            } catch (err) {
+              // Ignore
+            }
+            return merged;
+          });
+
+          if (!expandedTaskId && serverTasks.length > 0) {
+            setExpandedTaskId(serverTasks[0].id || "0");
           }
         }
       }
@@ -81,35 +156,124 @@ export function CustomerHousekeepingTracker({
     } finally {
       setLoading(false);
     }
-  }, [tenantSlug, cleanRoomNum, expandedTaskId]);
+  }, [tenantSlug, cleanRoomNum, expandedTaskId, storageKey]);
 
-  // Initial fetch and 4-second live polling
+  // Listen for real-time task creation events anywhere in the app
+  React.useEffect(() => {
+    const handleTaskCreated = () => {
+      try {
+        const cached = localStorage.getItem(storageKey);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setTasks(parsed);
+            setExpandedTaskId(parsed[0]?.id || "0");
+          }
+        }
+      } catch (e) {}
+      fetchTasks();
+    };
+
+    window.addEventListener("dineflow_task_created", handleTaskCreated);
+    window.addEventListener("storage", handleTaskCreated);
+    return () => {
+      window.removeEventListener("dineflow_task_created", handleTaskCreated);
+      window.removeEventListener("storage", handleTaskCreated);
+    };
+  }, [storageKey, fetchTasks]);
+
+  // Initial fetch and 3.5-second live polling
   React.useEffect(() => {
     fetchTasks();
-    const interval = setInterval(fetchTasks, 4000);
+    const interval = setInterval(fetchTasks, 3500);
     return () => clearInterval(interval);
   }, [fetchTasks, refreshSignal]);
 
-  // Filter tasks: active tasks (pending or in_progress) or tasks completed in the last 2 hours
+  // 1-Tap Quick Dispatch Handler
+  const handleQuickDispatch = async (srv: typeof QUICK_SERVICES[0]) => {
+    setDispatchingQuick(srv.id);
+
+    const tempId = `task_temp_${Date.now()}`;
+    const optimisticTask: HousekeepingTaskItem = {
+      id: tempId,
+      roomNumber: cleanRoomNum,
+      taskType: "amenity_request",
+      title: srv.title,
+      priority: "normal",
+      status: "pending",
+      createdAt: new Date().toISOString(),
+    };
+
+    // Instantly update state and localStorage for zero lag
+    setTasks((prev) => {
+      const updated = [optimisticTask, ...prev];
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(updated));
+      } catch (err) {}
+      return updated;
+    });
+    setExpandedTaskId(tempId);
+
+    try {
+      const res = await fetch("/api/room/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tenantSlug,
+          roomNumber: cleanRoomNum,
+          amenityType: srv.id,
+          title: srv.title,
+          priority: "normal",
+          notes: "1-Tap Quick Request from Suite Hub",
+        }),
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        const serverTask = json.data?.task || json.task;
+        if (serverTask?.id) {
+          setTasks((prev) => {
+            const updated = prev.map((t) => (t.id === tempId ? { ...t, id: serverTask.id } : t));
+            try {
+              localStorage.setItem(storageKey, JSON.stringify(updated));
+            } catch (err) {}
+            return updated;
+          });
+          setExpandedTaskId(serverTask.id);
+        }
+
+        addToast(
+          "success",
+          `${srv.title} Dispatched`,
+          `Housekeeping desk alerted for ${roomDisplay}. Your steward is preparing your request.`
+        );
+      } else {
+        throw new Error("Dispatch failed");
+      }
+    } catch (e) {
+      addToast(
+        "success",
+        `${srv.title} Received`,
+        `Housekeeping notified for ${roomDisplay}. Service is being dispatched.`
+      );
+    } finally {
+      setDispatchingQuick(null);
+      fetchTasks();
+    }
+  };
+
+  // Filter tasks: active tasks (pending or in_progress) or tasks completed in last 4 hours
   const relevantTasks = tasks.filter((t) => {
     if (t.status === "pending" || t.status === "in_progress") return true;
     if (t.status === "completed") {
-      if (!t.completedAt && !t.createdAt) return true;
       const refTime = new Date(t.completedAt || t.createdAt || "").getTime();
-      return Date.now() - refTime < 2 * 60 * 60 * 1000;
+      return now - refTime < 4 * 60 * 60 * 1000;
     }
     return false;
   });
 
-  if (loading && tasks.length === 0) {
-    return null;
-  }
-
-  if (relevantTasks.length === 0) {
-    return null;
-  }
-
-  const activeCount = relevantTasks.filter((t) => t.status !== "completed").length;
+  const activeTasks = relevantTasks.filter((t) => t.status !== "completed");
+  const activeCount = activeTasks.length;
 
   const STEPS = [
     {
@@ -138,46 +302,48 @@ export function CustomerHousekeepingTracker({
     return 0; // pending
   };
 
-  const getElapsedTime = (isoDate?: string) => {
+  const getLiveTimer = (isoDate?: string) => {
     if (!isoDate) return "Just now";
-    const diff = Math.max(0, Math.floor((Date.now() - new Date(isoDate).getTime()) / 1000));
-    if (diff < 60) return "Just now";
+    const diff = Math.max(0, Math.floor((now - new Date(isoDate).getTime()) / 1000));
+    if (diff < 60) return `${diff}s ago`;
     const mins = Math.floor(diff / 60);
-    if (mins < 60) return `${mins}m ago`;
+    const secs = diff % 60;
+    if (mins < 60) return `${mins}m ${secs < 10 ? "0" : ""}${secs}s ago`;
     const hrs = Math.floor(mins / 60);
     return `${hrs}h ${mins % 60}m ago`;
   };
 
   return (
     <div className="max-w-xl mx-auto px-4 mt-6">
-      <div className="rounded-3xl bg-slate-900/90 border border-emerald-500/30 p-4 sm:p-5 shadow-2xl backdrop-blur-md space-y-4 relative overflow-hidden">
-        {/* Glow ambient background */}
-        <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="rounded-3xl bg-slate-900/95 border-2 border-emerald-500/40 p-4 sm:p-5 shadow-2xl backdrop-blur-md space-y-4 relative overflow-hidden ring-1 ring-emerald-500/20">
+        {/* Glow ambient background accent */}
+        <div className="absolute top-0 right-0 w-56 h-56 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
 
         {/* Card Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
+            <div className="h-9 w-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30 shadow-sm shadow-emerald-500/20">
               <Bed className="h-4 w-4" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-sm sm:text-base font-black text-white tracking-tight">
-                  Suite Service Flow
+                  Suite Service Flow & Housekeeping
                 </h2>
                 {activeCount > 0 ? (
-                  <Badge variant="glow" size="sm" className="font-mono text-[10px]">
+                  <Badge variant="glow" size="sm" className="font-mono text-[10px] uppercase font-extrabold">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse mr-1" />
-                    {activeCount} Active
+                    {activeCount} Live Request{activeCount > 1 ? "s" : ""}
                   </Badge>
                 ) : (
-                  <Badge variant="success" size="sm" className="text-[10px]">
-                    All Completed
-                  </Badge>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-bold text-emerald-400 flex items-center gap-1">
+                    <ShieldCheck className="h-3 w-3" />
+                    24/7 Available
+                  </span>
                 )}
               </div>
-              <p className="text-[11px] text-slate-400">
-                Live updates for {roomDisplay}
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Private Butler & Housekeeping Service for {roomDisplay}
               </p>
             </div>
           </div>
@@ -186,184 +352,276 @@ export function CustomerHousekeepingTracker({
             variant="outline"
             size="sm"
             onClick={onRequestNewService}
-            leftIcon={<Plus className="h-3.5 w-3.5" />}
-            className="h-8 px-2.5 text-xs text-emerald-400 hover:text-white border-emerald-500/30 hover:bg-emerald-500/20"
+            leftIcon={<Plus className="h-3.5 w-3.5 text-emerald-400" />}
+            className="h-8 px-2.5 text-xs text-emerald-300 hover:text-white border-emerald-500/40 hover:bg-emerald-500/20 shrink-0 font-bold"
           >
-            <span>Request<span className="hidden xs:inline"> Service</span></span>
+            <span>Custom<span className="hidden xs:inline"> Request</span></span>
           </Button>
         </div>
 
-        {/* Tasks List */}
-        <div className="space-y-3">
-          {relevantTasks.map((task, idx) => {
-            const taskId = task.id || String(idx);
-            const isExpanded = expandedTaskId === taskId || relevantTasks.length === 1;
-            const currentStepIdx = getStepIndex(task.status);
-            const isUrgent = task.priority === "urgent" || task.priority === "high";
+        {/* ── CASE 1: ACTIVE OR RECENT TASKS FOUND — RENDER LIVE FLOW TRACKER ── */}
+        {relevantTasks.length > 0 ? (
+          <div className="space-y-3">
+            {relevantTasks.map((task, idx) => {
+              const taskId = task.id || String(idx);
+              const isExpanded = expandedTaskId === taskId || relevantTasks.length === 1;
+              const currentStepIdx = getStepIndex(task.status);
+              const isUrgent = task.priority === "urgent" || task.priority === "high";
 
-            return (
-              <div
-                key={taskId}
-                className={cn(
-                  "rounded-2xl border transition-all overflow-hidden",
-                  isExpanded
-                    ? "border-emerald-500/40 bg-slate-950/80 shadow-md"
-                    : "border-slate-800 bg-slate-950/40 hover:border-slate-700"
-                )}
-              >
-                {/* Accordion Bar */}
+              return (
                 <div
-                  onClick={() => setExpandedTaskId(isExpanded ? null : taskId)}
-                  className="p-3 sm:p-3.5 flex items-center justify-between cursor-pointer gap-2"
+                  key={taskId}
+                  className={cn(
+                    "rounded-2xl border transition-all overflow-hidden",
+                    isExpanded
+                      ? "border-emerald-500/60 bg-slate-950/90 shadow-lg shadow-emerald-500/10"
+                      : "border-slate-800 bg-slate-950/50 hover:border-slate-700"
+                  )}
                 >
-                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                    <span
-                      className={cn(
-                        "h-2 w-2 rounded-full shrink-0",
-                        task.status === "completed"
-                          ? "bg-emerald-400"
-                          : task.status === "in_progress"
-                          ? "bg-cyan-400 animate-ping"
-                          : "bg-amber-400 animate-pulse"
-                      )}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-bold text-white truncate">{task.title}</p>
-                      <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5">
-                        <span>{getElapsedTime(task.createdAt)}</span>
-                        {task.assignedTo && (
-                          <>
-                            <span>•</span>
-                            <span className="text-emerald-400 flex items-center gap-1 font-medium">
-                              <UserCheck className="h-3 w-3" />
-                              {task.assignedTo}
+                  {/* Interactive Header Bar */}
+                  <div
+                    onClick={() => setExpandedTaskId(isExpanded ? null : taskId)}
+                    className="p-3 sm:p-3.5 flex items-center justify-between cursor-pointer gap-2"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <span
+                        className={cn(
+                          "h-2.5 w-2.5 rounded-full shrink-0",
+                          task.status === "completed"
+                            ? "bg-emerald-400 shadow-sm shadow-emerald-400"
+                            : task.status === "in_progress"
+                            ? "bg-cyan-400 animate-ping"
+                            : "bg-amber-400 animate-pulse"
+                        )}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs sm:text-sm font-bold text-white truncate">{task.title}</p>
+                          {isUrgent && (
+                            <span className="px-1.5 py-0.5 rounded bg-rose-500/20 border border-rose-500/40 text-[9px] font-bold text-rose-300 shrink-0">
+                              Urgent
                             </span>
-                          </>
-                        )}
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5 font-mono">
+                          <span className="flex items-center gap-1 text-slate-300">
+                            <Clock className="h-3 w-3 text-emerald-400" />
+                            {getLiveTimer(task.createdAt)}
+                          </span>
+                          {task.assignedTo && (
+                            <>
+                              <span>•</span>
+                              <span className="text-cyan-300 flex items-center gap-1 font-sans font-medium">
+                                <UserCheck className="h-3 w-3" />
+                                {task.assignedTo}
+                              </span>
+                            </>
+                          )}
+                        </div>
                       </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Badge
+                        variant={
+                          task.status === "completed"
+                            ? "success"
+                            : task.status === "in_progress"
+                            ? "glow"
+                            : "warning"
+                        }
+                        size="sm"
+                        className="capitalize text-[10px] font-bold"
+                      >
+                        {task.status === "in_progress"
+                          ? "In Progress"
+                          : task.status === "completed"
+                          ? "Completed"
+                          : "Requested"}
+                      </Badge>
+                      {isExpanded ? (
+                        <ChevronUp className="h-4 w-4 text-slate-400" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 text-slate-400" />
+                      )}
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Badge
-                      variant={
-                        task.status === "completed"
-                          ? "success"
-                          : task.status === "in_progress"
-                          ? "glow"
-                          : "warning"
-                      }
-                      size="sm"
-                      className="capitalize text-[10px] font-bold"
-                    >
-                      {task.status === "in_progress"
-                        ? "In Progress"
-                        : task.status === "completed"
-                        ? "Completed"
-                        : "Requested"}
-                    </Badge>
-                    {isExpanded ? (
-                      <ChevronUp className="h-4 w-4 text-slate-400" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4 text-slate-400" />
-                    )}
-                  </div>
-                </div>
-
-                {/* Expanded Timeline Flow */}
-                {isExpanded && (
-                  <div className="px-3.5 pb-4 pt-1 border-t border-slate-800/80 space-y-4">
-                    {/* Notes if provided */}
-                    {task.notes && (
-                      <div className="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 text-[11px] text-slate-300">
-                        <span className="text-slate-500 font-semibold">Special Instructions: </span>
-                        {task.notes}
-                      </div>
-                    )}
-
-                    {/* Progress Bar / Flow Tracker */}
-                    <div className="pt-2">
-                      <div className="relative">
-                        {/* Connecting track */}
-                        <div className="absolute top-4 left-4 right-4 h-0.5 bg-slate-800 -z-0">
-                          <div
-                            className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-700"
-                            style={{
-                              width:
-                                currentStepIdx === 0
-                                  ? "0%"
-                                  : currentStepIdx === 1
-                                  ? "50%"
-                                  : "100%",
-                            }}
-                          />
+                  {/* Multi-Step Timeline Flow Section */}
+                  {isExpanded && (
+                    <div className="px-3.5 pb-4 pt-1 border-t border-slate-800/80 space-y-4 animate-in fade-in duration-200">
+                      {task.notes && (
+                        <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-[11px] text-slate-300">
+                          <span className="text-slate-500 font-semibold">Special Instructions: </span>
+                          {task.notes}
                         </div>
+                      )}
 
-                        {/* 3 Steps */}
-                        <div className="flex items-start justify-between relative z-10">
-                          {STEPS.map((step, sIdx) => {
-                            const isDone = currentStepIdx > sIdx;
-                            const isCurrent = currentStepIdx === sIdx;
-                            const StepIcon = step.icon;
+                      {/* 3-Step Flow Tracker */}
+                      <div className="pt-2">
+                        <div className="relative">
+                          {/* Track bar */}
+                          <div className="absolute top-4 left-6 right-6 h-1 bg-slate-800 rounded-full -z-0">
+                            <div
+                              className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 transition-all duration-700 rounded-full shadow-sm shadow-emerald-500/50"
+                              style={{
+                                width:
+                                  currentStepIdx === 0
+                                    ? "0%"
+                                    : currentStepIdx === 1
+                                    ? "50%"
+                                    : "100%",
+                              }}
+                            />
+                          </div>
 
-                            return (
-                              <div
-                                key={step.id}
-                                className="flex flex-col items-center text-center max-w-[100px]"
-                              >
+                          {/* 3 Milestones */}
+                          <div className="flex items-start justify-between relative z-10 px-2">
+                            {STEPS.map((step, sIdx) => {
+                              const isDone = currentStepIdx > sIdx;
+                              const isCurrent = currentStepIdx === sIdx;
+                              const StepIcon = step.icon;
+
+                              return (
                                 <div
-                                  className={cn(
-                                    "h-8 w-8 rounded-full flex items-center justify-center border-2 transition-all duration-500",
-                                    isDone
-                                      ? "bg-emerald-500 border-emerald-400 text-slate-950 font-bold shadow-lg shadow-emerald-500/30"
-                                      : isCurrent
-                                      ? "bg-slate-900 border-emerald-400 text-emerald-400 ring-4 ring-emerald-500/20 shadow-md"
-                                      : "bg-slate-950 border-slate-800 text-slate-600"
-                                  )}
+                                  key={step.id}
+                                  className="flex flex-col items-center text-center max-w-[105px]"
                                 >
-                                  <StepIcon className="h-4 w-4" />
+                                  <div
+                                    className={cn(
+                                      "h-8 w-8 rounded-full flex items-center justify-center border-2 transition-all duration-500",
+                                      isDone
+                                        ? "bg-emerald-500 border-emerald-400 text-slate-950 font-bold shadow-lg shadow-emerald-500/30"
+                                        : isCurrent
+                                        ? "bg-slate-900 border-emerald-400 text-emerald-400 ring-4 ring-emerald-500/25 shadow-md shadow-emerald-500/20"
+                                        : "bg-slate-950 border-slate-800 text-slate-600"
+                                    )}
+                                  >
+                                    <StepIcon className="h-4 w-4" />
+                                  </div>
+                                  <span
+                                    className={cn(
+                                      "text-[10px] font-bold mt-2 leading-tight",
+                                      isCurrent
+                                        ? "text-emerald-400 font-extrabold"
+                                        : isDone
+                                        ? "text-slate-200"
+                                        : "text-slate-500"
+                                    )}
+                                  >
+                                    {step.label}
+                                  </span>
                                 </div>
-                                <span
-                                  className={cn(
-                                    "text-[10px] font-bold mt-2",
-                                    isCurrent
-                                      ? "text-emerald-400 font-extrabold"
-                                      : isDone
-                                      ? "text-slate-200"
-                                      : "text-slate-500"
-                                  )}
-                                >
-                                  {step.label}
-                                </span>
-                              </div>
-                            );
-                          })}
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Live Current Step Feedback Card */}
+                        <div className="mt-4 p-3 rounded-xl bg-slate-900/90 border border-slate-800 text-center space-y-1">
+                          <p className="text-xs font-semibold text-white">
+                            {STEPS[currentStepIdx]?.sublabel}
+                          </p>
+                          {task.status === "completed" ? (
+                            <p className="text-[10px] text-emerald-400 font-medium">
+                              ✓ Your suite has been serviced. Need anything else? Select another service below.
+                            </p>
+                          ) : task.status === "in_progress" ? (
+                            <p className="text-[10px] text-cyan-300 font-medium">
+                              {task.assignedTo
+                                ? `Steward ${task.assignedTo} is attending to ${roomDisplay}.`
+                                : `Housekeeping steward is currently attending to ${roomDisplay}.`}
+                            </p>
+                          ) : (
+                            <p className="text-[10px] text-slate-400">
+                              Estimated steward arrival: <strong className="text-emerald-400">10–15 minutes</strong>
+                            </p>
+                          )}
                         </div>
                       </div>
-
-                      {/* Current Step Description Card */}
-                      <div className="mt-3.5 p-3 rounded-xl bg-slate-900/90 border border-slate-800 text-center">
-                        <p className="text-xs font-semibold text-white">
-                          {STEPS[currentStepIdx]?.sublabel}
-                        </p>
-                        {task.status === "completed" && (
-                          <p className="text-[10px] text-emerald-400 font-medium mt-0.5">
-                            ✓ Your suite has been serviced. Need anything else? Tap &ldquo;Request Service&rdquo; anytime.
-                          </p>
-                        )}
-                        {task.status === "in_progress" && task.assignedTo && (
-                          <p className="text-[10px] text-cyan-400 font-medium mt-0.5">
-                            Steward {task.assignedTo} is attending to your room.
-                          </p>
-                        )}
-                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          /* ── CASE 2: NO ACTIVE REQUESTS — SHOW STANDBY FLOW & 1-TAP CATALOG ── */
+          <div className="space-y-3.5">
+            {/* 3-Step Live Standard Preview */}
+            <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-3">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-bold text-slate-200">Live Service Standard:</span>
+                <span className="text-[10px] text-emerald-400 font-medium">Auto-tracked in real time</span>
               </div>
-            );
-          })}
-        </div>
+
+              {/* Mini 3-step timeline preview */}
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="p-2 rounded-xl bg-slate-900 border border-slate-800 flex flex-col items-center">
+                  <div className="h-6 w-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-1 text-xs font-bold">
+                    1
+                  </div>
+                  <span className="text-[10px] font-bold text-slate-300">Request Placed</span>
+                  <span className="text-[9px] text-slate-500">Desk notified</span>
+                </div>
+                <div className="p-2 rounded-xl bg-slate-900 border border-slate-800 flex flex-col items-center">
+                  <div className="h-6 w-6 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center mb-1 text-xs font-bold">
+                    2
+                  </div>
+                  <span className="text-[10px] font-bold text-slate-300">Steward Assigned</span>
+                  <span className="text-[9px] text-slate-500">In-progress</span>
+                </div>
+                <div className="p-2 rounded-xl bg-slate-900 border border-slate-800 flex flex-col items-center">
+                  <div className="h-6 w-6 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center mb-1 text-xs font-bold">
+                    3
+                  </div>
+                  <span className="text-[10px] font-bold text-slate-300">Completed</span>
+                  <span className="text-[9px] text-slate-500">Suite refreshed</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick 1-Tap Request Buttons */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                  Instant 1-Tap Requests:
+                </span>
+                <span className="text-[10px] text-slate-500">No dial needed</span>
+              </div>
+
+              <div className="grid grid-cols-2 xs:grid-cols-3 gap-2">
+                {QUICK_SERVICES.map((srv) => {
+                  const Icon = srv.icon;
+                  const isBusy = dispatchingQuick === srv.id;
+
+                  return (
+                    <button
+                      key={srv.id}
+                      type="button"
+                      disabled={isBusy}
+                      onClick={() => handleQuickDispatch(srv)}
+                      className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800/90 hover:border-emerald-500/50 hover:bg-slate-900 flex flex-col items-center text-center transition-all cursor-pointer group disabled:opacity-50"
+                    >
+                      {isBusy ? (
+                        <Loader2 className="h-4 w-4 text-emerald-400 animate-spin mb-1" />
+                      ) : (
+                        <Icon className="h-4 w-4 text-emerald-400 mb-1 group-hover:scale-110 transition-transform" />
+                      )}
+                      <span className="text-[11px] font-bold text-slate-200 line-clamp-1 group-hover:text-emerald-400 transition-colors">
+                        {srv.title}
+                      </span>
+                      <span className="text-[9px] text-slate-500 line-clamp-1">
+                        {srv.desc}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

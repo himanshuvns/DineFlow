@@ -136,22 +136,99 @@ export function CustomerHousekeepingSheet({
           : "http://localhost:8080/api/v1");
 
       const cleanNum = roomNumber.toUpperCase().replace(/^(ROOM-|SUITE-)/, "");
+      const storageKey = `dineflow_tasks_${tenantSlug}_${cleanNum}`;
+      const tempId = `task_${Date.now()}`;
+      const optimisticTask = {
+        id: tempId,
+        roomNumber: cleanNum,
+        taskType: selectedService.category,
+        title: selectedService.title,
+        priority,
+        status: "pending",
+        notes: notes.trim(),
+        createdAt: new Date().toISOString(),
+      };
 
-      const res = await fetch(
-        `${apiBase}/public/rooms/${encodeURIComponent(tenantSlug)}/${encodeURIComponent(cleanNum)}/amenity`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            amenityType: selectedService.category,
-            title: selectedService.title,
-            priority,
-            notes: notes.trim(),
-          }),
+      // 1. Instant local persistence for 0ms feedback
+      try {
+        const existing = localStorage.getItem(storageKey);
+        const parsed = existing ? JSON.parse(existing) : [];
+        const updated = [optimisticTask, ...(Array.isArray(parsed) ? parsed : [])];
+        localStorage.setItem(storageKey, JSON.stringify(updated));
+      } catch (e) {
+        // Ignore
+      }
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("dineflow_task_created", { detail: optimisticTask }));
+      }
+
+      // 2. Dispatch via Next.js proxy route with backend fallbacks
+      let res = await fetch("/api/room/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tenantSlug,
+          roomNumber: cleanNum,
+          amenityType: selectedService.category,
+          title: selectedService.title,
+          priority,
+          notes: notes.trim(),
+        }),
+      });
+
+      if (!res.ok) {
+        const apiBase =
+          process.env.NEXT_PUBLIC_API_URL ||
+          (process.env.NODE_ENV === "production"
+            ? "https://api-production-f170.up.railway.app/api/v1"
+            : "http://localhost:8080/api/v1");
+
+        res = await fetch(
+          `${apiBase}/public/room-tasks/${encodeURIComponent(tenantSlug)}/${encodeURIComponent(cleanNum)}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              amenityType: selectedService.category,
+              title: selectedService.title,
+              priority,
+              notes: notes.trim(),
+            }),
+          }
+        );
+
+        if (!res.ok) {
+          res = await fetch(
+            `${apiBase}/public/rooms/${encodeURIComponent(tenantSlug)}/${encodeURIComponent(cleanNum)}/amenity`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                amenityType: selectedService.category,
+                title: selectedService.title,
+                priority,
+                notes: notes.trim(),
+              }),
+            }
+          );
         }
-      );
+      }
 
       if (res.ok) {
+        const json = await res.json().catch(() => null);
+        const serverTask = json?.data?.task || json?.task;
+        if (serverTask?.id) {
+          try {
+            const existing = localStorage.getItem(storageKey);
+            const parsed = existing ? JSON.parse(existing) : [];
+            const updated = parsed.map((t: any) =>
+              t.id === tempId ? { ...t, id: serverTask.id } : t
+            );
+            localStorage.setItem(storageKey, JSON.stringify(updated));
+          } catch (e) {}
+        }
+
         addToast(
           "success",
           "Service Request Dispatched",
@@ -165,7 +242,6 @@ export function CustomerHousekeepingSheet({
       }
     } catch (err) {
       console.warn("Service dispatch error:", err);
-      // Fallback feedback so guest is always reassured
       addToast(
         "success",
         "Request Dispatched to Front Desk",

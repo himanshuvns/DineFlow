@@ -53,6 +53,8 @@ func Setup(
 			publicGroup.GET("/rooms/:tenantSlug/:roomNumber", roomHandler.GetPublicRoom)
 			publicGroup.POST("/rooms/:tenantSlug/:roomNumber/amenity", roomHandler.RequestPublicAmenity)
 			publicGroup.GET("/rooms/:tenantSlug/:roomNumber/tasks", roomHandler.GetPublicRoomTasks)
+			publicGroup.GET("/room-tasks/:tenantSlug/:roomNumber", roomHandler.GetPublicRoomTasks)
+			publicGroup.POST("/room-tasks/:tenantSlug/:roomNumber", roomHandler.RequestPublicAmenity)
 		}
 
 		// ── Public WhatsApp Webhook (Meta Cloud API) ──────────────────────
