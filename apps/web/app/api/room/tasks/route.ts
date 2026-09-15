@@ -38,10 +38,23 @@ export async function GET(req: NextRequest) {
 
     if (res.ok) {
       const data = await res.json();
-      return NextResponse.json(data, {
-        status: 200,
-        headers: { "Cache-Control": "no-store, max-age=0, must-revalidate" },
-      });
+      const rawTasks = data.data?.tasks || data.tasks || [];
+      const guestTasks = Array.isArray(rawTasks)
+        ? rawTasks.filter((t: any) => {
+            if (t.source === "staff" || t.isGuestRequest === false) return false;
+            const title = (t.title || "").toLowerCase();
+            if (title.includes("checkout deep clean") || title.includes("linen refresh —") || title.includes("turnover")) return false;
+            return true;
+          })
+        : [];
+
+      return NextResponse.json(
+        { ...data, tasks: guestTasks, data: { ...(data.data || {}), tasks: guestTasks } },
+        {
+          status: 200,
+          headers: { "Cache-Control": "no-store, max-age=0, must-revalidate" },
+        }
+      );
     }
 
     return NextResponse.json(

@@ -28,6 +28,7 @@ import {
   Wind,
   Bath,
   ArrowRight,
+  X,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -85,8 +86,10 @@ export default function RoomServiceMenuPage() {
   const [activeTab, setActiveTab] = React.useState<SuiteTab>("dining");
   const [roomInfo, setRoomInfo] = React.useState<RoomInfo | null>(null);
   const [hotelName, setHotelName] = React.useState("The Grand Palace & Spa");
+  const [hotelLogo, setHotelLogo] = React.useState<string | null>(null);
   const [categories, setCategories] = React.useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = React.useState("all");
+  const [isVegOnly, setIsVegOnly] = React.useState(false);
   const [menuItems, setMenuItems] = React.useState<MenuItem[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [searchQuery, setSearchQuery] = React.useState("");
@@ -101,7 +104,7 @@ export default function RoomServiceMenuPage() {
     setContext(tenantSlug, `room-${cleanRoomNum.toLowerCase()}`);
   }, [tenantSlug, cleanRoomNum, setContext]);
 
-  // Monitor active tasks in real-time
+  // Monitor active tasks in real-time (strictly guest requests)
   const checkActiveTasks = React.useCallback(() => {
     try {
       const storageKey = `dineflow_tasks_${tenantSlug}_${cleanRoomNum}`;
@@ -109,9 +112,14 @@ export default function RoomServiceMenuPage() {
       if (raw) {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed)) {
-          const active = parsed.filter(
-            (t: any) => t.status === "pending" || t.status === "in_progress"
-          );
+          const active = parsed.filter((t: any) => {
+            if (t.source === "staff" || t.isGuestRequest === false) return false;
+            const title = (t.title || "").toLowerCase();
+            if (title.includes("checkout deep clean") || title.includes("linen refresh —") || title.includes("turnover")) {
+              return false;
+            }
+            return t.status === "pending" || t.status === "in_progress";
+          });
           setActiveTasksCount(active.length);
           if (active.length > 0) {
             setLatestActiveTask({ title: active[0].title, status: active[0].status });
@@ -208,6 +216,9 @@ export default function RoomServiceMenuPage() {
           if (data.tenant?.name) {
             setHotelName(data.tenant.name);
           }
+          if (data.tenant?.logo || data.tenant?.logoUrl) {
+            setHotelLogo(data.tenant.logo || data.tenant.logoUrl);
+          }
 
           let itemsList: MenuItem[] = [];
           const catList: string[] = [];
@@ -299,6 +310,7 @@ export default function RoomServiceMenuPage() {
   };
 
   const filteredItems = menuItems.filter((item) => {
+    if (isVegOnly && !item.isVeg) return false;
     if (selectedCategory !== "all" && item.category !== selectedCategory) {
       return false;
     }
@@ -340,16 +352,16 @@ export default function RoomServiceMenuPage() {
         {/* Hotel Header Card */}
         <div className="max-w-xl mx-auto px-4 -mt-14 relative z-10">
           <div className="p-4 sm:p-5 rounded-3xl bg-slate-900/95 border border-slate-800 shadow-2xl backdrop-blur-md">
-            <div className="flex items-start justify-between">
-              <div>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">
                   Private Guest Suite Service
                 </span>
-                <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight truncate">
                   {hotelName}
                 </h1>
                 {roomInfo?.currentGuestName ? (
-                  <p className="text-xs text-emerald-400 font-medium mt-0.5">
+                  <p className="text-xs text-emerald-400 font-medium mt-0.5 truncate">
                     Welcome, {roomInfo.currentGuestName} • Silver tray delivery to your door
                   </p>
                 ) : (
@@ -358,6 +370,11 @@ export default function RoomServiceMenuPage() {
                   </p>
                 )}
               </div>
+              {hotelLogo && (
+                <div className="h-12 w-12 rounded-2xl bg-white/5 border border-slate-700/80 p-1 flex items-center justify-center overflow-hidden shrink-0 shadow-md">
+                  <img src={hotelLogo} alt={hotelName} className="h-full w-full object-contain" />
+                </div>
+              )}
             </div>
 
             {/* Quick Guest Amenities Shortcuts */}
@@ -588,22 +605,46 @@ export default function RoomServiceMenuPage() {
         <div className="animate-in fade-in duration-300">
           {/* Search Bar */}
           <div className="max-w-xl mx-auto px-4 mt-4">
-            <div className="relative">
-              <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-500" />
+            <div className="relative flex items-center">
+              <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-500 pointer-events-none" />
               <input
                 type="text"
                 placeholder="Search breakfast, chef specials, beverages..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-slate-900 border border-slate-800 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
+                className="w-full pl-10 pr-10 py-2.5 rounded-2xl bg-slate-900 border border-slate-800 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 transition-colors"
               />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 p-1 rounded-full text-slate-400 hover:text-white"
+                  title="Clear search"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
             </div>
           </div>
 
-          {/* Category Tabs */}
-          {categories.length > 1 && (
+          {/* Category Tabs & Veg Filter */}
+          {categories.length > 0 && (
             <div className="max-w-xl mx-auto px-4 mt-4">
               <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+                {/* 1-Tap Pure Veg Toggle */}
+                <button
+                  type="button"
+                  onClick={() => setIsVegOnly(!isVegOnly)}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-2xl border text-xs font-bold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
+                    isVegOnly
+                      ? "bg-emerald-500 text-slate-950 border-emerald-400 font-extrabold shadow-md shadow-emerald-500/20"
+                      : "bg-slate-900/80 border-slate-800 text-slate-300 hover:text-white"
+                  }`}
+                >
+                  <span className={`h-2 w-2 rounded-full ${isVegOnly ? "bg-slate-950" : "bg-emerald-400"}`} />
+                  <span>Veg Only</span>
+                </button>
+
                 {categories.map((cat) => {
                   const isSelected = selectedCategory === cat;
                   return (
@@ -732,14 +773,30 @@ export default function RoomServiceMenuPage() {
                 </div>
               ))
             ) : (
-              <div className="py-16 text-center text-slate-500 text-xs">
+              <div className="py-16 text-center text-slate-500 text-xs space-y-2">
                 <UtensilsCrossed className="h-8 w-8 mx-auto text-slate-400 opacity-50 mb-2" />
                 <p className="font-semibold text-slate-300">
-                  No dishes found in this category
+                  No dishes found matching your selection
                 </p>
                 <p className="text-[11px] text-slate-500">
-                  Try choosing another meal category or clear your search term.
+                  Try choosing another category or clearing your search / veg filter.
                 </p>
+                {(searchQuery || isVegOnly || selectedCategory !== "all") && (
+                  <div className="pt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs border-slate-700 text-slate-300 hover:text-white"
+                      onClick={() => {
+                        setSearchQuery("");
+                        setIsVegOnly(false);
+                        setSelectedCategory("all");
+                      }}
+                    >
+                      Reset Filters
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </div>

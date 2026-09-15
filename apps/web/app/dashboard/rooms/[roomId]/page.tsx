@@ -68,6 +68,7 @@ interface RoomDetail {
   currentGuestCheckIn?: string;
   currentGuestExpectedCheckOut?: string;
   currentGuestCount?: number;
+  currentGuestSpecialRequests?: string;
   qrSlug: string;
   amenities: string[];
   createdAt: string;
@@ -171,6 +172,22 @@ export default function RoomDetailPage() {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const cameraInputRef = React.useRef<HTMLInputElement | null>(null);
 
+  // Edit Stay form state
+  const [isEditStayOpen, setIsEditStayOpen] = React.useState(false);
+  const [editName, setEditName] = React.useState("");
+  const [editPhone, setEditPhone] = React.useState("");
+  const [editEmail, setEditEmail] = React.useState("");
+  const [editGuestCount, setEditGuestCount] = React.useState(1);
+  const [editCheckInDate, setEditCheckInDate] = React.useState("");
+  const [editExpectedCheckOutDate, setEditExpectedCheckOutDate] = React.useState("");
+  const [editAddress, setEditAddress] = React.useState("");
+  const [editNationality, setEditNationality] = React.useState("Indian");
+  const [editIdProofType, setEditIdProofType] = React.useState("Aadhaar Card");
+  const [editIdProofPreview, setEditIdProofPreview] = React.useState<string | null>(null);
+  const [editSpecialRequests, setEditSpecialRequests] = React.useState("");
+  const [isSavingStay, setIsSavingStay] = React.useState(false);
+  const editFileInputRef = React.useRef<HTMLInputElement | null>(null);
+
   // CheckOut / Stay Summary / Invoice state
   const [staySummaryLoading, setStaySummaryLoading] = React.useState(false);
   const [currentStaySummary, setCurrentStaySummary] = React.useState<any | null>(null);
@@ -228,6 +245,7 @@ export default function RoomDetailPage() {
           currentGuestCheckIn: currentGuest?.checkIn || r.currentGuestCheckIn,
           currentGuestExpectedCheckOut: currentGuest?.expectedCheckOut || r.currentGuestExpectedCheckOut,
           currentGuestCount: currentGuest?.numberOfGuests || r.currentGuestCount || r.numberOfGuests || 1,
+          currentGuestSpecialRequests: currentGuest?.specialRequests || r.currentGuestSpecialRequests || r.specialRequests,
           qrSlug: r.qrSlug || `room-${r.roomNumber}`,
           amenities: Array.isArray(r.amenities) && r.amenities.length > 0
             ? r.amenities
@@ -486,6 +504,120 @@ export default function RoomDetailPage() {
       fetchRoomData();
     } catch (e: any) {
       addToast("error", "Check-In Failed", e?.response?.data?.message || "Could not check in guest.");
+    }
+  };
+
+  const handleOpenEditStay = () => {
+    if (!room) return;
+    setEditName(room.currentGuestName || "");
+    setEditPhone(room.currentGuestPhone || "");
+    setEditEmail(room.currentGuestEmail || "");
+    setEditGuestCount(room.currentGuestCount || 1);
+
+    if (room.currentGuestCheckIn) {
+      try {
+        const d = new Date(room.currentGuestCheckIn);
+        setEditCheckInDate(d.toISOString().slice(0, 16));
+      } catch {
+        setEditCheckInDate(new Date().toISOString().slice(0, 16));
+      }
+    } else {
+      setEditCheckInDate(new Date().toISOString().slice(0, 16));
+    }
+
+    if (room.currentGuestExpectedCheckOut) {
+      try {
+        const d = new Date(room.currentGuestExpectedCheckOut);
+        setEditExpectedCheckOutDate(d.toISOString().slice(0, 16));
+      } catch {
+        const d = new Date();
+        d.setDate(d.getDate() + 1);
+        setEditExpectedCheckOutDate(d.toISOString().slice(0, 16));
+      }
+    } else {
+      const d = new Date();
+      d.setDate(d.getDate() + 1);
+      setEditExpectedCheckOutDate(d.toISOString().slice(0, 16));
+    }
+
+    setEditAddress(room.currentGuestAddress || "");
+    setEditNationality(room.currentGuestNationality || "Indian");
+    setEditIdProofType(room.currentGuestIdProofType || "Aadhaar Card");
+    setEditIdProofPreview(room.currentGuestIdProofUrl || null);
+    setEditSpecialRequests(room.currentGuestSpecialRequests || "");
+    setIsEditStayOpen(true);
+  };
+
+  const handleEditIDFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      if (file.size > 10 * 1024 * 1024) {
+        addToast("error", "File Too Large", "ID document must be under 10MB.");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        setEditIdProofPreview(reader.result as string);
+        addToast("info", "ID Document Attached", `${file.name} ready for saving.`);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSaveStaySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!room || !editName.trim()) return;
+
+    let normalizedPhone = editPhone.trim();
+    if (normalizedPhone) {
+      const phoneValidation = validateIndianPhone(normalizedPhone);
+      if (!phoneValidation.isValid) {
+        addToast(
+          "error",
+          "Invalid Indian Mobile",
+          phoneValidation.error || "Please enter a valid 10-digit Indian mobile number."
+        );
+        return;
+      }
+      normalizedPhone = phoneValidation.normalized;
+    }
+
+    const maxCap = room.capacity || 2;
+    if (editGuestCount > maxCap) {
+      addToast(
+        "error",
+        "Capacity Exceeded",
+        `${room.name} has a maximum capacity of ${maxCap} guest${maxCap > 1 ? "s" : ""}. Please adjust the guest count.`
+      );
+      return;
+    }
+
+    setIsSavingStay(true);
+    try {
+      const payload: any = {
+        name: editName.trim(),
+        phone: normalizedPhone || undefined,
+        email: editEmail.trim() || undefined,
+        numberOfGuests: Number(editGuestCount) || 1,
+        checkIn: editCheckInDate ? new Date(editCheckInDate).toISOString() : undefined,
+        expectedCheckOut: editExpectedCheckOutDate ? new Date(editExpectedCheckOutDate).toISOString() : undefined,
+        address: editAddress.trim() || undefined,
+        nationality: editNationality.trim() || "Indian",
+        idProofType: editIdProofType,
+        idProofUrl: editIdProofPreview || undefined,
+        specialRequests: editSpecialRequests.trim() || undefined,
+      };
+
+      await apiClient.put(`/rooms/${encodeURIComponent(room.id)}/guest`, payload);
+
+      addToast("success", "Stay Information Updated", `Guest stay details for ${editName} updated successfully.`);
+      setIsEditStayOpen(false);
+      fetchRoomData();
+    } catch (e: any) {
+      console.error("Save stay error:", e);
+      addToast("error", "Update Failed", e?.response?.data?.message || "Could not update stay information.");
+    } finally {
+      setIsSavingStay(false);
     }
   };
 
@@ -753,14 +885,24 @@ export default function RoomDetailPage() {
           </Button>
 
           {isOccupied ? (
-            <Button
-              variant="destructive"
-              size="sm"
-              leftIcon={<Users className="h-4 w-4" />}
-              onClick={handleInitiateCheckOut}
-            >
-              Guest Check-Out
-            </Button>
+            <>
+              <Button
+                variant="secondary"
+                size="sm"
+                leftIcon={<Edit3 className="h-4 w-4 text-emerald-500" />}
+                onClick={handleOpenEditStay}
+              >
+                Edit Stay
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                leftIcon={<Users className="h-4 w-4" />}
+                onClick={handleInitiateCheckOut}
+              >
+                Guest Check-Out
+              </Button>
+            </>
           ) : isCleaning ? (
             <Button
               variant="glow"
@@ -910,14 +1052,25 @@ export default function RoomDetailPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full text-xs text-rose-600 dark:text-rose-400 border-rose-500/30 hover:bg-rose-500/10"
-                    onClick={handleInitiateCheckOut}
-                  >
-                    Review Stay & Settle Check-Out
-                  </Button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="w-full text-xs font-semibold text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:border-emerald-500/50"
+                      onClick={handleOpenEditStay}
+                      leftIcon={<Edit3 className="h-3.5 w-3.5 text-emerald-500" />}
+                    >
+                      Edit Stay Info
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full text-xs text-rose-600 dark:text-rose-400 border-rose-500/30 hover:bg-rose-500/10 font-semibold"
+                      onClick={handleInitiateCheckOut}
+                    >
+                      Settle Check-Out
+                    </Button>
+                  </div>
                   {!room.currentGuestName && (
                     <Button
                       variant="secondary"
@@ -1564,6 +1717,262 @@ export default function RoomDetailPage() {
               value={specialRequests}
               onChange={(e) => setSpecialRequests(e.target.value)}
               className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
+            />
+          </div>
+        </form>
+      </Modal>
+
+      {/* Edit Guest Stay Details Modal */}
+      <Modal
+        isOpen={isEditStayOpen}
+        onClose={() => setIsEditStayOpen(false)}
+        title={`Modify Stay Information — ${room.name}`}
+        description="Update in-house guest personal details, stay duration dates, room occupancy, and identity verification."
+        size="lg"
+        footer={
+          <div className="flex items-center justify-end gap-2 w-full">
+            <Button variant="ghost" size="sm" onClick={() => setIsEditStayOpen(false)} disabled={isSavingStay}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              form="edit-stay-form"
+              variant="glow"
+              size="sm"
+              disabled={isSavingStay}
+              leftIcon={<Check className="h-4 w-4" />}
+            >
+              {isSavingStay ? "Saving Stay Details..." : "Save Stay Changes"}
+            </Button>
+          </div>
+        }
+      >
+        <form id="edit-stay-form" onSubmit={handleSaveStaySubmit} className="space-y-4 text-xs py-1">
+          {/* Guest Name & Phone */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1">
+                Guest Full Name *
+              </label>
+              <input
+                type="text"
+                required
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                placeholder="e.g. Rahul Sharma"
+                className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+
+            <div>
+              <label className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1">
+                Mobile Number (+91 Indian Mobile) *
+              </label>
+              <input
+                type="tel"
+                required
+                value={editPhone}
+                onChange={(e) => setEditPhone(formatIndianPhoneInput(e.target.value))}
+                placeholder="+91 98765 43210"
+                className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 font-mono"
+              />
+            </div>
+          </div>
+
+          {/* Email & Guests Count */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1">
+                Email Address (Optional)
+              </label>
+              <input
+                type="email"
+                value={editEmail}
+                onChange={(e) => setEditEmail(e.target.value)}
+                placeholder="guest@example.com"
+                className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                  In-House Guests Count *
+                </label>
+                <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold">
+                  Max Capacity: {room.capacity}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={1}
+                  max={room.capacity || 2}
+                  value={editGuestCount}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    const maxCap = room.capacity || 2;
+                    if (val > maxCap) {
+                      setEditGuestCount(maxCap);
+                      addToast("warning", "Max Capacity Limit", `${room.name} maximum capacity is ${maxCap} guests.`);
+                    } else {
+                      setEditGuestCount(Math.max(1, val));
+                    }
+                  }}
+                  className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 font-mono"
+                />
+                <span className="text-slate-500 shrink-0 text-[11px]">
+                  / {room.capacity} Max
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Stay Timing: Check-In and Expected Check-Out */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+            <div>
+              <label className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1">
+                Check-In Date & Time
+              </label>
+              <input
+                type="datetime-local"
+                value={editCheckInDate}
+                onChange={(e) => setEditCheckInDate(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1">
+                Expected Check-Out Date & Time
+              </label>
+              <input
+                type="datetime-local"
+                value={editExpectedCheckOutDate}
+                onChange={(e) => setEditExpectedCheckOutDate(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 font-mono"
+              />
+            </div>
+          </div>
+
+          {/* Address & Nationality */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1">
+                Residential Address / City
+              </label>
+              <input
+                type="text"
+                value={editAddress}
+                onChange={(e) => setEditAddress(e.target.value)}
+                placeholder="e.g. Bandra West, Mumbai, Maharashtra"
+                className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+
+            <div>
+              <label className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1">
+                Nationality
+              </label>
+              <input
+                type="text"
+                value={editNationality}
+                onChange={(e) => setEditNationality(e.target.value)}
+                placeholder="Indian"
+                className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+          </div>
+
+          {/* ID Proof Type & Upload/Preview */}
+          <div className="space-y-2">
+            <label className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1">
+              Government Identity Document
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <select
+                value={editIdProofType}
+                onChange={(e) => setEditIdProofType(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+              >
+                <option value="Aadhaar Card">Aadhaar Card (UIDAI)</option>
+                <option value="Driving License">Driving License (State RTO)</option>
+                <option value="Passport">International Passport</option>
+                <option value="Voter ID">Voter ID (Election Commission)</option>
+                <option value="PAN Card">PAN Card (Income Tax Dept)</option>
+              </select>
+
+              <div className="flex items-center gap-2">
+                <input
+                  ref={editFileInputRef}
+                  type="file"
+                  accept="image/*,application/pdf"
+                  className="hidden"
+                  onChange={handleEditIDFileChange}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 text-xs"
+                  onClick={() => editFileInputRef.current?.click()}
+                  leftIcon={<UploadCloud className="h-3.5 w-3.5 text-emerald-500" />}
+                >
+                  {editIdProofPreview ? "Replace File" : "Upload Document"}
+                </Button>
+                {editIdProofPreview && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs text-rose-500 hover:bg-rose-500/10"
+                    onClick={() => setEditIdProofPreview(null)}
+                  >
+                    Remove
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Preview if uploaded */}
+            {editIdProofPreview && (
+              <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                <div className="flex items-center gap-2 min-w-0">
+                  {editIdProofPreview.startsWith("data:image") ? (
+                    <img
+                      src={editIdProofPreview}
+                      alt="ID Preview"
+                      className="h-9 w-9 object-cover rounded-lg border border-slate-200 dark:border-slate-800 shrink-0"
+                    />
+                  ) : (
+                    <div className="h-9 w-9 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
+                      <FileCheck className="h-4 w-4" />
+                    </div>
+                  )}
+                  <div className="truncate">
+                    <span className="font-bold text-slate-900 dark:text-white block truncate text-xs">
+                      {editIdProofType} Verified Document
+                    </span>
+                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono">
+                      Attached to Active Stay Folio
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Special Requests */}
+          <div>
+            <label className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1">
+              Special Requests & Front Desk Notes
+            </label>
+            <textarea
+              rows={2}
+              value={editSpecialRequests}
+              onChange={(e) => setEditSpecialRequests(e.target.value)}
+              placeholder="e.g. Late checkout approved until 2 PM, anniversary champagne requested..."
+              className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 resize-none"
             />
           </div>
         </form>

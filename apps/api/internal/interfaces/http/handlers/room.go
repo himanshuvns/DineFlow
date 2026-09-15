@@ -290,6 +290,40 @@ func (h *RoomHandler) CheckIn(c *gin.Context) {
 	response.Created(c, gin.H{"guest": guest, "room": updatedRoom})
 }
 
+// UpdateStay modifies active guest stay details (dates, guest count, ID proofs, notes, etc.).
+func (h *RoomHandler) UpdateStay(c *gin.Context) {
+	tenantID := middleware.GetTenantID(c)
+	if tenantID == "" {
+		response.Unauthorized(c, "tenant context missing")
+		return
+	}
+	tOID, err := bson.ObjectIDFromHex(tenantID)
+	if err != nil {
+		response.BadRequest(c, "INVALID_TENANT_ID", "invalid tenant ID")
+		return
+	}
+
+	id := c.Param("id")
+	if id == "" {
+		response.BadRequest(c, "INVALID_ID", "room ID is required")
+		return
+	}
+
+	var input domainroom.UpdateGuestStayInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		response.BadRequest(c, "INVALID_PAYLOAD", err.Error())
+		return
+	}
+
+	updatedGuest, updatedRoom, err := h.roomService.UpdateGuestStay(c.Request.Context(), tOID, id, input)
+	if err != nil {
+		response.BadRequest(c, "UPDATE_STAY_FAILED", err.Error())
+		return
+	}
+
+	response.OK(c, gin.H{"guest": updatedGuest, "room": updatedRoom})
+}
+
 // CheckOut checks out the active guest, generates stay summary, and sends room to housekeeping.
 func (h *RoomHandler) CheckOut(c *gin.Context) {
 	tenantID := middleware.GetTenantID(c)
@@ -467,15 +501,17 @@ func (h *RoomHandler) CreateTask(c *gin.Context) {
 	}
 
 	task := &domainroom.HousekeepingTask{
-		TenantID:   tOID,
-		RoomID:     room.ID,
-		RoomNumber: room.RoomNumber,
-		TaskType:   req.TaskType,
-		Title:      req.Title,
-		Priority:   req.Priority,
-		AssignedTo: req.AssignedTo,
-		Status:     domainroom.TaskPending,
-		Notes:      req.Notes,
+		TenantID:       tOID,
+		RoomID:         room.ID,
+		RoomNumber:     room.RoomNumber,
+		TaskType:       req.TaskType,
+		Title:          req.Title,
+		Priority:       req.Priority,
+		AssignedTo:     req.AssignedTo,
+		Status:         domainroom.TaskPending,
+		Notes:          req.Notes,
+		Source:         "staff",
+		IsGuestRequest: false,
 	}
 
 	if err := h.roomService.CreateHousekeepingTask(c.Request.Context(), task); err != nil {
@@ -618,14 +654,16 @@ func (h *RoomHandler) RequestPublicAmenity(c *gin.Context) {
 	}
 
 	task := &domainroom.HousekeepingTask{
-		TenantID:   room.TenantID,
-		RoomID:     room.ID,
-		RoomNumber: room.RoomNumber,
-		TaskType:   taskType,
-		Title:      title,
-		Priority:   priority,
-		Status:     domainroom.TaskPending,
-		Notes:      req.Notes,
+		TenantID:       room.TenantID,
+		RoomID:         room.ID,
+		RoomNumber:     room.RoomNumber,
+		TaskType:       taskType,
+		Title:          title,
+		Priority:       priority,
+		Status:         domainroom.TaskPending,
+		Notes:          req.Notes,
+		Source:         "guest",
+		IsGuestRequest: true,
 	}
 
 	if err := h.roomService.CreateHousekeepingTask(c.Request.Context(), task); err != nil {
@@ -641,6 +679,7 @@ func (h *RoomHandler) RequestPublicAmenity(c *gin.Context) {
 }
 
 // GetPublicRoomTasks returns active and recent housekeeping/amenity tasks for a room.
+// Strictly isolates guest view: staff operational tasks, maintenance, and turnover cleans are NEVER shown to the customer.
 func (h *RoomHandler) GetPublicRoomTasks(c *gin.Context) {
 	tenantSlug := c.Param("tenantSlug")
 	roomNumber := c.Param("roomNumber")
@@ -657,9 +696,24 @@ func (h *RoomHandler) GetPublicRoomTasks(c *gin.Context) {
 		return
 	}
 
+	// Filter: only return tasks originated by customer guest requests
+	guestTasks := make([]domainroom.HousekeepingTask, 0)
+	for _, t := range tasks {
+		// Strictly exclude tasks created by staff or system turnover
+		if t.Source == "staff" || (!t.IsGuestRequest && t.Source != "guest") {
+			continue
+		}
+		// Also defensively exclude any checkout/turnover cleaning tasks
+		titleLower := strings.ToLower(t.Title)
+		if strings.Contains(titleLower, "checkout deep clean") || strings.Contains(titleLower, "turnover") || strings.Contains(titleLower, "linen refresh —") {
+			continue
+		}
+		guestTasks = append(guestTasks, t)
+	}
+
 	response.OK(c, gin.H{
 		"roomNumber": room.RoomNumber,
-		"tasks":      tasks,
+		"tasks":      guestTasks,
 	})
 }
 

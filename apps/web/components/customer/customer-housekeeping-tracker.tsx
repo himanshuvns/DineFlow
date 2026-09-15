@@ -19,6 +19,7 @@ import {
   Send,
   Loader2,
   ShieldCheck,
+  X,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,8 @@ export interface HousekeepingTaskItem {
   status: "pending" | "in_progress" | "completed" | string;
   assignedTo?: string;
   notes?: string;
+  source?: string;
+  isGuestRequest?: boolean;
   createdAt?: string;
   updatedAt?: string;
   completedAt?: string;
@@ -79,21 +82,42 @@ export function CustomerHousekeepingTracker({
     return () => clearInterval(t);
   }, []);
 
-  // Load from local storage on mount for zero-latency instant rendering
+  // Load from local storage on mount for zero-latency instant rendering (strictly filter guest requests)
   React.useEffect(() => {
     try {
       const cached = localStorage.getItem(storageKey);
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          setTasks(parsed);
-          setExpandedTaskId(parsed[0]?.id || "0");
+          const guestOnly = parsed.filter((t: any) => {
+            if (t.source === "staff" || t.isGuestRequest === false) return false;
+            const title = (t.title || "").toLowerCase();
+            if (title.includes("checkout deep clean") || title.includes("linen refresh —") || title.includes("turnover")) return false;
+            return true;
+          });
+          setTasks(guestOnly);
+          setExpandedTaskId(guestOnly[0]?.id || "0");
         }
       }
     } catch (e) {
       // Ignore
     }
   }, [storageKey]);
+
+  const handleDismissTask = (taskIdToDismiss: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setTasks((prev) => {
+      const updated = prev.filter((t) => t.id !== taskIdToDismiss);
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(updated));
+      } catch (_) {}
+      return updated;
+    });
+    if (expandedTaskId === taskIdToDismiss) {
+      setExpandedTaskId(null);
+    }
+    addToast("info", "Service Dismissed", "Completed service request removed from your view.");
+  };
 
   const fetchTasks = React.useCallback(async () => {
     try {
@@ -118,7 +142,19 @@ export function CustomerHousekeepingTracker({
 
       if (res.ok) {
         const json = await res.json();
-        const serverTasks: HousekeepingTaskItem[] = json.data?.tasks || json.tasks || [];
+        const rawTasks: HousekeepingTaskItem[] = json.data?.tasks || json.tasks || [];
+        // Strictly filter out any tasks created by client/staff or turnover deep cleans
+        const serverTasks = Array.isArray(rawTasks)
+          ? rawTasks.filter((t: any) => {
+              if (t.source === "staff" || t.isGuestRequest === false) return false;
+              const title = (t.title || "").toLowerCase();
+              if (title.includes("checkout deep clean") || title.includes("linen refresh —") || title.includes("turnover")) {
+                return false;
+              }
+              return true;
+            })
+          : [];
+
         if (Array.isArray(serverTasks)) {
           setTasks((prev) => {
             // SERVER DATA IS AUTHORITATIVE for status and progression.
@@ -489,6 +525,17 @@ export function CustomerHousekeepingTracker({
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0">
+                      {task.status === "completed" && (
+                        <button
+                          type="button"
+                          onClick={(e) => handleDismissTask(taskId, e)}
+                          title="Dismiss completed service"
+                          className="h-6 px-1.5 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 text-[10px] font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                        >
+                          <X className="h-3 w-3" />
+                          <span>Clear</span>
+                        </button>
+                      )}
                       <Badge
                         variant={
                           task.status === "completed"

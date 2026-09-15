@@ -207,10 +207,12 @@ type HousekeepingTask struct {
 	Priority    string        `bson:"priority" json:"priority"` // "normal", "high", "urgent"
 	AssignedTo  string        `bson:"assignedTo,omitempty" json:"assignedTo,omitempty"`
 	Status      TaskStatus    `bson:"status" json:"status"`
-	Notes       string        `bson:"notes,omitempty" json:"notes,omitempty"`
-	CompletedAt *time.Time    `bson:"completedAt,omitempty" json:"completedAt,omitempty"`
-	CreatedAt   time.Time     `bson:"createdAt" json:"createdAt"`
-	UpdatedAt   time.Time     `bson:"updatedAt" json:"updatedAt"`
+	Notes          string        `bson:"notes,omitempty" json:"notes,omitempty"`
+	Source         string        `bson:"source,omitempty" json:"source,omitempty"`                 // "guest" | "staff"
+	IsGuestRequest bool          `bson:"isGuestRequest" json:"isGuestRequest"`                     // true if initiated by customer QR
+	CompletedAt    *time.Time    `bson:"completedAt,omitempty" json:"completedAt,omitempty"`
+	CreatedAt      time.Time     `bson:"createdAt" json:"createdAt"`
+	UpdatedAt      time.Time     `bson:"updatedAt" json:"updatedAt"`
 }
 
 func (t *HousekeepingTask) Validate() error {
@@ -233,4 +235,19 @@ func (t *HousekeepingTask) Validate() error {
 		t.Priority = "normal"
 	}
 	return nil
+}
+
+// UpdateGuestStayInput defines fields that can be modified on an active guest stay.
+type UpdateGuestStayInput struct {
+	Name             *string    `json:"name"`
+	Phone            *string    `json:"phone"`
+	Email            *string    `json:"email"`
+	NumberOfGuests   *int       `json:"numberOfGuests"`
+	CheckIn          *time.Time `json:"checkIn"`
+	ExpectedCheckOut *time.Time `json:"expectedCheckOut"`
+	Address          *string    `json:"address"`
+	Nationality      *string    `json:"nationality"`
+	IDProofType      *string    `json:"idProofType"`
+	IDProofURL       *string    `json:"idProofUrl"`
+	SpecialRequests  *string    `json:"specialRequests"`
 }

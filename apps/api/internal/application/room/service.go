@@ -554,6 +554,116 @@ func (s *Service) CheckInGuest(ctx context.Context, tenantID bson.ObjectID, iden
 	return guest, &updatedRoom, nil
 }
 
+// UpdateGuestStay updates an active guest's stay information and synchronizes the room record.
+func (s *Service) UpdateGuestStay(ctx context.Context, tenantID bson.ObjectID, identifier string, input domainroom.UpdateGuestStayInput) (*domainroom.Guest, *domainroom.Room, error) {
+	roomID, err := s.ResolveRoomID(ctx, tenantID, identifier)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	roomsColl := s.db.Collection("rooms")
+	var r domainroom.Room
+	err = roomsColl.FindOne(ctx, bson.M{"_id": roomID, "tenantId": tenantID}).Decode(&r)
+	if err != nil {
+		return nil, nil, errors.New("room not found")
+	}
+
+	if r.Status != domainroom.StatusOccupied && (r.CurrentGuestID == nil || r.CurrentGuestID.IsZero()) {
+		return nil, nil, errors.New("cannot edit stay: room is not occupied by an active guest")
+	}
+
+	guestsColl := s.db.Collection("guests")
+	var g domainroom.Guest
+	if r.CurrentGuestID != nil && !r.CurrentGuestID.IsZero() {
+		_ = guestsColl.FindOne(ctx, bson.M{"_id": *r.CurrentGuestID, "tenantId": tenantID}).Decode(&g)
+	}
+	if g.ID.IsZero() {
+		// Fallback: find by roomId and status == checked_in
+		_ = guestsColl.FindOne(ctx, bson.M{"roomId": roomID, "tenantId": tenantID, "status": domainroom.GuestCheckedIn}, options.FindOne().SetSort(bson.D{{Key: "checkIn", Value: -1}})).Decode(&g)
+	}
+	if g.ID.IsZero() {
+		return nil, nil, errors.New("active guest record not found for this suite")
+	}
+
+	now := time.Now().UTC()
+	guestUpdate := bson.M{"updatedAt": now}
+	roomUpdate := bson.M{"updatedAt": now}
+
+	if input.Name != nil && strings.TrimSpace(*input.Name) != "" {
+		cleanName := strings.TrimSpace(*input.Name)
+		guestUpdate["name"] = cleanName
+		roomUpdate["currentGuestName"] = cleanName
+	}
+	if input.Phone != nil && strings.TrimSpace(*input.Phone) != "" {
+		normalizedPhone, err := domainroom.ValidateAndNormalizeIndianPhone(*input.Phone)
+		if err == nil {
+			guestUpdate["phone"] = normalizedPhone
+			roomUpdate["currentGuestPhone"] = normalizedPhone
+		} else {
+			cleanPhone := strings.TrimSpace(*input.Phone)
+			guestUpdate["phone"] = cleanPhone
+			roomUpdate["currentGuestPhone"] = cleanPhone
+		}
+	}
+	if input.Email != nil {
+		guestUpdate["email"] = strings.TrimSpace(*input.Email)
+	}
+	if input.NumberOfGuests != nil {
+		numGuests := *input.NumberOfGuests
+		if numGuests <= 0 {
+			numGuests = 1
+		}
+		maxCap := r.Capacity
+		if maxCap <= 0 {
+			maxCap = 2
+		}
+		if numGuests > maxCap {
+			return nil, nil, fmt.Errorf("number of guests (%d) exceeds room capacity of %d", numGuests, maxCap)
+		}
+		guestUpdate["numberOfGuests"] = numGuests
+	}
+	if input.CheckIn != nil && !input.CheckIn.IsZero() {
+		guestUpdate["checkIn"] = *input.CheckIn
+		roomUpdate["currentGuestCheckIn"] = input.CheckIn
+	}
+	if input.ExpectedCheckOut != nil {
+		guestUpdate["expectedCheckOut"] = input.ExpectedCheckOut
+		roomUpdate["currentGuestExpectedCheckOut"] = input.ExpectedCheckOut
+	}
+	if input.Address != nil {
+		guestUpdate["address"] = strings.TrimSpace(*input.Address)
+	}
+	if input.Nationality != nil {
+		guestUpdate["nationality"] = strings.TrimSpace(*input.Nationality)
+	}
+	if input.IDProofType != nil {
+		guestUpdate["idProofType"] = strings.TrimSpace(*input.IDProofType)
+	}
+	if input.IDProofURL != nil && strings.TrimSpace(*input.IDProofURL) != "" {
+		guestUpdate["idProofUrl"] = strings.TrimSpace(*input.IDProofURL)
+		guestUpdate["idProofUploadedAt"] = now
+	}
+	if input.SpecialRequests != nil {
+		guestUpdate["specialRequests"] = strings.TrimSpace(*input.SpecialRequests)
+	}
+
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+	var updatedGuest domainroom.Guest
+	err = guestsColl.FindOneAndUpdate(ctx, bson.M{"_id": g.ID, "tenantId": tenantID}, bson.M{"$set": guestUpdate}, opts).Decode(&updatedGuest)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to update guest record: %w", err)
+	}
+
+	var updatedRoom domainroom.Room
+	err = roomsColl.FindOneAndUpdate(ctx, bson.M{"_id": roomID, "tenantId": tenantID}, bson.M{"$set": roomUpdate}, opts).Decode(&updatedRoom)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to update room record: %w", err)
+	}
+	updatedRoom.CurrentGuest = &updatedGuest
+
+	return &updatedGuest, &updatedRoom, nil
+}
+
 // GetStaySummary calculates an itemized stay statement and folio breakdown for checkout.
 func (s *Service) GetStaySummary(ctx context.Context, tenantID bson.ObjectID, identifier string) (*StaySummary, error) {
 	roomID, err := s.ResolveRoomID(ctx, tenantID, identifier)
@@ -744,17 +854,19 @@ func (s *Service) CheckOutGuest(ctx context.Context, tenantID bson.ObjectID, ide
 
 	// Create Housekeeping cleaning task
 	task := &domainroom.HousekeepingTask{
-		ID:         bson.NewObjectID(),
-		TenantID:   tenantID,
-		RoomID:     roomID,
-		RoomNumber: r.RoomNumber,
-		TaskType:   domainroom.TaskCleaning,
-		Title:      fmt.Sprintf("Checkout Deep Clean & Linen Refresh — %s", r.Name),
-		Priority:   "high",
-		Status:     domainroom.TaskPending,
-		Notes:      "Guest checked out. Sanitize suite, change linens, replenish minibar and toiletries.",
-		CreatedAt:  now,
-		UpdatedAt:  now,
+		ID:             bson.NewObjectID(),
+		TenantID:       tenantID,
+		RoomID:         roomID,
+		RoomNumber:     r.RoomNumber,
+		TaskType:       domainroom.TaskCleaning,
+		Title:          fmt.Sprintf("Checkout Deep Clean & Linen Refresh — %s", r.Name),
+		Priority:       "high",
+		Status:         domainroom.TaskPending,
+		Notes:          "Guest checked out. Sanitize suite, change linens, replenish minibar and toiletries.",
+		Source:         "staff",
+		IsGuestRequest: false,
+		CreatedAt:      now,
+		UpdatedAt:      now,
 	}
 	_, _ = tasksColl.InsertOne(ctx, task)
 

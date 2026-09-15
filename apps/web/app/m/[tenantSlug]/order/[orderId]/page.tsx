@@ -539,7 +539,20 @@ export default function OrderTrackingPage() {
           <Button
             variant="glow"
             className="col-span-2 h-12 text-sm font-bold"
-            onClick={() => router.push(`/m/${tenantSlug}/t-04`)}
+            onClick={() => {
+              if (isRoomService) {
+                const rNum = tableName.replace(/[^0-9]/g, "");
+                if (rNum) {
+                  router.push(`/m/${tenantSlug}/room/${rNum}`);
+                  return;
+                }
+              }
+              if (urlTable) {
+                router.push(`/m/${tenantSlug}/${encodeURIComponent(urlTable.toLowerCase().replace(/\s+/g, "-"))}`);
+              } else {
+                router.push(`/m/${tenantSlug}`);
+              }
+            }}
           >
             <PlusCircle className="h-4 w-4 mr-2" />
             <span>Order More Drinks or Food</span>
