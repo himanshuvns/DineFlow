@@ -122,7 +122,7 @@ export function CustomerHousekeepingTracker({
         if (Array.isArray(serverTasks)) {
           setTasks((prev) => {
             // SERVER DATA IS AUTHORITATIVE for status/progress.
-            // Server tasks are placed in the map first (definitive).
+            // Server tasks are placed in the map first (definitive source of truth).
             const map = new Map<string, HousekeepingTaskItem>();
             const serverIds = new Set<string>();
             serverTasks.forEach((t) => {
@@ -132,18 +132,19 @@ export function CustomerHousekeepingTracker({
               }
             });
 
-            // Only keep local tasks that are:
-            // 1. Temp IDs not yet confirmed by server (created < 2 min ago)
-            // 2. NOT already present on the server (server wins on status)
-            const TWO_MINUTES = 2 * 60 * 1000;
+            // Grace-window: keep ANY prev task (real-ID or temp) if:
+            //   a) server doesn't have it yet (could be transient empty response), AND
+            //   b) it was created less than 5 minutes ago
+            // This prevents a single empty server response from wiping freshly created tasks.
+            // Server wins for status: if serverIds already has the task, server's version is used.
+            const FIVE_MINUTES = 5 * 60 * 1000;
             prev.forEach((t) => {
               if (!t.id) return;
-              // If the server already has this ID, server wins — skip local
+              // Server already has this task — server version is in the map, skip local copy
               if (serverIds.has(t.id)) return;
-              // Only keep very recent temp tasks (< 2 min)
+              // Keep any recent task that server didn't return (temp or real ID)
               const age = Date.now() - new Date(t.createdAt || "").getTime();
-              const isTemp = t.id.startsWith("task_temp_") || t.id.startsWith("task_");
-              if (isTemp && age < TWO_MINUTES) {
+              if (age < FIVE_MINUTES) {
                 map.set(t.id, t);
               }
             });
@@ -155,11 +156,10 @@ export function CustomerHousekeepingTracker({
             });
 
             try {
-              // Only write server-confirmed tasks to localStorage (no optimistic temp IDs)
-              const confirmed = merged.filter((t) => !t.id?.startsWith("task_temp_"));
-              localStorage.setItem(storageKey, JSON.stringify(confirmed));
-            } catch (err) {
-              // Ignore
+              // Persist all tasks (temp ones may briefly appear; they'll be replaced on next poll)
+              localStorage.setItem(storageKey, JSON.stringify(merged));
+            } catch (_) {
+              // Ignore storage errors
             }
             return merged;
           });
