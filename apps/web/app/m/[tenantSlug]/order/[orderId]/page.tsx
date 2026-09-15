@@ -89,10 +89,23 @@ export default function OrderTrackingPage() {
             totalAmount: data.totalAmount || data.total || 0,
             createdAt: data.createdAt,
           });
-          setStatus(data.status || "pending");
+          const orderStatus = (data.status || "pending") as OrderStatus;
+          setStatus(orderStatus);
           if (data.createdAt) {
-            const elapsed = Math.max(0, Math.floor((Date.now() - new Date(data.createdAt).getTime()) / 1000));
-            setSecondsElapsed(elapsed);
+            const isDelivered = orderStatus === "served" || orderStatus === "paid" || orderStatus === "cancelled";
+            const startMs = new Date(data.createdAt).getTime();
+            if (isDelivered) {
+              let endMs = data.updatedAt ? new Date(data.updatedAt).getTime() : startMs;
+              if (Array.isArray(data.timeline)) {
+                const servedEvent = data.timeline.find((t: any) => t.status === "served" || t.status === "delivered");
+                if (servedEvent?.timestamp) {
+                  endMs = new Date(servedEvent.timestamp).getTime();
+                }
+              }
+              setSecondsElapsed(Math.max(0, Math.floor((endMs - startMs) / 1000)));
+            } else {
+              setSecondsElapsed(Math.max(0, Math.floor((Date.now() - startMs) / 1000)));
+            }
           }
         }
       }
@@ -109,13 +122,16 @@ export default function OrderTrackingPage() {
     return () => clearInterval(interval);
   }, [fetchOrder]);
 
-  // Live timer tick
+  // Live timer tick - stops once order is served/delivered, paid, or cancelled
   React.useEffect(() => {
+    if (status === "served" || status === "paid" || status === "cancelled") {
+      return;
+    }
     const timer = setInterval(() => {
       setSecondsElapsed((prev) => prev + 1);
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [status]);
 
   const formatTimer = (secs: number) => {
     const mins = Math.floor(secs / 60);
@@ -238,9 +254,23 @@ export default function OrderTrackingPage() {
           <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/10 blur-3xl -z-0 pointer-events-none" />
 
           <div className="relative z-10 text-center">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800/80 border border-slate-700/60 text-xs font-mono font-semibold text-slate-300 mb-3">
-              <Clock className="h-3.5 w-3.5 text-emerald-400" />
-              <span>Elapsed: {formatTimer(secondsElapsed)}</span>
+            <div
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-semibold mb-3 border ${
+                status === "served" || status === "paid"
+                  ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-300"
+                  : "bg-slate-800/80 border-slate-700/60 text-slate-300"
+              }`}
+            >
+              {status === "served" || status === "paid" ? (
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+              ) : (
+                <Clock className="h-3.5 w-3.5 text-emerald-400" />
+              )}
+              <span>
+                {status === "served" || status === "paid"
+                  ? `Delivered in: ${formatTimer(secondsElapsed)}`
+                  : `Elapsed: ${formatTimer(secondsElapsed)}`}
+              </span>
             </div>
 
             <h1 className="text-2xl font-black text-white tracking-tight">

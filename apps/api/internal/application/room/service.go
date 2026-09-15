@@ -161,6 +161,22 @@ func (s *Service) ListRooms(ctx context.Context, tenantID bson.ObjectID, floor, 
 	if rooms == nil {
 		rooms = []domainroom.Room{}
 	}
+	for i := range rooms {
+		if rooms[i].Status == domainroom.StatusOccupied {
+			if (rooms[i].CurrentGuestCheckIn == nil || rooms[i].CurrentGuestExpectedCheckOut == nil) && rooms[i].CurrentGuestID != nil && !rooms[i].CurrentGuestID.IsZero() {
+				var g domainroom.Guest
+				if err := s.db.Collection("guests").FindOne(ctx, bson.M{"_id": rooms[i].CurrentGuestID, "tenantId": tenantID}).Decode(&g); err == nil {
+					if rooms[i].CurrentGuestCheckIn == nil && !g.CheckIn.IsZero() {
+						rooms[i].CurrentGuestCheckIn = &g.CheckIn
+					}
+					if rooms[i].CurrentGuestExpectedCheckOut == nil && g.ExpectedCheckOut != nil {
+						rooms[i].CurrentGuestExpectedCheckOut = g.ExpectedCheckOut
+					}
+				}
+			}
+		}
+	}
+
 	return rooms, nil
 }
 
@@ -184,17 +200,27 @@ func (s *Service) GetRoomByID(ctx context.Context, tenantID bson.ObjectID, ident
 		return nil, err
 	}
 
-	if r.CurrentGuestCheckIn == nil {
-		if r.CurrentGuestID != nil && !r.CurrentGuestID.IsZero() {
-			var g domainroom.Guest
-			if err := s.db.Collection("guests").FindOne(ctx, bson.M{"_id": r.CurrentGuestID, "tenantId": tenantID}).Decode(&g); err == nil && !g.CheckIn.IsZero() {
+	if r.CurrentGuestID != nil && !r.CurrentGuestID.IsZero() {
+		var g domainroom.Guest
+		if err := s.db.Collection("guests").FindOne(ctx, bson.M{"_id": r.CurrentGuestID, "tenantId": tenantID}).Decode(&g); err == nil {
+			r.CurrentGuest = &g
+			if r.CurrentGuestCheckIn == nil && !g.CheckIn.IsZero() {
 				r.CurrentGuestCheckIn = &g.CheckIn
 			}
+			if r.CurrentGuestExpectedCheckOut == nil && g.ExpectedCheckOut != nil {
+				r.CurrentGuestExpectedCheckOut = g.ExpectedCheckOut
+			}
 		}
-		if r.CurrentGuestCheckIn == nil && r.Status == domainroom.StatusOccupied {
-			var g domainroom.Guest
-			if err := s.db.Collection("guests").FindOne(ctx, bson.M{"roomId": r.ID, "status": domainroom.GuestCheckedIn}, options.FindOne().SetSort(bson.D{{Key: "checkIn", Value: -1}})).Decode(&g); err == nil && !g.CheckIn.IsZero() {
+	}
+	if r.CurrentGuest == nil && r.Status == domainroom.StatusOccupied {
+		var g domainroom.Guest
+		if err := s.db.Collection("guests").FindOne(ctx, bson.M{"roomId": r.ID, "status": domainroom.GuestCheckedIn}, options.FindOne().SetSort(bson.D{{Key: "checkIn", Value: -1}})).Decode(&g); err == nil {
+			r.CurrentGuest = &g
+			if r.CurrentGuestCheckIn == nil && !g.CheckIn.IsZero() {
 				r.CurrentGuestCheckIn = &g.CheckIn
+			}
+			if r.CurrentGuestExpectedCheckOut == nil && g.ExpectedCheckOut != nil {
+				r.CurrentGuestExpectedCheckOut = g.ExpectedCheckOut
 			}
 		}
 	}
@@ -429,6 +455,13 @@ func (s *Service) CheckInGuest(ctx context.Context, tenantID bson.ObjectID, iden
 	if numGuests <= 0 {
 		numGuests = 1
 	}
+	maxCap := r.Capacity
+	if maxCap <= 0 {
+		maxCap = 2
+	}
+	if numGuests > maxCap {
+		return nil, nil, fmt.Errorf("number of guests (%d) exceeds room capacity of %d", numGuests, maxCap)
+	}
 
 	nationality := strings.TrimSpace(input.Nationality)
 	if nationality == "" {
@@ -505,12 +538,13 @@ func (s *Service) CheckInGuest(ctx context.Context, tenantID bson.ObjectID, iden
 	var updatedRoom domainroom.Room
 	err = roomsColl.FindOneAndUpdate(ctx, bson.M{"_id": roomID, "tenantId": tenantID}, bson.M{
 		"$set": bson.M{
-			"status":              domainroom.StatusOccupied,
-			"currentGuestId":      guest.ID,
-			"currentGuestName":    guest.Name,
-			"currentGuestPhone":   guest.Phone,
-			"currentGuestCheckIn": &checkInTime,
-			"updatedAt":           now,
+			"status":                       domainroom.StatusOccupied,
+			"currentGuestId":               guest.ID,
+			"currentGuestName":             guest.Name,
+			"currentGuestPhone":            guest.Phone,
+			"currentGuestCheckIn":          &checkInTime,
+			"currentGuestExpectedCheckOut": guest.ExpectedCheckOut,
+			"updatedAt":                    now,
 		},
 	}, opts).Decode(&updatedRoom)
 	if err != nil {
@@ -694,13 +728,14 @@ func (s *Service) CheckOutGuest(ctx context.Context, tenantID bson.ObjectID, ide
 	var updatedRoom domainroom.Room
 	err = roomsColl.FindOneAndUpdate(ctx, bson.M{"_id": roomID, "tenantId": tenantID}, bson.M{
 		"$set": bson.M{
-			"status":              domainroom.StatusCleaning,
-			"currentGuestId":      nil,
-			"currentGuestName":    "",
-			"currentGuestPhone":   "",
-			"currentGuestCheckIn": nil,
-			"doNotDisturb":        false,
-			"updatedAt":           now,
+			"status":                       domainroom.StatusCleaning,
+			"currentGuestId":               nil,
+			"currentGuestName":             "",
+			"currentGuestPhone":            "",
+			"currentGuestCheckIn":          nil,
+			"currentGuestExpectedCheckOut": nil,
+			"doNotDisturb":                 false,
+			"updatedAt":                    now,
 		},
 	}, opts).Decode(&updatedRoom)
 	if err != nil {

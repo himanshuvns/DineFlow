@@ -493,8 +493,12 @@ export default function KDSOrdersPage() {
                   <div
                     className={`flex items-center gap-1 text-xs font-mono font-bold px-2 py-1 rounded-lg border ${urgencyBadge}`}
                   >
-                    <Clock className="h-3.5 w-3.5" />
-                    <span>{formatTimer(order.secondsElapsed)}</span>
+                    {order.status === "served" ? (
+                      <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />
+                    ) : (
+                      <Clock className="h-3.5 w-3.5" />
+                    )}
+                    <span>{order.status === "served" ? `Delivered: ${formatTimer(order.secondsElapsed)}` : formatTimer(order.secondsElapsed)}</span>
                   </div>
                 </CardHeader>
 

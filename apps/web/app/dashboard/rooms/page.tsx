@@ -61,6 +61,10 @@ interface RoomItem {
   currentGuestName?: string;
   currentGuestPhone?: string;
   amenities?: string[];
+  capacity?: number;
+  currentGuestCheckIn?: string;
+  currentGuestExpectedCheckOut?: string;
+  currentGuestCount?: number;
 }
 
 interface HotelStats {
@@ -75,6 +79,38 @@ interface HotelStats {
   pendingRoomService: number;
   activeHousekeepingTasks: number;
 }
+
+const getStayMetrics = (checkInStr?: string, checkOutStr?: string) => {
+  if (!checkInStr) return null;
+  const start = new Date(checkInStr).getTime();
+  if (isNaN(start)) return null;
+
+  let end: number;
+  let isProjected = false;
+  if (checkOutStr && !isNaN(new Date(checkOutStr).getTime())) {
+    end = new Date(checkOutStr).getTime();
+  } else {
+    end = start + 24 * 60 * 60 * 1000;
+    isProjected = true;
+  }
+
+  const diffMs = Math.max(0, end - start);
+  const nights = Math.max(1, Math.round(diffMs / (1000 * 60 * 60 * 24)));
+  const totalDays = nights + 1;
+
+  const elapsedMs = Math.max(0, Date.now() - start);
+  const currentDay = Math.min(totalDays, Math.max(1, Math.ceil(elapsedMs / (1000 * 60 * 60 * 24))));
+
+  return {
+    checkInDate: new Date(start).toLocaleDateString([], { day: "2-digit", month: "short" }),
+    checkOutDate: new Date(end).toLocaleDateString([], { day: "2-digit", month: "short" }),
+    nights,
+    totalDays,
+    currentDay,
+    isProjected,
+    stayDurationLabel: `${nights}N • ${totalDays}D`,
+  };
+};
 
 export default function RoomsDirectoryPage() {
   const router = useRouter();
@@ -172,6 +208,10 @@ export default function RoomsDirectoryPage() {
           activeGuest: r.currentGuestName || r.activeGuest || undefined,
           currentGuestName: r.currentGuestName,
           currentGuestPhone: r.currentGuestPhone,
+          capacity: r.capacity || 2,
+          currentGuestCheckIn: r.currentGuestCheckIn || r.currentGuest?.checkIn,
+          currentGuestExpectedCheckOut: r.currentGuestExpectedCheckOut || r.currentGuest?.expectedCheckOut,
+          currentGuestCount: r.currentGuestCount || r.currentGuest?.numberOfGuests || 1,
           amenities: Array.isArray(r.amenities) ? r.amenities : [],
         }));
         setRooms(loaded);
@@ -290,6 +330,16 @@ export default function RoomsDirectoryPage() {
       return;
     }
 
+    const maxCap = checkInRoom.capacity || 2;
+    if (guestCount > maxCap) {
+      addToast(
+        "error",
+        "Capacity Exceeded",
+        `${checkInRoom.name} has a maximum capacity of ${maxCap} guest${maxCap > 1 ? "s" : ""}. Please adjust the guest count.`
+      );
+      return;
+    }
+
     try {
       await apiClient.post(`/rooms/${encodeURIComponent(checkInRoom.id)}/check-in`, {
         name: guestName.trim(),
@@ -322,6 +372,20 @@ export default function RoomsDirectoryPage() {
     } catch (e: any) {
       addToast("error", "Check-In Failed", e?.response?.data?.message || "Could not check in guest.");
     }
+  };
+
+  const handleStartCheckIn = (room: RoomItem) => {
+    setCheckInRoom(room);
+    setGuestName("");
+    setGuestPhone("");
+    setGuestEmail("");
+    setGuestAddress("");
+    setGuestCount(Math.min(2, room.capacity || 2));
+    setCheckInDate(new Date().toISOString().slice(0, 16));
+    const tmrw = new Date();
+    tmrw.setDate(tmrw.getDate() + 1);
+    tmrw.setHours(11, 0, 0, 0);
+    setExpectedCheckOutDate(tmrw.toISOString().slice(0, 16));
   };
 
   const handleIDFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -620,18 +684,37 @@ export default function RoomsDirectoryPage() {
                   </div>
                 </div>
 
-                {/* Guest In-House pill */}
+                {/* Guest In-House pill with Stay Dates & Duration */}
                 {isOccupied && (room.activeGuest || room.currentGuestName) ? (
-                  <div className="mt-3 p-2 rounded-xl bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 text-xs flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 truncate">
-                      <Users className="h-3.5 w-3.5 text-slate-500 shrink-0" />
-                      <span className="text-slate-700 dark:text-slate-300 font-medium truncate">
-                        {room.activeGuest || room.currentGuestName}
+                  <div className="mt-3 p-2.5 rounded-xl bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 text-xs space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 truncate">
+                        <Users className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                        <span className="text-slate-900 dark:text-white font-bold truncate">
+                          {room.activeGuest || room.currentGuestName}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold font-mono bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                        Folio OK
                       </span>
                     </div>
-                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold font-mono">
-                      Folio OK
-                    </span>
+
+                    {/* Stay Dates & Duration */}
+                    {(() => {
+                      const metrics = getStayMetrics(room.currentGuestCheckIn, room.currentGuestExpectedCheckOut);
+                      if (!metrics) return null;
+                      return (
+                        <div className="pt-1.5 border-t border-slate-200/80 dark:border-slate-800/80 flex items-center justify-between text-[11px] font-mono">
+                          <div className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
+                            <Calendar className="h-3 w-3 text-emerald-500 shrink-0" />
+                            <span>{metrics.checkInDate} → {metrics.checkOutDate}</span>
+                          </div>
+                          <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
+                            {metrics.stayDurationLabel}
+                          </span>
+                        </div>
+                      );
+                    })()}
                   </div>
                 ) : isCleaning ? (
                   <div className="mt-3 p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-xs flex items-center justify-between text-cyan-800 dark:text-cyan-300">
@@ -650,11 +733,7 @@ export default function RoomsDirectoryPage() {
                   <div className="mt-3 p-2 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs flex items-center justify-between text-slate-500">
                     <span className="text-[11px]">Suite vacant & available</span>
                     <button
-                      onClick={() => {
-                        setCheckInRoom(room);
-                        setGuestName("");
-                        setGuestPhone("");
-                      }}
+                      onClick={() => handleStartCheckIn(room)}
                       className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
                     >
                       Check-In
@@ -723,11 +802,7 @@ export default function RoomsDirectoryPage() {
                       variant="secondary"
                       size="sm"
                       className="h-7 text-[10px] px-2 text-emerald-600 dark:text-emerald-400"
-                      onClick={() => {
-                        setCheckInRoom(room);
-                        setGuestName("");
-                        setGuestPhone("");
-                      }}
+                      onClick={() => handleStartCheckIn(room)}
                     >
                       Check-In
                     </Button>
@@ -907,17 +982,29 @@ export default function RoomsDirectoryPage() {
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1">
-                  Number of Guests
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">
+                    Number of Guests *
+                  </label>
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold font-mono">
+                    Max: {checkInRoom?.capacity || 2}
+                  </span>
+                </div>
                 <input
                   type="number"
                   min="1"
-                  max="10"
+                  max={checkInRoom?.capacity || 2}
                   value={guestCount}
-                  onChange={(e) => setGuestCount(Math.max(1, parseInt(e.target.value) || 1))}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value) || 1;
+                    const maxCap = checkInRoom?.capacity || 2;
+                    setGuestCount(Math.min(maxCap, Math.max(1, val)));
+                  }}
                   className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
                 />
+                <p className="text-[10px] text-slate-500 mt-1">
+                  Suite capacity strictly limited to {checkInRoom?.capacity || 2} guest{(checkInRoom?.capacity || 2) > 1 ? "s" : ""}.
+                </p>
               </div>
             </div>
 
@@ -1162,19 +1249,40 @@ export default function RoomsDirectoryPage() {
                     </Badge>
                   </div>
 
-                  <div className="pt-2 border-t border-amber-500/20 grid grid-cols-2 gap-2 text-[11px]">
+                  <div className="pt-2 border-t border-amber-500/20 grid grid-cols-3 gap-2 text-[11px]">
                     <div>
-                      <span className="text-slate-500 block">Check-In:</span>
-                      <span className="font-semibold text-slate-800 dark:text-slate-200">
+                      <span className="text-slate-500 block font-semibold">Check-In:</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200 block">
                         {currentStaySummary?.checkIn
-                          ? new Date(currentStaySummary.checkIn).toLocaleString()
+                          ? new Date(currentStaySummary.checkIn).toLocaleDateString([], { day: "2-digit", month: "short", year: "numeric" })
                           : "Active Stay"}
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-mono block">
+                        {currentStaySummary?.checkIn
+                          ? new Date(currentStaySummary.checkIn).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                          : ""}
                       </span>
                     </div>
                     <div>
-                      <span className="text-slate-500 block">Stay Duration:</span>
-                      <span className="font-semibold text-slate-800 dark:text-slate-200 font-mono">
+                      <span className="text-slate-500 block font-semibold">Check-Out:</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200 block">
+                        {currentStaySummary?.checkOut
+                          ? new Date(currentStaySummary.checkOut).toLocaleDateString([], { day: "2-digit", month: "short", year: "numeric" })
+                          : new Date().toLocaleDateString([], { day: "2-digit", month: "short", year: "numeric" })}
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-mono block">
+                        {currentStaySummary?.checkOut
+                          ? new Date(currentStaySummary.checkOut).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                          : new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block font-semibold">Stay Duration:</span>
+                      <span className="font-bold text-amber-600 dark:text-amber-400 font-mono block">
                         {currentStaySummary?.stayDuration || "1 Night"}
+                      </span>
+                      <span className="text-[10px] text-slate-500 block">
+                        Folio Billable
                       </span>
                     </div>
                   </div>

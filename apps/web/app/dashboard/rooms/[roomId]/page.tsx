@@ -32,6 +32,7 @@ import {
   Eye,
   MapPin,
   Calendar,
+  LogOut,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -94,6 +95,40 @@ interface RoomOrder {
   total?: number;
   createdAt: string;
 }
+
+const getStayMetrics = (checkInStr?: string, checkOutStr?: string) => {
+  if (!checkInStr) return null;
+  const start = new Date(checkInStr).getTime();
+  if (isNaN(start)) return null;
+
+  let end: number;
+  let isProjected = false;
+  if (checkOutStr && !isNaN(new Date(checkOutStr).getTime())) {
+    end = new Date(checkOutStr).getTime();
+  } else {
+    end = start + 24 * 60 * 60 * 1000;
+    isProjected = true;
+  }
+
+  const diffMs = Math.max(0, end - start);
+  const nights = Math.max(1, Math.round(diffMs / (1000 * 60 * 60 * 24)));
+  const totalDays = nights + 1;
+
+  const elapsedMs = Math.max(0, Date.now() - start);
+  const currentDay = Math.min(totalDays, Math.max(1, Math.ceil(elapsedMs / (1000 * 60 * 60 * 24))));
+
+  return {
+    checkInDate: new Date(start).toLocaleDateString([], { day: "2-digit", month: "short", year: "numeric" }),
+    checkInTime: new Date(start).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    checkOutDate: new Date(end).toLocaleDateString([], { day: "2-digit", month: "short", year: "numeric" }),
+    checkOutTime: new Date(end).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    nights,
+    totalDays,
+    currentDay,
+    isProjected,
+    stayDurationLabel: `${nights} Night${nights > 1 ? "s" : ""} • ${totalDays} Day${totalDays > 1 ? "s" : ""}`,
+  };
+};
 
 export default function RoomDetailPage() {
   const params = useParams();
@@ -190,9 +225,9 @@ export default function RoomDetailPage() {
           currentGuestIdProofType: currentGuest?.idProofType,
           currentGuestIdProofUrl: currentGuest?.idProofUrl,
           currentGuestFolioBalance: currentGuest?.folioBalance,
-          currentGuestCheckIn: currentGuest?.checkIn,
-          currentGuestExpectedCheckOut: currentGuest?.expectedCheckOut,
-          currentGuestCount: currentGuest?.numberOfGuests,
+          currentGuestCheckIn: currentGuest?.checkIn || r.currentGuestCheckIn,
+          currentGuestExpectedCheckOut: currentGuest?.expectedCheckOut || r.currentGuestExpectedCheckOut,
+          currentGuestCount: currentGuest?.numberOfGuests || r.currentGuestCount || r.numberOfGuests || 1,
           qrSlug: r.qrSlug || `room-${r.roomNumber}`,
           amenities: Array.isArray(r.amenities) && r.amenities.length > 0
             ? r.amenities
@@ -388,6 +423,16 @@ export default function RoomDetailPage() {
         "error",
         "Invalid Indian Mobile",
         phoneValidation.error || "Please enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9."
+      );
+      return;
+    }
+
+    const maxCap = room.capacity || 2;
+    if (guestCount > maxCap) {
+      addToast(
+        "error",
+        "Capacity Exceeded",
+        `${room.name} has a maximum capacity of ${maxCap} guest${maxCap > 1 ? "s" : ""}. Please adjust the guest count.`
       );
       return;
     }
@@ -796,17 +841,68 @@ export default function RoomDetailPage() {
                       <span className="truncate">{room.currentGuestAddress}</span>
                     </div>
                   )}
-                  {room.currentGuestCheckIn ? (
-                    <div className="flex items-center gap-2 text-slate-500 text-[10px] font-mono">
-                      <Calendar className="h-3.5 w-3.5 shrink-0" />
-                      <span>In: {new Date(room.currentGuestCheckIn).toLocaleDateString()}</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2 text-slate-500 text-[10px] font-mono">
-                      <Clock className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
-                      <span>Active QR In-Room Dining Session</span>
-                    </div>
-                  )}
+                  {/* Comprehensive Stay & Timing Details */}
+                  {(() => {
+                    const metrics = getStayMetrics(room.currentGuestCheckIn, room.currentGuestExpectedCheckOut);
+                    if (!metrics) {
+                      return (
+                        <div className="flex items-center gap-2 text-slate-500 text-[10px] font-mono">
+                          <Clock className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                          <span>Active QR In-Room Dining Session</span>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-slate-800 text-[11px]">
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-0.5">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
+                              <Calendar className="h-3 w-3 text-emerald-500" /> Check-In
+                            </span>
+                            <span className="font-bold text-slate-900 dark:text-white font-mono block text-xs">
+                              {metrics.checkInDate}
+                            </span>
+                            <span className="text-[10px] text-slate-500 font-mono block">
+                              {metrics.checkInTime}
+                            </span>
+                          </div>
+
+                          <div className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-0.5">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
+                              <LogOut className="h-3 w-3 text-amber-500" /> {metrics.isProjected ? "Check-Out (Est.)" : "Check-Out"}
+                            </span>
+                            <span className="font-bold text-slate-900 dark:text-white font-mono block text-xs">
+                              {metrics.checkOutDate}
+                            </span>
+                            <span className="text-[10px] text-slate-500 font-mono block">
+                              {metrics.checkOutTime}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Stay Duration & Days Pill */}
+                        <div className="p-2 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-between">
+                          <div className="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300 font-bold">
+                            <Clock className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                            <span>Stay: {metrics.stayDurationLabel}</span>
+                          </div>
+                          <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
+                            Day {metrics.currentDay} of {metrics.totalDays}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between text-slate-600 dark:text-slate-400 text-[11px] px-0.5">
+                          <span className="flex items-center gap-1">
+                            <Users className="h-3.5 w-3.5 text-slate-500" />
+                            <span>In-House Guests: <strong className="text-slate-900 dark:text-white font-bold">{room.currentGuestCount || 1}</strong></span>
+                          </span>
+                          <span className="text-[10px] font-mono text-slate-500">
+                            Max Capacity: {room.capacity}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })()}
                   <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
                     <ShieldCheck className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
                     <span>{room.currentGuestName ? "Verified Guest Session" : "Guest In-House • Folio Open"}</span>
@@ -1260,17 +1356,29 @@ export default function RoomDetailPage() {
             </div>
 
             <div>
-              <label className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1">
-                Number of Guests
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">
+                  Number of Guests *
+                </label>
+                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold font-mono">
+                  Max: {room.capacity || 2}
+                </span>
+              </div>
               <input
                 type="number"
                 min="1"
-                max="10"
+                max={room.capacity || 2}
                 value={guestCount}
-                onChange={(e) => setGuestCount(Math.max(1, parseInt(e.target.value) || 1))}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value) || 1;
+                  const maxCap = room.capacity || 2;
+                  setGuestCount(Math.min(maxCap, Math.max(1, val)));
+                }}
                 className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
               />
+              <p className="text-[10px] text-slate-500 mt-1">
+                Suite capacity strictly limited to {room.capacity || 2} guest{(room.capacity || 2) > 1 ? "s" : ""}.
+              </p>
             </div>
           </div>
 
@@ -1513,19 +1621,40 @@ export default function RoomDetailPage() {
                   </Badge>
                 </div>
 
-                <div className="pt-2 border-t border-amber-500/20 grid grid-cols-2 gap-2 text-[11px]">
+                <div className="pt-2 border-t border-amber-500/20 grid grid-cols-3 gap-2 text-[11px]">
                   <div>
-                    <span className="text-slate-500 block">Check-In:</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">
+                    <span className="text-slate-500 block font-semibold">Check-In:</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200 block">
                       {currentStaySummary?.checkIn
-                        ? new Date(currentStaySummary.checkIn).toLocaleString()
+                        ? new Date(currentStaySummary.checkIn).toLocaleDateString([], { day: "2-digit", month: "short", year: "numeric" })
                         : "Active Stay"}
+                    </span>
+                    <span className="text-[10px] text-slate-500 font-mono block">
+                      {currentStaySummary?.checkIn
+                        ? new Date(currentStaySummary.checkIn).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                        : ""}
                     </span>
                   </div>
                   <div>
-                    <span className="text-slate-500 block">Stay Duration:</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200 font-mono">
+                    <span className="text-slate-500 block font-semibold">Check-Out:</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200 block">
+                      {currentStaySummary?.checkOut
+                        ? new Date(currentStaySummary.checkOut).toLocaleDateString([], { day: "2-digit", month: "short", year: "numeric" })
+                        : new Date().toLocaleDateString([], { day: "2-digit", month: "short", year: "numeric" })}
+                    </span>
+                    <span className="text-[10px] text-slate-500 font-mono block">
+                      {currentStaySummary?.checkOut
+                        ? new Date(currentStaySummary.checkOut).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                        : new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block font-semibold">Stay Duration:</span>
+                    <span className="font-bold text-amber-600 dark:text-amber-400 font-mono block">
                       {currentStaySummary?.stayDuration || "1 Night"}
+                    </span>
+                    <span className="text-[10px] text-slate-500 block">
+                      Folio Billable
                     </span>
                   </div>
                 </div>

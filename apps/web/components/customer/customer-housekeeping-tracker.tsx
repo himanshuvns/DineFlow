@@ -350,9 +350,23 @@ export function CustomerHousekeepingTracker({
     return 0; // pending / unknown
   };
 
-  const getLiveTimer = (isoDate?: string) => {
-    if (!isoDate) return "Just now";
-    const diff = Math.max(0, Math.floor((now - new Date(isoDate).getTime()) / 1000));
+  const getLiveTimer = (task: HousekeepingTaskItem) => {
+    if (task.status === "completed") {
+      const startMs = task.createdAt ? new Date(task.createdAt).getTime() : Date.now();
+      const endMs = task.completedAt
+        ? new Date(task.completedAt).getTime()
+        : (task.updatedAt ? new Date(task.updatedAt).getTime() : startMs);
+      const diff = Math.max(0, Math.floor((endMs - startMs) / 1000));
+      if (diff < 60) return `Done in ${diff}s`;
+      const mins = Math.floor(diff / 60);
+      const secs = diff % 60;
+      if (mins < 60) return `Done in ${mins}m ${secs < 10 ? "0" : ""}${secs}s`;
+      const hrs = Math.floor(mins / 60);
+      return `Done in ${hrs}h ${mins % 60}m`;
+    }
+
+    if (!task.createdAt) return "Just now";
+    const diff = Math.max(0, Math.floor((now - new Date(task.createdAt).getTime()) / 1000));
     if (diff < 60) return `${diff}s ago`;
     const mins = Math.floor(diff / 60);
     const secs = diff % 60;
@@ -453,9 +467,13 @@ export function CustomerHousekeepingTracker({
                         </div>
 
                         <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5 font-mono">
-                          <span className="flex items-center gap-1 text-slate-300">
-                            <Clock className="h-3 w-3 text-emerald-400" />
-                            {getLiveTimer(task.createdAt)}
+                          <span className={cn("flex items-center gap-1", task.status === "completed" ? "text-emerald-400 font-semibold" : "text-slate-300")}>
+                            {task.status === "completed" ? (
+                              <CheckCircle2 className="h-3 w-3 text-emerald-400" />
+                            ) : (
+                              <Clock className="h-3 w-3 text-emerald-400" />
+                            )}
+                            {getLiveTimer(task)}
                           </span>
                           {task.assignedTo && (
                             <>

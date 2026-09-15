@@ -581,9 +581,20 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
             table: o.tableName || (o.tableNumber ? `Table ${o.tableNumber}` : o.table || "Dine-in"),
             customerName: o.customerName || "Customer",
             customerPhone: o.customerPhone || "",
-            secondsElapsed: o.createdAt
-              ? Math.max(0, Math.floor((Date.now() - new Date(o.createdAt).getTime()) / 1000))
-              : 60,
+            secondsElapsed: (() => {
+              if (!o.createdAt) return 60;
+              const startMs = new Date(o.createdAt).getTime();
+              const isFinished = o.status === "served" || o.status === "paid" || o.status === "cancelled";
+              if (isFinished) {
+                let endMs = o.updatedAt ? new Date(o.updatedAt).getTime() : startMs;
+                if (Array.isArray(o.timeline)) {
+                  const ev = o.timeline.find((t: any) => t.status === "served" || t.status === "delivered");
+                  if (ev?.timestamp) endMs = new Date(ev.timestamp).getTime();
+                }
+                return Math.max(0, Math.floor((endMs - startMs) / 1000));
+              }
+              return Math.max(0, Math.floor((Date.now() - startMs) / 1000));
+            })(),
             station: o.station || "main_kitchen",
             destination: o.destination || "dine_in",
             status: o.status || "pending",
@@ -1390,9 +1401,20 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
           table: o.tableName || (o.tableNumber ? `Table ${o.tableNumber}` : o.table || "Dine-in"),
           customerName: o.customerName || "Customer",
           customerPhone: o.customerPhone || "",
-          secondsElapsed: o.createdAt
-            ? Math.max(0, Math.floor((Date.now() - new Date(o.createdAt).getTime()) / 1000))
-            : 60,
+          secondsElapsed: (() => {
+            if (!o.createdAt) return 60;
+            const startMs = new Date(o.createdAt).getTime();
+            const isFinished = o.status === "served" || o.status === "paid" || o.status === "cancelled";
+            if (isFinished) {
+              let endMs = o.updatedAt ? new Date(o.updatedAt).getTime() : startMs;
+              if (Array.isArray(o.timeline)) {
+                const ev = o.timeline.find((t: any) => t.status === "served" || t.status === "delivered");
+                if (ev?.timestamp) endMs = new Date(ev.timestamp).getTime();
+              }
+              return Math.max(0, Math.floor((endMs - startMs) / 1000));
+            }
+            return Math.max(0, Math.floor((Date.now() - startMs) / 1000));
+          })(),
           station: o.station || "main_kitchen",
           destination: o.destination || "dine_in",
           status: o.status || "pending",
