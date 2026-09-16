@@ -56,6 +56,7 @@ func Setup(
 			publicGroup.POST("/rooms/:tenantSlug/:roomNumber/amenity", roomHandler.RequestPublicAmenity)
 			publicGroup.GET("/room-tasks/:tenantSlug/:roomNumber", roomHandler.GetPublicRoomTasks)
 			publicGroup.POST("/room-tasks/:tenantSlug/:roomNumber", roomHandler.RequestPublicAmenity)
+			publicGroup.POST("/rooms/:tenantSlug/:roomNumber/extend-stay", roomHandler.PublicExtendStay)
 		}
 
 		// ── Public WhatsApp Webhook (Meta Cloud API) ──────────────────────

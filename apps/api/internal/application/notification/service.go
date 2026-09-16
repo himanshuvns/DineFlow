@@ -374,6 +374,34 @@ func (s *Service) EmitGuestCheckedOut(ctx context.Context, tenantID bson.ObjectI
 	return err
 }
 
+// EmitGuestStayExtended fires when an in-house guest extends their stay from the customer portal.
+func (s *Service) EmitGuestStayExtended(ctx context.Context, tenantID bson.ObjectID, guestName, roomNumber, roomID string, oldCheckOut, newCheckOut time.Time, nights int) error {
+	if strings.TrimSpace(guestName) == "" {
+		guestName = "Guest"
+	}
+	formattedDate := newCheckOut.Format("02 Jan 2006, 03:04 PM")
+	title := fmt.Sprintf("Stay Extended — Suite %s", roomNumber)
+	message := fmt.Sprintf("%s extended stay until %s (+%d night(s)).", guestName, formattedDate, nights)
+
+	_, err := s.CreateNotification(ctx, CreateNotificationInput{
+		TenantID:  tenantID,
+		Category:  domainnotification.CategoryReservations,
+		Title:     title,
+		Message:   message,
+		Priority:  domainnotification.PriorityHigh,
+		ActionURL: fmt.Sprintf("/dashboard/rooms/%s", roomID),
+		Metadata: map[string]interface{}{
+			"roomId":           roomID,
+			"roomNumber":       roomNumber,
+			"guestName":        guestName,
+			"oldCheckOut":      oldCheckOut.Format(time.RFC3339),
+			"newCheckOut":      newCheckOut.Format(time.RFC3339),
+			"additionalNights": nights,
+		},
+	})
+	return err
+}
+
 // EmitHousekeepingRequested fires when a guest requests a housekeeping service.
 func (s *Service) EmitHousekeepingRequested(ctx context.Context, tenantID bson.ObjectID, taskTitle, roomNumber, roomID string) error {
 	msg := strings.TrimSpace(taskTitle)

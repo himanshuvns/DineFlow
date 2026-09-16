@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"regexp"
 	"strings"
 	"time"
@@ -1349,4 +1350,123 @@ func (s *Service) GetPublicRoom(ctx context.Context, tenantSlug, roomIdentifier 
 	}
 
 	return room, t.Name, nil
+}
+
+// ExtendPublicGuestStay extends an in-house guest's stay from the customer portal.
+// It strictly enforces that the stay can only be INCREASED (new checkout > current checkout).
+func (s *Service) ExtendPublicGuestStay(ctx context.Context, tenantSlug, roomIdentifier string, newCheckOut time.Time, notes string) (*domainroom.Guest, *domainroom.Room, int, time.Time, error) {
+	if newCheckOut.IsZero() {
+		return nil, nil, 0, time.Time{}, errors.New("a valid new check-out date is required")
+	}
+
+	room, _, err := s.GetPublicRoom(ctx, tenantSlug, roomIdentifier)
+	if err != nil {
+		return nil, nil, 0, time.Time{}, err
+	}
+
+	guestsColl := s.db.Collection("guests")
+	var g domainroom.Guest
+	if room.CurrentGuestID != nil && !room.CurrentGuestID.IsZero() {
+		_ = guestsColl.FindOne(ctx, bson.M{"_id": *room.CurrentGuestID, "tenantId": room.TenantID}).Decode(&g)
+	}
+	if g.ID.IsZero() {
+		_ = guestsColl.FindOne(ctx, bson.M{
+			"roomId":   room.ID,
+			"tenantId": room.TenantID,
+			"status":   domainroom.GuestCheckedIn,
+		}, options.FindOne().SetSort(bson.D{{Key: "checkIn", Value: -1}})).Decode(&g)
+	}
+
+	nowTime := time.Now().UTC()
+	if g.ID.IsZero() {
+		// Initialize in-house guest record if suite is actively scanned
+		guestName := strings.TrimSpace(room.CurrentGuestName)
+		if guestName == "" {
+			guestName = fmt.Sprintf("Guest of %s", room.Name)
+		}
+		checkInTime := nowTime.Add(-24 * time.Hour)
+		if room.CurrentGuestCheckIn != nil && !room.CurrentGuestCheckIn.IsZero() {
+			checkInTime = *room.CurrentGuestCheckIn
+		}
+		defaultCheckout := time.Date(nowTime.Year(), nowTime.Month(), nowTime.Day(), 11, 0, 0, 0, time.UTC)
+		if !defaultCheckout.After(checkInTime) {
+			defaultCheckout = defaultCheckout.Add(24 * time.Hour)
+		}
+
+		g = domainroom.Guest{
+			ID:               bson.NewObjectID(),
+			TenantID:         room.TenantID,
+			RoomID:           room.ID,
+			RoomNumber:       room.RoomNumber,
+			Name:             guestName,
+			Status:           domainroom.GuestCheckedIn,
+			CheckIn:          checkInTime,
+			ExpectedCheckOut: &defaultCheckout,
+			NumberOfGuests:   2,
+			CreatedAt:        nowTime,
+			UpdatedAt:        nowTime,
+		}
+		_, _ = guestsColl.InsertOne(ctx, g)
+		room.CurrentGuestID = &g.ID
+		room.CurrentGuestName = guestName
+		room.Status = domainroom.StatusOccupied
+		room.CurrentGuestCheckIn = &checkInTime
+		room.CurrentGuestExpectedCheckOut = &defaultCheckout
+	}
+
+	// Determine baseline current check-out date
+	currentCheckOut := time.Date(nowTime.Year(), nowTime.Month(), nowTime.Day(), 11, 0, 0, 0, time.UTC)
+	if g.ExpectedCheckOut != nil && !g.ExpectedCheckOut.IsZero() {
+		currentCheckOut = *g.ExpectedCheckOut
+	} else if room.CurrentGuestExpectedCheckOut != nil && !room.CurrentGuestExpectedCheckOut.IsZero() {
+		currentCheckOut = *room.CurrentGuestExpectedCheckOut
+	} else if !g.CheckIn.IsZero() {
+		currentCheckOut = g.CheckIn.Add(24 * time.Hour)
+	}
+
+	// STRICT VALIDATION: Customer can ONLY increase/extend stay, NEVER decrease or shorten
+	if !newCheckOut.After(currentCheckOut) {
+		return nil, nil, 0, currentCheckOut, fmt.Errorf("check-out date can only be extended to a later date (current check-out is %s). Stays cannot be shortened from the customer portal", currentCheckOut.Format("02 Jan 2006, 03:04 PM"))
+	}
+
+	// Calculate additional nights
+	diff := newCheckOut.Sub(currentCheckOut)
+	additionalNights := int(math.Max(1, math.Round(diff.Hours()/24)))
+
+	now := time.Now().UTC()
+	guestUpdate := bson.M{
+		"expectedCheckOut": newCheckOut,
+		"updatedAt":        now,
+	}
+
+	trimmedNotes := strings.TrimSpace(notes)
+	if trimmedNotes != "" {
+		extNote := fmt.Sprintf("[%s] Guest extended stay (+%d nights): %s", now.Format("02 Jan 15:04"), additionalNights, trimmedNotes)
+		if g.SpecialRequests != "" {
+			guestUpdate["specialRequests"] = g.SpecialRequests + " | " + extNote
+		} else {
+			guestUpdate["specialRequests"] = extNote
+		}
+	}
+
+	_, err = guestsColl.UpdateOne(ctx, bson.M{"_id": g.ID, "tenantId": room.TenantID}, bson.M{"$set": guestUpdate})
+	if err != nil {
+		return nil, nil, 0, currentCheckOut, fmt.Errorf("failed to update guest stay: %w", err)
+	}
+	g.ExpectedCheckOut = &newCheckOut
+
+	roomsColl := s.db.Collection("rooms")
+	roomUpdate := bson.M{
+		"currentGuestExpectedCheckOut": newCheckOut,
+		"updatedAt":                    now,
+	}
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+	var updatedRoom domainroom.Room
+	err = roomsColl.FindOneAndUpdate(ctx, bson.M{"_id": room.ID, "tenantId": room.TenantID}, bson.M{"$set": roomUpdate}, opts).Decode(&updatedRoom)
+	if err != nil {
+		updatedRoom = *room
+		updatedRoom.CurrentGuestExpectedCheckOut = &newCheckOut
+	}
+
+	return &g, &updatedRoom, additionalNights, currentCheckOut, nil
 }

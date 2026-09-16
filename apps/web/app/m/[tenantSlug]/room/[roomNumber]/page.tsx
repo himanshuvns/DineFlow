@@ -29,6 +29,7 @@ import {
   Bath,
   ArrowRight,
   X,
+  CalendarDays,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,7 @@ import {
 import { CustomerCartDrawer } from "@/components/customer/customer-cart-drawer";
 import { CustomerHousekeepingSheet } from "@/components/customer/customer-housekeeping-sheet";
 import { CustomerHousekeepingTracker } from "@/components/customer/customer-housekeeping-tracker";
+import { CustomerExtendStayModal } from "@/components/customer/customer-extend-stay-modal";
 import { useCartStore } from "@/lib/stores/cart-store";
 
 interface RoomInfo {
@@ -53,6 +55,8 @@ interface RoomInfo {
   floor: string;
   wing: string;
   currentGuestName?: string;
+  currentGuestCheckIn?: string;
+  currentGuestExpectedCheckOut?: string;
   amenities: string[];
 }
 
@@ -97,6 +101,8 @@ export default function RoomServiceMenuPage() {
   const [customizingDish, setCustomizingDish] = React.useState<CustomizerDish | null>(null);
   const [isHousekeepingSheetOpen, setIsHousekeepingSheetOpen] = React.useState(false);
   const [housekeepingRefreshSignal, setHousekeepingRefreshSignal] = React.useState(0);
+  const [isExtendStayModalOpen, setIsExtendStayModalOpen] = React.useState(false);
+  const [roomRefreshSignal, setRoomRefreshSignal] = React.useState(0);
   const [activeTasksCount, setActiveTasksCount] = React.useState(0);
   const [latestActiveTask, setLatestActiveTask] = React.useState<{ title: string; status: string } | null>(null);
   const [copiedWifi, setCopiedWifi] = React.useState(false);
@@ -188,6 +194,8 @@ export default function RoomServiceMenuPage() {
               floor: r.floor || "Floor 2",
               wing: r.wing || "Main Wing",
               currentGuestName: r.currentGuestName,
+              currentGuestCheckIn: r.currentGuestCheckIn,
+              currentGuestExpectedCheckOut: r.currentGuestExpectedCheckOut,
               amenities: Array.isArray(r.amenities) ? r.amenities : [],
             });
           }
@@ -200,7 +208,7 @@ export default function RoomServiceMenuPage() {
       }
     }
     loadRoomDetails();
-  }, [tenantSlug, cleanRoomNum]);
+  }, [tenantSlug, cleanRoomNum, roomRefreshSignal]);
 
   // Fetch Live Tenant Menu
   React.useEffect(() => {
@@ -373,6 +381,22 @@ export default function RoomServiceMenuPage() {
                     Silver tray delivery directly to your door • 24/7 Butler care
                   </p>
                 )}
+
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => setIsExtendStayModalOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition-all hover:scale-[1.02] shadow-xs cursor-pointer"
+                  >
+                    <CalendarDays className="h-3.5 w-3.5" />
+                    <span>Extend Stay</span>
+                    {roomInfo?.currentGuestExpectedCheckOut && (
+                      <span className="text-[10px] opacity-80 border-l border-primary/30 pl-1.5 font-medium">
+                        Until {new Date(roomInfo.currentGuestExpectedCheckOut).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                      </span>
+                    )}
+                  </button>
+                </div>
               </div>
               {hotelLogo && (
                 <div className="h-12 w-12 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-slate-700/80 p-1 flex items-center justify-center overflow-hidden shrink-0 shadow-md">
@@ -812,6 +836,69 @@ export default function RoomServiceMenuPage() {
           ══════════════════════════════════════════════════════════════════ */}
       {activeTab === "info" && (
         <div className="max-w-xl mx-auto px-4 mt-4 space-y-4 animate-in fade-in duration-300">
+          {/* Your Stay & Check-out Card */}
+          <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 shadow-xl space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="h-9 w-9 rounded-xl bg-primary/15 text-primary flex items-center justify-center border border-primary/30">
+                  <CalendarDays className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">Your Stay & Reservation</h3>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    {roomDisplay} • {roomInfo?.currentGuestName || "Active Reservation"}
+                  </p>
+                </div>
+              </div>
+              <Badge variant="success" dot size="sm" className="text-[10px] font-bold">
+                In-House
+              </Badge>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800/80">
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-0.5">
+                  Check-In
+                </span>
+                <p className="font-semibold text-slate-800 dark:text-slate-200">
+                  {roomInfo?.currentGuestCheckIn
+                    ? new Date(roomInfo.currentGuestCheckIn).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })
+                    : "Current Stay"}
+                </p>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800/80">
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-0.5">
+                  Scheduled Check-Out
+                </span>
+                <p className="font-semibold text-slate-800 dark:text-slate-200">
+                  {roomInfo?.currentGuestExpectedCheckOut
+                    ? `${new Date(roomInfo.currentGuestExpectedCheckOut).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })} • 11:00 AM`
+                    : "11:00 AM UTC"}
+                </p>
+              </div>
+            </div>
+
+            <Button
+              onClick={() => setIsExtendStayModalOpen(true)}
+              className="w-full text-xs font-bold gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-md shadow-primary/20 rounded-xl cursor-pointer"
+            >
+              <CalendarDays className="h-3.5 w-3.5" />
+              <span>Extend Your Stay</span>
+            </Button>
+            <p className="text-[10px] text-center text-slate-400 dark:text-slate-500">
+              Stays can only be extended from the portal. Early departures are handled by Front Desk.
+            </p>
+          </div>
+
           {/* Wi-Fi Credentials Card */}
           <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 shadow-xl space-y-3">
             <div className="flex items-center gap-2.5">
@@ -996,6 +1083,21 @@ export default function RoomServiceMenuPage() {
         onTaskCreated={() => {
           setHousekeepingRefreshSignal((prev) => prev + 1);
           setActiveTab("housekeeping");
+        }}
+      />
+
+      {/* ── Customer Extend Stay Modal ── */}
+      <CustomerExtendStayModal
+        isOpen={isExtendStayModalOpen}
+        onClose={() => setIsExtendStayModalOpen(false)}
+        tenantSlug={tenantSlug}
+        roomNumber={cleanRoomNum}
+        roomDisplay={roomDisplay}
+        currentGuestName={roomInfo?.currentGuestName}
+        currentCheckIn={roomInfo?.currentGuestCheckIn}
+        currentCheckOut={roomInfo?.currentGuestExpectedCheckOut}
+        onStayExtended={() => {
+          setRoomRefreshSignal((prev) => prev + 1);
         }}
       />
     </div>

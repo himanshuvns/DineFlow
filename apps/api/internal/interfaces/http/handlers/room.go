@@ -804,4 +804,67 @@ func (h *RoomHandler) ClearHistory(c *gin.Context) {
 	})
 }
 
+type PublicExtendStayRequest struct {
+	NewCheckOut      string `json:"newCheckOut" binding:"required"`
+	Notes            string `json:"notes"`
+	AdditionalNights int    `json:"additionalNights"`
+}
+
+// PublicExtendStay allows an in-house guest to extend their stay duration from the QR room portal.
+// Stays can strictly only be increased / extended. Reductions are rejected with an explicit error.
+func (h *RoomHandler) PublicExtendStay(c *gin.Context) {
+	tenantSlug := c.Param("tenantSlug")
+	roomNumber := c.Param("roomNumber")
+
+	var req PublicExtendStayRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "INVALID_PAYLOAD", "newCheckOut date is required")
+		return
+	}
+
+	parsedDate, err := time.Parse(time.RFC3339, strings.TrimSpace(req.NewCheckOut))
+	if err != nil {
+		// Fallback parse for YYYY-MM-DD
+		parsedDate, err = time.Parse("2006-01-02", strings.TrimSpace(req.NewCheckOut))
+		if err != nil {
+			response.BadRequest(c, "INVALID_DATE", "invalid date format; use ISO 8601 (YYYY-MM-DDTHH:MM:SSZ)")
+			return
+		}
+		// Set standard checkout time 11:00 AM UTC
+		parsedDate = time.Date(parsedDate.Year(), parsedDate.Month(), parsedDate.Day(), 11, 0, 0, 0, time.UTC)
+	}
+
+	guest, room, nights, oldCheckOut, err := h.roomService.ExtendPublicGuestStay(c.Request.Context(), tenantSlug, roomNumber, parsedDate, req.Notes)
+	if err != nil {
+		response.BadRequest(c, "EXTEND_STAY_FAILED", err.Error())
+		return
+	}
+
+	// Fire real-time notification to hotel staff & notification center
+	if h.notifService != nil {
+		go func() {
+			_ = h.notifService.EmitGuestStayExtended(
+				context.Background(),
+				room.TenantID,
+				guest.Name,
+				room.RoomNumber,
+				room.ID.Hex(),
+				oldCheckOut,
+				parsedDate,
+				nights,
+			)
+		}()
+	}
+
+	response.OK(c, gin.H{
+		"success":          true,
+		"message":          fmt.Sprintf("Stay successfully extended by %d night(s) until %s", nights, parsedDate.Format("02 Jan 2006, 03:04 PM")),
+		"newCheckOut":      parsedDate.Format(time.RFC3339),
+		"additionalNights": nights,
+		"guestName":        guest.Name,
+		"roomNumber":       room.RoomNumber,
+		"room":             room,
+	})
+}
+
 
