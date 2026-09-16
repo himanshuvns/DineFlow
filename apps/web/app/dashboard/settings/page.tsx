@@ -78,7 +78,7 @@ export default function SettingsPage() {
   const { tenant, updateTenant } = useAuthStore();
   const { addToast } = useToast();
   const { theme, setTheme } = useTheme();
-  const [activeTab, setActiveTab] = React.useState("billing");
+  const [activeTab, setActiveTab] = React.useState("general");
 
   // General settings state
   const [name, setName] = React.useState(tenant?.name || "The Grand Bistro");
@@ -92,6 +92,20 @@ export default function SettingsPage() {
       setLogoUrl(tenant.logoUrl || tenant.logo || "");
     }
   }, [tenant]);
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get("tab");
+      if (tab && ["general", "billing", "appearance"].includes(tab)) {
+        setActiveTab(tab);
+      }
+      if (params.get("openLogoModal") === "true" || tab === "logo") {
+        setActiveTab("general");
+        setIsLogoModalOpen(true);
+      }
+    }
+  }, []);
 
   // Billing & Subscription state
   const currentPlan = tenant?.plan || "growth";
@@ -284,8 +298,8 @@ export default function SettingsPage() {
 
       <Tabs
         tabs={[
+          { id: "general", label: "Brand & Business" },
           { id: "billing", label: "Subscription & Invoices" },
-          { id: "general", label: "Business Details" },
           { id: "appearance", label: "Appearance & Theme" },
         ]}
         activeTab={activeTab}

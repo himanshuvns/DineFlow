@@ -304,7 +304,7 @@ export const STARTER_TEMPLATES = {
 };
 
 const DEFAULT_ONBOARDING: OnboardingStep[] = [
-  { id: 1, title: "Register Business & Workspace", completed: true },
+  { id: 1, title: "Brand Identity & Workspace Profile", completed: true, cta: "Brand Setup", href: "/dashboard/settings?tab=general&openLogoModal=true" },
   { id: 2, title: "Configure Dine-in Tables & Layout", completed: false, cta: "Manage Tables", href: "/dashboard/tables" },
   { id: 3, title: "Add Your Signature Menu Items", completed: false, cta: "Add Items", href: "/dashboard/menu" },
   { id: 4, title: "Print & Display QR Code Stands", completed: false, cta: "View QRs", href: "/dashboard/tables" },

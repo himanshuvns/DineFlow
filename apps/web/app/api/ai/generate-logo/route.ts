@@ -2,48 +2,141 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const maxDuration = 45;
 
-interface GenerateLogoRequest {
+export interface GenerateLogoRequest {
   name: string;
   businessType?: string;
   vibe?: string;
   primaryColor?: string;
   keywords?: string;
+  mode?: "all" | "single";
+  archetype?: "minimal" | "luxury" | "artisan" | "monogram";
 }
 
-const GEMINI_MODELS = [
-  "gemini-2.0-flash",
-  "gemini-2.0-flash-lite",
-  "gemini-1.5-flash",
+export interface LogoVariation {
+  id: "minimal" | "luxury" | "artisan" | "monogram";
+  title: string;
+  description: string;
+  svg: string;
+  dataUri: string;
+  source: "gemini" | "procedural";
+  model?: string;
+  palette: {
+    primary: string;
+    accent: string;
+    bg: string;
+  };
+}
+
+const ACTIVE_GEMINI_MODELS = [
+  "gemini-3.6-flash",
+  "gemini-3.5-flash",
 ];
+
+const ARCHETYPE_CONFIGS: Record<
+  "minimal" | "luxury" | "artisan" | "monogram",
+  {
+    title: string;
+    description: string;
+    designFocus: string;
+    motifGuidelines: string;
+    layoutStyle: string;
+  }
+> = {
+  minimal: {
+    title: "Modern Minimalist",
+    description: "Sleek geometric line art with refined negative space and modern sans-serif letterforms.",
+    designFocus: "ultra-clean contemporary vector minimalism, balanced negative space, razor-sharp vector paths",
+    motifGuidelines: "a single continuous-line geometric mark, abstract silhouette, or pure geometric emblem",
+    layoutStyle: "clean horizontal or stacked lockup with modern sans-serif typography (like Montserrat or Helvetica Neue)",
+  },
+  luxury: {
+    title: "Royal Luxury & Heritage",
+    description: "Prestigious crest with heraldic elements, metallic gradients, and classic serif typography.",
+    designFocus: "5-star luxury hospitality crest, regal shield silhouette, opulent metallic gradient framing",
+    motifGuidelines: "a refined royal crown, laurel wreath, star constellation, or heraldic shield emblem",
+    layoutStyle: "centered majestic crest with high-contrast serif typography (like Playfair Display or Bodoni)",
+  },
+  artisan: {
+    title: "Artisan Craft & Culinary",
+    description: "Handcrafted gourmet motif with organic lines, culinary symbols, and warm hospitality accents.",
+    designFocus: "artisan culinary seal, organic flowing curves, handcrafted gourmet warmth, bespoke mark",
+    motifGuidelines: "a botanical sprig, single-origin coffee bean, artisan baker wheat, or culinary flame motif",
+    layoutStyle: "circular artisan stamp or curved emblem with warm balanced character spacing",
+  },
+  monogram: {
+    title: "Bold Monogram & Seal",
+    description: "Striking interlocking initials set inside a bold geometric stamp with high-contrast framing.",
+    designFocus: "powerful geometric monogram seal, interlocking stylized typography, iconic silhouette",
+    motifGuidelines: "interlocking stylized letters of the brand initials enclosed in an architectural geometric ring or octagon",
+    layoutStyle: "prominent central monogram badge with brand name arched or placed beneath in spaced uppercase",
+  },
+};
+
+// Color palettes with primary, accent, and background tones
+const PALETTES: Record<string, { primary: string; accent: string; secondary: string; bg: string }> = {
+  emerald: {
+    primary: "#059669",
+    accent: "#34D399",
+    secondary: "#10B981",
+    bg: "#061510",
+  },
+  gold: {
+    primary: "#B45309",
+    accent: "#FBBF24",
+    secondary: "#D97706",
+    bg: "#0F0B06",
+  },
+  sapphire: {
+    primary: "#1D4ED8",
+    accent: "#60A5FA",
+    secondary: "#3B82F6",
+    bg: "#080F1E",
+  },
+  crimson: {
+    primary: "#BE123C",
+    accent: "#FB7185",
+    secondary: "#E11D48",
+    bg: "#18060B",
+  },
+  amber: {
+    primary: "#C2410C",
+    accent: "#FB923C",
+    secondary: "#EA580C",
+    bg: "#160904",
+  },
+  monochrome: {
+    primary: "#94A3B8",
+    accent: "#FFFFFF",
+    secondary: "#CBD5E1",
+    bg: "#090D16",
+  },
+};
 
 function sanitizeSvg(rawSvg: string): string {
   const match = rawSvg.match(/<svg[\s\S]*?<\/svg>/i);
   if (!match) return "";
   let svg = match[0].trim();
+
+  // Normalize viewBox and namespaces
   if (!svg.includes("viewBox")) {
     svg = svg.replace(/<svg/i, '<svg viewBox="0 0 300 300"');
   }
   if (!svg.includes('xmlns="http://www.w3.org/2000/svg"')) {
     svg = svg.replace(/<svg/i, '<svg xmlns="http://www.w3.org/2000/svg"');
   }
+  // Remove markdown tags if any leaked inside
+  svg = svg.replace(/```[a-z]*\s*/gi, "").replace(/```/g, "");
+
   return svg;
 }
 
-// Seeded pseudo-random (LCG) for consistent-within-request but varied-across-requests output
-function seededRand(seed: number) {
-  let s = seed;
-  return () => {
-    s = (s * 1664525 + 1013904223) & 0xffffffff;
-    return (s >>> 0) / 0xffffffff;
-  };
-}
-
-function generateProceduralSvg(
+// Fallback procedural generator ensuring 0% failure rate
+function generateArchetypeProceduralSvg(
   name: string,
-  businessType: string = "restaurant",
-  vibe: string = "modern_minimalist",
-  colorTheme: string = "emerald",
-  seed?: number
+  businessType: string,
+  archetype: "minimal" | "luxury" | "artisan" | "monogram",
+  colorTheme: string,
+  seed: number
 ): string {
   const brandName = (name || "DineFlow").trim();
   const words = brandName.split(/\s+/).filter(Boolean);
@@ -51,208 +144,313 @@ function generateProceduralSvg(
     ? (words[0][0] + words[1][0]).toUpperCase()
     : brandName.slice(0, 2).toUpperCase();
 
-  // Use a time-based seed if not provided — ensures each call is unique
-  const rng = seededRand(seed ?? (Date.now() ^ (Math.random() * 0x7fffffff)));
-  const r1 = rng(); const r2 = rng(); const r3 = rng();
-  const r4 = rng(); const r5 = rng(); const r6 = rng();
+  const pal = PALETTES[colorTheme] || PALETTES.emerald;
+  const isHotel = businessType.toLowerCase().includes("hotel") || brandName.toLowerCase().includes("hotel") || brandName.toLowerCase().includes("resort");
+  const isCafe = businessType.toLowerCase().includes("cafe") || brandName.toLowerCase().includes("cafe") || brandName.toLowerCase().includes("coffee");
+  const subtitle = isHotel ? "HOTEL & SUITES" : isCafe ? "CAFE & ROASTERY" : "HOSPITALITY";
 
-  let gradStart = "#059669";
-  let gradEnd = "#10B981";
-  let accent = "#34D399";
+  const gradId = `grad_${archetype}_${seed}`;
+  const accentGradId = `accent_${archetype}_${seed}`;
 
-  if (colorTheme === "gold" || vibe === "royal_luxury") {
-    gradStart = "#B45309"; gradEnd = "#F59E0B"; accent = "#FCD34D";
-  } else if (colorTheme === "sapphire" || vibe === "modern_minimalist") {
-    gradStart = "#1D4ED8"; gradEnd = "#3B82F6"; accent = "#93C5FD";
-  } else if (colorTheme === "crimson" || vibe === "vibrant_bistro") {
-    gradStart = "#BE123C"; gradEnd = "#F43F5E"; accent = "#FDA4AF";
-  } else if (colorTheme === "amber" || vibe === "artisan_culinary") {
-    gradStart = "#C2410C"; gradEnd = "#F97316"; accent = "#FDBA74";
+  if (archetype === "minimal") {
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="100%" height="100%">
+  <defs>
+    <linearGradient id="${gradId}" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="${pal.primary}" />
+      <stop offset="100%" stop-color="${pal.accent}" />
+    </linearGradient>
+  </defs>
+  <rect width="300" height="300" rx="36" fill="${pal.bg}" stroke="${pal.primary}" stroke-width="1.5" stroke-opacity="0.3" />
+  
+  <g transform="translate(150, 118)">
+    <rect x="-42" y="-42" width="84" height="84" rx="20" fill="none" stroke="url(#${gradId})" stroke-width="2" transform="rotate(45)" opacity="0.8" />
+    <circle cx="0" cy="0" r="28" fill="${pal.primary}" fill-opacity="0.12" stroke="${pal.accent}" stroke-width="1.5" />
+    <text x="0" y="8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="24" font-weight="900" text-anchor="middle" fill="#FFFFFF" letter-spacing="1">${initials}</text>
+  </g>
+
+  <text x="150" y="218" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="${brandName.length > 15 ? 13 : 16}" font-weight="800" text-anchor="middle" fill="#FFFFFF" letter-spacing="2">${brandName.toUpperCase()}</text>
+  <text x="150" y="238" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="8.5" font-weight="600" text-anchor="middle" fill="${pal.accent}" letter-spacing="4">${subtitle}</text>
+</svg>`;
   }
 
-  const isHotel = businessType.toLowerCase().includes("hotel")
-    || brandName.toLowerCase().includes("hotel")
-    || brandName.toLowerCase().includes("resort")
-    || brandName.toLowerCase().includes("palace");
-  const subtitle = isHotel ? "HOTEL & SUITES" : "HOSPITALITY";
+  if (archetype === "luxury") {
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="100%" height="100%">
+  <defs>
+    <linearGradient id="${gradId}" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="${pal.accent}" />
+      <stop offset="50%" stop-color="${pal.primary}" />
+      <stop offset="100%" stop-color="${pal.accent}" />
+    </linearGradient>
+    <linearGradient id="${accentGradId}" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="${pal.accent}" />
+    </linearGradient>
+  </defs>
+  <rect width="300" height="300" rx="36" fill="${pal.bg}" stroke="${pal.primary}" stroke-width="2" stroke-opacity="0.4" />
+  
+  <path d="M150 48 L195 72 L195 130 C195 162 150 182 150 182 C150 182 105 162 105 130 L105 72 Z" fill="url(#${gradId})" fill-opacity="0.1" stroke="url(#${gradId})" stroke-width="2" />
+  
+  <path d="M138 78 L150 64 L162 78 L156 82 L150 74 L144 82 Z" fill="url(#${accentGradId})" />
+  <circle cx="150" cy="85" r="2.5" fill="#FFFFFF" />
+  <text x="150" y="132" font-family="'Playfair Display', Georgia, serif" font-size="30" font-weight="900" text-anchor="middle" fill="#FFFFFF" letter-spacing="1.5">${initials}</text>
+  
+  <line x1="60" y1="202" x2="110" y2="202" stroke="${pal.primary}" stroke-width="1" opacity="0.6" />
+  <circle cx="150" cy="202" r="3" fill="${pal.accent}" />
+  <line x1="190" y1="202" x2="240" y2="202" stroke="${pal.primary}" stroke-width="1" opacity="0.6" />
 
-  // Varied border radius for the outer frame (35–55)
-  const rx = Math.round(35 + r1 * 20);
-  // Varied inner ring radius (65–80)
-  const innerR = Math.round(65 + r2 * 15);
-  // Varied center Y offset for monogram (-5 to +5)
-  const centreY = Math.round(125 + (r3 - 0.5) * 10);
-  // Stroke dash variation
-  const dashA = Math.round(3 + r4 * 4);
-  const dashB = Math.round(2 + r5 * 3);
-  // Background colour tint (pure black vs very dark navy)
-  const bgOptions = ["#090D16", "#0A0F1D", "#06080F", "#0D1117", "#080C14"];
-  const bg = bgOptions[Math.floor(r6 * bgOptions.length)];
+  <text x="150" y="226" font-family="'Playfair Display', Georgia, serif" font-size="${brandName.length > 15 ? 13 : 16}" font-weight="700" text-anchor="middle" fill="#FFFFFF" letter-spacing="2">${brandName.toUpperCase()}</text>
+  <text x="150" y="246" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="8.5" font-weight="700" text-anchor="middle" fill="${pal.accent}" letter-spacing="3.5">${subtitle}</text>
+</svg>`;
+  }
 
+  if (archetype === "artisan") {
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="100%" height="100%">
+  <defs>
+    <linearGradient id="${gradId}" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="${pal.primary}" />
+      <stop offset="100%" stop-color="${pal.accent}" />
+    </linearGradient>
+  </defs>
+  <rect width="300" height="300" rx="36" fill="${pal.bg}" stroke="${pal.accent}" stroke-width="1.5" stroke-opacity="0.3" />
+  
+  <circle cx="150" cy="116" r="54" fill="none" stroke="url(#${gradId})" stroke-width="2" stroke-dasharray="4 3" opacity="0.7" />
+  <circle cx="150" cy="116" r="46" fill="${pal.primary}" fill-opacity="0.14" stroke="${pal.accent}" stroke-width="1.5" />
+  
+  <path d="M150 78 C144 88 136 94 136 104 C136 114 143 120 150 120 C157 120 164 114 164 104 C164 94 156 88 150 78 Z" fill="url(#${gradId})" opacity="0.85" />
+  <text x="150" y="148" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="20" font-weight="900" text-anchor="middle" fill="#FFFFFF" letter-spacing="2">${initials}</text>
+  
+  <text x="150" y="218" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="${brandName.length > 15 ? 13 : 16}" font-weight="800" text-anchor="middle" fill="#FFFFFF" letter-spacing="1.5">${brandName.toUpperCase()}</text>
+  <text x="150" y="238" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="8.5" font-weight="600" text-anchor="middle" fill="${pal.accent}" letter-spacing="3">${subtitle} • EST. 2025</text>
+</svg>`;
+  }
+
+  // Monogram & Stamp
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="100%" height="100%">
   <defs>
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="${gradStart}" />
-      <stop offset="100%" stop-color="${gradEnd}" />
+    <linearGradient id="${gradId}" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="${pal.primary}" />
+      <stop offset="100%" stop-color="${pal.accent}" />
     </linearGradient>
-    <linearGradient id="goldAccent" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="${accent}" />
-      <stop offset="100%" stop-color="#FFFFFF" />
-    </linearGradient>
-    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="4" result="blur" />
-      <feComposite in="SourceGraphic" in2="blur" operator="over" />
-    </filter>
   </defs>
-
-  <rect x="15" y="15" width="270" height="270" rx="${rx}" fill="${bg}" stroke="${gradEnd}" stroke-width="3" stroke-opacity="0.4" />
+  <rect width="300" height="300" rx="36" fill="${pal.bg}" stroke="${pal.primary}" stroke-width="2" stroke-opacity="0.4" />
   
-  <circle cx="150" cy="${centreY}" r="${innerR + 7}" fill="none" stroke="url(#bgGrad)" stroke-width="2.5" stroke-dasharray="${dashA} ${dashB}" opacity="0.6" />
-  <circle cx="150" cy="${centreY}" r="${innerR}" fill="url(#bgGrad)" fill-opacity="0.15" stroke="${accent}" stroke-width="1.5" />
-
-  ${isHotel ? `
-  <path d="M120 ${centreY - 25} L150 ${centreY - 50} L180 ${centreY - 25} L172 ${centreY - 20} L150 ${centreY - 39} L128 ${centreY - 20} Z" fill="url(#goldAccent)" filter="url(#softGlow)" />
-  <path d="M130 ${centreY - 15} L150 ${centreY - 31} L170 ${centreY - 15} L166 ${centreY - 11} L150 ${centreY - 24} L134 ${centreY - 11} Z" fill="${accent}" opacity="0.8" />
-  <rect x="144" y="${centreY - 7}" width="12" height="18" rx="2" fill="url(#goldAccent)" />
-  ` : `
-  <circle cx="150" cy="${centreY - 33}" r="6" fill="url(#goldAccent)" filter="url(#softGlow)" />
-  <path d="M150 ${centreY - 47} L152 ${centreY - 39} L160 ${centreY - 37} L152 ${centreY - 35} L150 ${centreY - 27} L148 ${centreY - 35} L140 ${centreY - 37} L148 ${centreY - 39} Z" fill="${accent}" />
-  <path d="M132 ${centreY - 20} C132 ${centreY - 27} 140 ${centreY - 27} 140 ${centreY - 15} L140 ${centreY - 5}" stroke="url(#goldAccent)" stroke-width="2.5" stroke-linecap="round" fill="none" />
-  <path d="M168 ${centreY - 20} C168 ${centreY - 27} 160 ${centreY - 27} 160 ${centreY - 15} L160 ${centreY - 5}" stroke="url(#goldAccent)" stroke-width="2.5" stroke-linecap="round" fill="none" />
-  `}
-
-  <text x="150" y="${centreY + 27}" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="34" font-weight="900" text-anchor="middle" fill="#FFFFFF" letter-spacing="2">
-    ${initials}
-  </text>
-
-  <line x1="50" y1="205" x2="110" y2="205" stroke="${gradEnd}" stroke-width="1.5" stroke-linecap="round" opacity="0.6" />
-  <circle cx="150" cy="205" r="3" fill="${accent}" />
-  <line x1="190" y1="205" x2="250" y2="205" stroke="${gradEnd}" stroke-width="1.5" stroke-linecap="round" opacity="0.6" />
-
-  <text x="150" y="232" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="${brandName.length > 16 ? 13 : 16}" font-weight="800" text-anchor="middle" fill="#FFFFFF" letter-spacing="1.5">
-    ${brandName.toUpperCase()}
-  </text>
-
-  <text x="150" y="252" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="9" font-weight="700" text-anchor="middle" fill="${accent}" letter-spacing="3">
-    ${subtitle}
-  </text>
+  <polygon points="150,55 198,75 218,123 198,171 150,191 102,171 82,123 102,75" fill="url(#${gradId})" fill-opacity="0.12" stroke="url(#${gradId})" stroke-width="2" />
+  <circle cx="150" cy="123" r="40" fill="none" stroke="${pal.accent}" stroke-width="1.5" stroke-dasharray="3 2" />
+  <text x="150" y="136" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="34" font-weight="900" text-anchor="middle" fill="#FFFFFF" letter-spacing="2">${initials}</text>
+  
+  <text x="150" y="226" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="${brandName.length > 15 ? 13 : 16}" font-weight="900" text-anchor="middle" fill="#FFFFFF" letter-spacing="2">${brandName.toUpperCase()}</text>
+  <text x="150" y="246" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="8.5" font-weight="700" text-anchor="middle" fill="${pal.accent}" letter-spacing="4">${subtitle}</text>
 </svg>`;
 }
 
-// Varied design directive pools injected into the Gemini prompt
-const DESIGN_LAYOUTS = [
-  "a bold circular crest with the brand initials centered, surrounded by a thin decorative ring",
-  "a shield/coat-of-arms silhouette with the brand name arched beneath a monogram",
-  "a minimalist square badge with the brand initials in oversized typography, flanked by thin horizontal lines",
-  "a diamond/rhombus frame with the initials inside and the brand name below in spaced caps",
-  "an octagonal seal with concentric rings, central monogram, and subtle radial lines",
-  "a classic hotel key-and-crown emblem with the brand name in elegant serifs below",
-];
+async function generateWithGemini(
+  apiKey: string,
+  model: string,
+  prompt: string
+): Promise<string | null> {
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+  const res = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.8,
+        maxOutputTokens: 8192,
+        thinkingConfig: {
+          thinkingBudget: 0,
+        },
+      },
+    }),
+  });
 
-const MOTIF_DETAILS = [
-  "Use a subtle chevron or arch above the initials",
-  "Add thin horizontal rules flanking the brand name",
-  "Include a small 5-pointed star or fleur-de-lis accent above the monogram",
-  "Draw decorative corner flourishes inside the outer frame",
-  "Add a thin dotted or dashed inner circle behind the central emblem",
-  "Include a thin laurel wreath framing the initials",
-];
+  if (!res.ok) {
+    throw new Error(`Gemini ${model} returned ${res.status}`);
+  }
 
-const TYPOGRAPHY_STYLES = [
-  "serif (Playfair Display style) for the brand name",
-  "bold geometric sans-serif (Montserrat style) for the brand name",
-  "condensed uppercase tracking-widest for the brand name",
-  "italic script for the brand name with a contrasting subtitle",
-  "ultra-heavy display weight with wide letter-spacing",
-];
+  const data = await res.json();
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+  const cleaned = sanitizeSvg(text);
+  return cleaned && cleaned.length > 150 ? cleaned : null;
+}
+
+async function createArchetypeLogo(
+  archetypeKey: "minimal" | "luxury" | "artisan" | "monogram",
+  brandName: string,
+  businessType: string,
+  vibe: string,
+  primaryColor: string,
+  keywords: string,
+  apiKey?: string
+): Promise<LogoVariation> {
+  const arc = ARCHETYPE_CONFIGS[archetypeKey];
+  const pal = PALETTES[primaryColor] || PALETTES.emerald;
+  const uniqueSeed = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+  const prompt = `You are an elite vector brand identity designer. Craft an iconic, production-ready vector logo for:
+Brand Name: "${brandName}"
+Business Category: ${businessType}
+Vibe / Brand Essence: ${vibe}
+Creative Archetype: ${arc.title} (${arc.designFocus})
+Primary Palette: Primary: ${pal.primary}, Accent: ${pal.accent}, Background: ${pal.bg}
+Specific Directives:
+- Motif direction: ${arc.motifGuidelines}
+- Typography layout: ${arc.layoutStyle}
+- Keywords: ${keywords || "luxury, memorable, modern, premium branding"}
+- Unique Session Salt: ${uniqueSeed}
+
+STRICT TECHNICAL RULES:
+1. Output ONLY pure valid SVG markup enclosed in <svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg"> ... </svg>.
+2. No markdown wrapper (do NOT write \`\`\`xml or \`\`\`svg), no explanation text.
+3. Use a rich dark background rect (#0A0F1D, #081018, or ${pal.bg}) with rounded corners (rx="36").
+4. Embed self-contained <linearGradient> or <radialGradient> definitions inside <defs>.
+5. Include the brand name "${brandName}" rendered with clean, balanced, high-contrast typography.
+6. Scalable, sharp vector paths with balanced negative space.`;
+
+  if (apiKey) {
+    for (const model of ACTIVE_GEMINI_MODELS) {
+      try {
+        const svg = await generateWithGemini(apiKey, model, prompt);
+        if (svg) {
+          const dataUri = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+          return {
+            id: archetypeKey,
+            title: arc.title,
+            description: arc.description,
+            svg,
+            dataUri,
+            source: "gemini",
+            model,
+            palette: {
+              primary: pal.primary,
+              accent: pal.accent,
+              bg: pal.bg,
+            },
+          };
+        }
+      } catch (err) {
+        console.warn(`[generate-logo] Model ${model} failed for archetype ${archetypeKey}:`, err);
+      }
+    }
+  }
+
+  // Resilient fallback with distinct visual archetype styling
+  const proceduralSvg = generateArchetypeProceduralSvg(
+    brandName,
+    businessType,
+    archetypeKey,
+    primaryColor,
+    Date.now() + Math.floor(Math.random() * 1000)
+  );
+  const dataUri = `data:image/svg+xml;utf8,${encodeURIComponent(proceduralSvg)}`;
+
+  return {
+    id: archetypeKey,
+    title: arc.title,
+    description: arc.description,
+    svg: proceduralSvg,
+    dataUri,
+    source: "procedural",
+    palette: {
+      primary: pal.primary,
+      accent: pal.accent,
+      bg: pal.bg,
+    },
+  };
+}
 
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as GenerateLogoRequest;
-    const { name, businessType = "restaurant", vibe = "royal_luxury", primaryColor = "emerald", keywords = "" } = body;
+    const {
+      name,
+      businessType = "restaurant",
+      vibe = "royal_luxury",
+      primaryColor = "emerald",
+      keywords = "",
+      mode = "all",
+      archetype = "minimal",
+    } = body;
 
     const brandName = (name || "DineFlow").trim();
     const apiKey = process.env.GEMINI_API_KEY;
 
-    // Randomisation seed — changes every call so even same inputs produce fresh results
-    const uniqueSeed = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    if (mode === "single") {
+      // Regenerate a single specific variation
+      const singleVariation = await createArchetypeLogo(
+        archetype,
+        brandName,
+        businessType,
+        vibe,
+        primaryColor,
+        keywords,
+        apiKey
+      );
 
-    if (apiKey) {
-      // Pick random varied directive strings
-      const layout = DESIGN_LAYOUTS[Math.floor(Math.random() * DESIGN_LAYOUTS.length)];
-      const motif = MOTIF_DETAILS[Math.floor(Math.random() * MOTIF_DETAILS.length)];
-      const typo = TYPOGRAPHY_STYLES[Math.floor(Math.random() * TYPOGRAPHY_STYLES.length)];
-
-      const prompt = `You are an elite vector logo designer and SVG artist. Create a visually unique, production-ready vector brand logo.
-
-Brand Info:
-- Name: "${brandName}"
-- Business Category: ${businessType}
-- Vibe / Style: ${vibe}
-- Primary Accent: ${primaryColor}
-- Keywords: ${keywords || "luxury, hospitality, elegance, memorable"}
-
-Design Directives (follow these exactly for THIS iteration):
-- Layout concept: ${layout}
-- Decorative motif: ${motif}
-- Typography style: ${typo}
-- Unique session seed (incorporate as creative variation): ${uniqueSeed}
-
-TECHNICAL RULES:
-1. Return ONLY pure SVG code starting with <svg and ending with </svg>. No markdown, no backticks, no extra text.
-2. The SVG MUST have viewBox="0 0 300 300", width="100%", height="100%".
-3. Use a dark background (#0A0F1D or similar deep navy/black) with rounded corners.
-4. Include an iconic central crest/monogram and the brand name "${brandName}" in clean typography.
-5. Make it visually DISTINCT from any generic hospitality logo — this brand must look unique.
-6. The SVG must be self-contained without external assets or CSS classes.`;
-
-      for (const model of GEMINI_MODELS) {
-        try {
-          const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-          const res = await fetch(endpoint, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: {
-                temperature: 1.0,      // High creativity — ensures unique output each time
-                topP: 0.95,
-                topK: 40,
-                maxOutputTokens: 4096,
-              },
-            }),
-          });
-
-          if (res.ok) {
-            const data = await res.json();
-            const text = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
-            const cleanSvg = sanitizeSvg(text);
-            if (cleanSvg && cleanSvg.length > 100) {
-              const dataUri = `data:image/svg+xml;utf8,${encodeURIComponent(cleanSvg)}`;
-              return NextResponse.json({
-                ok: true,
-                svg: cleanSvg,
-                dataUri,
-                source: "gemini",
-                model,
-              });
-            }
-          }
-        } catch (e) {
-          console.warn(`[generate-logo] Model ${model} failed:`, e);
-        }
-      }
+      return NextResponse.json({
+        ok: true,
+        variations: [singleVariation],
+        svg: singleVariation.svg,
+        dataUri: singleVariation.dataUri,
+        source: singleVariation.source,
+      });
     }
 
-    // Procedural fallback — uses time-based seed for uniqueness
-    const proceduralSvg = generateProceduralSvg(brandName, businessType, vibe, primaryColor, Date.now());
-    const dataUri = `data:image/svg+xml;utf8,${encodeURIComponent(proceduralSvg)}`;
+    // Generate all 4 distinct creative archetypes concurrently
+    const archetypes: Array<"minimal" | "luxury" | "artisan" | "monogram"> = [
+      "minimal",
+      "luxury",
+      "artisan",
+      "monogram",
+    ];
+
+    const results = await Promise.allSettled(
+      archetypes.map((arc) =>
+        createArchetypeLogo(
+          arc,
+          brandName,
+          businessType,
+          vibe,
+          primaryColor,
+          keywords,
+          apiKey
+        )
+      )
+    );
+
+    const variations: LogoVariation[] = results.map((res, index) => {
+      if (res.status === "fulfilled") {
+        return res.value;
+      }
+      // Safety fallback if a promise threw an uncaught error
+      const arc = archetypes[index];
+      const pal = PALETTES[primaryColor] || PALETTES.emerald;
+      const fallbackSvg = generateArchetypeProceduralSvg(brandName, businessType, arc, primaryColor, Date.now() + index);
+      return {
+        id: arc,
+        title: ARCHETYPE_CONFIGS[arc].title,
+        description: ARCHETYPE_CONFIGS[arc].description,
+        svg: fallbackSvg,
+        dataUri: `data:image/svg+xml;utf8,${encodeURIComponent(fallbackSvg)}`,
+        source: "procedural",
+        palette: {
+          primary: pal.primary,
+          accent: pal.accent,
+          bg: pal.bg,
+        },
+      };
+    });
+
+    const primaryVariation = variations[0];
 
     return NextResponse.json({
       ok: true,
-      svg: proceduralSvg,
-      dataUri,
-      source: "procedural",
+      variations,
+      // Backward compatibility fields
+      svg: primaryVariation.svg,
+      dataUri: primaryVariation.dataUri,
+      source: primaryVariation.source,
+      model: primaryVariation.model,
     });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Failed to generate logo";
@@ -263,4 +461,5 @@ TECHNICAL RULES:
     );
   }
 }
+
 
