@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { apiClient } from '@/lib/api'
+import { apiClient, getBaseURL } from '@/lib/api'
 import { useAuthStore } from '@/lib/stores/auth-store'
 
 export type NotificationCategory =
@@ -158,31 +158,52 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
 
   connectSSE: () => {
     const existing = get().sseRef
-    if (existing) return
+    if (existing && existing.readyState !== EventSource.CLOSED) return
 
     const authState = useAuthStore.getState()
     const tenantId = authState.tenant?.id
-    if (!tenantId) return
-
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
     const token = authState.accessToken
-    const url = `${baseUrl}/api/v1/notifications/stream?tenantId=${tenantId}&token=${token}`
+    if (!tenantId || !token) return
 
-    const es = new EventSource(url)
+    const rawBase = getBaseURL()
+    const cleanBase = rawBase.replace(/\/api\/v1\/?$/, '')
+    const url = `${cleanBase}/api/v1/notifications/stream?tenantId=${encodeURIComponent(tenantId)}&token=${encodeURIComponent(token)}`
 
-    es.addEventListener('notification', (e) => {
-      try {
-        const raw = JSON.parse(e.data) as { data?: Notification } | Notification
-        const notif = ('data' in raw && raw.data) ? raw.data : (raw as Notification)
-        if (notif?.id) {
-          get().pushNotification(notif)
+    try {
+      const es = new EventSource(url)
+
+      const handlePayload = (dataStr: string) => {
+        try {
+          const raw = JSON.parse(dataStr)
+          // Look for notification in:
+          // 1. raw.notification (from Go NotificationEvent)
+          // 2. raw.data
+          // 3. raw directly
+          let notif: Notification | null = null
+          if (raw?.notification && typeof raw.notification === 'object' && raw.notification.id) {
+            notif = raw.notification as Notification
+          } else if (raw?.data && typeof raw.data === 'object' && raw.data.id) {
+            notif = raw.data as Notification
+          } else if (raw?.id) {
+            notif = raw as Notification
+          }
+
+          if (notif?.id) {
+            get().pushNotification(notif)
+          }
+        } catch {
+          // Ignore ping or keepalive events
         }
-      } catch {
-        // parse error — ignore
       }
-    })
 
-    set({ sseRef: es })
+      es.addEventListener('notification', (e) => handlePayload(e.data))
+      es.addEventListener('message', (e) => handlePayload(e.data))
+      es.onmessage = (e) => handlePayload(e.data)
+
+      set({ sseRef: es })
+    } catch (err) {
+      console.warn('[NotificationStore] EventSource connection failed:', err)
+    }
   },
 
   disconnectSSE: () => {

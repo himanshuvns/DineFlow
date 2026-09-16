@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Bell, X, CheckCheck, Trash2, BellOff, ShoppingCart, Bed, Building2, Wrench, CreditCard, UtensilsCrossed, Users, Settings, Loader2 } from 'lucide-react'
 import { useNotificationStore, type Notification, type NotificationCategory } from '@/lib/stores/notification-store'
+import { useAuthStore } from '@/lib/stores/auth-store'
+import { useToast } from '@/components/ui/toast'
 
 // ── Inline time helper (no date-fns dependency) ───────────────────────────
 function timeAgo(dateStr: string): string {
@@ -142,18 +144,24 @@ export function NotificationCenter() {
     disconnectSSE,
   } = useNotificationStore()
 
-  // Initial load + SSE connection
+  const tenantId = useAuthStore((s) => s.tenant?.id)
+  const accessToken = useAuthStore((s) => s.accessToken)
+  const prevCountRef = useRef(unreadCount)
+
+  // Real-time SSE connection whenever auth store is hydrated and active
   useEffect(() => {
+    if (!tenantId || !accessToken) return
+
     void fetchUnreadCount()
     connectSSE()
-    // Poll unread count every 30s as fallback
-    const interval = setInterval(() => void fetchUnreadCount(), 30_000)
+
+    // Poll unread count every 15s as fallback for dropped socket connections
+    const interval = setInterval(() => void fetchUnreadCount(), 15_000)
     return () => {
       clearInterval(interval)
       disconnectSSE()
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [tenantId, accessToken, fetchUnreadCount, connectSSE, disconnectSSE])
 
   // Fetch notifications when panel opens / category changes
   useEffect(() => {

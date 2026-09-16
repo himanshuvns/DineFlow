@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"time"
 
 	appnotification "github.com/dineflow/api/internal/application/notification"
 	domainnotification "github.com/dineflow/api/internal/domain/notification"
@@ -248,6 +249,11 @@ func (h *NotificationHandler) Stream(c *gin.Context) {
 				return false
 			}
 			c.SSEvent("notification", string(msg))
+			c.Writer.Flush()
+			return true
+		case <-time.After(15 * time.Second):
+			// Keep-alive heartbeat ping to prevent reverse proxies (Railway, Cloudflare, etc.) from dropping idle SSE
+			c.SSEvent("ping", fmt.Sprintf(`{"time":%d}`, time.Now().Unix()))
 			c.Writer.Flush()
 			return true
 		}

@@ -245,6 +245,7 @@ func (s *Service) EmitOrderCreated(ctx context.Context, tenantID bson.ObjectID, 
 func (s *Service) EmitOrderUpdated(ctx context.Context, tenantID bson.ObjectID, ord *domainorder.Order) error {
 	var title, message string
 	priority := domainnotification.PriorityMedium
+	category := domainnotification.CategoryOrders
 
 	switch ord.Status {
 	case domainorder.StatusServed:
@@ -255,6 +256,7 @@ func (s *Service) EmitOrderUpdated(ctx context.Context, tenantID bson.ObjectID, 
 		message = fmt.Sprintf("Order #%s has been cancelled.", ord.OrderNumber)
 		priority = domainnotification.PriorityHigh
 	case domainorder.StatusPaid:
+		category = domainnotification.CategoryPayments
 		title = fmt.Sprintf("Payment Received — #%s", ord.OrderNumber)
 		message = fmt.Sprintf("₹%.0f payment recorded for Order #%s.", ord.TotalAmount, ord.OrderNumber)
 		priority = domainnotification.PriorityMedium
@@ -264,7 +266,7 @@ func (s *Service) EmitOrderUpdated(ctx context.Context, tenantID bson.ObjectID, 
 
 	_, err := s.CreateNotification(ctx, CreateNotificationInput{
 		TenantID:  tenantID,
-		Category:  domainnotification.CategoryOrders,
+		Category:  category,
 		Title:     title,
 		Message:   message,
 		Priority:  priority,
@@ -280,6 +282,9 @@ func (s *Service) EmitOrderUpdated(ctx context.Context, tenantID bson.ObjectID, 
 
 // EmitGuestCheckedIn fires when a guest checks into a room.
 func (s *Service) EmitGuestCheckedIn(ctx context.Context, tenantID bson.ObjectID, guestName, roomNumber, roomID string) error {
+	if strings.TrimSpace(guestName) == "" {
+		guestName = "Guest"
+	}
 	_, err := s.CreateNotification(ctx, CreateNotificationInput{
 		TenantID:  tenantID,
 		Category:  domainnotification.CategoryReservations,
@@ -294,6 +299,9 @@ func (s *Service) EmitGuestCheckedIn(ctx context.Context, tenantID bson.ObjectID
 
 // EmitGuestCheckedOut fires when a guest checks out of a room.
 func (s *Service) EmitGuestCheckedOut(ctx context.Context, tenantID bson.ObjectID, guestName, roomNumber, roomID string) error {
+	if strings.TrimSpace(guestName) == "" {
+		guestName = "Guest"
+	}
 	_, err := s.CreateNotification(ctx, CreateNotificationInput{
 		TenantID:  tenantID,
 		Category:  domainnotification.CategoryReservations,
@@ -308,25 +316,33 @@ func (s *Service) EmitGuestCheckedOut(ctx context.Context, tenantID bson.ObjectI
 
 // EmitHousekeepingRequested fires when a guest requests a housekeeping service.
 func (s *Service) EmitHousekeepingRequested(ctx context.Context, tenantID bson.ObjectID, taskTitle, roomNumber, roomID string) error {
+	msg := strings.TrimSpace(taskTitle)
+	if msg == "" {
+		msg = fmt.Sprintf("Service request submitted for Room %s", roomNumber)
+	}
 	_, err := s.CreateNotification(ctx, CreateNotificationInput{
 		TenantID:  tenantID,
 		Category:  domainnotification.CategoryHousekeeping,
 		Title:     fmt.Sprintf("Housekeeping Request — Room %s", roomNumber),
-		Message:   taskTitle,
+		Message:   msg,
 		Priority:  domainnotification.PriorityHigh,
 		ActionURL: fmt.Sprintf("/dashboard/rooms/%s", roomID),
-		Metadata:  map[string]interface{}{"roomId": roomID, "roomNumber": roomNumber, "taskTitle": taskTitle},
+		Metadata:  map[string]interface{}{"roomId": roomID, "roomNumber": roomNumber, "taskTitle": msg},
 	})
 	return err
 }
 
 // EmitHousekeepingCompleted fires when a staff member marks a housekeeping task as done.
 func (s *Service) EmitHousekeepingCompleted(ctx context.Context, tenantID bson.ObjectID, taskTitle, roomNumber, roomID string) error {
+	msg := strings.TrimSpace(taskTitle)
+	if msg == "" {
+		msg = fmt.Sprintf("Housekeeping service completed for Room %s", roomNumber)
+	}
 	_, err := s.CreateNotification(ctx, CreateNotificationInput{
 		TenantID:  tenantID,
 		Category:  domainnotification.CategoryHousekeeping,
 		Title:     fmt.Sprintf("Housekeeping Done — Room %s", roomNumber),
-		Message:   taskTitle,
+		Message:   msg,
 		Priority:  domainnotification.PriorityMedium,
 		ActionURL: fmt.Sprintf("/dashboard/rooms/%s", roomID),
 		Metadata:  map[string]interface{}{"roomId": roomID, "roomNumber": roomNumber},

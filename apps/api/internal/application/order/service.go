@@ -517,6 +517,9 @@ func (s *Service) UpdateOrderStatus(ctx context.Context, tenantID bson.ObjectID,
 		Order:     &ord,
 	})
 
+	// Emit notification for restaurant notification center (served/delivered, paid, cancelled)
+	s.emitOrderNotif(ctx, tenantID, &ord, false)
+
 	return &ord, nil
 }
 

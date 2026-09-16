@@ -25,20 +25,22 @@ const (
 func Auth(maker *token.Maker) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
-		if authHeader == "" {
-			response.Unauthorized(c, "Authorization header is required.")
-			return
+		var tokenStr string
+
+		if authHeader != "" {
+			parts := strings.SplitN(authHeader, " ", 2)
+			if len(parts) == 2 && strings.EqualFold(parts[0], "Bearer") {
+				tokenStr = parts[1]
+			}
 		}
 
-		parts := strings.SplitN(authHeader, " ", 2)
-		if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
-			response.Unauthorized(c, "Invalid authorization header format. Use: Bearer <token>")
-			return
-		}
-
-		tokenStr := parts[1]
+		// Fallback for SSE / EventSource / WebSocket where browser cannot set custom headers
 		if tokenStr == "" {
-			response.Unauthorized(c, "Token is required.")
+			tokenStr = c.Query("token")
+		}
+
+		if tokenStr == "" {
+			response.Unauthorized(c, "Authorization header or token query parameter is required.")
 			return
 		}
 

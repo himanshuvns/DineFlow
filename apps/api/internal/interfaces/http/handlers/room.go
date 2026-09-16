@@ -546,6 +546,16 @@ func (h *RoomHandler) CreateTask(c *gin.Context) {
 		return
 	}
 
+	// Fire housekeeping notification asynchronously
+	if h.notifService != nil {
+		go func() {
+			_ = h.notifService.EmitHousekeepingRequested(
+				context.Background(), tOID,
+				task.Title, room.RoomNumber, room.ID.Hex(),
+			)
+		}()
+	}
+
 	response.Created(c, task)
 }
 
