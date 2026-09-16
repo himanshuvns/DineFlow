@@ -413,34 +413,34 @@ export function CustomerHousekeepingTracker({
 
   return (
     <div className="max-w-xl mx-auto px-4 mt-6">
-      <div className="rounded-3xl bg-slate-900/95 border-2 border-emerald-500/40 p-4 sm:p-5 shadow-2xl backdrop-blur-md space-y-4 relative overflow-hidden ring-1 ring-emerald-500/20">
+      <div className="rounded-3xl bg-white dark:bg-slate-900/95 border-2 border-emerald-500/40 p-4 sm:p-5 shadow-xl dark:shadow-2xl backdrop-blur-md space-y-4 relative overflow-hidden ring-1 ring-emerald-500/20">
         {/* Glow ambient background accent */}
-        <div className="absolute top-0 right-0 w-56 h-56 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-0 right-0 w-56 h-56 bg-emerald-500/10 dark:bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
 
         {/* Card Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="h-9 w-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30 shadow-sm shadow-emerald-500/20">
+            <div className="h-9 w-9 rounded-xl bg-emerald-500/15 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-500/30 shadow-sm">
               <Bed className="h-4 w-4" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-sm sm:text-base font-black text-white tracking-tight">
+                <h2 className="text-sm sm:text-base font-black text-slate-900 dark:text-white tracking-tight">
                   Suite Service Flow & Housekeeping
                 </h2>
                 {activeCount > 0 ? (
                   <Badge variant="glow" size="sm" className="font-mono text-[10px] uppercase font-extrabold">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse mr-1" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse mr-1" />
                     {activeCount} Live Request{activeCount > 1 ? "s" : ""}
                   </Badge>
                 ) : (
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-bold text-emerald-400 flex items-center gap-1">
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                     <ShieldCheck className="h-3 w-3" />
                     24/7 Available
                   </span>
                 )}
               </div>
-              <p className="text-[11px] text-slate-400 mt-0.5">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                 Private Butler & Housekeeping Service for {roomDisplay}
               </p>
             </div>
@@ -450,8 +450,8 @@ export function CustomerHousekeepingTracker({
             variant="outline"
             size="sm"
             onClick={onRequestNewService}
-            leftIcon={<Plus className="h-3.5 w-3.5 text-emerald-400" />}
-            className="h-8 px-2.5 text-xs text-emerald-300 hover:text-white border-emerald-500/40 hover:bg-emerald-500/20 shrink-0 font-bold"
+            leftIcon={<Plus className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />}
+            className="h-8 px-2.5 text-xs text-emerald-700 dark:text-emerald-300 hover:text-emerald-900 dark:hover:text-white border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-500/20 shrink-0 font-bold"
           >
             <span>Custom<span className="hidden xs:inline"> Request</span></span>
           </Button>
@@ -472,8 +472,8 @@ export function CustomerHousekeepingTracker({
                   className={cn(
                     "rounded-2xl border transition-all overflow-hidden",
                     isExpanded
-                      ? "border-emerald-500/60 bg-slate-950/90 shadow-lg shadow-emerald-500/10"
-                      : "border-slate-800 bg-slate-950/50 hover:border-slate-700"
+                      ? "border-emerald-500/60 bg-emerald-50/40 dark:bg-slate-950/90 shadow-lg shadow-emerald-500/10"
+                      : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/50 hover:border-slate-300 dark:hover:border-slate-700"
                   )}
                 >
                   {/* Interactive Header Bar */}
@@ -486,35 +486,35 @@ export function CustomerHousekeepingTracker({
                         className={cn(
                           "h-2.5 w-2.5 rounded-full shrink-0",
                           task.status === "completed"
-                            ? "bg-emerald-400 shadow-sm shadow-emerald-400"
+                            ? "bg-emerald-500 dark:bg-emerald-400 shadow-sm"
                             : task.status === "in_progress"
-                            ? "bg-cyan-400 animate-ping"
-                            : "bg-amber-400 animate-pulse"
+                            ? "bg-cyan-500 dark:bg-cyan-400 animate-ping"
+                            : "bg-amber-500 dark:bg-amber-400 animate-pulse"
                         )}
                       />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <p className="text-xs sm:text-sm font-bold text-white truncate">{task.title}</p>
+                          <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">{task.title}</p>
                           {isUrgent && (
-                            <span className="px-1.5 py-0.5 rounded bg-rose-500/20 border border-rose-500/40 text-[9px] font-bold text-rose-300 shrink-0">
+                            <span className="px-1.5 py-0.5 rounded bg-rose-500/15 dark:bg-rose-500/20 border border-rose-500/30 text-[9px] font-bold text-rose-700 dark:text-rose-300 shrink-0">
                               Urgent
                             </span>
                           )}
                         </div>
 
-                        <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5 font-mono">
-                          <span className={cn("flex items-center gap-1", task.status === "completed" ? "text-emerald-400 font-semibold" : "text-slate-300")}>
+                        <div className="flex items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 font-mono">
+                          <span className={cn("flex items-center gap-1", task.status === "completed" ? "text-emerald-600 dark:text-emerald-400 font-semibold" : "text-slate-600 dark:text-slate-300")}>
                             {task.status === "completed" ? (
-                              <CheckCircle2 className="h-3 w-3 text-emerald-400" />
+                              <CheckCircle2 className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
                             ) : (
-                              <Clock className="h-3 w-3 text-emerald-400" />
+                              <Clock className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
                             )}
                             {getLiveTimer(task)}
                           </span>
                           {task.assignedTo && (
                             <>
                               <span>•</span>
-                              <span className="text-cyan-300 flex items-center gap-1 font-sans font-medium">
+                              <span className="text-cyan-700 dark:text-cyan-300 flex items-center gap-1 font-sans font-medium">
                                 <UserCheck className="h-3 w-3" />
                                 {task.assignedTo}
                               </span>
@@ -530,7 +530,7 @@ export function CustomerHousekeepingTracker({
                           type="button"
                           onClick={(e) => handleDismissTask(taskId, e)}
                           title="Dismiss completed service"
-                          className="h-6 px-1.5 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 text-[10px] font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                          className="h-6 px-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-rose-100 dark:hover:bg-rose-500/20 text-slate-600 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-300 text-[10px] font-semibold flex items-center gap-1 transition-colors cursor-pointer"
                         >
                           <X className="h-3 w-3" />
                           <span>Clear</span>
@@ -563,10 +563,10 @@ export function CustomerHousekeepingTracker({
 
                   {/* Multi-Step Timeline Flow Section */}
                   {isExpanded && (
-                    <div className="px-3.5 pb-4 pt-1 border-t border-slate-800/80 space-y-4 animate-in fade-in duration-200">
+                    <div className="px-3.5 pb-4 pt-1 border-t border-slate-200 dark:border-slate-800/80 space-y-4 animate-in fade-in duration-200">
                       {task.notes && (
-                        <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-[11px] text-slate-300">
-                          <span className="text-slate-500 font-semibold">Special Instructions: </span>
+                        <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 text-[11px] text-slate-700 dark:text-slate-300">
+                          <span className="text-slate-500 dark:text-slate-400 font-semibold">Special Instructions: </span>
                           {task.notes}
                         </div>
                       )}
@@ -575,7 +575,7 @@ export function CustomerHousekeepingTracker({
                       <div className="pt-2">
                         <div className="relative">
                           {/* Track bar */}
-                          <div className="absolute top-4 left-6 right-6 h-1 bg-slate-800 rounded-full -z-0">
+                          <div className="absolute top-4 left-6 right-6 h-1 bg-slate-200 dark:bg-slate-800 rounded-full -z-0">
                             <div
                               className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 transition-all duration-700 rounded-full shadow-sm shadow-emerald-500/50"
                               style={{
@@ -605,10 +605,10 @@ export function CustomerHousekeepingTracker({
                                     className={cn(
                                       "h-8 w-8 rounded-full flex items-center justify-center border-2 transition-all duration-500",
                                       isDone
-                                        ? "bg-emerald-500 border-emerald-400 text-slate-950 font-bold shadow-lg shadow-emerald-500/30"
+                                        ? "bg-emerald-500 border-emerald-400 text-white dark:text-slate-950 font-bold shadow-lg shadow-emerald-500/30"
                                         : isCurrent
-                                        ? "bg-slate-900 border-emerald-400 text-emerald-400 ring-4 ring-emerald-500/25 shadow-md shadow-emerald-500/20"
-                                        : "bg-slate-950 border-slate-800 text-slate-600"
+                                        ? "bg-white dark:bg-slate-900 border-emerald-500 dark:border-emerald-400 text-emerald-600 dark:text-emerald-400 ring-4 ring-emerald-500/20 shadow-md shadow-emerald-500/20"
+                                        : "bg-slate-100 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-600"
                                     )}
                                   >
                                     <StepIcon className="h-4 w-4" />
@@ -617,10 +617,10 @@ export function CustomerHousekeepingTracker({
                                     className={cn(
                                       "text-[10px] font-bold mt-2 leading-tight",
                                       isCurrent
-                                        ? "text-emerald-400 font-extrabold"
+                                        ? "text-emerald-600 dark:text-emerald-400 font-extrabold"
                                         : isDone
-                                        ? "text-slate-200"
-                                        : "text-slate-500"
+                                        ? "text-slate-800 dark:text-slate-200"
+                                        : "text-slate-400 dark:text-slate-500"
                                     )}
                                   >
                                     {step.label}
@@ -632,23 +632,23 @@ export function CustomerHousekeepingTracker({
                         </div>
 
                         {/* Live Current Step Feedback Card */}
-                        <div className="mt-4 p-3 rounded-xl bg-slate-900/90 border border-slate-800 text-center space-y-1">
-                          <p className="text-xs font-semibold text-white">
+                        <div className="mt-4 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 text-center space-y-1">
+                          <p className="text-xs font-semibold text-slate-900 dark:text-white">
                             {STEPS[currentStepIdx]?.sublabel}
                           </p>
                           {task.status === "completed" ? (
-                            <p className="text-[10px] text-emerald-400 font-medium">
+                            <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
                               ✓ Your suite has been serviced. Need anything else? Select another service below.
                             </p>
                           ) : task.status === "in_progress" ? (
-                            <p className="text-[10px] text-cyan-300 font-medium">
+                            <p className="text-[10px] text-cyan-700 dark:text-cyan-300 font-medium">
                               {task.assignedTo
                                 ? `Steward ${task.assignedTo} is attending to ${roomDisplay}.`
                                 : `Housekeeping steward is currently attending to ${roomDisplay}.`}
                             </p>
                           ) : (
-                            <p className="text-[10px] text-slate-400">
-                              Estimated steward arrival: <strong className="text-emerald-400">10–15 minutes</strong>
+                            <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                              Estimated steward arrival: <strong className="text-emerald-600 dark:text-emerald-400">10–15 minutes</strong>
                             </p>
                           )}
                         </div>
@@ -663,33 +663,33 @@ export function CustomerHousekeepingTracker({
           /* ── CASE 2: NO ACTIVE REQUESTS — SHOW STANDBY FLOW & 1-TAP CATALOG ── */
           <div className="space-y-3.5">
             {/* 3-Step Live Standard Preview */}
-            <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-3">
+            <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 space-y-3">
               <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-slate-200">Live Service Standard:</span>
-                <span className="text-[10px] text-emerald-400 font-medium">Auto-tracked in real time</span>
+                <span className="font-bold text-slate-800 dark:text-slate-200">Live Service Standard:</span>
+                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Auto-tracked in real time</span>
               </div>
 
               {/* Mini 3-step timeline preview */}
               <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="p-2 rounded-xl bg-slate-900 border border-slate-800 flex flex-col items-center">
-                  <div className="h-6 w-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-1 text-xs font-bold">
+                <div className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col items-center">
+                  <div className="h-6 w-6 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-1 text-xs font-bold">
                     1
                   </div>
-                  <span className="text-[10px] font-bold text-slate-300">Request Placed</span>
+                  <span className="text-[10px] font-bold text-slate-800 dark:text-slate-300">Request Placed</span>
                   <span className="text-[9px] text-slate-500">Desk notified</span>
                 </div>
-                <div className="p-2 rounded-xl bg-slate-900 border border-slate-800 flex flex-col items-center">
-                  <div className="h-6 w-6 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center mb-1 text-xs font-bold">
+                <div className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col items-center">
+                  <div className="h-6 w-6 rounded-full bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 flex items-center justify-center mb-1 text-xs font-bold">
                     2
                   </div>
-                  <span className="text-[10px] font-bold text-slate-300">Steward Assigned</span>
+                  <span className="text-[10px] font-bold text-slate-800 dark:text-slate-300">Steward Assigned</span>
                   <span className="text-[9px] text-slate-500">In-progress</span>
                 </div>
-                <div className="p-2 rounded-xl bg-slate-900 border border-slate-800 flex flex-col items-center">
-                  <div className="h-6 w-6 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center mb-1 text-xs font-bold">
+                <div className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col items-center">
+                  <div className="h-6 w-6 rounded-full bg-teal-500/20 text-teal-600 dark:text-teal-400 flex items-center justify-center mb-1 text-xs font-bold">
                     3
                   </div>
-                  <span className="text-[10px] font-bold text-slate-300">Completed</span>
+                  <span className="text-[10px] font-bold text-slate-800 dark:text-slate-300">Completed</span>
                   <span className="text-[9px] text-slate-500">Suite refreshed</span>
                 </div>
               </div>
@@ -698,7 +698,7 @@ export function CustomerHousekeepingTracker({
             {/* Quick 1-Tap Request Buttons */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Instant 1-Tap Requests:
                 </span>
                 <span className="text-[10px] text-slate-500">No dial needed</span>
@@ -715,17 +715,17 @@ export function CustomerHousekeepingTracker({
                       type="button"
                       disabled={isBusy}
                       onClick={() => handleQuickDispatch(srv)}
-                      className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800/90 hover:border-emerald-500/50 hover:bg-slate-900 flex flex-col items-center text-center transition-all cursor-pointer group disabled:opacity-50"
+                      className="p-2.5 rounded-xl bg-white dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800/90 hover:border-emerald-500/50 hover:bg-slate-50 dark:hover:bg-slate-900 flex flex-col items-center text-center transition-all cursor-pointer group disabled:opacity-50 shadow-sm dark:shadow-none"
                     >
                       {isBusy ? (
-                        <Loader2 className="h-4 w-4 text-emerald-400 animate-spin mb-1" />
+                        <Loader2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 animate-spin mb-1" />
                       ) : (
-                        <Icon className="h-4 w-4 text-emerald-400 mb-1 group-hover:scale-110 transition-transform" />
+                        <Icon className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mb-1 group-hover:scale-110 transition-transform" />
                       )}
-                      <span className="text-[11px] font-bold text-slate-200 line-clamp-1 group-hover:text-emerald-400 transition-colors">
+                      <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 line-clamp-1 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                         {srv.title}
                       </span>
-                      <span className="text-[9px] text-slate-500 line-clamp-1">
+                      <span className="text-[9px] text-slate-500 dark:text-slate-400 line-clamp-1">
                         {srv.desc}
                       </span>
                     </button>

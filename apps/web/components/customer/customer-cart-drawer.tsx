@@ -291,16 +291,16 @@ export function CustomerCartDrawer({
             onClick={() => !isSubmitting && setIsOpen(false)}
           />
 
-          <div className="relative w-full max-w-lg max-h-[90dvh] flex flex-col bg-slate-900 border border-slate-800 rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden z-10 animate-in fade-in slide-in-from-bottom duration-200">
+          <div className="relative w-full max-w-lg max-h-[90dvh] flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden z-10 animate-in fade-in slide-in-from-bottom duration-200">
             {/* Header */}
-            <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/40">
+            <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/80 dark:bg-slate-950/40">
               <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                <div className="h-8 w-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
                   <ShoppingBag className="h-4 w-4" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-white">Your Order</h3>
-                  <p className="text-[11px] text-slate-400">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">Your Order</h3>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
                     {tableName} • Direct to Kitchen
                   </p>
                 </div>
@@ -310,7 +310,7 @@ export function CustomerCartDrawer({
                 type="button"
                 onClick={() => setIsOpen(false)}
                 disabled={isSubmitting}
-                className="h-8 w-8 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center hover:text-white"
+                className="h-8 w-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center hover:text-slate-900 dark:hover:text-white"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -320,7 +320,7 @@ export function CustomerCartDrawer({
             <div className="p-5 overflow-y-auto space-y-5 flex-1">
               {/* Order Items List */}
               <div className="space-y-3">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                   Selected Dishes ({itemCount})
                 </span>
 
@@ -330,11 +330,11 @@ export function CustomerCartDrawer({
                   items.map((item) => (
                     <div
                       key={item.cartItemId}
-                      className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 flex items-start justify-between gap-3"
+                      className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800/80 flex items-start justify-between gap-3"
                     >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <h4 className="text-sm font-bold text-white truncate">
+                          <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate">
                             {item.name}
                           </h4>
                           {item.selectedVariant && (
@@ -345,39 +345,39 @@ export function CustomerCartDrawer({
                         </div>
 
                         {item.selectedModifiers.length > 0 && (
-                          <p className="text-xs text-slate-400 mt-1">
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                             + {item.selectedModifiers.map((m) => m.name).join(", ")}
                           </p>
                         )}
 
                         {item.notes && (
-                          <p className="text-xs text-amber-400/90 mt-1 italic">
+                          <p className="text-xs text-amber-600 dark:text-amber-400/90 mt-1 italic">
                             Note: {item.notes}
                           </p>
                         )}
 
-                        <span className="text-xs font-mono font-semibold text-emerald-400 mt-2 block">
+                        <span className="text-xs font-mono font-semibold text-emerald-600 dark:text-emerald-400 mt-2 block">
                           {formatCurrency(item.totalPrice, "INR")}
                         </span>
                       </div>
 
                       {/* Quantity & Delete */}
                       <div className="flex items-center gap-2">
-                        <div className="flex items-center bg-slate-900 border border-slate-800 rounded-lg">
+                        <div className="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xs">
                           <button
                             type="button"
                             onClick={() => updateQuantity(item.cartItemId, item.quantity - 1)}
-                            className="h-7 w-7 flex items-center justify-center text-slate-400 hover:text-white"
+                            className="h-7 w-7 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                           >
                             <Minus className="h-3 w-3" />
                           </button>
-                          <span className="w-6 text-center text-xs font-bold text-white">
+                          <span className="w-6 text-center text-xs font-bold text-slate-900 dark:text-white">
                             {item.quantity}
                           </span>
                           <button
                             type="button"
                             onClick={() => updateQuantity(item.cartItemId, item.quantity + 1)}
-                            className="h-7 w-7 flex items-center justify-center text-slate-400 hover:text-white"
+                            className="h-7 w-7 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                           >
                             <Plus className="h-3 w-3" />
                           </button>
@@ -386,7 +386,7 @@ export function CustomerCartDrawer({
                         <button
                           type="button"
                           onClick={() => removeItem(item.cartItemId)}
-                          className="h-7 w-7 rounded-lg text-slate-500 hover:text-rose-400 flex items-center justify-center"
+                          className="h-7 w-7 rounded-lg text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 flex items-center justify-center"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -398,31 +398,31 @@ export function CustomerCartDrawer({
 
               {/* Guest Details Form */}
               <form id="order-form" onSubmit={handleCheckout} className="space-y-3 pt-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                   Guest & Delivery Details
                 </span>
 
                 <div className="space-y-2.5">
                   <div className="relative">
-                    <User className="absolute left-3.5 top-3 h-4 w-4 text-slate-500" />
+                    <User className="absolute left-3.5 top-3 h-4 w-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
                     <input
                       type="text"
                       placeholder="Your Name (Optional)"
                       value={nameInput}
                       onChange={(e) => setNameInput(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-colors"
                     />
                   </div>
 
                   <div className="relative">
-                    <Phone className="absolute left-3.5 top-3 h-4 w-4 text-emerald-400" />
+                    <Phone className="absolute left-3.5 top-3 h-4 w-4 text-emerald-600 dark:text-emerald-400 pointer-events-none" />
                     <input
                       type="tel"
                       inputMode="numeric"
                       placeholder="WhatsApp Mobile (+91 98765 43210)"
                       value={phoneInput}
                       onChange={(e) => setPhoneInput(formatIndianPhoneInput(e.target.value))}
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-colors"
                     />
                   </div>
 
@@ -431,31 +431,31 @@ export function CustomerCartDrawer({
                   </p>
 
                   <div className="relative">
-                    <MessageSquare className="absolute left-3.5 top-3 h-4 w-4 text-slate-500" />
+                    <MessageSquare className="absolute left-3.5 top-3 h-4 w-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
                     <input
                       type="text"
-                      placeholder="Any order notes for the waiter?"
+                      placeholder="Any order notes for the kitchen / waiter?"
                       value={notesInput}
                       onChange={(e) => setNotesInput(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-colors"
                     />
                   </div>
                 </div>
               </form>
 
               {/* Bill Breakdown */}
-              <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800/80 space-y-2">
-                <div className="flex justify-between text-xs text-slate-400">
+              <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800/80 space-y-2">
+                <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400">
                   <span>Subtotal</span>
                   <span className="font-mono">{formatCurrency(subtotal, "INR")}</span>
                 </div>
-                <div className="flex justify-between text-xs text-slate-400">
+                <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400">
                   <span>Taxes & GST (5%)</span>
                   <span className="font-mono">{formatCurrency(tax, "INR")}</span>
                 </div>
-                <div className="pt-2 border-t border-slate-800 flex justify-between text-sm font-bold text-white">
+                <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex justify-between text-sm font-bold text-slate-900 dark:text-white">
                   <span>To Pay (Pay at counter or post-meal)</span>
-                  <span className="text-emerald-400 font-mono text-base">
+                  <span className="text-emerald-600 dark:text-emerald-400 font-mono text-base font-extrabold">
                     {formatCurrency(total, "INR")}
                   </span>
                 </div>
@@ -463,7 +463,7 @@ export function CustomerCartDrawer({
             </div>
 
             {/* Footer Submit Button */}
-            <div className="p-4 pb-safe border-t border-slate-800 bg-slate-950/90 backdrop-blur space-y-2">
+            <div className="p-4 pb-safe border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/90 backdrop-blur space-y-2">
               <Button
                 type="submit"
                 form="order-form"

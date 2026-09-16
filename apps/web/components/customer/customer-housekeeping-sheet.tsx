@@ -265,7 +265,7 @@ export function CustomerHousekeepingSheet({
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Service Catalog Grid */}
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2.5">
+          <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2.5">
             Choose Service Type
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-72 overflow-y-auto pr-1">
@@ -280,25 +280,25 @@ export function CustomerHousekeepingSheet({
                     "p-3 rounded-2xl border transition-all cursor-pointer flex items-start gap-3 text-left",
                     isSelected
                       ? "border-emerald-500 bg-emerald-500/10 ring-1 ring-emerald-500 shadow-sm"
-                      : "border-slate-800 bg-slate-900/60 hover:border-slate-700 hover:bg-slate-900"
+                      : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-900"
                   )}
                 >
                   <div
                     className={cn(
                       "p-2 rounded-xl shrink-0 transition-colors",
                       isSelected
-                        ? "bg-emerald-500 text-slate-950 font-bold shadow-md shadow-emerald-500/20"
-                        : "bg-slate-800 text-slate-400"
+                        ? "bg-emerald-500 text-white dark:text-slate-950 font-bold shadow-md shadow-emerald-500/20"
+                        : "bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                     )}
                   >
                     <Icon className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between">
-                      <p className="text-xs font-bold text-white truncate">{srv.title}</p>
-                      {isSelected && <Check className="h-3.5 w-3.5 text-emerald-400 shrink-0" />}
+                      <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{srv.title}</p>
+                      {isSelected && <Check className="h-3.5 w-3.5 text-emerald-500 dark:text-emerald-400 shrink-0" />}
                     </div>
-                    <p className="text-[10px] text-slate-400 mt-0.5 leading-snug line-clamp-2">
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug line-clamp-2">
                       {srv.description}
                     </p>
                   </div>
@@ -310,7 +310,7 @@ export function CustomerHousekeepingSheet({
 
         {/* Priority & Urgency */}
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+          <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
             Priority Level
           </label>
           <div className="grid grid-cols-2 gap-2.5">
@@ -320,8 +320,8 @@ export function CustomerHousekeepingSheet({
               className={cn(
                 "p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all",
                 priority === "normal"
-                  ? "border-emerald-500 bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500"
-                  : "border-slate-800 bg-slate-900/60 text-slate-400 hover:text-white"
+                  ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-500"
+                  : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               )}
             >
               <Clock className="h-3.5 w-3.5" />
@@ -333,8 +333,8 @@ export function CustomerHousekeepingSheet({
               className={cn(
                 "p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all",
                 priority === "urgent"
-                  ? "border-rose-500 bg-rose-500/15 text-rose-300 ring-1 ring-rose-500"
-                  : "border-slate-800 bg-slate-900/60 text-slate-400 hover:text-white"
+                  ? "border-rose-500 bg-rose-50 dark:bg-rose-500/15 text-rose-700 dark:text-rose-300 ring-1 ring-rose-500"
+                  : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               )}
             >
               <AlertCircle className="h-3.5 w-3.5" />
@@ -345,7 +345,7 @@ export function CustomerHousekeepingSheet({
 
         {/* Custom Instructions / Special Notes */}
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+          <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
             Special Instructions / Notes (Optional)
           </label>
           <textarea
@@ -353,12 +353,12 @@ export function CustomerHousekeepingSheet({
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="e.g. Please leave extra towels on the vanity, or do not knock after 10 PM..."
-            className="w-full p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 transition-colors resize-none"
+            className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 transition-colors resize-none"
           />
         </div>
 
         {/* Action Buttons */}
-        <div className="pt-2 flex items-center justify-end gap-3 border-t border-slate-800">
+        <div className="pt-2 flex items-center justify-end gap-3 border-t border-slate-200 dark:border-slate-800">
           <Button type="button" variant="ghost" size="sm" onClick={onClose} disabled={submitting}>
             Cancel
           </Button>

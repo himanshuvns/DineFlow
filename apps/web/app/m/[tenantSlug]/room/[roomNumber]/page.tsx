@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useToast } from "@/components/ui/toast";
 import { formatCurrency } from "@/lib/utils";
 import {
@@ -323,79 +324,82 @@ export default function RoomServiceMenuPage() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 pb-36 font-sans">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-36 font-sans transition-colors duration-200">
       {/* ── Luxury Hotel In-Room Dining Hero ── */}
       <div className="relative">
-        <div className="h-44 sm:h-56 w-full relative overflow-hidden bg-slate-900">
+        <div className="h-44 sm:h-56 w-full relative overflow-hidden bg-slate-200 dark:bg-slate-900">
           <img
             src="https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1600&q=80"
             alt="Hotel Suite"
             className="w-full h-full object-cover brightness-40"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-50 dark:from-slate-950 via-slate-50/60 dark:via-slate-950/60 to-transparent" />
 
           {/* Top Bar Indicators */}
           <div className="absolute top-4 inset-x-4 max-w-xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="px-3 py-1 rounded-full bg-slate-900/80 backdrop-blur border border-slate-700 text-xs font-bold text-emerald-400 flex items-center gap-1.5 shadow">
+              <span className="px-3 py-1 rounded-full bg-white/90 dark:bg-slate-900/80 backdrop-blur border border-slate-200 dark:border-slate-700 text-xs font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5 shadow-sm">
                 <Hotel className="h-3.5 w-3.5" />
                 <span>Guest Hospitality Portal</span>
               </span>
             </div>
 
-            <Badge variant="glow" size="sm" className="font-mono font-extrabold text-xs">
-              {roomDisplay}
-            </Badge>
+            <div className="flex items-center gap-2">
+              <ThemeToggle className="h-8 w-8 rounded-full bg-white/90 dark:bg-slate-900/80 backdrop-blur border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 shadow-sm" />
+              <Badge variant="glow" size="sm" className="font-mono font-extrabold text-xs">
+                {roomDisplay}
+              </Badge>
+            </div>
           </div>
         </div>
 
         {/* Hotel Header Card */}
         <div className="max-w-xl mx-auto px-4 -mt-14 relative z-10">
-          <div className="p-4 sm:p-5 rounded-3xl bg-slate-900/95 border border-slate-800 shadow-2xl backdrop-blur-md">
+          <div className="p-4 sm:p-5 rounded-3xl bg-white/95 dark:bg-slate-900/95 border border-slate-200/80 dark:border-slate-800 shadow-2xl backdrop-blur-md">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
                   Private Guest Suite Service
                 </span>
-                <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight truncate">
+                <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight truncate">
                   {hotelName}
                 </h1>
                 {roomInfo?.currentGuestName ? (
-                  <p className="text-xs text-emerald-400 font-medium mt-0.5 truncate">
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-0.5 truncate">
                     Welcome, {roomInfo.currentGuestName} • Silver tray delivery to your door
                   </p>
                 ) : (
-                  <p className="text-xs text-slate-400 mt-0.5">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                     Silver tray delivery directly to your door • 24/7 Butler care
                   </p>
                 )}
               </div>
               {hotelLogo && (
-                <div className="h-12 w-12 rounded-2xl bg-white/5 border border-slate-700/80 p-1 flex items-center justify-center overflow-hidden shrink-0 shadow-md">
+                <div className="h-12 w-12 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-slate-700/80 p-1 flex items-center justify-center overflow-hidden shrink-0 shadow-md">
                   <img src={hotelLogo} alt={hotelName} className="h-full w-full object-contain" />
                 </div>
               )}
             </div>
 
             {/* Quick Guest Amenities Shortcuts */}
-            <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-slate-800">
+            <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-slate-200/80 dark:border-slate-800">
               <button
                 type="button"
                 onClick={() => setActiveTab("housekeeping")}
                 className={`p-2.5 rounded-2xl border flex flex-col items-center text-center transition-all cursor-pointer group ${
                   activeTab === "housekeeping"
-                    ? "bg-emerald-500/10 border-emerald-500/50 text-emerald-400"
-                    : "bg-slate-950/60 border-slate-800 hover:border-slate-700 text-slate-300"
+                    ? "bg-emerald-500/10 border-emerald-500/50 text-emerald-600 dark:text-emerald-400"
+                    : "bg-slate-50 dark:bg-slate-950/60 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-300"
                 }`}
               >
                 <div className="relative">
-                  <Bed className="h-4 w-4 text-emerald-400 mb-1 group-hover:scale-110 transition-transform" />
+                  <Bed className="h-4 w-4 text-emerald-500 dark:text-emerald-400 mb-1 group-hover:scale-110 transition-transform" />
                   {activeTasksCount > 0 && (
-                    <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping absolute -top-1 -right-1" />
+                    <span className="h-2 w-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-ping absolute -top-1 -right-1" />
                   )}
                 </div>
                 <span className="text-[11px] font-bold">Suite Flow</span>
-                <span className="text-[9px] text-slate-500">
+                <span className="text-[9px] text-slate-500 dark:text-slate-500">
                   {activeTasksCount > 0 ? `${activeTasksCount} In Flight` : "Live Status"}
                 </span>
               </button>
@@ -405,13 +409,13 @@ export default function RoomServiceMenuPage() {
                 onClick={() => setActiveTab("dining")}
                 className={`p-2.5 rounded-2xl border flex flex-col items-center text-center transition-all cursor-pointer group ${
                   activeTab === "dining"
-                    ? "bg-emerald-500/10 border-emerald-500/50 text-emerald-400"
-                    : "bg-slate-950/60 border-slate-800 hover:border-slate-700 text-slate-300"
+                    ? "bg-emerald-500/10 border-emerald-500/50 text-emerald-600 dark:text-emerald-400"
+                    : "bg-slate-50 dark:bg-slate-950/60 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-300"
                 }`}
               >
-                <UtensilsCrossed className="h-4 w-4 text-cyan-400 mb-1 group-hover:scale-110 transition-transform" />
+                <UtensilsCrossed className="h-4 w-4 text-cyan-600 dark:text-cyan-400 mb-1 group-hover:scale-110 transition-transform" />
                 <span className="text-[11px] font-bold">Dining Menu</span>
-                <span className="text-[9px] text-slate-500">In-Room Food</span>
+                <span className="text-[9px] text-slate-500 dark:text-slate-500">In-Room Food</span>
               </button>
 
               <button
@@ -419,13 +423,13 @@ export default function RoomServiceMenuPage() {
                 onClick={() => setActiveTab("info")}
                 className={`p-2.5 rounded-2xl border flex flex-col items-center text-center transition-all cursor-pointer group ${
                   activeTab === "info"
-                    ? "bg-emerald-500/10 border-emerald-500/50 text-emerald-400"
-                    : "bg-slate-950/60 border-slate-800 hover:border-slate-700 text-slate-300"
+                    ? "bg-emerald-500/10 border-emerald-500/50 text-emerald-600 dark:text-emerald-400"
+                    : "bg-slate-50 dark:bg-slate-950/60 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-300"
                 }`}
               >
-                <Wifi className="h-4 w-4 text-amber-400 mb-1 group-hover:scale-110 transition-transform" />
+                <Wifi className="h-4 w-4 text-amber-500 dark:text-amber-400 mb-1 group-hover:scale-110 transition-transform" />
                 <span className="text-[11px] font-bold">Suite Info</span>
-                <span className="text-[9px] text-slate-500">Wi-Fi & Concierge</span>
+                <span className="text-[9px] text-slate-500 dark:text-slate-500">Wi-Fi & Concierge</span>
               </button>
             </div>
           </div>
@@ -434,14 +438,14 @@ export default function RoomServiceMenuPage() {
 
       {/* ── Segmented Navigation Control ── */}
       <div className="max-w-xl mx-auto px-4 mt-4 sticky top-2 z-30">
-        <div className="grid grid-cols-3 gap-1.5 p-1.5 rounded-2xl bg-slate-900/95 border border-slate-800 shadow-xl backdrop-blur-md">
+        <div className="grid grid-cols-3 gap-1.5 p-1.5 rounded-2xl bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 shadow-xl backdrop-blur-md">
           <button
             type="button"
             onClick={() => setActiveTab("dining")}
             className={`py-2 px-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               activeTab === "dining"
                 ? "bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20"
-                : "text-slate-400 hover:text-white"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
             <UtensilsCrossed className="h-3.5 w-3.5" />
@@ -454,7 +458,7 @@ export default function RoomServiceMenuPage() {
             className={`py-2 px-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 relative cursor-pointer ${
               activeTab === "housekeeping"
                 ? "bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20"
-                : "text-slate-400 hover:text-white"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
             <Bed className="h-3.5 w-3.5" />
@@ -464,7 +468,7 @@ export default function RoomServiceMenuPage() {
                 {activeTasksCount}
               </span>
             ) : (
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400" />
             )}
           </button>
 
@@ -474,7 +478,7 @@ export default function RoomServiceMenuPage() {
             className={`py-2 px-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               activeTab === "info"
                 ? "bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20"
-                : "text-slate-400 hover:text-white"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
             <Info className="h-3.5 w-3.5" />
@@ -488,23 +492,23 @@ export default function RoomServiceMenuPage() {
         <div className="max-w-xl mx-auto px-4 mt-3 animate-in fade-in slide-in-from-top-2 duration-300">
           <div
             onClick={() => setActiveTab("housekeeping")}
-            className="p-3 rounded-2xl bg-gradient-to-r from-emerald-950/90 via-slate-900 to-emerald-950/90 border-2 border-emerald-500/60 flex items-center justify-between cursor-pointer hover:border-emerald-400 transition-all shadow-lg shadow-emerald-500/10 group"
+            className="p-3 rounded-2xl bg-gradient-to-r from-emerald-50 via-white to-emerald-50 dark:from-emerald-950/90 dark:via-slate-900 dark:to-emerald-950/90 border-2 border-emerald-500/60 flex items-center justify-between cursor-pointer hover:border-emerald-500 transition-all shadow-lg shadow-emerald-500/10 group"
           >
             <div className="flex items-center gap-2.5 min-w-0">
-              <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-ping shrink-0" />
+              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-ping shrink-0" />
               <div className="min-w-0">
-                <p className="text-xs font-bold text-white truncate flex items-center gap-1.5">
-                  <span className="text-slate-300">Live Service:</span>
-                  <span className="text-emerald-400 font-black">{latestActiveTask?.title}</span>
+                <p className="text-xs font-bold text-slate-900 dark:text-white truncate flex items-center gap-1.5">
+                  <span className="text-slate-600 dark:text-slate-300">Live Service:</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-black">{latestActiveTask?.title}</span>
                 </p>
-                <p className="text-[10px] text-slate-400">
+                <p className="text-[10px] text-slate-500 dark:text-slate-400">
                   {latestActiveTask?.status === "in_progress"
                     ? "Steward attending to your suite right now"
                     : "Request received • Housekeeping dispatched"}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-1 text-xs font-bold text-emerald-400 group-hover:translate-x-1 transition-transform shrink-0 ml-2">
+            <div className="flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 group-hover:translate-x-1 transition-transform shrink-0 ml-2">
               <span>Track Flow</span>
               <ArrowRight className="h-3.5 w-3.5" />
             </div>
@@ -528,13 +532,13 @@ export default function RoomServiceMenuPage() {
 
           {/* Hospitality Concierge & Express Suite Assistance */}
           <div className="max-w-xl mx-auto px-4">
-            <div className="p-4 rounded-3xl bg-slate-900/90 border border-slate-800 space-y-3">
+            <div className="p-4 rounded-3xl bg-white/90 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 space-y-3 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-300">
                     Additional Suite Amenities
                   </h3>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                     Complimentary for all staying guests in {roomDisplay}
                   </p>
                 </div>
@@ -542,7 +546,7 @@ export default function RoomServiceMenuPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => setIsHousekeepingSheetOpen(true)}
-                  className="h-7 text-xs border-slate-700 text-slate-300 hover:text-white"
+                  className="h-7 text-xs border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
                 >
                   More Options
                 </Button>
@@ -551,44 +555,44 @@ export default function RoomServiceMenuPage() {
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div
                   onClick={() => setIsHousekeepingSheetOpen(true)}
-                  className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80 hover:border-emerald-500/40 cursor-pointer transition-colors flex items-center gap-2"
+                  className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 hover:border-emerald-500/40 cursor-pointer transition-colors flex items-center gap-2"
                 >
-                  <Moon className="h-4 w-4 text-purple-400 shrink-0" />
+                  <Moon className="h-4 w-4 text-purple-500 dark:text-purple-400 shrink-0" />
                   <div>
-                    <p className="font-bold text-slate-200">Extra Pillows</p>
+                    <p className="font-bold text-slate-800 dark:text-slate-200">Extra Pillows</p>
                     <p className="text-[9px] text-slate-500">Hypoallergenic</p>
                   </div>
                 </div>
 
                 <div
                   onClick={() => setIsHousekeepingSheetOpen(true)}
-                  className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80 hover:border-emerald-500/40 cursor-pointer transition-colors flex items-center gap-2"
+                  className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 hover:border-emerald-500/40 cursor-pointer transition-colors flex items-center gap-2"
                 >
-                  <Bath className="h-4 w-4 text-cyan-400 shrink-0" />
+                  <Bath className="h-4 w-4 text-cyan-600 dark:text-cyan-400 shrink-0" />
                   <div>
-                    <p className="font-bold text-slate-200">Bath Slippers</p>
+                    <p className="font-bold text-slate-800 dark:text-slate-200">Bath Slippers</p>
                     <p className="text-[9px] text-slate-500">Plush cotton</p>
                   </div>
                 </div>
 
                 <div
                   onClick={handleReception}
-                  className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80 hover:border-emerald-500/40 cursor-pointer transition-colors flex items-center gap-2"
+                  className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 hover:border-emerald-500/40 cursor-pointer transition-colors flex items-center gap-2"
                 >
-                  <Clock className="h-4 w-4 text-amber-400 shrink-0" />
+                  <Clock className="h-4 w-4 text-amber-500 dark:text-amber-400 shrink-0" />
                   <div>
-                    <p className="font-bold text-slate-200">Late Checkout</p>
+                    <p className="font-bold text-slate-800 dark:text-slate-200">Late Checkout</p>
                     <p className="text-[9px] text-slate-500">Inquire desk</p>
                   </div>
                 </div>
 
                 <div
                   onClick={handleReception}
-                  className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80 hover:border-emerald-500/40 cursor-pointer transition-colors flex items-center gap-2"
+                  className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 hover:border-emerald-500/40 cursor-pointer transition-colors flex items-center gap-2"
                 >
-                  <ShieldCheck className="h-4 w-4 text-emerald-400 shrink-0" />
+                  <ShieldCheck className="h-4 w-4 text-emerald-500 dark:text-emerald-400 shrink-0" />
                   <div>
-                    <p className="font-bold text-slate-200">Luggage Butler</p>
+                    <p className="font-bold text-slate-800 dark:text-slate-200">Luggage Butler</p>
                     <p className="text-[9px] text-slate-500">Baggage pickup</p>
                   </div>
                 </div>
@@ -606,19 +610,19 @@ export default function RoomServiceMenuPage() {
           {/* Search Bar */}
           <div className="max-w-xl mx-auto px-4 mt-4">
             <div className="relative flex items-center">
-              <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-500 pointer-events-none" />
+              <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
               <input
                 type="text"
                 placeholder="Search breakfast, chef specials, beverages..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-10 py-2.5 rounded-2xl bg-slate-900 border border-slate-800 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 transition-colors"
+                className="w-full pl-10 pr-10 py-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-colors shadow-xs"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-3 p-1 rounded-full text-slate-400 hover:text-white"
+                  className="absolute right-3 p-1 rounded-full text-slate-400 hover:text-slate-700 dark:hover:text-white"
                   title="Clear search"
                 >
                   <X className="h-3.5 w-3.5" />
@@ -638,10 +642,10 @@ export default function RoomServiceMenuPage() {
                   className={`flex items-center gap-1.5 px-3 py-2 rounded-2xl border text-xs font-bold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
                     isVegOnly
                       ? "bg-emerald-500 text-slate-950 border-emerald-400 font-extrabold shadow-md shadow-emerald-500/20"
-                      : "bg-slate-900/80 border-slate-800 text-slate-300 hover:text-white"
+                      : "bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
                   }`}
                 >
-                  <span className={`h-2 w-2 rounded-full ${isVegOnly ? "bg-slate-950" : "bg-emerald-400"}`} />
+                  <span className={`h-2 w-2 rounded-full ${isVegOnly ? "bg-slate-950" : "bg-emerald-500 dark:bg-emerald-400"}`} />
                   <span>Veg Only</span>
                 </button>
 
@@ -655,7 +659,7 @@ export default function RoomServiceMenuPage() {
                       className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl border text-xs font-bold whitespace-nowrap transition-all capitalize cursor-pointer ${
                         isSelected
                           ? "bg-emerald-500 text-slate-950 border-emerald-400 shadow-lg shadow-emerald-500/20"
-                          : "bg-slate-900/80 border-slate-800 text-slate-400 hover:text-white"
+                          : "bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                       }`}
                     >
                       <UtensilsCrossed className="h-3 w-3" />
@@ -665,12 +669,12 @@ export default function RoomServiceMenuPage() {
                 })}
               </div>
 
-              <div className="flex items-center justify-between text-[11px] text-slate-400 px-1 mt-1">
+              <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 px-1 mt-1">
                 <div className="flex items-center gap-1.5">
-                  <Clock className="h-3 w-3 text-emerald-400" />
+                  <Clock className="h-3 w-3 text-emerald-500 dark:text-emerald-400" />
                   <span>24/7 Suite Service Available</span>
                 </div>
-                <span className="text-emerald-400 font-semibold font-mono">
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold font-mono">
                   {filteredItems.length} {filteredItems.length === 1 ? "Option" : "Options"}
                 </span>
               </div>
@@ -682,7 +686,7 @@ export default function RoomServiceMenuPage() {
             {loading ? (
               <div className="py-16 text-center space-y-3">
                 <div className="h-8 w-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin mx-auto" />
-                <p className="text-xs text-slate-400">Loading fresh dishes from the hotel kitchen...</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Loading fresh dishes from the hotel kitchen...</p>
               </div>
             ) : filteredItems.length > 0 ? (
               filteredItems.map((dish) => (
@@ -700,7 +704,7 @@ export default function RoomServiceMenuPage() {
                       modifierGroups: dish.modifierGroups,
                     })
                   }
-                  className="p-3.5 rounded-2xl bg-slate-900/70 border border-slate-800/80 hover:border-slate-700/80 transition-all flex gap-3.5 cursor-pointer group"
+                  className="p-3.5 rounded-2xl bg-white dark:bg-slate-900/70 border border-slate-200/80 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700/80 transition-all flex gap-3.5 cursor-pointer group shadow-sm hover:shadow-md dark:shadow-none"
                 >
                   {/* Left Info */}
                   <div className="flex-1 min-w-0 flex flex-col justify-between">
@@ -709,8 +713,8 @@ export default function RoomServiceMenuPage() {
                         <span
                           className={`inline-flex items-center justify-center h-3.5 w-3.5 rounded border ${
                             dish.isVeg
-                              ? "border-emerald-500 text-emerald-400"
-                              : "border-rose-500 text-rose-400"
+                              ? "border-emerald-500 text-emerald-500"
+                              : "border-rose-500 text-rose-500"
                           }`}
                         >
                           <span
@@ -719,27 +723,27 @@ export default function RoomServiceMenuPage() {
                             }`}
                           />
                         </span>
-                        <h3 className="text-sm font-bold text-white group-hover:text-emerald-400 transition-colors truncate">
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors truncate">
                           {dish.name}
                         </h3>
                       </div>
 
                       {dish.description && (
-                        <p className="text-xs text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">
                           {dish.description}
                         </p>
                       )}
                     </div>
 
-                    <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-800/40">
-                      <span className="text-sm font-extrabold font-mono text-white">
+                    <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-100 dark:border-slate-800/40">
+                      <span className="text-sm font-extrabold font-mono text-slate-900 dark:text-white">
                         {formatCurrency(dish.basePrice, "INR")}
                       </span>
 
                       <Button
                         variant="secondary"
                         size="sm"
-                        className="h-8 px-2.5 xs:px-3 text-xs font-bold text-emerald-400 hover:text-white border-emerald-500/30 hover:bg-emerald-500/20 shrink-0"
+                        className="h-8 px-2.5 xs:px-3 text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30 dark:hover:bg-emerald-500/20 shrink-0"
                         onClick={(e) => {
                           e.stopPropagation();
                           setCustomizingDish({
@@ -762,7 +766,7 @@ export default function RoomServiceMenuPage() {
 
                   {/* Right Image */}
                   {dish.imageUrl && (
-                    <div className="h-20 w-20 xs:h-24 xs:w-24 sm:h-28 sm:w-28 rounded-xl overflow-hidden bg-slate-800 shrink-0 relative">
+                    <div className="h-20 w-20 xs:h-24 xs:w-24 sm:h-28 sm:w-28 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0 relative">
                       <img
                         src={dish.imageUrl}
                         alt={dish.name}
@@ -775,7 +779,7 @@ export default function RoomServiceMenuPage() {
             ) : (
               <div className="py-16 text-center text-slate-500 text-xs space-y-2">
                 <UtensilsCrossed className="h-8 w-8 mx-auto text-slate-400 opacity-50 mb-2" />
-                <p className="font-semibold text-slate-300">
+                <p className="font-semibold text-slate-800 dark:text-slate-300">
                   No dishes found matching your selection
                 </p>
                 <p className="text-[11px] text-slate-500">
@@ -786,7 +790,7 @@ export default function RoomServiceMenuPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="text-xs border-slate-700 text-slate-300 hover:text-white"
+                      className="text-xs border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
                       onClick={() => {
                         setSearchQuery("");
                         setIsVegOnly(false);
@@ -809,25 +813,25 @@ export default function RoomServiceMenuPage() {
       {activeTab === "info" && (
         <div className="max-w-xl mx-auto px-4 mt-4 space-y-4 animate-in fade-in duration-300">
           {/* Wi-Fi Credentials Card */}
-          <div className="p-4 sm:p-5 rounded-3xl bg-slate-900/95 border border-slate-800 shadow-xl space-y-3">
+          <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 shadow-xl space-y-3">
             <div className="flex items-center gap-2.5">
-              <div className="h-9 w-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/30">
+              <div className="h-9 w-9 rounded-xl bg-amber-500/15 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-500/30">
                 <Wifi className="h-4 w-4" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-white">Complimentary High-Speed Wi-Fi</h3>
-                <p className="text-[11px] text-slate-400">Unlimited 500 Mbps connection for {roomDisplay}</p>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">Complimentary High-Speed Wi-Fi</h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">Unlimited 500 Mbps connection for {roomDisplay}</p>
               </div>
             </div>
 
-            <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800/80 flex items-center justify-between">
+            <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800/80 flex items-center justify-between">
               <div>
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Network</span>
-                <p className="text-xs font-mono font-bold text-slate-200">GrandPalace_Guest_5G</p>
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Network</span>
+                <p className="text-xs font-mono font-bold text-slate-800 dark:text-slate-200">GrandPalace_Guest_5G</p>
               </div>
               <div className="text-right">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Password</span>
-                <p className="text-xs font-mono font-bold text-emerald-400">GrandSuite@2025</p>
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Password</span>
+                <p className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">GrandSuite@2025</p>
               </div>
             </div>
 
@@ -835,11 +839,11 @@ export default function RoomServiceMenuPage() {
               variant="outline"
               size="sm"
               onClick={handleCopyWifi}
-              className="w-full text-xs font-bold border-slate-800 hover:border-emerald-500/50 hover:bg-emerald-500/10 text-slate-200 hover:text-emerald-400"
+              className="w-full text-xs font-bold border-slate-200 dark:border-slate-800 hover:border-emerald-500/50 bg-white hover:bg-emerald-50 dark:bg-transparent dark:hover:bg-emerald-500/10 text-slate-700 dark:text-slate-200 hover:text-emerald-600 dark:hover:text-emerald-400"
             >
               {copiedWifi ? (
                 <>
-                  <Check className="h-3.5 w-3.5 mr-1.5 text-emerald-400" />
+                  <Check className="h-3.5 w-3.5 mr-1.5 text-emerald-500 dark:text-emerald-400" />
                   <span>Password Copied!</span>
                 </>
               ) : (
@@ -852,54 +856,54 @@ export default function RoomServiceMenuPage() {
           </div>
 
           {/* Concierge & Hotel Contacts */}
-          <div className="p-4 sm:p-5 rounded-3xl bg-slate-900/95 border border-slate-800 shadow-xl space-y-3">
+          <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 shadow-xl space-y-3">
             <div className="flex items-center gap-2.5">
-              <div className="h-9 w-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
+              <div className="h-9 w-9 rounded-xl bg-emerald-500/15 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-500/30">
                 <Phone className="h-4 w-4" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-white">Direct Hotel Extensions</h3>
-                <p className="text-[11px] text-slate-400">Pick up your room telephone or dial extension</p>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">Direct Hotel Extensions</h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">Pick up your room telephone or dial extension</p>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
                 <div>
-                  <p className="font-bold text-white">Front Desk</p>
+                  <p className="font-bold text-slate-900 dark:text-white">Front Desk</p>
                   <p className="text-[10px] text-slate-500">24/7 Reception</p>
                 </div>
-                <span className="font-mono font-bold text-emerald-400 bg-slate-900 px-2 py-1 rounded-lg border border-slate-800">
+                <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-white dark:bg-slate-900 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-800 shadow-xs">
                   Ext 0
                 </span>
               </div>
 
-              <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
                 <div>
-                  <p className="font-bold text-white">In-Room Dining</p>
+                  <p className="font-bold text-slate-900 dark:text-white">In-Room Dining</p>
                   <p className="text-[10px] text-slate-500">Kitchen order</p>
                 </div>
-                <span className="font-mono font-bold text-emerald-400 bg-slate-900 px-2 py-1 rounded-lg border border-slate-800">
+                <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-white dark:bg-slate-900 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-800 shadow-xs">
                   Ext 1
                 </span>
               </div>
 
-              <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
                 <div>
-                  <p className="font-bold text-white">Housekeeping</p>
+                  <p className="font-bold text-slate-900 dark:text-white">Housekeeping</p>
                   <p className="text-[10px] text-slate-500">Linen & butler</p>
                 </div>
-                <span className="font-mono font-bold text-emerald-400 bg-slate-900 px-2 py-1 rounded-lg border border-slate-800">
+                <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-white dark:bg-slate-900 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-800 shadow-xs">
                   Ext 2
                 </span>
               </div>
 
-              <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
                 <div>
-                  <p className="font-bold text-white">Concierge & Travel</p>
+                  <p className="font-bold text-slate-900 dark:text-white">Concierge & Travel</p>
                   <p className="text-[10px] text-slate-500">Cabs & tours</p>
                 </div>
-                <span className="font-mono font-bold text-emerald-400 bg-slate-900 px-2 py-1 rounded-lg border border-slate-800">
+                <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-white dark:bg-slate-900 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-800 shadow-xs">
                   Ext 3
                 </span>
               </div>
@@ -907,57 +911,57 @@ export default function RoomServiceMenuPage() {
           </div>
 
           {/* Key Timings */}
-          <div className="p-4 sm:p-5 rounded-3xl bg-slate-900/95 border border-slate-800 shadow-xl space-y-3">
+          <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 shadow-xl space-y-3">
             <div className="flex items-center gap-2.5">
-              <div className="h-9 w-9 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center border border-cyan-500/30">
+              <div className="h-9 w-9 rounded-xl bg-cyan-500/15 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 flex items-center justify-center border border-cyan-500/30">
                 <Clock className="h-4 w-4" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-white">Hotel Hours & Timings</h3>
-                <p className="text-[11px] text-slate-400">Meal and facility operational schedules</p>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">Hotel Hours & Timings</h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">Meal and facility operational schedules</p>
               </div>
             </div>
 
             <div className="space-y-2 text-xs">
-              <div className="flex items-center justify-between p-2 rounded-xl bg-slate-950/60">
-                <span className="text-slate-300 font-medium">Breakfast Buffet (Dining Room)</span>
-                <span className="font-mono text-slate-400">07:00 AM – 10:30 AM</span>
+              <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-slate-950/60">
+                <span className="text-slate-700 dark:text-slate-300 font-medium">Breakfast Buffet (Dining Room)</span>
+                <span className="font-mono text-slate-500 dark:text-slate-400">07:00 AM – 10:30 AM</span>
               </div>
-              <div className="flex items-center justify-between p-2 rounded-xl bg-slate-950/60">
-                <span className="text-slate-300 font-medium">In-Room Dining Kitchen</span>
-                <span className="font-mono text-emerald-400 font-bold">Open 24 Hours</span>
+              <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-slate-950/60">
+                <span className="text-slate-700 dark:text-slate-300 font-medium">In-Room Dining Kitchen</span>
+                <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">Open 24 Hours</span>
               </div>
-              <div className="flex items-center justify-between p-2 rounded-xl bg-slate-950/60">
-                <span className="text-slate-300 font-medium">Swimming Pool & Spa</span>
-                <span className="font-mono text-slate-400">06:00 AM – 10:00 PM</span>
+              <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-slate-950/60">
+                <span className="text-slate-700 dark:text-slate-300 font-medium">Swimming Pool & Spa</span>
+                <span className="font-mono text-slate-500 dark:text-slate-400">06:00 AM – 10:00 PM</span>
               </div>
-              <div className="flex items-center justify-between p-2 rounded-xl bg-slate-950/60">
-                <span className="text-slate-300 font-medium">Standard Check-out Time</span>
-                <span className="font-mono text-amber-400 font-bold">11:00 AM</span>
+              <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-slate-950/60">
+                <span className="text-slate-700 dark:text-slate-300 font-medium">Standard Check-out Time</span>
+                <span className="font-mono text-amber-600 dark:text-amber-400 font-bold">11:00 AM</span>
               </div>
             </div>
           </div>
 
           {/* Suite Features Checklist */}
-          <div className="p-4 sm:p-5 rounded-3xl bg-slate-900/95 border border-slate-800 shadow-xl space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+          <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 shadow-xl space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
               {roomDisplay} Amenities
             </h3>
-            <div className="grid grid-cols-2 gap-2 text-xs text-slate-300">
-              <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-950/40">
-                <Tv className="h-3.5 w-3.5 text-emerald-400" />
+            <div className="grid grid-cols-2 gap-2 text-xs text-slate-700 dark:text-slate-300">
+              <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/60">
+                <Tv className="h-3.5 w-3.5 text-emerald-500 dark:text-emerald-400" />
                 <span>55" 4K Smart TV</span>
               </div>
-              <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-950/40">
-                <Wind className="h-3.5 w-3.5 text-emerald-400" />
+              <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/60">
+                <Wind className="h-3.5 w-3.5 text-emerald-500 dark:text-emerald-400" />
                 <span>Climate Control AC</span>
               </div>
-              <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-950/40">
-                <Coffee className="h-3.5 w-3.5 text-emerald-400" />
+              <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/60">
+                <Coffee className="h-3.5 w-3.5 text-emerald-500 dark:text-emerald-400" />
                 <span>Nespresso Coffee Maker</span>
               </div>
-              <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-950/40">
-                <Bath className="h-3.5 w-3.5 text-emerald-400" />
+              <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/60">
+                <Bath className="h-3.5 w-3.5 text-emerald-500 dark:text-emerald-400" />
                 <span>Rainforest Shower</span>
               </div>
             </div>

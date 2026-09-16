@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useToast } from "@/components/ui/toast";
 import { formatCurrency } from "@/lib/utils";
 
@@ -209,9 +210,9 @@ export default function OrderTrackingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 pb-20">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-20 font-sans transition-colors duration-200">
       {/* Header */}
-      <header className="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur sticky top-0 z-30">
+      <header className="border-b border-slate-200 dark:border-slate-800/80 bg-white/80 dark:bg-slate-900/60 backdrop-blur sticky top-0 z-30">
         <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
           <button
             onClick={() => {
@@ -228,28 +229,31 @@ export default function OrderTrackingPage() {
                 router.push(`/m/${tenantSlug}`);
               }
             }}
-            className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-white"
+            className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
           >
             <ArrowLeft className="h-4 w-4" />
             <span>Menu</span>
           </button>
 
           <div className="text-center">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-400 font-bold block">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-bold block">
               {isRoomService ? "Suite Service Live Tracking" : "DineFlow Live Tracking"}
             </span>
-            <span className="text-xs font-bold text-white">{orderId}</span>
+            <span className="text-xs font-bold text-slate-900 dark:text-white">{orderId}</span>
           </div>
 
-          <Badge variant="glow" size="sm" className="font-mono font-bold">
-            {tableName}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <ThemeToggle className="h-8 w-8 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 shadow-sm" />
+            <Badge variant="glow" size="sm" className="font-mono font-bold">
+              {tableName}
+            </Badge>
+          </div>
         </div>
       </header>
 
       <main className="max-w-lg mx-auto px-4 pt-6 space-y-6">
         {/* Status Hero Card */}
-        <div className="p-6 rounded-3xl bg-gradient-to-b from-slate-900 via-slate-900/90 to-slate-950 border border-slate-800 shadow-2xl relative overflow-hidden">
+        <div className="p-6 rounded-3xl bg-white dark:bg-gradient-to-b dark:from-slate-900 dark:via-slate-900/90 dark:to-slate-950 border border-slate-200 dark:border-slate-800 shadow-xl dark:shadow-2xl relative overflow-hidden">
           {/* Subtle background glow */}
           <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/10 blur-3xl -z-0 pointer-events-none" />
 
@@ -257,14 +261,14 @@ export default function OrderTrackingPage() {
             <div
               className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-semibold mb-3 border ${
                 status === "served" || status === "paid"
-                  ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-300"
-                  : "bg-slate-800/80 border-slate-700/60 text-slate-300"
+                  ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-700 dark:text-emerald-300"
+                  : "bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300"
               }`}
             >
               {status === "served" || status === "paid" ? (
-                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
               ) : (
-                <Clock className="h-3.5 w-3.5 text-emerald-400" />
+                <Clock className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
               )}
               <span>
                 {status === "served" || status === "paid"
@@ -273,14 +277,14 @@ export default function OrderTrackingPage() {
               </span>
             </div>
 
-            <h1 className="text-2xl font-black text-white tracking-tight">
+            <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
               {status === "pending" && (isRoomService ? "Dispatching to Suite Chef..." : "Sending to Kitchen...")}
               {status === "preparing" && (isRoomService ? "Chef Preparing Your Suite Dining" : "Chef is Preparing Your Food")}
               {status === "ready" && (isRoomService ? "Butler En Route to Your Suite" : "Your Food is Ready!")}
               {status === "served" && (isRoomService ? "Delivered to Your Door" : "Served at Your Table")}
             </h1>
 
-            <p className="text-xs text-slate-400 mt-1.5 max-w-xs mx-auto">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 max-w-xs mx-auto">
               {status === "preparing"
                 ? (isRoomService
                     ? "Your order was sent directly to the room service station. Fresh course is being plated on a silver tray."
@@ -299,24 +303,24 @@ export default function OrderTrackingPage() {
             </p>
 
             {/* WhatsApp Alert Banner */}
-            <div className="mt-5 p-3 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-center gap-2 text-xs text-emerald-300">
-              <MessageCircle className="h-4 w-4 text-emerald-400 shrink-0" />
+            <div className="mt-5 p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-500/30 flex items-center justify-center gap-2 text-xs text-emerald-800 dark:text-emerald-300">
+              <MessageCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <span className="font-medium">
-                Live alerts active on WhatsApp for this table.
+                Live alerts active on WhatsApp for this order.
               </span>
             </div>
           </div>
         </div>
 
         {/* Visual Progress Steps */}
-        <div className="p-5 rounded-2xl bg-slate-900/70 border border-slate-800/80 shadow-lg space-y-6">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block">
+        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800/80 shadow-md space-y-6">
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
             Order Progress
           </span>
 
           <div className="space-y-6 relative pl-3">
             {/* Connecting Vertical Line */}
-            <div className="absolute left-[23px] top-4 bottom-4 w-0.5 bg-slate-800 -z-0" />
+            <div className="absolute left-[23px] top-4 bottom-4 w-0.5 bg-slate-200 dark:bg-slate-800 -z-0" />
 
             {steps.map((step) => {
               const state = getStepState(step.id);
@@ -330,8 +334,8 @@ export default function OrderTrackingPage() {
                       state === "completed"
                         ? "bg-emerald-500 border-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20"
                         : state === "active"
-                        ? "bg-emerald-500/20 border-emerald-400 text-emerald-400 ring-4 ring-emerald-500/10 animate-pulse"
-                        : "bg-slate-950 border-slate-800 text-slate-600"
+                        ? "bg-emerald-500/20 border-emerald-500 text-emerald-600 dark:text-emerald-400 ring-4 ring-emerald-500/10 animate-pulse"
+                        : "bg-slate-100 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-600"
                     }`}
                   >
                     {state === "completed" ? (
@@ -345,12 +349,12 @@ export default function OrderTrackingPage() {
                   <div className="flex-1 min-w-0">
                     <p
                       className={`text-sm font-bold ${
-                        state === "upcoming" ? "text-slate-500" : "text-white"
+                        state === "upcoming" ? "text-slate-400 dark:text-slate-500" : "text-slate-900 dark:text-white"
                       }`}
                     >
                       {step.label}
                     </p>
-                    <p className="text-xs text-slate-400 mt-0.5">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                       {step.sublabel}
                     </p>
                   </div>
@@ -367,12 +371,12 @@ export default function OrderTrackingPage() {
         </div>
 
         {/* Ordered Items Summary */}
-        <div className="p-5 rounded-2xl bg-slate-900/70 border border-slate-800/80 shadow-lg space-y-3">
+        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800/80 shadow-md space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
               Ordered Items
             </span>
-            <span className="text-xs font-mono text-slate-400">
+            <span className="text-xs font-mono text-slate-500 dark:text-slate-400">
               {order?.items?.length || 0} {order?.items?.length === 1 ? "Item" : "Items"}
             </span>
           </div>
@@ -391,23 +395,23 @@ export default function OrderTrackingPage() {
                   <div
                     key={idx}
                     className={`flex items-start justify-between text-sm ${
-                      idx < (order.items?.length || 0) - 1 ? "border-b border-slate-800/60 pb-3" : ""
+                      idx < (order.items?.length || 0) - 1 ? "border-b border-slate-100 dark:border-slate-800/60 pb-3" : ""
                     }`}
                   >
                     <div>
-                      <span className="font-bold text-white">
-                        <span className="text-emerald-400 mr-2">{it.quantity || 1}x</span>
+                      <span className="font-bold text-slate-900 dark:text-white">
+                        <span className="text-emerald-600 dark:text-emerald-400 mr-2">{it.quantity || 1}x</span>
                         {it.name}
                       </span>
                       {(it.selectedVariant || modNames || it.notes) && (
-                        <p className="text-xs text-slate-400 mt-0.5">
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                           {[it.selectedVariant, modNames, it.notes]
                             .filter(Boolean)
                             .join(" • ")}
                         </p>
                       )}
                     </div>
-                    <span className="font-mono font-semibold text-slate-200">
+                    <span className="font-mono font-semibold text-slate-800 dark:text-slate-200">
                       ₹{itemPrice.toFixed(0)}
                     </span>
                   </div>
@@ -421,7 +425,7 @@ export default function OrderTrackingPage() {
           </div>
 
           {/* Pricing Breakdown */}
-          <div className="pt-3 border-t border-slate-800 space-y-1.5 text-xs text-slate-400">
+          <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-1.5 text-xs text-slate-500 dark:text-slate-400">
             <div className="flex justify-between">
               <span>Subtotal</span>
               <span className="font-mono">
@@ -440,9 +444,9 @@ export default function OrderTrackingPage() {
                 <span className="font-mono">₹{order?.roomServiceFee?.toFixed(2)}</span>
               </div>
             )}
-            <div className="pt-2 border-t border-slate-800/80 flex justify-between text-sm font-bold text-white">
+            <div className="pt-2 border-t border-slate-200/80 dark:border-slate-800/80 flex justify-between text-sm font-bold text-slate-900 dark:text-white">
               <span>Total Payable</span>
-              <span className="text-emerald-400 font-mono text-base">
+              <span className="text-emerald-600 dark:text-emerald-400 font-mono text-base font-extrabold">
                 ₹{(order?.totalAmount || 0).toFixed(2)}
               </span>
             </div>
@@ -450,10 +454,10 @@ export default function OrderTrackingPage() {
         </div>
 
         {/* ── Post-Dining Guest Feedback Card (Phase 5) ──────────────────── */}
-        <div className="rounded-2xl p-5 bg-slate-900/80 border border-slate-800 space-y-4">
+        <div className="rounded-2xl p-5 bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 space-y-4 shadow-md">
           <div className="text-center space-y-1">
-            <h3 className="text-sm font-bold text-white">How was your dining experience?</h3>
-            <p className="text-[11px] text-slate-400">Your feedback helps our culinary team maintain 5-star standards.</p>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">How was your dining experience?</h3>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">Your feedback helps our culinary team maintain 5-star standards.</p>
           </div>
 
           {/* Star Rating Selectors */}
@@ -466,13 +470,13 @@ export default function OrderTrackingPage() {
                   setSelectedRating(star);
                   addToast("success", "Rating Selected", `You gave ${star} out of 5 stars.`);
                 }}
-                className="p-1.5 rounded-lg text-slate-600 hover:text-amber-400 transition-transform active:scale-125 cursor-pointer"
+                className="p-1.5 rounded-lg text-slate-300 dark:text-slate-600 hover:text-amber-400 transition-transform active:scale-125 cursor-pointer"
               >
                 <Sparkles
                   className={`h-7 w-7 transition-colors ${
                     star <= selectedRating
                       ? "text-amber-400 fill-amber-400 drop-shadow-md"
-                      : "text-slate-600 hover:text-amber-300"
+                      : "text-slate-300 dark:text-slate-600 hover:text-amber-400"
                   }`}
                 />
               </button>
@@ -494,8 +498,8 @@ export default function OrderTrackingPage() {
                   }}
                   className={`px-3 py-1 rounded-full text-[11px] font-medium transition-all cursor-pointer ${
                     isSelected
-                      ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
-                      : "bg-slate-950 border border-slate-800 text-slate-400 hover:text-white"
+                      ? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/40"
+                      : "bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                   }`}
                 >
                   {chip}
@@ -507,7 +511,7 @@ export default function OrderTrackingPage() {
           <Button
             variant="outline"
             size="sm"
-            className="w-full text-xs font-semibold text-slate-200 hover:text-white"
+            className="w-full text-xs font-semibold border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
             onClick={() => {
               addToast("success", "Feedback Recorded", "Thank you! Your feedback has been shared with the head chef.");
             }}
@@ -520,25 +524,25 @@ export default function OrderTrackingPage() {
         <div className="grid grid-cols-2 gap-3 pt-2">
           <Button
             variant="secondary"
-            className="h-12 text-xs font-bold text-slate-200 hover:text-white"
+            className="h-12 text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs"
             onClick={handleCallSteward}
           >
-            <BellRing className="h-4 w-4 mr-2 text-emerald-400" />
+            <BellRing className="h-4 w-4 mr-2 text-emerald-500 dark:text-emerald-400" />
             <span>Call Steward</span>
           </Button>
 
           <Button
             variant="secondary"
-            className="h-12 text-xs font-bold text-slate-200 hover:text-white"
+            className="h-12 text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs"
             onClick={handleRequestBill}
           >
-            <Receipt className="h-4 w-4 mr-2 text-amber-400" />
+            <Receipt className="h-4 w-4 mr-2 text-amber-500 dark:text-amber-400" />
             <span>Request Bill</span>
           </Button>
 
           <Button
             variant="glow"
-            className="col-span-2 h-12 text-sm font-bold"
+            className="col-span-2 h-12 text-sm font-bold bg-emerald-600 hover:bg-emerald-500 text-white"
             onClick={() => {
               if (isRoomService) {
                 const rNum = tableName.replace(/[^0-9]/g, "");

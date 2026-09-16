@@ -121,19 +121,19 @@ export function DishCustomizerSheet({
       />
 
       {/* Sheet Container */}
-      <div className="relative w-full max-w-lg max-h-[85dvh] sm:max-h-[90dvh] flex flex-col bg-slate-900 border border-slate-800 rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden z-10 animate-in fade-in slide-in-from-bottom duration-200">
+      <div className="relative w-full max-w-lg max-h-[85dvh] sm:max-h-[90dvh] flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden z-10 animate-in fade-in slide-in-from-bottom duration-200">
         {/* Header with image */}
         {dish.imageUrl && (
-          <div className="relative h-48 w-full bg-slate-950 overflow-hidden">
+          <div className="relative h-48 w-full bg-slate-100 dark:bg-slate-950 overflow-hidden">
             <img
               src={dish.imageUrl}
               alt={dish.name}
               className="h-full w-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-black/40" />
+            <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-slate-900 via-transparent to-black/40" />
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 h-9 w-9 rounded-full bg-slate-900/80 backdrop-blur-md text-white flex items-center justify-center hover:bg-slate-800 transition-colors"
+              className="absolute top-4 right-4 h-9 w-9 rounded-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-md text-slate-700 dark:text-white flex items-center justify-center hover:bg-white dark:hover:bg-slate-800 transition-colors shadow-sm"
             >
               <X className="h-5 w-5" />
             </button>
@@ -141,8 +141,8 @@ export function DishCustomizerSheet({
               <span
                 className={`inline-flex items-center justify-center h-5 w-5 rounded border ${
                   dish.isVeg
-                    ? "border-emerald-500 bg-emerald-950/80 text-emerald-400"
-                    : "border-rose-500 bg-rose-950/80 text-rose-400"
+                    ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400"
+                    : "border-rose-500 bg-rose-50 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400"
                 }`}
               >
                 <span
@@ -151,7 +151,7 @@ export function DishCustomizerSheet({
                   }`}
                 />
               </span>
-              <span className="text-xs font-semibold text-white/90 drop-shadow">
+              <span className="text-xs font-semibold text-slate-900 dark:text-white drop-shadow-xs">
                 {dish.isVeg ? "Pure Veg" : "Non-Veg"}
               </span>
             </div>
@@ -160,13 +160,13 @@ export function DishCustomizerSheet({
 
         {/* Header without image */}
         {!dish.imageUrl && (
-          <div className="p-5 border-b border-slate-800 flex items-start justify-between">
+          <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between">
             <div className="flex items-center gap-2">
               <span
                 className={`inline-flex items-center justify-center h-4 w-4 rounded border ${
                   dish.isVeg
-                    ? "border-emerald-500 text-emerald-400"
-                    : "border-rose-500 text-rose-400"
+                    ? "border-emerald-500 text-emerald-600 dark:text-emerald-400"
+                    : "border-rose-500 text-rose-600 dark:text-rose-400"
                 }`}
               >
                 <span
@@ -175,11 +175,11 @@ export function DishCustomizerSheet({
                   }`}
                 />
               </span>
-              <h3 className="text-lg font-bold text-white">{dish.name}</h3>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">{dish.name}</h3>
             </div>
             <button
               onClick={onClose}
-              className="h-8 w-8 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center hover:text-white"
+              className="h-8 w-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center hover:text-slate-900 dark:hover:text-white"
             >
               <X className="h-4 w-4" />
             </button>
@@ -187,18 +187,18 @@ export function DishCustomizerSheet({
         )}
 
         {/* Scrollable Configuration Body */}
-        <div className="p-5 overflow-y-auto space-y-6 flex-1 text-slate-200">
+        <div className="p-5 overflow-y-auto space-y-6 flex-1 text-slate-700 dark:text-slate-200">
           {dish.imageUrl && (
             <div>
-              <h2 className="text-xl font-bold text-white">{dish.name}</h2>
-              <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">{dish.name}</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
                 {dish.description}
               </p>
             </div>
           )}
 
           {!dish.imageUrl && (
-            <p className="text-xs text-slate-400 leading-relaxed">
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
               {dish.description}
             </p>
           )}
@@ -207,8 +207,8 @@ export function DishCustomizerSheet({
           {dish.variants && dish.variants.length > 0 && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
-                  Select Size / Portion <span className="text-rose-400">*</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-300">
+                  Select Size / Portion <span className="text-rose-500">*</span>
                 </span>
                 <Badge variant="neutral" size="sm">Required</Badge>
               </div>
@@ -221,14 +221,14 @@ export function DishCustomizerSheet({
                       key={variant.name}
                       type="button"
                       onClick={() => setSelectedVariant(variant)}
-                      className={`flex flex-col p-3 rounded-xl text-left border transition-all ${
+                      className={`flex flex-col p-3 rounded-xl text-left border transition-all cursor-pointer ${
                         isSelected
-                          ? "bg-emerald-500/10 border-emerald-500 text-white shadow-sm"
-                          : "bg-slate-950/60 border-slate-800 text-slate-300 hover:border-slate-700"
+                          ? "bg-emerald-500/10 border-emerald-500 text-slate-900 dark:text-white shadow-xs"
+                          : "bg-slate-50 dark:bg-slate-950/60 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700"
                       }`}
                     >
                       <span className="text-sm font-semibold">{variant.name}</span>
-                      <span className="text-xs font-bold text-emerald-400 mt-1">
+                      <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-1">
                         {formatCurrency(variant.price, "INR")}
                       </span>
                     </button>
@@ -244,7 +244,7 @@ export function DishCustomizerSheet({
               <div key={group.id} className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-300">
                       {group.name}
                     </span>
                     <p className="text-[11px] text-slate-500">
@@ -268,10 +268,10 @@ export function DishCustomizerSheet({
                         key={opt.name}
                         type="button"
                         onClick={() => handleModifierToggle(group, opt)}
-                        className={`w-full flex items-center justify-between p-3 rounded-xl border text-sm transition-colors ${
+                        className={`w-full flex items-center justify-between p-3 rounded-xl border text-sm transition-colors cursor-pointer ${
                           isChecked
-                            ? "bg-emerald-500/10 border-emerald-500/60 text-white"
-                            : "bg-slate-950/40 border-slate-800/80 text-slate-300 hover:border-slate-700"
+                            ? "bg-emerald-500/10 border-emerald-500/60 text-slate-900 dark:text-white shadow-xs"
+                            : "bg-slate-50 dark:bg-slate-950/40 border-slate-200 dark:border-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700"
                         }`}
                       >
                         <div className="flex items-center gap-3">
@@ -281,14 +281,14 @@ export function DishCustomizerSheet({
                             } border flex items-center justify-center transition-colors ${
                               isChecked
                                 ? "bg-emerald-500 border-emerald-500 text-slate-950"
-                                : "border-slate-600 bg-slate-900"
+                                : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900"
                             }`}
                           >
                             {isChecked && <Check className="h-3 w-3 stroke-[3]" />}
                           </div>
-                          <span>{opt.name}</span>
+                          <span className="font-medium">{opt.name}</span>
                         </div>
-                        <span className="text-xs font-semibold text-emerald-400">
+                        <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 font-mono">
                           +{formatCurrency(opt.price, "INR")}
                         </span>
                       </button>
@@ -300,7 +300,7 @@ export function DishCustomizerSheet({
 
           {/* Cooking Instructions */}
           <div className="space-y-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-300">
               Kitchen Notes / Allergies
             </span>
             <input
@@ -308,30 +308,30 @@ export function DishCustomizerSheet({
               placeholder="e.g. Less spicy, dressing on side, no peanuts..."
               value={specialInstructions}
               onChange={(e) => setSpecialInstructions(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-colors"
             />
           </div>
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 pb-safe border-t border-slate-800 bg-slate-950/80 backdrop-blur flex items-center gap-3">
+        <div className="p-4 pb-safe border-t border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-950/80 backdrop-blur flex items-center gap-3">
           {/* Quantity Controls */}
-          <div className="flex items-center bg-slate-900 border border-slate-800 rounded-xl p-1">
+          <div className="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-1 shadow-xs">
             <button
               type="button"
               onClick={() => setQuantity(Math.max(1, quantity - 1))}
               disabled={quantity <= 1}
-              className="h-9 w-9 rounded-lg flex items-center justify-center text-slate-300 hover:text-white disabled:opacity-40 disabled:hover:text-slate-300"
+              className="h-9 w-9 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white disabled:opacity-40 disabled:hover:text-slate-400"
             >
               <Minus className="h-4 w-4" />
             </button>
-            <span className="w-8 text-center text-sm font-bold text-white">
+            <span className="w-8 text-center text-sm font-bold text-slate-900 dark:text-white">
               {quantity}
             </span>
             <button
               type="button"
               onClick={() => setQuantity(quantity + 1)}
-              className="h-9 w-9 rounded-lg flex items-center justify-center text-slate-300 hover:text-white"
+              className="h-9 w-9 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
             >
               <Plus className="h-4 w-4" />
             </button>
@@ -340,7 +340,7 @@ export function DishCustomizerSheet({
           {/* Add to Cart CTA */}
           <Button
             variant="glow"
-            className="flex-1 h-11 text-sm font-bold"
+            className="flex-1 h-11 text-sm font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/20"
             onClick={handleAddToCart}
           >
             <span>Add to Order</span>

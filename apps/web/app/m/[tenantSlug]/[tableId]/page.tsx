@@ -13,9 +13,11 @@ import {
   Heart,
   Plus,
   MessageCircle,
+  X,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useToast } from "@/components/ui/toast";
 import { formatCurrency } from "@/lib/utils";
 import {
@@ -378,16 +380,16 @@ export default function CustomerMenuPage() {
   }).filter((cat) => cat.items.length > 0);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 pb-28">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-28 font-sans transition-colors duration-200">
       {/* Top Navigation & Hero Banner */}
       <div className="relative">
-        <div className="h-44 sm:h-56 w-full relative overflow-hidden bg-slate-900">
+        <div className="h-44 sm:h-56 w-full relative overflow-hidden bg-slate-200 dark:bg-slate-900">
           <img
             src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1600&q=80"
             alt="Restaurant Interior"
             className="w-full h-full object-cover brightness-50"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/50 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-50 dark:from-slate-950 via-slate-50/60 dark:via-slate-950/50 to-transparent" />
 
           {/* Quick Action Badges */}
           <div className="absolute top-3 right-3 sm:top-4 sm:right-4 flex items-center gap-1.5 xs:gap-2">
@@ -401,33 +403,36 @@ export default function CustomerMenuPage() {
             </button>
             <button
               onClick={handleWifiInfo}
-              className="h-8 w-8 xs:h-9 xs:w-9 rounded-full bg-slate-900/80 backdrop-blur border border-slate-700/60 text-slate-300 flex items-center justify-center hover:text-white"
+              className="h-8 w-8 xs:h-9 xs:w-9 rounded-full bg-white/80 dark:bg-slate-900/80 backdrop-blur border border-slate-200/80 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 flex items-center justify-center hover:text-slate-900 dark:hover:text-white shadow-sm"
               title="Wi-Fi Information"
             >
               <Wifi className="h-3.5 w-3.5 xs:h-4 xs:w-4" />
             </button>
             <button
               onClick={handleCallWaiter}
-              className="px-2.5 xs:px-3 h-8 xs:h-9 rounded-full bg-emerald-500/90 hover:bg-emerald-500 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-500/20"
+              className="px-2.5 xs:px-3 h-8 xs:h-9 rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-500/20"
             >
               <BellRing className="h-3.5 w-3.5" />
               <span><span className="hidden xs:inline">Call </span>Waiter</span>
             </button>
+            <ThemeToggle
+              className="h-8 w-8 xs:h-9 xs:w-9 rounded-full bg-white/80 dark:bg-slate-900/80 backdrop-blur border border-slate-200/80 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 shadow-sm"
+            />
           </div>
         </div>
 
         {/* Restaurant Profile Card */}
         <div className="max-w-xl mx-auto px-4 -mt-16 relative z-10">
-          <div className="p-4 rounded-2xl bg-slate-900/95 border border-slate-800 shadow-xl backdrop-blur-md">
+          <div className="p-4 sm:p-5 rounded-2xl bg-white/95 dark:bg-slate-900/95 border border-slate-200/80 dark:border-slate-800 shadow-xl backdrop-blur-md">
             <div className="flex items-start justify-between">
               <div>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
                   DineFlow Contactless Ordering
                 </span>
-                <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
                   {restaurantDisplayName}
                 </h1>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                   Contactless Guest Dining & Table Ordering
                 </p>
               </div>
@@ -437,18 +442,18 @@ export default function CustomerMenuPage() {
                 <Badge variant="glow" size="sm" className="font-mono font-bold text-xs">
                   {tableName}
                 </Badge>
-                <span className="text-[10px] text-slate-500 mt-1">Direct to KDS</span>
+                <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-medium">Direct to KDS</span>
               </div>
             </div>
 
-            <div className="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs">
-              <div className="flex items-center gap-1.5 text-slate-300">
-                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="font-medium text-slate-300">Live Kitchen Active</span>
+            <div className="mt-3 pt-3 border-t border-slate-200/80 dark:border-slate-800/80 flex items-center justify-between text-xs">
+              <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse" />
+                <span className="font-medium text-slate-600 dark:text-slate-300">Live Kitchen Active</span>
               </div>
               <button
                 onClick={handleOpenWhatsApp}
-                className="text-[11px] font-semibold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 cursor-pointer"
+                className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 dark:hover:text-emerald-300 flex items-center gap-1 cursor-pointer"
               >
                 <MessageCircle className="h-3.5 w-3.5" />
                 <span>Prefer WhatsApp? Tap here</span>
@@ -456,25 +461,35 @@ export default function CustomerMenuPage() {
             </div>
 
             {/* Search Bar */}
-            <div className="mt-4 relative">
-              <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-500" />
+            <div className="mt-4 relative flex items-center">
+              <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
               <input
                 type="text"
                 placeholder="Search dishes, drinks, ingredients..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
+                className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-slate-100/80 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-colors"
               />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 p-1 rounded-full text-slate-400 hover:text-slate-700 dark:hover:text-white"
+                  title="Clear search"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
             </div>
 
             {/* Dietary Filter Pills */}
             <div className="flex items-center gap-2 mt-3 overflow-x-auto pb-1 scrollbar-none">
               <button
                 onClick={() => setDietaryFilter("all")}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
                   dietaryFilter === "all"
-                    ? "bg-emerald-500 text-slate-950"
-                    : "bg-slate-800/80 text-slate-400 hover:text-white"
+                    ? "bg-emerald-500 text-slate-950 shadow-sm"
+                    : "bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                 }`}
               >
                 All Items
@@ -482,10 +497,10 @@ export default function CustomerMenuPage() {
 
               <button
                 onClick={() => setDietaryFilter("veg")}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 transition-colors ${
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 transition-colors cursor-pointer ${
                   dietaryFilter === "veg"
-                    ? "bg-emerald-500 text-slate-950"
-                    : "bg-slate-800/80 text-emerald-400 hover:bg-slate-800"
+                    ? "bg-emerald-500 text-slate-950 shadow-sm"
+                    : "bg-slate-100 dark:bg-slate-800/80 text-emerald-700 dark:text-emerald-400 hover:bg-slate-200 dark:hover:bg-slate-800"
                 }`}
               >
                 <span className="h-2 w-2 rounded-full bg-emerald-500 inline-block" />
@@ -494,10 +509,10 @@ export default function CustomerMenuPage() {
 
               <button
                 onClick={() => setDietaryFilter("non-veg")}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 transition-colors ${
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 transition-colors cursor-pointer ${
                   dietaryFilter === "non-veg"
-                    ? "bg-rose-500 text-white"
-                    : "bg-slate-800/80 text-rose-400 hover:bg-slate-800"
+                    ? "bg-rose-500 text-white shadow-sm"
+                    : "bg-slate-100 dark:bg-slate-800/80 text-rose-700 dark:text-rose-400 hover:bg-slate-200 dark:hover:bg-slate-800"
                 }`}
               >
                 <span className="h-2 w-2 rounded-full bg-rose-500 inline-block" />
@@ -511,9 +526,9 @@ export default function CustomerMenuPage() {
       {/* Main Menu Feed */}
       <div className="max-w-xl mx-auto px-4 mt-6 space-y-8">
         {filteredCategories.length === 0 ? (
-          <div className="p-8 text-center bg-slate-900/50 rounded-2xl border border-slate-800/80 my-8">
-            <Sparkles className="h-8 w-8 text-slate-500 mx-auto mb-2" />
-            <p className="text-sm font-semibold text-slate-300">
+          <div className="p-8 text-center bg-white dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-800/80 my-8 shadow-sm">
+            <Sparkles className="h-8 w-8 text-slate-400 dark:text-slate-500 mx-auto mb-2" />
+            <p className="text-sm font-semibold text-slate-800 dark:text-slate-300">
               {searchQuery || dietaryFilter !== "all"
                 ? "No matching dishes found"
                 : isLiveSyncing
@@ -527,15 +542,30 @@ export default function CustomerMenuPage() {
                 ? "Fetching the latest live dishes from the kitchen…"
                 : "This restaurant's digital menu is currently being prepared. Please ask your server for assistance."}
             </p>
+            {(searchQuery || dietaryFilter !== "all") && (
+              <div className="pt-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setDietaryFilter("all");
+                  }}
+                >
+                  Reset Filters
+                </Button>
+              </div>
+            )}
           </div>
         ) : (
           filteredCategories.map((cat) => (
             <section key={cat.category} className="space-y-3.5">
               <div className="flex items-center gap-2">
-                <h2 className="text-base font-bold text-white tracking-tight">
+                <h2 className="text-base font-bold text-slate-900 dark:text-white tracking-tight">
                   {cat.category}
                 </h2>
-                <div className="h-px flex-1 bg-slate-800/80" />
+                <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800/80" />
               </div>
 
               <div className="space-y-3">
@@ -543,7 +573,7 @@ export default function CustomerMenuPage() {
                   <div
                     key={dish.id}
                     onClick={() => setCustomizingDish(dish)}
-                    className="p-3 sm:p-3.5 rounded-2xl bg-slate-900/70 border border-slate-800/80 hover:border-slate-700/80 transition-all flex gap-3 sm:gap-3.5 cursor-pointer group"
+                    className="p-3 sm:p-3.5 rounded-2xl bg-white dark:bg-slate-900/70 border border-slate-200/80 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700/80 transition-all flex gap-3 sm:gap-3.5 cursor-pointer group shadow-sm hover:shadow-md dark:shadow-none"
                   >
                     {/* Left: Info */}
                     <div className="flex-1 min-w-0 flex flex-col justify-between">
@@ -552,8 +582,8 @@ export default function CustomerMenuPage() {
                           <span
                             className={`inline-flex items-center justify-center h-3.5 w-3.5 rounded border ${
                               dish.isVeg
-                                ? "border-emerald-500 text-emerald-400"
-                                : "border-rose-500 text-rose-400"
+                                ? "border-emerald-500 text-emerald-500"
+                                : "border-rose-500 text-rose-500"
                             }`}
                           >
                             <span
@@ -562,25 +592,25 @@ export default function CustomerMenuPage() {
                               }`}
                             />
                           </span>
-                          <h3 className="text-sm font-bold text-white group-hover:text-emerald-400 transition-colors truncate">
+                          <h3 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors truncate">
                             {dish.name}
                           </h3>
                         </div>
 
-                        <p className="text-xs text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">
                           {dish.description}
                         </p>
                       </div>
 
-                      <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-800/40">
-                        <span className="text-sm font-extrabold font-mono text-white">
+                      <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-100 dark:border-slate-800/40">
+                        <span className="text-sm font-extrabold font-mono text-slate-900 dark:text-white">
                           {formatCurrency(dish.basePrice, "INR")}
                         </span>
 
                         <Button
                           variant="secondary"
                           size="sm"
-                          className="h-8 px-3 text-xs font-bold text-emerald-400 hover:text-white border-emerald-500/30 hover:bg-emerald-500/20 shrink-0"
+                          className="h-8 px-3 text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30 dark:hover:bg-emerald-500/20 shrink-0"
                           onClick={(e) => {
                             e.stopPropagation();
                             setCustomizingDish(dish);
@@ -594,7 +624,7 @@ export default function CustomerMenuPage() {
 
                     {/* Right: Dish Image */}
                     {dish.imageUrl && (
-                      <div className="h-20 w-20 xs:h-24 xs:w-24 sm:h-28 sm:w-28 rounded-xl overflow-hidden bg-slate-800 shrink-0 relative">
+                      <div className="h-20 w-20 xs:h-24 xs:w-24 sm:h-28 sm:w-28 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0 relative">
                         <img
                           src={dish.imageUrl}
                           alt={dish.name}
