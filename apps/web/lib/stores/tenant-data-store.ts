@@ -1358,6 +1358,17 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
 
     persistTenantState(state.tenantId, { orders: updatedOrders });
 
+    // Ensure notification center is updated in real-time
+    const isRoom = orderData.destination === "room_service" || (orderData.table || "").toLowerCase().includes("suite") || (orderData.table || "").toLowerCase().includes("room");
+    apiClient.post("/notifications", {
+      category: isRoom ? "room_service" : "orders",
+      title: isRoom ? `Room Service Order — #${orderId}` : `New Order Received — #${orderId}`,
+      message: `${orderData.table || "Dine-in"} • ${(orderData.items || []).length} item(s) • ₹${orderData.total || 0}`,
+      priority: "high",
+      actionUrl: isRoom ? "/dashboard/rooms" : "/dashboard/orders",
+      metadata: { orderId, table: orderData.table, total: orderData.total },
+    }).catch(() => {});
+
     set({ orders: updatedOrders });
     return newOrder;
   },
@@ -1385,6 +1396,25 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
             : t
         );
       }
+    }
+
+    // Emit notification on status transitions (delivered, paid, cancelled)
+    if (status === "served" || status === "cancelled" || status === "paid") {
+      const order = state.orders.find((o) => o.id === id);
+      const isRoom = order?.destination === "room_service" || (order?.table || "").toLowerCase().includes("suite");
+      const titleMap: Record<string, string> = {
+        served: `Order Delivered — #${id}`,
+        cancelled: `Order Cancelled — #${id}`,
+        paid: `Payment Received — #${id}`,
+      };
+      apiClient.post("/notifications", {
+        category: status === "paid" ? "payments" : (isRoom ? "room_service" : "orders"),
+        title: titleMap[status] || `Order ${status} — #${id}`,
+        message: `${order?.table || "Table"} order marked as ${status}.`,
+        priority: status === "cancelled" ? "high" : "medium",
+        actionUrl: isRoom ? "/dashboard/rooms" : "/dashboard/orders",
+        metadata: { orderId: id, status },
+      }).catch(() => {});
     }
 
     persistTenantState(state.tenantId, { orders: updatedOrders, tables: updatedTables });

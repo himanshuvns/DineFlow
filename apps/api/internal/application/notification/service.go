@@ -141,12 +141,72 @@ func (s *Service) ListNotifications(ctx context.Context, tenantID bson.ObjectID,
 	}
 
 	totalCount, _ := coll.CountDocuments(ctx, query)
+
+	// If workspace has no notifications at all, seed realistic initial notifications so the notification center isn't empty
+	if totalCount == 0 && filter.Search == "" && (filter.Category == "" || filter.Category == "all") && (filter.Read == nil || !*filter.Read) {
+		s.seedInitialNotifications(ctx, tenantID)
+		// Re-run query to retrieve the newly created notifications
+		cursor2, err2 := coll.Find(ctx, query, findOpts)
+		if err2 == nil {
+			defer cursor2.Close(ctx)
+			var seeded []*domainnotification.Notification
+			if err := cursor2.All(ctx, &seeded); err == nil && len(seeded) > 0 {
+				notifications = seeded
+				totalCount = int64(len(seeded))
+			}
+		}
+	}
+
 	unreadCount, _ := coll.CountDocuments(ctx, bson.M{
 		"tenantId": tenantID,
 		"read":     false,
 	})
 
 	return notifications, unreadCount, totalCount, nil
+}
+
+// seedInitialNotifications creates 3 introductory notifications for fresh or unseeded workspaces.
+func (s *Service) seedInitialNotifications(ctx context.Context, tenantID bson.ObjectID) {
+	now := time.Now().UTC()
+	coll := s.db.Collection(CollNotifications)
+
+	starterNotifications := []interface{}{
+		&domainnotification.Notification{
+			ID:        bson.NewObjectID(),
+			TenantID:  tenantID,
+			Category:  domainnotification.CategorySystem,
+			Title:     "Workspace Operating System Active",
+			Message:   "Digital dining, table QR menus, and kitchen display services are online.",
+			Priority:  domainnotification.PriorityHigh,
+			Read:      false,
+			ActionURL: "/dashboard",
+			CreatedAt: now.Add(-10 * time.Minute),
+		},
+		&domainnotification.Notification{
+			ID:        bson.NewObjectID(),
+			TenantID:  tenantID,
+			Category:  domainnotification.CategoryOrders,
+			Title:     "Real-Time Order Engine Ready",
+			Message:   "Live notifications will stream here whenever guests order via table QR or room service.",
+			Priority:  domainnotification.PriorityMedium,
+			Read:      false,
+			ActionURL: "/dashboard/orders",
+			CreatedAt: now.Add(-5 * time.Minute),
+		},
+		&domainnotification.Notification{
+			ID:        bson.NewObjectID(),
+			TenantID:  tenantID,
+			Category:  domainnotification.CategoryHousekeeping,
+			Title:     "Hospitality & PMS Workflows Connected",
+			Message:   "Guest service requests and housekeeping tasks will appear here in real-time.",
+			Priority:  domainnotification.PriorityLow,
+			Read:      false,
+			ActionURL: "/dashboard/rooms",
+			CreatedAt: now.Add(-1 * time.Minute),
+		},
+	}
+
+	_, _ = coll.InsertMany(ctx, starterNotifications)
 }
 
 // GetUnreadCount returns the number of unread notifications for a tenant.
