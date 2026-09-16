@@ -20,14 +20,42 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
+// notifServiceIface is the concrete method signature used from appnotification.Service.
+type notifServiceIface interface {
+	EmitOrderCreated(ctx context.Context, tenantID bson.ObjectID, order *domainorder.Order) error
+	EmitOrderUpdated(ctx context.Context, tenantID bson.ObjectID, order *domainorder.Order) error
+}
+
 type Service struct {
-	db  *mongoinfra.Client
-	hub *realtime.Hub
+	db           *mongoinfra.Client
+	hub          *realtime.Hub
+	notifService notifServiceIface
 }
 
 func NewService(db *mongoinfra.Client, hub *realtime.Hub) *Service {
 	return &Service{db: db, hub: hub}
 }
+
+// SetNotificationService injects the notification service for event emission.
+func (s *Service) SetNotificationService(ns notifServiceIface) {
+	s.notifService = ns
+}
+
+// emitOrderNotif is a fire-and-forget notification helper.
+func (s *Service) emitOrderNotif(ctx context.Context, tenantID bson.ObjectID, ord *domainorder.Order, isNew bool) {
+	if s.notifService == nil {
+		return
+	}
+	go func() {
+		bgCtx := context.Background()
+		if isNew {
+			_ = s.notifService.EmitOrderCreated(bgCtx, tenantID, ord)
+		} else {
+			_ = s.notifService.EmitOrderUpdated(bgCtx, tenantID, ord)
+		}
+	}()
+}
+
 
 type CustomerItemInput struct {
 	MenuItemID        string   `json:"menuItemId"`
@@ -368,6 +396,9 @@ func (s *Service) CreateCustomerOrder(ctx context.Context, input CreateOrderInpu
 		EventType: realtime.EventOrderCreated,
 		Order:     ord,
 	})
+
+	// 9. Emit notification for the restaurant's notification center
+	s.emitOrderNotif(ctx, t.ID, ord, true)
 
 	return ord, nil
 }

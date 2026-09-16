@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"io"
@@ -8,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	notifapp "github.com/dineflow/api/internal/application/notification"
 	roomapp "github.com/dineflow/api/internal/application/room"
 	domainroom "github.com/dineflow/api/internal/domain/room"
 	"github.com/dineflow/api/internal/interfaces/http/middleware"
@@ -17,11 +19,12 @@ import (
 )
 
 type RoomHandler struct {
-	roomService *roomapp.Service
+	roomService  *roomapp.Service
+	notifService *notifapp.Service
 }
 
-func NewRoomHandler(roomService *roomapp.Service) *RoomHandler {
-	return &RoomHandler{roomService: roomService}
+func NewRoomHandler(roomService *roomapp.Service, notifService *notifapp.Service) *RoomHandler {
+	return &RoomHandler{roomService: roomService, notifService: notifService}
 }
 
 // List returns rooms for the current tenant.
@@ -287,6 +290,16 @@ func (h *RoomHandler) CheckIn(c *gin.Context) {
 		return
 	}
 
+	// Fire check-in notification asynchronously
+	if h.notifService != nil && updatedRoom != nil && guest != nil {
+		go func() {
+			_ = h.notifService.EmitGuestCheckedIn(
+				context.Background(), tOID,
+				guest.Name, updatedRoom.RoomNumber, updatedRoom.ID.Hex(),
+			)
+		}()
+	}
+
 	response.Created(c, gin.H{"guest": guest, "room": updatedRoom})
 }
 
@@ -338,6 +351,20 @@ func (h *RoomHandler) CheckOut(c *gin.Context) {
 	if err != nil {
 		response.BadRequest(c, "CHECKOUT_FAILED", err.Error())
 		return
+	}
+
+	// Fire checkout notification asynchronously
+	if h.notifService != nil && updatedRoom != nil {
+		guestName := ""
+		if staySummary != nil {
+			guestName = staySummary.GuestName
+		}
+		go func() {
+			_ = h.notifService.EmitGuestCheckedOut(
+				context.Background(), tOID,
+				guestName, updatedRoom.RoomNumber, updatedRoom.ID.Hex(),
+			)
+		}()
 	}
 
 	response.OK(c, gin.H{"room": updatedRoom, "task": task, "staySummary": staySummary})
@@ -555,6 +582,16 @@ func (h *RoomHandler) UpdateTask(c *gin.Context) {
 		return
 	}
 
+	// Emit housekeeping completed notification
+	if h.notifService != nil && updated != nil && (req.Status == "done" || req.Status == "completed") {
+		go func() {
+			_ = h.notifService.EmitHousekeepingCompleted(
+				context.Background(), tOID,
+				updated.Title, updated.RoomNumber, updated.RoomID.Hex(),
+			)
+		}()
+	}
+
 	response.OK(c, updated)
 }
 
@@ -669,6 +706,16 @@ func (h *RoomHandler) RequestPublicAmenity(c *gin.Context) {
 	if err := h.roomService.CreateHousekeepingTask(c.Request.Context(), task); err != nil {
 		response.BadRequest(c, "REQUEST_FAILED", err.Error())
 		return
+	}
+
+	// Fire housekeeping notification asynchronously
+	if h.notifService != nil {
+		go func() {
+			_ = h.notifService.EmitHousekeepingRequested(
+				context.Background(), room.TenantID,
+				title, room.RoomNumber, room.ID.Hex(),
+			)
+		}()
 	}
 
 	response.Created(c, gin.H{

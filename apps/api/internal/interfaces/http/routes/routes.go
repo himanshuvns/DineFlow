@@ -27,6 +27,7 @@ func Setup(
 	analyticsHandler *handlers.AnalyticsHandler,
 	aiHandler *handlers.AIHandler,
 	roomHandler *handlers.RoomHandler,
+	notifHandler *handlers.NotificationHandler,
 ) {
 	// Auth middleware (used on protected routes)
 	authMiddleware := middleware.Auth(tokenMaker)
@@ -216,6 +217,18 @@ func Setup(
 				aiGroup.GET("/forecast", middleware.OwnerOrManager(), aiHandler.GetDemandForecast)
 				aiGroup.GET("/pricing-alerts", middleware.OwnerOrManager(), aiHandler.GetPricingAlerts)
 				aiGroup.POST("/chatbot", aiHandler.ChatbotReply)
+			}
+
+			// ── Notifications ──────────────────────────────────────────────
+			notifGroup := protected.Group("/notifications")
+			{
+				notifGroup.GET("", notifHandler.List)
+				notifGroup.GET("/unread-count", notifHandler.GetUnreadCount)
+				notifGroup.PATCH("/:id/read", notifHandler.MarkAsRead)
+				notifGroup.POST("/mark-all-read", notifHandler.MarkAllAsRead)
+				notifGroup.DELETE("/clear-read", notifHandler.ClearRead)
+				notifGroup.POST("", notifHandler.Create)
+				notifGroup.GET("/stream", notifHandler.Stream)
 			}
 		}
 	}

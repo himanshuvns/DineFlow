@@ -68,18 +68,13 @@ func (h *Hub) Unregister(tenantID string, ch chan []byte) {
 	}
 }
 
-// Broadcast sends an event payload to all clients belonging to that tenant.
-func (h *Hub) Broadcast(event *OrderEvent) {
+// BroadcastRaw sends raw bytes to all clients belonging to that tenant.
+func (h *Hub) BroadcastRaw(tenantID string, payload []byte) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
-	channels, ok := h.clients[event.TenantID]
+	channels, ok := h.clients[tenantID]
 	if !ok || len(channels) == 0 {
-		return
-	}
-
-	payload, err := json.Marshal(event)
-	if err != nil {
 		return
 	}
 
@@ -90,4 +85,34 @@ func (h *Hub) Broadcast(event *OrderEvent) {
 			// Non-blocking write: skip slow client
 		}
 	}
+}
+
+// Broadcast sends an event payload to all clients belonging to that tenant.
+func (h *Hub) Broadcast(event *OrderEvent) {
+	payload, err := json.Marshal(event)
+	if err != nil {
+		return
+	}
+	h.BroadcastRaw(event.TenantID, payload)
+}
+
+// NotificationEvent represents a live notification event.
+type NotificationEvent struct {
+	TenantID     string      `json:"tenantId"`
+	EventType    string      `json:"type"`
+	Notification interface{} `json:"notification"`
+}
+
+// BroadcastNotification sends a notification event to all connected clients for that tenant.
+func (h *Hub) BroadcastNotification(tenantID string, notif interface{}) {
+	event := NotificationEvent{
+		TenantID:     tenantID,
+		EventType:    "notification.created",
+		Notification: notif,
+	}
+	payload, err := json.Marshal(event)
+	if err != nil {
+		return
+	}
+	h.BroadcastRaw(tenantID, payload)
 }

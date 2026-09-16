@@ -12,6 +12,7 @@ import (
 	analyticsapp "github.com/dineflow/api/internal/application/analytics"
 	authapp "github.com/dineflow/api/internal/application/auth"
 	menuapp "github.com/dineflow/api/internal/application/menu"
+	notifapp "github.com/dineflow/api/internal/application/notification"
 	orderapp "github.com/dineflow/api/internal/application/order"
 	roomapp "github.com/dineflow/api/internal/application/room"
 	staffapp "github.com/dineflow/api/internal/application/staff"
@@ -143,6 +144,7 @@ func main() {
 	waService := whatsappapp.NewService(mongoDB)
 	analyticsService := analyticsapp.NewService(mongoDB)
 	aiService := aiapp.NewService(cfg.AI.GeminiAPIKey, mongoDB)
+	notifService := notifapp.NewService(mongoDB, hub)
 
 	authHandler := handlers.NewAuthHandler(authService)
 	tenantHandler := handlers.NewTenantHandler(mongoDB)
@@ -150,12 +152,16 @@ func main() {
 	storageHandler := handlers.NewStorageHandler(storageService)
 	menuHandler := handlers.NewMenuHandler(menuService, aiService)
 	tableHandler := handlers.NewTableHandler(tableService)
-	roomHandler := handlers.NewRoomHandler(roomService)
+	roomHandler := handlers.NewRoomHandler(roomService, notifService)
 	orderHandler := handlers.NewOrderHandler(orderService, hub)
 	subHandler := handlers.NewSubscriptionHandler(subService)
 	waHandler := handlers.NewWhatsAppHandler(waService)
 	analyticsHandler := handlers.NewAnalyticsHandler(analyticsService)
 	aiHandler := handlers.NewAIHandler(aiService)
+	notifHandler := handlers.NewNotificationHandler(notifService, hub)
+
+	// Inject notifService into order service for real-time event emission
+	orderService.SetNotificationService(notifService)
 
 	// Inject ping functions for health endpoint
 	handlers.SetHealthDeps(
@@ -188,6 +194,7 @@ func main() {
 		analyticsHandler,
 		aiHandler,
 		roomHandler,
+		notifHandler,
 	)
 
 	// ── HTTP Server ───────────────────────────────────────────────────────────

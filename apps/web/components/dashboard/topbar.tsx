@@ -17,6 +17,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Dropdown } from "@/components/ui/dropdown";
 import { useToast } from "@/components/ui/toast";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { NotificationCenter } from "@/components/notifications/notification-center";
 
 export function TopBar() {
   const router = useRouter();
@@ -88,10 +89,7 @@ export function TopBar() {
         <ThemeToggle />
 
         {/* Notifications */}
-        <button className="relative p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 transition-colors cursor-pointer">
-          <Bell className="h-4 w-4" />
-          <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900" />
-        </button>
+        <NotificationCenter />
 
         {/* User profile dropdown */}
         <Dropdown
