@@ -48,6 +48,7 @@ import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
 import { apiClient } from "@/lib/api";
+import { validateIndianPhone, formatIndianPhoneInput } from "@/lib/validation";
 
 // ── Interfaces ────────────────────────────────────────────────────────────────
 
@@ -299,6 +300,7 @@ export default function WhatsAppPage() {
 
   // Test Sender State
   const [testNumber, setTestNumber] = React.useState("+91 98000 12345");
+  const [testNumberTouched, setTestNumberTouched] = React.useState(false);
   const [testGuestName, setTestGuestName] = React.useState("Alex Rivera");
   const [isSendingTest, setIsSendingTest] = React.useState(false);
 
@@ -561,18 +563,26 @@ export default function WhatsAppPage() {
   const handleSendTest = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!testNumber) return;
+
+    const v = validateIndianPhone(testNumber);
+    if (!v.isValid) {
+      setTestNumberTouched(true);
+      addToast("error", "Invalid WhatsApp Number", v.error || "Please enter a valid 10-digit Indian mobile number.");
+      return;
+    }
+
     setIsSendingTest(true);
 
     try {
       await apiClient.post("/whatsapp/send-test", {
-        recipientPhone: testNumber,
+        recipientPhone: v.normalized,
         customerName: testGuestName,
         template: "order_confirmed",
       });
-      addToast("success", "Notification Dispatched", `Sent digital notification to ${testNumber}`);
+      addToast("success", "Notification Dispatched", `Sent digital notification to ${v.formatted}`);
       fetchData();
     } catch (err) {
-      addToast("success", "Sandbox Dispatched", `Notification recorded in dispatch logs for ${testNumber}`);
+      addToast("success", "Sandbox Dispatched", `Notification recorded in dispatch logs for ${v.formatted}`);
     } finally {
       setIsSendingTest(false);
     }
@@ -912,7 +922,17 @@ export default function WhatsAppPage() {
                     <Input
                       label="Recipient WhatsApp Number"
                       value={testNumber}
-                      onChange={(e) => setTestNumber(e.target.value)}
+                      onChange={(e) => {
+                        setTestNumber(formatIndianPhoneInput(e.target.value));
+                        setTestNumberTouched(true);
+                      }}
+                      onBlur={() => setTestNumberTouched(true)}
+                      error={
+                        testNumberTouched && testNumber && !validateIndianPhone(testNumber).isValid
+                          ? validateIndianPhone(testNumber).error
+                          : undefined
+                      }
+                      isSuccess={!!testNumber && validateIndianPhone(testNumber).isValid}
                       placeholder="+91 98000 00000"
                       required
                     />

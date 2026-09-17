@@ -32,7 +32,33 @@ var (
 	ErrInvalidOTP           = errors.New("invalid or expired verification code")
 	ErrInvalidRefreshToken  = errors.New("invalid or expired refresh token")
 	ErrSlugAlreadyExists    = errors.New("business URL slug already taken")
+	ErrWeakPassword         = errors.New("password must be at least 8 characters and include uppercase, lowercase, number, and special character")
 )
+
+// ValidatePasswordComplexity verifies standard password criteria:
+// >= 8 chars, at least one uppercase, at least one lowercase, at least one digit, at least one special character.
+func ValidatePasswordComplexity(password string) error {
+	if len(password) < 8 {
+		return ErrWeakPassword
+	}
+	var hasUpper, hasLower, hasDigit, hasSpecial bool
+	for _, ch := range password {
+		switch {
+		case ch >= 'A' && ch <= 'Z':
+			hasUpper = true
+		case ch >= 'a' && ch <= 'z':
+			hasLower = true
+		case ch >= '0' && ch <= '9':
+			hasDigit = true
+		case strings.ContainsRune("!@#$%^&*()_+-=[]{};':\"|,.<>/?~`\\", ch):
+			hasSpecial = true
+		}
+	}
+	if !hasUpper || !hasLower || !hasDigit || !hasSpecial {
+		return ErrWeakPassword
+	}
+	return nil
+}
 
 const maxFailedAttempts = 5
 
@@ -123,6 +149,11 @@ func (s *Service) Register(ctx context.Context, req RegisterRequest) (string, er
 	tenantsColl := s.mongo.Collection("tenants")
 	usersColl := s.mongo.Collection("users")
 
+	// Validate password complexity
+	if err := ValidatePasswordComplexity(req.Password); err != nil {
+		return "", err
+	}
+
 	phone := otp.NormalizePhone(req.Phone)
 	email := strings.ToLower(strings.TrimSpace(req.Email))
 
@@ -130,8 +161,15 @@ func (s *Service) Register(ctx context.Context, req RegisterRequest) (string, er
 	if phone == "" && email == "" {
 		return "", ErrInvalidPhone
 	}
-	if phone != "" && len(phone) < 10 {
-		return "", ErrInvalidPhone
+	if phone != "" {
+		if strings.HasPrefix(phone, "+91") {
+			digits := phone[3:]
+			if len(digits) != 10 || (digits[0] != '6' && digits[0] != '7' && digits[0] != '8' && digits[0] != '9') {
+				return "", ErrInvalidPhone
+			}
+		} else if len(phone) < 10 {
+			return "", ErrInvalidPhone
+		}
 	}
 
 	// Resolve user name

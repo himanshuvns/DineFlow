@@ -40,6 +40,12 @@ import { useToast } from "@/components/ui/toast";
 import { EmptyState } from "@/components/ui/empty-state";
 import { apiClient } from "@/lib/api";
 import { useAuthStore } from "@/lib/stores/auth-store";
+import {
+  validateIndianPhone,
+  formatIndianPhoneInput,
+  validateEmail,
+  validateIFSC,
+} from "@/lib/validation";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -234,11 +240,13 @@ export default function StaffPage() {
   const [inviteDepartment, setInviteDepartment] = React.useState("Floor Service");
   const [inviteType, setInviteType] = React.useState("full_time");
   const [inviteSalary, setInviteSalary] = React.useState("20000");
+  const [invitePhoneTouched, setInvitePhoneTouched] = React.useState(false);
 
   const [isEditProfileOpen, setIsEditProfileOpen] = React.useState(false);
   const [selectedStaff, setSelectedStaff] = React.useState<StaffMember | null>(null);
   const [profileName, setProfileName] = React.useState("");
   const [profilePhone, setProfilePhone] = React.useState("");
+  const [profilePhoneTouched, setProfilePhoneTouched] = React.useState(false);
   const [profileEmail, setProfileEmail] = React.useState("");
   const [profileDepartment, setProfileDepartment] = React.useState("");
   const [profileEmpType, setProfileEmpType] = React.useState("full_time");
@@ -251,6 +259,7 @@ export default function StaffPage() {
   const [profileBankName, setProfileBankName] = React.useState("");
   const [profileEmergName, setProfileEmergName] = React.useState("");
   const [profileEmergPhone, setProfileEmergPhone] = React.useState("");
+  const [profileEmergPhoneTouched, setProfileEmergPhoneTouched] = React.useState(false);
 
   const [isGeofenceModalOpen, setIsGeofenceModalOpen] = React.useState(false);
   const [geoLat, setGeoLat] = React.useState("28.6315");
@@ -601,10 +610,30 @@ export default function StaffPage() {
       addToast("warning", "Contact Required", "Please enter a WhatsApp phone number or email address.");
       return;
     }
+
+    let normalizedPhone = phone;
+    if (phone) {
+      const v = validateIndianPhone(phone);
+      if (!v.isValid) {
+        setInvitePhoneTouched(true);
+        addToast("error", "Invalid WhatsApp Number", v.error || "Please enter a valid 10-digit Indian mobile number.");
+        return;
+      }
+      normalizedPhone = v.normalized;
+    }
+
+    if (email) {
+      const ev = validateEmail(email);
+      if (!ev.isValid) {
+        addToast("error", "Invalid Email", ev.error || "Please enter a valid email address.");
+        return;
+      }
+    }
+
     try {
       await apiClient.post("/staff/invite", {
         name: inviteName.trim() || phone || email.split("@")[0],
-        phone: phone,
+        phone: normalizedPhone,
         email: email,
         role: inviteRole,
         department: inviteDepartment,
@@ -625,6 +654,7 @@ export default function StaffPage() {
       setInviteName("");
       setInvitePhone("");
       setInviteEmail("");
+      setInvitePhoneTouched(false);
       fetchStaff();
     } catch (err: unknown) {
       const errObj = (err as { response?: { data?: { error?: { message?: string } | string; message?: string } } })?.response?.data;
@@ -635,30 +665,71 @@ export default function StaffPage() {
 
   const handleOpenEditProfile = (member: StaffMember) => {
     setSelectedStaff(member);
-    setProfileName(member.name || "");
+    setProfileName(member.name);
     setProfilePhone(member.phone || "");
+    setProfilePhoneTouched(false);
     setProfileEmail(member.email || "");
     setProfileDepartment(member.department || "Floor Service");
     setProfileEmpType(member.employmentType || "full_time");
     setProfileShiftName(member.shiftName || "Morning Shift (09:00 - 18:00)");
-    setProfileBasic(String(member.salary?.basic || 25000));
-    setProfileHra(String(member.salary?.hra || 10000));
-    setProfileOvertimeRate(String(member.salary?.overtimeRate || 180));
+    setProfileBasic(member.salary?.basic?.toString() || "20000");
+    setProfileHra(member.salary?.hra?.toString() || "8000");
+    setProfileOvertimeRate(member.salary?.overtimeRate?.toString() || "150");
     setProfileAccNum(member.bankDetails?.accountNumber || "");
     setProfileIfsc(member.bankDetails?.ifsc || "");
-    setProfileBankName(member.bankDetails?.bankName || "HDFC Bank");
+    setProfileBankName(member.bankDetails?.bankName || "");
     setProfileEmergName(member.emergencyContact?.name || "");
     setProfileEmergPhone(member.emergencyContact?.phone || "");
+    setProfileEmergPhoneTouched(false);
     setIsEditProfileOpen(true);
   };
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedStaff) return;
+
+    let normalizedPhone = profilePhone.trim();
+    if (normalizedPhone) {
+      const v = validateIndianPhone(normalizedPhone);
+      if (!v.isValid) {
+        setProfilePhoneTouched(true);
+        addToast("error", "Invalid WhatsApp Number", v.error || "Please enter a valid Indian mobile number.");
+        return;
+      }
+      normalizedPhone = v.normalized;
+    }
+
+    let normalizedEmergPhone = profileEmergPhone.trim();
+    if (normalizedEmergPhone) {
+      const ev = validateIndianPhone(normalizedEmergPhone);
+      if (!ev.isValid) {
+        setProfileEmergPhoneTouched(true);
+        addToast("error", "Invalid Emergency Contact Phone", ev.error || "Please enter a valid Indian mobile number.");
+        return;
+      }
+      normalizedEmergPhone = ev.normalized;
+    }
+
+    if (profileEmail.trim()) {
+      const emv = validateEmail(profileEmail);
+      if (!emv.isValid) {
+        addToast("error", "Invalid Email Address", emv.error || "Please enter a valid email address.");
+        return;
+      }
+    }
+
+    if (profileIfsc.trim()) {
+      const ifscV = validateIFSC(profileIfsc);
+      if (!ifscV.isValid) {
+        addToast("error", "Invalid Bank IFSC Code", ifscV.error || "Please enter a valid 11-character IFSC code.");
+        return;
+      }
+    }
+
     try {
       await apiClient.put(`/staff/profiles/${selectedStaff.id}`, {
         name: profileName.trim(),
-        phone: profilePhone.trim(),
+        phone: normalizedPhone,
         email: profileEmail.trim(),
         department: profileDepartment,
         employmentType: profileEmpType,
@@ -676,7 +747,7 @@ export default function StaffPage() {
         },
         emergencyContact: {
           name: profileEmergName.trim(),
-          phone: profileEmergPhone.trim(),
+          phone: normalizedEmergPhone,
         },
       });
       addToast("success", "Profile Updated", `Workforce profile updated for ${profileName.trim() || selectedStaff.name}`);
@@ -1568,7 +1639,17 @@ export default function StaffPage() {
               label="WhatsApp Phone Number"
               placeholder="+91 98765 43210"
               value={invitePhone}
-              onChange={(e) => setInvitePhone(e.target.value)}
+              onChange={(e) => {
+                setInvitePhone(formatIndianPhoneInput(e.target.value));
+                setInvitePhoneTouched(true);
+              }}
+              onBlur={() => setInvitePhoneTouched(true)}
+              error={
+                invitePhoneTouched && invitePhone && !validateIndianPhone(invitePhone).isValid
+                  ? validateIndianPhone(invitePhone).error
+                  : undefined
+              }
+              isSuccess={!!invitePhone && validateIndianPhone(invitePhone).isValid}
               required
               leftIcon={<MessageSquare className="h-4 w-4 text-emerald-600" />}
             />
@@ -1671,7 +1752,17 @@ export default function StaffPage() {
             <Input
               label="WhatsApp Phone Number"
               value={profilePhone}
-              onChange={(e) => setProfilePhone(e.target.value)}
+              onChange={(e) => {
+                setProfilePhone(formatIndianPhoneInput(e.target.value));
+                setProfilePhoneTouched(true);
+              }}
+              onBlur={() => setProfilePhoneTouched(true)}
+              error={
+                profilePhoneTouched && profilePhone && !validateIndianPhone(profilePhone).isValid
+                  ? validateIndianPhone(profilePhone).error
+                  : undefined
+              }
+              isSuccess={!!profilePhone && validateIndianPhone(profilePhone).isValid}
               placeholder="+91 98765 43210"
               leftIcon={<MessageSquare className="h-3.5 w-3.5 text-emerald-600" />}
             />
@@ -1789,8 +1880,18 @@ export default function StaffPage() {
               <Input
                 label="Contact Phone"
                 value={profileEmergPhone}
-                onChange={(e) => setProfileEmergPhone(e.target.value)}
-                placeholder="+919876543210"
+                onChange={(e) => {
+                  setProfileEmergPhone(formatIndianPhoneInput(e.target.value));
+                  setProfileEmergPhoneTouched(true);
+                }}
+                onBlur={() => setProfileEmergPhoneTouched(true)}
+                error={
+                  profileEmergPhoneTouched && profileEmergPhone && !validateIndianPhone(profileEmergPhone).isValid
+                    ? validateIndianPhone(profileEmergPhone).error
+                    : undefined
+                }
+                isSuccess={!!profileEmergPhone && validateIndianPhone(profileEmergPhone).isValid}
+                placeholder="+91 98765 43210"
               />
             </div>
           </div>

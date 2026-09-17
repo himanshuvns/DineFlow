@@ -11,11 +11,12 @@ import {
   CheckCircle2,
   ChevronDown,
 } from "lucide-react";
-import { FormInput, PasswordField, CTAButton } from "@/components/auth";
+import { PasswordField, CTAButton } from "@/components/auth";
 import { useToast } from "@/components/ui/toast";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { apiClient } from "@/lib/api";
 import { HospitalityLoader } from "@/components/ui/hospitality-loader";
+import { validateIndianPhone, formatIndianPhoneInput } from "@/lib/validation";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -31,6 +32,11 @@ export default function LoginPage() {
   const [welcomeName, setWelcomeName] = React.useState("");
   const [error, setError] = React.useState("");
 
+  // Validation touch state
+  const [phoneTouched, setPhoneTouched] = React.useState(false);
+
+  const phoneValidation = React.useMemo(() => validateIndianPhone(phone), [phone]);
+
   React.useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
@@ -42,18 +48,36 @@ export default function LoginPage() {
   }, [addToast]);
 
   const handleFillDemo = () => {
-    setPhone("+91 9876543210");
+    setPhone("+91 98765 43210");
     setPassword("DineFlow@2026");
     setError("");
+    setPhoneTouched(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    setPhoneTouched(true);
+
+    if (!phoneValidation.isValid) {
+      setError(phoneValidation.error || "Please enter a valid 10-digit Indian mobile number");
+      return;
+    }
+
+    if (!password) {
+      setError("Please enter your password");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      const res = await apiClient.post("/auth/login", { phone, password });
+      const res = await apiClient.post("/auth/login", {
+        phone: phoneValidation.normalized,
+        password,
+      });
+
       if (res.data?.success) {
         const { user, tenant, accessToken, isFirstLogin } = res.data.data;
         const storageKey = user?.id ? `dineflow_has_logged_in_${user.id}` : "dineflow_has_logged_in";
@@ -134,12 +158,20 @@ export default function LoginPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-2.5">
-          {/* Mobile Number */}
+          {/* Mobile Number with Real-time Formatting & Validation */}
           <div className="w-full space-y-1">
             <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block select-none">
               Mobile Number
             </label>
-            <div className="group relative flex items-center rounded-2xl border border-slate-200 dark:border-slate-700/60 bg-slate-100/90 dark:bg-[#0F172A]/70 backdrop-blur-md transition-all duration-200 hover:border-slate-300 dark:hover:border-slate-600 focus-within:border-emerald-500 dark:focus-within:border-[#14F1C7] focus-within:ring-2 focus-within:ring-emerald-500/20 dark:focus-within:ring-[#14F1C7]/40 focus-within:shadow-[0_0_15px_rgba(16,185,129,0.15)] dark:focus-within:shadow-[0_0_20px_rgba(20,241,199,0.22)]">
+            <div
+              className={`group relative flex items-center rounded-2xl border transition-all duration-200 bg-slate-100/90 dark:bg-[#0F172A]/70 backdrop-blur-md ${
+                phoneTouched && !phoneValidation.isValid
+                  ? "border-rose-500/80 focus-within:border-rose-500 focus-within:ring-2 focus-within:ring-rose-500/20"
+                  : phoneValidation.isValid
+                  ? "border-emerald-500/60 dark:border-emerald-500/60 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20"
+                  : "border-slate-200 dark:border-slate-700/60 hover:border-slate-300 dark:hover:border-slate-600 focus-within:border-emerald-500 dark:focus-within:border-[#14F1C7] focus-within:ring-2 focus-within:ring-emerald-500/20 dark:focus-within:ring-[#14F1C7]/40"
+              }`}
+            >
               <div className="flex items-center gap-1 pl-3.5 pr-2.5 py-2 border-r border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 font-medium text-[13.5px] select-none shrink-0">
                 <Phone className="h-4 w-4 text-slate-400 mr-1" />
                 <span>+91</span>
@@ -148,21 +180,46 @@ export default function LoginPage() {
               <input
                 type="tel"
                 placeholder="98765 43210"
-                value={phone.startsWith("+91") ? phone.slice(3).trim() : phone}
+                value={
+                  phone.startsWith("+91")
+                    ? formatIndianPhoneInput(phone).replace(/^\+91\s*/, "")
+                    : formatIndianPhoneInput(phone)
+                }
                 onChange={(e) => {
-                  const digits = e.target.value.replace(/[^0-9]/g, "");
-                  setPhone("+91 " + digits);
+                  const digits = e.target.value.replace(/[^0-9]/g, "").slice(0, 10);
+                  setPhone("+91" + digits);
+                  setPhoneTouched(true);
+                  if (error) setError("");
                 }}
+                onBlur={() => setPhoneTouched(true)}
                 required
+                maxLength={11}
+                aria-invalid={phoneTouched && !phoneValidation.isValid}
+                aria-describedby={phoneTouched && !phoneValidation.isValid ? "login-phone-error" : undefined}
                 className="w-full bg-transparent text-base sm:text-sm text-slate-900 dark:text-[#F8FAFC] placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none px-3 py-2"
               />
+
+              {phoneValidation.isValid && (
+                <div className="pr-3 flex items-center text-emerald-500 dark:text-[#14F1C7] pointer-events-none shrink-0">
+                  <CheckCircle2 className="h-4 w-4" />
+                </div>
+              )}
             </div>
+
+            {phoneTouched && !phoneValidation.isValid && (
+              <p id="login-phone-error" role="alert" className="text-xs text-rose-500 pl-1 font-medium">
+                {phoneValidation.error}
+              </p>
+            )}
           </div>
 
           {/* Password */}
           <PasswordField
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              if (error) setError("");
+            }}
             required
             helperText=""
           />
@@ -185,7 +242,11 @@ export default function LoginPage() {
             </Link>
           </div>
 
-          {error && <p className="text-xs text-rose-500 font-medium">{error}</p>}
+          {error && (
+            <p role="alert" className="text-xs text-rose-500 font-medium pl-1">
+              {error}
+            </p>
+          )}
 
           <div className="pt-1">
             <CTAButton isLoading={isLoading}>

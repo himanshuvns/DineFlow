@@ -4,5 +4,6 @@ export * from "./floating-card";
 export * from "./business-category-selector";
 export * from "./form-input";
 export * from "./password-field";
+export * from "./password-strength-meter";
 export * from "./cta-button";
 export * from "./scattered-food-particles";

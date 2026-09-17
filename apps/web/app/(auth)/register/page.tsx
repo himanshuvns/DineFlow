@@ -16,11 +16,18 @@ import {
   BusinessCategorySelector,
   FormInput,
   PasswordField,
+  PasswordStrengthMeter,
   CTAButton,
 } from "@/components/auth";
 import { useToast } from "@/components/ui/toast";
 import { apiClient } from "@/lib/api";
 import { HospitalityLoader } from "@/components/ui/hospitality-loader";
+import {
+  validateIndianPhone,
+  formatIndianPhoneInput,
+  validatePassword,
+  validateConfirmPassword,
+} from "@/lib/validation";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -33,6 +40,16 @@ export default function RegisterPage() {
   const [lastName, setLastName] = React.useState("");
   const [phone, setPhone] = React.useState("+91");
   const [password, setPassword] = React.useState("");
+  const [confirmPassword, setConfirmPassword] = React.useState("");
+
+  // Touch states for inline validation on blur / first interaction
+  const [phoneTouched, setPhoneTouched] = React.useState(false);
+  const [passwordTouched, setPasswordTouched] = React.useState(false);
+  const [confirmPasswordTouched, setConfirmPasswordTouched] = React.useState(false);
+  const [businessNameTouched, setBusinessNameTouched] = React.useState(false);
+  const [firstNameTouched, setFirstNameTouched] = React.useState(false);
+  const [lastNameTouched, setLastNameTouched] = React.useState(false);
+
   const [isLoading, setIsLoading] = React.useState(false);
   const [isRedirecting, setIsRedirecting] = React.useState(false);
 
@@ -45,19 +62,56 @@ export default function RegisterPage() {
     setSlug(generated);
   }, [businessName]);
 
+  // Real-time validations
+  const phoneValidation = React.useMemo(() => validateIndianPhone(phone), [phone]);
+  const passwordValidation = React.useMemo(() => validatePassword(password), [password]);
+  const confirmPasswordValidation = React.useMemo(
+    () => validateConfirmPassword(password, confirmPassword),
+    [password, confirmPassword]
+  );
+
+  const isFormValid =
+    businessName.trim().length >= 2 &&
+    firstName.trim().length >= 1 &&
+    lastName.trim().length >= 1 &&
+    phoneValidation.isValid &&
+    passwordValidation.isValid &&
+    confirmPasswordValidation.isValid;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    setPhoneTouched(true);
+    setPasswordTouched(true);
+    setConfirmPasswordTouched(true);
+    setBusinessNameTouched(true);
+    setFirstNameTouched(true);
+    setLastNameTouched(true);
+
+    if (!isFormValid) {
+      if (!phoneValidation.isValid) {
+        addToast("error", "Invalid Mobile Number", phoneValidation.error || "Please enter a valid 10-digit Indian mobile number.");
+      } else if (!passwordValidation.isValid) {
+        addToast("error", "Weak Password", passwordValidation.error || "Please satisfy all password complexity criteria.");
+      } else if (!confirmPasswordValidation.isValid) {
+        addToast("error", "Password Mismatch", "Passwords do not match. Please verify.");
+      } else {
+        addToast("warning", "Required Fields", "Please complete all required fields.");
+      }
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       const res = await apiClient.post("/auth/register", {
-        businessName,
+        businessName: businessName.trim(),
         slug,
         businessType,
         name: `${firstName} ${lastName}`.trim(),
-        firstName,
-        lastName,
-        phone,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        phone: phoneValidation.normalized,
         password,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Kolkata",
         country: "IN",
@@ -68,7 +122,7 @@ export default function RegisterPage() {
       if (devOtp) {
         addToast("success", "Account Created!", `Verification code: ${devOtp}`);
         setTimeout(() => {
-          router.push(`/verify?phone=${encodeURIComponent(phone)}&devOtp=${encodeURIComponent(devOtp)}`);
+          router.push(`/verify?phone=${encodeURIComponent(phoneValidation.normalized)}&devOtp=${encodeURIComponent(devOtp)}`);
         }, 2200);
       } else {
         addToast(
@@ -77,7 +131,7 @@ export default function RegisterPage() {
           "Please check your mobile for the 6-digit verification code."
         );
         setTimeout(() => {
-          router.push(`/verify?phone=${encodeURIComponent(phone)}`);
+          router.push(`/verify?phone=${encodeURIComponent(phoneValidation.normalized)}`);
         }, 2200);
       }
     } catch (err: any) {
@@ -148,7 +202,17 @@ export default function RegisterPage() {
             <FormInput
               placeholder="e.g. The Grand Bistro"
               value={businessName}
-              onChange={(e) => setBusinessName(e.target.value)}
+              onChange={(e) => {
+                setBusinessName(e.target.value);
+                setBusinessNameTouched(true);
+              }}
+              onBlur={() => setBusinessNameTouched(true)}
+              error={
+                businessNameTouched && businessName.trim().length > 0 && businessName.trim().length < 2
+                  ? "Business name must be at least 2 characters"
+                  : undefined
+              }
+              isSuccess={businessName.trim().length >= 2}
               required
               leftIcon={<Store className="h-4 w-4" />}
             />
@@ -160,7 +224,12 @@ export default function RegisterPage() {
               label="First Name"
               placeholder="First name"
               value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
+              onChange={(e) => {
+                setFirstName(e.target.value);
+                setFirstNameTouched(true);
+              }}
+              onBlur={() => setFirstNameTouched(true)}
+              isSuccess={firstName.trim().length >= 1}
               required
               leftIcon={<User className="h-4 w-4" />}
             />
@@ -168,23 +237,36 @@ export default function RegisterPage() {
               label="Last Name"
               placeholder="Last name"
               value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
+              onChange={(e) => {
+                setLastName(e.target.value);
+                setLastNameTouched(true);
+              }}
+              onBlur={() => setLastNameTouched(true)}
+              isSuccess={lastName.trim().length >= 1}
               required
               leftIcon={<User className="h-4 w-4" />}
             />
           </div>
 
-          {/* 4. Mobile Number with +91 segmented pill */}
+          {/* 4. Mobile Number with +91 segmented pill and real-time formatting */}
           <div className="w-full space-y-1">
             <div className="flex items-center justify-between">
               <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 select-none">
                 Mobile Number
               </label>
               <span className="text-[10.5px] text-slate-500 dark:text-[#94A3B8]">
-                6-digit OTP verification
+                10-digit Indian Mobile
               </span>
             </div>
-            <div className="group relative flex items-center rounded-2xl border border-slate-200 dark:border-slate-700/60 bg-slate-100/90 dark:bg-[#0F172A]/70 backdrop-blur-md transition-all duration-200 hover:border-slate-300 dark:hover:border-slate-600 focus-within:border-emerald-500 dark:focus-within:border-[#14F1C7] focus-within:ring-2 focus-within:ring-emerald-500/20 dark:focus-within:ring-[#14F1C7]/40 focus-within:shadow-[0_0_15px_rgba(16,185,129,0.15)] dark:focus-within:shadow-[0_0_20px_rgba(20,241,199,0.22)]">
+            <div
+              className={`group relative flex items-center rounded-2xl border transition-all duration-200 bg-slate-100/90 dark:bg-[#0F172A]/70 backdrop-blur-md ${
+                phoneTouched && !phoneValidation.isValid
+                  ? "border-rose-500/80 focus-within:border-rose-500 focus-within:ring-2 focus-within:ring-rose-500/20"
+                  : phoneValidation.isValid
+                  ? "border-emerald-500/60 dark:border-emerald-500/60 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20"
+                  : "border-slate-200 dark:border-slate-700/60 hover:border-slate-300 dark:hover:border-slate-600 focus-within:border-emerald-500 dark:focus-within:border-[#14F1C7] focus-within:ring-2 focus-within:ring-emerald-500/20 dark:focus-within:ring-[#14F1C7]/40"
+              }`}
+            >
               {/* Country Code Pill */}
               <div className="flex items-center gap-1 pl-3.5 pr-2.5 py-2 border-r border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 font-medium text-[13.5px] select-none shrink-0">
                 <Phone className="h-4 w-4 text-slate-400 mr-1" />
@@ -192,34 +274,106 @@ export default function RegisterPage() {
                 <ChevronDown className="h-3 w-3 text-slate-400" />
               </div>
 
-              {/* Number Input */}
+              {/* Number Input with live formatting */}
               <input
                 type="tel"
-                placeholder="9165437865"
-                value={phone.startsWith("+91") ? phone.slice(3).trim() : phone}
+                placeholder="98765 43210"
+                value={
+                  phone.startsWith("+91")
+                    ? formatIndianPhoneInput(phone).replace(/^\+91\s*/, "")
+                    : formatIndianPhoneInput(phone)
+                }
                 onChange={(e) => {
-                  const digits = e.target.value.replace(/[^0-9]/g, "");
+                  const digits = e.target.value.replace(/[^0-9]/g, "").slice(0, 10);
                   setPhone("+91" + digits);
+                  setPhoneTouched(true);
                 }}
+                onBlur={() => setPhoneTouched(true)}
                 required
-                maxLength={10}
+                maxLength={11}
+                aria-invalid={phoneTouched && !phoneValidation.isValid}
+                aria-describedby="register-phone-feedback"
                 className="w-full bg-transparent text-base sm:text-sm text-slate-900 dark:text-[#F8FAFC] placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none px-3 py-2"
               />
+
+              {phoneValidation.isValid && (
+                <div className="pr-3 flex items-center text-emerald-500 dark:text-[#14F1C7] pointer-events-none shrink-0">
+                  <CheckCircle2 className="h-4 w-4" />
+                </div>
+              )}
             </div>
+
+            {/* Inline Error or Helper */}
+            {phoneTouched && !phoneValidation.isValid ? (
+              <p id="register-phone-feedback" role="alert" className="text-xs text-rose-500 pl-1 font-medium">
+                {phoneValidation.error}
+              </p>
+            ) : (
+              <p id="register-phone-feedback" className="text-[11px] text-slate-500 dark:text-[#94A3B8] pl-1">
+                Enter your 10-digit mobile number starting with 6, 7, 8, or 9
+              </p>
+            )}
           </div>
 
-          {/* 5. Password Field with Mascot Event Trigger */}
-          <PasswordField
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            minLength={8}
-            helperText=""
-          />
+          {/* 5. Password Field with Live Criteria Checklist & Strength Meter */}
+          <div>
+            <PasswordField
+              label="Password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setPasswordTouched(true);
+              }}
+              onBlur={() => setPasswordTouched(true)}
+              required
+              isSuccess={passwordValidation.isValid}
+              helperText=""
+            />
 
-          {/* 6. Emerald Gradient CTA Button */}
-          <div className="pt-1">
-            <CTAButton isLoading={isLoading}>
+            {/* Real-Time Password Strength Meter & 5-Criteria Checklist */}
+            <PasswordStrengthMeter
+              validation={passwordValidation}
+              hasTyped={password.length > 0}
+            />
+          </div>
+
+          {/* 6. Confirm Password with Live Matching Validation */}
+          <div>
+            <PasswordField
+              label="Confirm Password"
+              placeholder="••••••••"
+              value={confirmPassword}
+              onChange={(e) => {
+                setConfirmPassword(e.target.value);
+                setConfirmPasswordTouched(true);
+              }}
+              onBlur={() => setConfirmPasswordTouched(true)}
+              required
+              isSuccess={confirmPasswordValidation.status === "match"}
+              error={
+                confirmPasswordTouched &&
+                confirmPassword.length > 0 &&
+                confirmPasswordValidation.status === "mismatch"
+                  ? "Passwords do not match"
+                  : undefined
+              }
+              helperText={
+                confirmPasswordTouched && confirmPasswordValidation.status === "match"
+                  ? "✅ Passwords match"
+                  : !confirmPasswordTouched || confirmPassword.length === 0
+                  ? "Re-enter your password to confirm"
+                  : undefined
+              }
+            />
+          </div>
+
+          {/* 7. Emerald Gradient CTA Button */}
+          <div className="pt-2">
+            <CTAButton
+              isLoading={isLoading}
+              disabled={!isFormValid || isLoading}
+            >
               Create Workspace & Verify Mobile
             </CTAButton>
           </div>

@@ -3,10 +3,13 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
+import { CheckCircle2 } from "lucide-react";
+
 export interface FormInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
   helperText?: string;
+  isSuccess?: boolean;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
   containerClassName?: string;
@@ -20,6 +23,7 @@ export const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(
       label,
       error,
       helperText,
+      isSuccess = false,
       leftIcon,
       rightIcon,
       containerClassName,
@@ -49,6 +53,7 @@ export const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(
             "focus-within:border-emerald-500 dark:focus-within:border-[#14F1C7]",
             "focus-within:ring-2 focus-within:ring-emerald-500/20 dark:focus-within:ring-[#14F1C7]/40",
             "focus-within:shadow-[0_0_15px_rgba(16,185,129,0.15)] dark:focus-within:shadow-[0_0_20px_rgba(20,241,199,0.22)]",
+            isSuccess && !error && "border-emerald-500/60 dark:border-emerald-500/60",
             error && "border-rose-500/70 focus-within:border-rose-500 focus-within:ring-rose-500/20"
           )}
         >
@@ -62,27 +67,39 @@ export const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(
             id={inputId}
             type={type}
             ref={ref}
+            aria-invalid={!!error}
+            aria-describedby={
+              error ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined
+            }
             className={cn(
               "w-full bg-transparent text-[14px] text-slate-900 dark:text-[#F8FAFC] placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition-colors",
               "py-2 sm:py-2.5",
               leftIcon ? "pl-2" : "pl-3.5",
-              rightIcon ? "pr-2" : "pr-3.5",
+              rightIcon || isSuccess ? "pr-2" : "pr-3.5",
               className
             )}
             {...props}
           />
 
-          {rightIcon && (
+          {rightIcon ? (
             <div className="flex items-center pr-3 shrink-0">
               {rightIcon}
             </div>
-          )}
+          ) : isSuccess ? (
+            <div className="flex items-center pr-3 shrink-0 text-emerald-500 dark:text-[#14F1C7] pointer-events-none">
+              <CheckCircle2 className="h-4 w-4" />
+            </div>
+          ) : null}
         </div>
 
         {error ? (
-          <p className="text-xs text-rose-500 pl-1">{error}</p>
+          <p id={`${inputId}-error`} role="alert" className="text-xs text-rose-500 pl-1 font-medium">
+            {error}
+          </p>
         ) : helperText ? (
-          <p className="text-xs text-slate-500 dark:text-[#94A3B8] pl-1 leading-normal">{helperText}</p>
+          <p id={`${inputId}-helper`} className="text-xs text-slate-500 dark:text-[#94A3B8] pl-1 leading-normal">
+            {helperText}
+          </p>
         ) : null}
       </div>
     );
