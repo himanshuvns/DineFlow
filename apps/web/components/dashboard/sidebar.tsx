@@ -16,7 +16,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
-  ShieldAlert,
   BrainCircuit,
 } from "lucide-react";
 import { useUIStore } from "@/lib/stores/ui-store";
@@ -36,7 +35,6 @@ export const NAV_ITEMS = [
   { href: "/dashboard/ai", label: "AI Studio", icon: BrainCircuit, badge: "New" },
   { href: "/pricing", label: "Subscription Plans", icon: Sparkles, badge: "SaaS" },
   { href: "/dashboard/settings", label: "Settings & Billing", icon: Settings },
-  { href: "/admin", label: "Platform Admin", icon: ShieldAlert, badge: "Super" },
 ];
 
 export function Sidebar() {

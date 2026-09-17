@@ -36,7 +36,6 @@ const ROUTE_TITLES: Record<string, string> = {
   "/dashboard/notifications": "Notification Center",
   "/dashboard/settings": "Settings & Billing",
   "/pricing": "Subscription Plans",
-  "/admin": "Platform Admin",
 };
 
 export function TopBar() {

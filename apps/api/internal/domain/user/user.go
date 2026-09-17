@@ -7,16 +7,35 @@ import (
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
-// Role defines the permission level of a user within a tenant.
+// Role defines the permission level of a user.
 type Role string
 
 const (
-	RoleOwner   Role = "owner"
-	RoleManager Role = "manager"
-	RoleChef    Role = "chef"
-	RoleWaiter  Role = "waiter"
-	RoleCashier Role = "cashier"
+	// Platform Roles (Software Owner / Super Admin Console)
+	RoleSuperAdmin    Role = "super_admin"
+	RolePlatformAdmin Role = "platform_admin"
+	RoleFinanceAdmin  Role = "finance_admin"
+	RoleSupportAgent  Role = "support_agent"
+
+	// Tenant Roles (Client Workspace)
+	RoleOwner        Role = "owner"
+	RoleManager      Role = "manager"
+	RoleChef         Role = "chef"
+	RoleWaiter       Role = "waiter"
+	RoleCashier      Role = "cashier"
+	RoleHousekeeping Role = "housekeeping"
+	RoleStaff        Role = "staff"
 )
+
+// IsPlatformRole returns true if the given role is an elevated platform-level role.
+func IsPlatformRole(r Role) bool {
+	switch r {
+	case RoleSuperAdmin, RolePlatformAdmin, RoleFinanceAdmin, RoleSupportAgent:
+		return true
+	default:
+		return false
+	}
+}
 
 // Status is the user account state.
 type Status string
@@ -129,6 +148,24 @@ type User struct {
 // DefaultPermissionsForRole returns the default permission set for a role.
 func DefaultPermissionsForRole(role Role) Permissions {
 	switch role {
+	case RoleSuperAdmin, RolePlatformAdmin:
+		return Permissions{
+			CanManageMenu: true, CanManageStaff: true, CanViewAnalytics: true,
+			CanManageBilling: true, CanManageOrders: true, CanAccessKDS: true, CanManageTables: true,
+			CanApproveLeave: true, CanViewPayroll: true, CanClockAttendance: true,
+		}
+	case RoleFinanceAdmin:
+		return Permissions{
+			CanManageMenu: false, CanManageStaff: false, CanViewAnalytics: true,
+			CanManageBilling: true, CanManageOrders: false, CanAccessKDS: false, CanManageTables: false,
+			CanApproveLeave: false, CanViewPayroll: true, CanClockAttendance: false,
+		}
+	case RoleSupportAgent:
+		return Permissions{
+			CanManageMenu: true, CanManageStaff: false, CanViewAnalytics: true,
+			CanManageBilling: false, CanManageOrders: true, CanAccessKDS: true, CanManageTables: true,
+			CanApproveLeave: false, CanViewPayroll: false, CanClockAttendance: false,
+		}
 	case RoleOwner:
 		return Permissions{
 			CanManageMenu: true, CanManageStaff: true, CanViewAnalytics: true,
@@ -147,7 +184,7 @@ func DefaultPermissionsForRole(role Role) Permissions {
 			CanManageBilling: false, CanManageOrders: false, CanAccessKDS: true, CanManageTables: false,
 			CanApproveLeave: false, CanViewPayroll: false, CanClockAttendance: true,
 		}
-	case RoleWaiter:
+	case RoleWaiter, RoleStaff:
 		return Permissions{
 			CanManageMenu: false, CanManageStaff: false, CanViewAnalytics: false,
 			CanManageBilling: false, CanManageOrders: true, CanAccessKDS: false, CanManageTables: true,
@@ -157,6 +194,12 @@ func DefaultPermissionsForRole(role Role) Permissions {
 		return Permissions{
 			CanManageMenu: false, CanManageStaff: false, CanViewAnalytics: true,
 			CanManageBilling: false, CanManageOrders: true, CanAccessKDS: false, CanManageTables: false,
+			CanApproveLeave: false, CanViewPayroll: false, CanClockAttendance: true,
+		}
+	case RoleHousekeeping:
+		return Permissions{
+			CanManageMenu: false, CanManageStaff: false, CanViewAnalytics: false,
+			CanManageBilling: false, CanManageOrders: false, CanAccessKDS: false, CanManageTables: false,
 			CanApproveLeave: false, CanViewPayroll: false, CanClockAttendance: true,
 		}
 	default:

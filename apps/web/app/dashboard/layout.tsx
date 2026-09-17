@@ -5,6 +5,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Sidebar, NAV_ITEMS } from "@/components/dashboard/sidebar";
 import { TopBar } from "@/components/dashboard/topbar";
+import { ImpersonationBanner } from "@/components/dashboard/impersonation-banner";
+import { BroadcastBanner } from "@/components/dashboard/broadcast-banner";
 import { useUIStore } from "@/lib/stores/ui-store";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { X, UtensilsCrossed, Sparkles } from "lucide-react";
@@ -173,6 +175,8 @@ export default function DashboardLayout({
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+        <ImpersonationBanner />
+        <BroadcastBanner />
         <TopBar />
         <main className="flex-1 p-3 sm:p-5 lg:p-6 max-w-7xl w-full mx-auto pb-safe flex flex-col min-h-0 overflow-y-auto">
           {children}

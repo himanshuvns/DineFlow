@@ -225,11 +225,11 @@ func Setup(
 				billingGroup.POST("/simulate-grace-period", middleware.OwnerOnly(), subHandler.SimulateGracePeriod)
 			}
 
-			// ── Platform Super-Admin (Phase 4) ─────────────────────────────
-			adminGroup := protected.Group("/admin")
+			// ── Platform Super-Admin (Enterprise Multi-Tenant Separation) ───────────
+			adminGroup := protected.Group("/admin", middleware.SupportOrAbove())
 			{
 				adminGroup.GET("/platform/overview", subHandler.GetPlatformOverview)
-				adminGroup.POST("/platform/override-plan", subHandler.AdminOverridePlan)
+				adminGroup.POST("/platform/override-plan", middleware.PlatformAdminOrAbove(), subHandler.AdminOverridePlan)
 			}
 
 			// ── WhatsApp Marketing & Invoicing (Meta Cloud API, AI Chatbot & GST Invoicing) ───

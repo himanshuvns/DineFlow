@@ -1,0 +1,138 @@
+/**
+ * DineFlow Centralized Role-Based Access Control (RBAC) System
+ *
+ * Clearly segregates:
+ * 1. Platform Roles (Software Owner / Platform Super Admin Console)
+ * 2. Tenant Roles (Hospitality Client Workspaces)
+ */
+
+export type PlatformRole =
+  | "super_admin"
+  | "platform_admin"
+  | "finance_admin"
+  | "support_agent";
+
+export type TenantRole =
+  | "owner"
+  | "manager"
+  | "cashier"
+  | "chef"
+  | "housekeeping"
+  | "staff";
+
+export type UserRole = PlatformRole | TenantRole | string;
+
+export const PLATFORM_ROLES: PlatformRole[] = [
+  "super_admin",
+  "platform_admin",
+  "finance_admin",
+  "support_agent",
+];
+
+export const TENANT_ROLES: TenantRole[] = [
+  "owner",
+  "manager",
+  "cashier",
+  "chef",
+  "housekeeping",
+  "staff",
+];
+
+/**
+ * Checks if a given role is an elevated Platform-level role.
+ */
+export function isPlatformRole(role?: string | null): boolean {
+  if (!role) return false;
+  return PLATFORM_ROLES.includes(role as PlatformRole);
+}
+
+/**
+ * Checks if a user has Super Admin platform privileges.
+ */
+export function isSuperAdmin(role?: string | null): boolean {
+  return role === "super_admin";
+}
+
+/**
+ * Checks if a user has Platform Admin or Super Admin privileges.
+ */
+export function isPlatformAdmin(role?: string | null): boolean {
+  return role === "super_admin" || role === "platform_admin";
+}
+
+/**
+ * Checks if a user can manage billing and financial subscriptions.
+ */
+export function canManageSubscriptions(role?: string | null): boolean {
+  return (
+    role === "super_admin" ||
+    role === "platform_admin" ||
+    role === "finance_admin"
+  );
+}
+
+/**
+ * Checks if a user can securely impersonate client workspaces.
+ */
+export function canImpersonate(role?: string | null): boolean {
+  return role === "super_admin" || role === "platform_admin";
+}
+
+/**
+ * Checks if a user can view or respond to support tickets.
+ */
+export function canManageSupport(role?: string | null): boolean {
+  return isPlatformRole(role);
+}
+
+/**
+ * Human-readable role label.
+ */
+export function getRoleLabel(role?: string | null): string {
+  switch (role) {
+    case "super_admin":
+      return "Super Admin";
+    case "platform_admin":
+      return "Platform Admin";
+    case "finance_admin":
+      return "Finance Admin";
+    case "support_agent":
+      return "Support Agent";
+    case "owner":
+      return "Business Owner";
+    case "manager":
+      return "General Manager";
+    case "cashier":
+      return "Cashier";
+    case "chef":
+      return "Head Chef";
+    case "housekeeping":
+      return "Housekeeping";
+    case "staff":
+      return "Staff";
+    default:
+      return role ? role.replace("_", " ").toUpperCase() : "Staff";
+  }
+}
+
+/**
+ * Badge styling class for roles.
+ */
+export function getRoleBadgeClass(role?: string | null): string {
+  switch (role) {
+    case "super_admin":
+      return "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20";
+    case "platform_admin":
+      return "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20";
+    case "finance_admin":
+      return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20";
+    case "support_agent":
+      return "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20";
+    case "owner":
+      return "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20";
+    case "manager":
+      return "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20";
+    default:
+      return "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20";
+  }
+}

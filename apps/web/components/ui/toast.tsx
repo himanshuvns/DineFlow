@@ -15,9 +15,16 @@ export interface ToastItem {
   description?: string;
 }
 
+export interface ToastOptions {
+  title: string;
+  description?: string;
+  variant?: "default" | "destructive" | ToastType;
+}
+
 interface ToastContextValue {
   toasts: ToastItem[];
   addToast: (type: ToastType, title: string, description?: string) => void;
+  toast: (options: ToastOptions) => void;
   removeToast: (id: string) => void;
 }
 
@@ -41,8 +48,23 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     [removeToast]
   );
 
+  const toast = React.useCallback(
+    (options: ToastOptions) => {
+      const type: ToastType =
+        options.variant === "destructive" || options.variant === "error"
+          ? "error"
+          : options.variant === "warning"
+          ? "warning"
+          : options.variant === "info"
+          ? "info"
+          : "success";
+      addToast(type, options.title, options.description);
+    },
+    [addToast]
+  );
+
   return (
-    <ToastContext.Provider value={{ toasts, addToast, removeToast }}>
+    <ToastContext.Provider value={{ toasts, addToast, toast, removeToast }}>
       {children}
       <div
         className="fixed bottom-4 inset-x-4 sm:bottom-5 sm:right-5 sm:inset-x-auto sm:max-w-sm w-auto sm:w-full z-[60] flex flex-col gap-2.5 pointer-events-none pb-safe"

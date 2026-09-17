@@ -33,21 +33,31 @@ interface AuthState {
   accessToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isImpersonating?: boolean;
+  impersonatedTenant?: Tenant | null;
+  originalUser?: User | null;
+  originalTenant?: Tenant | null;
   setAuth: (user: any, tenant: any, token: string, isFirstLogin?: boolean) => void;
   setAccessToken: (token: string) => void;
   clearAuth: () => void;
   updateTenant: (tenant: Partial<Tenant>) => void;
   updateUser: (user: Partial<User>) => void;
+  startImpersonation: (targetTenant: Tenant) => void;
+  stopImpersonation: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       tenant: null,
       accessToken: null,
       isAuthenticated: false,
       isLoading: false,
+      isImpersonating: false,
+      impersonatedTenant: null,
+      originalUser: null,
+      originalTenant: null,
 
       setAuth: (rawUser: any, rawTenant: any, accessToken: string, isFirstLogin?: boolean) => {
         const rawName = (rawUser.name || "").trim();
@@ -95,6 +105,10 @@ export const useAuthStore = create<AuthState>()(
           accessToken,
           isAuthenticated: true,
           isLoading: false,
+          isImpersonating: false,
+          impersonatedTenant: null,
+          originalUser: null,
+          originalTenant: null,
         });
       },
 
@@ -111,6 +125,10 @@ export const useAuthStore = create<AuthState>()(
           accessToken: null,
           isAuthenticated: false,
           isLoading: false,
+          isImpersonating: false,
+          impersonatedTenant: null,
+          originalUser: null,
+          originalTenant: null,
         }),
 
       updateTenant: (tenantUpdates) =>
@@ -122,6 +140,38 @@ export const useAuthStore = create<AuthState>()(
         set((state) => ({
           user: state.user ? { ...state.user, ...userUpdates } : null,
         })),
+
+      startImpersonation: (targetTenant: Tenant) => {
+        const state = get();
+        set({
+          originalUser: state.user,
+          originalTenant: state.tenant,
+          isImpersonating: true,
+          impersonatedTenant: targetTenant,
+          tenant: targetTenant,
+        });
+      },
+
+      stopImpersonation: () => {
+        const state = get();
+        if (state.originalTenant) {
+          set({
+            tenant: state.originalTenant,
+            user: state.originalUser || state.user,
+            isImpersonating: false,
+            impersonatedTenant: null,
+            originalUser: null,
+            originalTenant: null,
+          });
+        } else {
+          set({
+            isImpersonating: false,
+            impersonatedTenant: null,
+            originalUser: null,
+            originalTenant: null,
+          });
+        }
+      },
     }),
     {
       name: "dineflow_auth",

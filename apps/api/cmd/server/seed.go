@@ -178,6 +178,43 @@ func seedDefaultData(ctx context.Context, db *mongoinfra.Client, log *zap.Logger
 		})
 	}
 
+	// Also ensure Platform Super Admin account superadmin@dineflow.io exists
+	superAdminCount, _ := usersColl.CountDocuments(ctx, bson.M{"email": "superadmin@dineflow.io"})
+	if superAdminCount == 0 {
+		superHash, _ := bcrypt.GenerateFromPassword([]byte("SuperAdmin@2026"), bcrypt.DefaultCost)
+		superUser := user.User{
+			ID:          bson.NewObjectID(),
+			TenantID:    tenantID,
+			Phone:       "+919888888888",
+			Email:       "superadmin@dineflow.io",
+			Name:        "Platform Super Admin",
+			Role:        user.RoleSuperAdmin,
+			Permissions: user.DefaultPermissionsForRole(user.RoleSuperAdmin),
+			Auth: user.Auth{
+				PasswordHash:  string(superHash),
+				EmailVerified: true,
+				PhoneVerified: true,
+			},
+			Status:    user.StatusActive,
+			CreatedAt: time.Now().UTC(),
+			UpdatedAt: time.Now().UTC(),
+		}
+		if _, err := usersColl.InsertOne(ctx, superUser); err == nil {
+			log.Info("🌱 Seeded superadmin@dineflow.io account",
+				zap.String("phone", "+919888888888"),
+				zap.String("password", "SuperAdmin@2026"),
+			)
+		}
+	} else {
+		_, _ = usersColl.UpdateOne(ctx, bson.M{"email": "superadmin@dineflow.io"}, bson.M{
+			"$set": bson.M{
+				"role":               user.RoleSuperAdmin,
+				"phone":              "+919888888888",
+				"auth.phoneVerified": true,
+			},
+		})
+	}
+
 	// 3. Seed Sample Categories and Menu Items if none exist for this tenant
 	itemCount, _ := itemsColl.CountDocuments(ctx, bson.M{"tenantId": tenantID})
 	if itemCount == 0 {

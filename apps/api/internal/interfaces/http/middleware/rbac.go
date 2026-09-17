@@ -67,5 +67,47 @@ func WaiterOrAbove() gin.HandlerFunc {
 		string(user.RoleChef),
 		string(user.RoleWaiter),
 		string(user.RoleCashier),
+		string(user.RoleStaff),
+		string(user.RoleHousekeeping),
+	)
+}
+
+// ─── Platform Roles (Super Admin Console) ─────────────────────────────────────
+
+// RequirePlatformRole restricts access strictly to authorized platform roles.
+// Tenant roles (owner, manager, chef, waiter, etc.) are strictly forbidden.
+func RequirePlatformRole(allowedPlatformRoles ...string) gin.HandlerFunc {
+	return RequireRole(allowedPlatformRoles...)
+}
+
+// SuperAdminOnly restricts to Super Admins only.
+func SuperAdminOnly() gin.HandlerFunc {
+	return RequireRole(string(user.RoleSuperAdmin))
+}
+
+// PlatformAdminOrAbove allows Super Admin and Platform Admin.
+func PlatformAdminOrAbove() gin.HandlerFunc {
+	return RequireRole(
+		string(user.RoleSuperAdmin),
+		string(user.RolePlatformAdmin),
+	)
+}
+
+// FinanceAdminOrAbove allows Super Admin, Platform Admin, and Finance Admin.
+func FinanceAdminOrAbove() gin.HandlerFunc {
+	return RequireRole(
+		string(user.RoleSuperAdmin),
+		string(user.RolePlatformAdmin),
+		string(user.RoleFinanceAdmin),
+	)
+}
+
+// SupportOrAbove allows all platform roles (Super Admin, Platform Admin, Finance, Support).
+func SupportOrAbove() gin.HandlerFunc {
+	return RequireRole(
+		string(user.RoleSuperAdmin),
+		string(user.RolePlatformAdmin),
+		string(user.RoleFinanceAdmin),
+		string(user.RoleSupportAgent),
 	)
 }
