@@ -138,6 +138,14 @@ export default function RoomsDirectoryPage() {
   const [statusFilter, setStatusFilter] = React.useState("all");
   const [searchQuery, setSearchQuery] = React.useState("");
 
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const s = params.get("search");
+      if (s) setSearchQuery(s);
+    }
+  }, []);
+
   // Modals
   const [selectedRoom, setSelectedRoom] = React.useState<RoomItem | null>(null);
   const [isAddRoomOpen, setIsAddRoomOpen] = React.useState(false);

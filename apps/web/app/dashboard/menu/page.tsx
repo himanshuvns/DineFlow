@@ -85,6 +85,16 @@ export default function MenuManagementPage() {
   const [activeCategory, setActiveCategory] = React.useState("all");
   const [searchQuery, setSearchQuery] = React.useState("");
 
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const s = params.get("search");
+      if (s) setSearchQuery(s);
+      const c = params.get("category");
+      if (c) setActiveCategory(c);
+    }
+  }, []);
+
   // Multi-Filter Options
   const [dietaryFilter, setDietaryFilter] = React.useState<"all" | "veg" | "non_veg">("all");
   const [availabilityFilter, setAvailabilityFilter] = React.useState<"all" | "available" | "unavailable">("all");

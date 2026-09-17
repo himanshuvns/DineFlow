@@ -28,6 +28,7 @@ func Setup(
 	aiHandler *handlers.AIHandler,
 	roomHandler *handlers.RoomHandler,
 	notifHandler *handlers.NotificationHandler,
+	searchHandler *handlers.SearchHandler,
 ) {
 	// Auth middleware (used on protected routes)
 	authMiddleware := middleware.Auth(tokenMaker)
@@ -231,6 +232,12 @@ func Setup(
 				notifGroup.DELETE("/clear-read", notifHandler.ClearRead)
 				notifGroup.POST("", notifHandler.Create)
 				notifGroup.GET("/stream", notifHandler.Stream)
+			}
+
+			// ── Global Search (Database-driven, multi-tenant) ───────────────
+			searchGroup := protected.Group("/search")
+			{
+				searchGroup.GET("", searchHandler.Search)
 			}
 		}
 	}

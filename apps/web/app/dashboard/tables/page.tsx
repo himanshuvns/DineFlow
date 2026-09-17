@@ -50,12 +50,23 @@ export default function TablesManagementPage() {
   const [baseUrl, setBaseUrl] = React.useState("https://dineflow-steel.vercel.app");
 
   React.useEffect(() => {
-    if (typeof window !== "undefined" && window.location.origin) {
-      if (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
+    if (typeof window !== "undefined") {
+      if (window.location.origin && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
         setBaseUrl(window.location.origin);
       }
+      const params = new URLSearchParams(window.location.search);
+      const searchParam = params.get("search");
+      if (searchParam && tables.length > 0) {
+        const clean = searchParam.trim().toLowerCase();
+        const matched = tables.find(
+          (t) => t.name.toLowerCase().includes(clean) || t.id.toLowerCase() === clean
+        );
+        if (matched) {
+          setSelectedTable(matched);
+        }
+      }
     }
-  }, []);
+  }, [tables]);
 
   // New Table Modal
   const [isAddTableOpen, setIsAddTableOpen] = React.useState(false);

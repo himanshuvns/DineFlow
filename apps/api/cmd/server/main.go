@@ -15,6 +15,7 @@ import (
 	notifapp "github.com/dineflow/api/internal/application/notification"
 	orderapp "github.com/dineflow/api/internal/application/order"
 	roomapp "github.com/dineflow/api/internal/application/room"
+	searchapp "github.com/dineflow/api/internal/application/search"
 	staffapp "github.com/dineflow/api/internal/application/staff"
 	subapp "github.com/dineflow/api/internal/application/subscription"
 	tableapp "github.com/dineflow/api/internal/application/table"
@@ -145,6 +146,7 @@ func main() {
 	analyticsService := analyticsapp.NewService(mongoDB)
 	aiService := aiapp.NewService(cfg.AI.GeminiAPIKey, mongoDB)
 	notifService := notifapp.NewService(mongoDB, hub)
+	searchService := searchapp.NewService(mongoDB)
 
 	authHandler := handlers.NewAuthHandler(authService)
 	tenantHandler := handlers.NewTenantHandler(mongoDB)
@@ -159,6 +161,7 @@ func main() {
 	analyticsHandler := handlers.NewAnalyticsHandler(analyticsService)
 	aiHandler := handlers.NewAIHandler(aiService)
 	notifHandler := handlers.NewNotificationHandler(notifService, hub)
+	searchHandler := handlers.NewSearchHandler(searchService)
 
 	// Inject notifService into order service for real-time event emission
 	orderService.SetNotificationService(notifService)
@@ -195,6 +198,7 @@ func main() {
 		aiHandler,
 		roomHandler,
 		notifHandler,
+		searchHandler,
 	)
 
 	// ── HTTP Server ───────────────────────────────────────────────────────────

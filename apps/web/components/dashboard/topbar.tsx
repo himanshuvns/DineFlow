@@ -4,7 +4,6 @@ import * as React from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Menu,
-  Search,
   Bell,
   LogOut,
   User as UserIcon,
@@ -18,6 +17,7 @@ import { Dropdown } from "@/components/ui/dropdown";
 import { useToast } from "@/components/ui/toast";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { NotificationCenter } from "@/components/notifications/notification-center";
+import { GlobalSearch } from "./global-search";
 
 const ROUTE_TITLES: Record<string, string> = {
   "/dashboard": "Workspace Overview",
@@ -45,8 +45,6 @@ export function TopBar() {
   const { setMobileMenuOpen } = useUIStore();
   const { user, tenant, clearAuth } = useAuthStore();
   const { addToast } = useToast();
-  const searchInputRef = React.useRef<HTMLInputElement | null>(null);
-  const [searchValue, setSearchValue] = React.useState("");
 
   // Determine current page title
   const currentTitle = React.useMemo(() => {
@@ -55,47 +53,6 @@ export function TopBar() {
     if (pathname.startsWith("/dashboard/ai/")) return "AI Co-Pilot Studio";
     return "Workspace Overview";
   }, [pathname]);
-
-  // Global Cmd+K / Ctrl+K shortcut listener
-  React.useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const query = searchValue.trim().toLowerCase();
-    if (!query) return;
-
-    if (query.includes("order") || query.includes("kds") || query.includes("kitchen") || query.includes("ticket")) {
-      router.push("/dashboard/orders");
-    } else if (query.includes("menu") || query.includes("dish") || query.includes("food") || query.includes("item")) {
-      router.push("/dashboard/menu");
-    } else if (query.includes("table") || query.includes("qr") || query.includes("seat")) {
-      router.push("/dashboard/tables");
-    } else if (query.includes("room") || query.includes("suite") || query.includes("hotel") || query.includes("stay") || query.includes("guest")) {
-      router.push("/dashboard/rooms");
-    } else if (query.includes("staff") || query.includes("employee") || query.includes("permission") || query.includes("team")) {
-      router.push("/dashboard/staff");
-    } else if (query.includes("analytics") || query.includes("sale") || query.includes("revenue") || query.includes("report")) {
-      router.push("/dashboard/analytics");
-    } else if (query.includes("ai") || query.includes("forecast") || query.includes("upsell") || query.includes("writer")) {
-      router.push("/dashboard/ai");
-    } else if (query.includes("whatsapp") || query.includes("bot") || query.includes("chat")) {
-      router.push("/dashboard/whatsapp");
-    } else if (query.includes("setting") || query.includes("bill") || query.includes("invoice") || query.includes("profile")) {
-      router.push("/dashboard/settings");
-    } else {
-      router.push(`/dashboard/menu?search=${encodeURIComponent(query)}`);
-    }
-    setSearchValue("");
-  };
 
   const handleSignOut = () => {
     clearAuth();
@@ -139,20 +96,8 @@ export function TopBar() {
         </div>
       </div>
 
-      {/* Middle: Quick Search */}
-      <form onSubmit={handleSearchSubmit} className="hidden lg:flex items-center w-72">
-        <div className="relative w-full">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 dark:text-slate-500" />
-          <input
-            ref={searchInputRef}
-            type="text"
-            value={searchValue}
-            onChange={(e) => setSearchValue(e.target.value)}
-            placeholder="Search orders, rooms, menu... (⌘K)"
-            className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-100/90 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-emerald-500/50 transition-all"
-          />
-        </div>
-      </form>
+      {/* Middle: Global Search */}
+      <GlobalSearch />
 
       {/* Right Actions */}
       <div className="flex items-center gap-2.5 sm:gap-3">

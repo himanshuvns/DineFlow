@@ -95,6 +95,17 @@ export default function KDSOrdersPage() {
   const [stationFilter, setStationFilter] = React.useState("all");
   const [soundEnabled, setSoundEnabled] = React.useState(true);
   const [isFullscreen, setIsFullscreen] = React.useState(false);
+  const [searchQuery, setSearchQuery] = React.useState("");
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const s = params.get("search");
+      if (s) {
+        setSearchQuery(s);
+      }
+    }
+  }, []);
 
   // Manual Order Modal
   const [isManualModalOpen, setIsManualModalOpen] = React.useState(false);
@@ -299,6 +310,18 @@ export default function KDSOrdersPage() {
   };
 
   const filteredOrders = orders.filter((o) => {
+    // Search Query Filter
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase().replace(/^#/, "");
+      const matches =
+        o.id.toLowerCase().includes(q) ||
+        (o.customerName && o.customerName.toLowerCase().includes(q)) ||
+        (o.customerPhone && o.customerPhone.includes(q)) ||
+        (o.table && o.table.toLowerCase().includes(q));
+      if (!matches) return false;
+      return true;
+    }
+
     // Status Filter
     if (activeTab === "all") {
       if (o.status === "served" || o.status === "cancelled" || o.status === "paid") return false;
@@ -398,6 +421,21 @@ export default function KDSOrdersPage() {
           </Button>
         </div>
       </div>
+
+      {/* Global Search Filter Active Banner */}
+      {searchQuery && (
+        <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs">
+          <span className="text-emerald-800 dark:text-emerald-300 font-medium">
+            Filtering orders matching <strong>&ldquo;{searchQuery}&rdquo;</strong> ({filteredOrders.length} found)
+          </span>
+          <button
+            onClick={() => setSearchQuery("")}
+            className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 font-semibold hover:bg-emerald-500/30 cursor-pointer transition-colors"
+          >
+            Clear Filter
+          </button>
+        </div>
+      )}
 
       {/* Station Filter Pills */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1">
