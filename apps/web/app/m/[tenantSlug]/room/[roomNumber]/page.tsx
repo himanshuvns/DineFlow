@@ -353,6 +353,14 @@ export default function RoomServiceMenuPage() {
             </div>
 
             <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsExtendStayModalOpen(true)}
+                className="px-3 py-1 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md transition-all hover:scale-105 cursor-pointer"
+              >
+                <CalendarDays className="h-3.5 w-3.5" />
+                <span>Extend Stay</span>
+              </button>
               <ThemeToggle className="h-8 w-8 rounded-full bg-white/90 dark:bg-slate-900/80 backdrop-blur border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 shadow-sm" />
               <Badge variant="glow" size="sm" className="font-mono font-extrabold text-xs">
                 {roomDisplay}
@@ -386,12 +394,12 @@ export default function RoomServiceMenuPage() {
                   <button
                     type="button"
                     onClick={() => setIsExtendStayModalOpen(true)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition-all hover:scale-[1.02] shadow-xs cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md transition-all hover:scale-105 cursor-pointer"
                   >
                     <CalendarDays className="h-3.5 w-3.5" />
                     <span>Extend Stay</span>
                     {roomInfo?.currentGuestExpectedCheckOut && (
-                      <span className="text-[10px] opacity-80 border-l border-primary/30 pl-1.5 font-medium">
+                      <span className="text-[10px] opacity-90 border-l border-white/40 pl-1.5 font-medium">
                         Until {new Date(roomInfo.currentGuestExpectedCheckOut).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                       </span>
                     )}
@@ -405,12 +413,12 @@ export default function RoomServiceMenuPage() {
               )}
             </div>
 
-            {/* Quick Guest Amenities Shortcuts */}
-            <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-slate-200/80 dark:border-slate-800">
+            {/* Quick Guest Amenities Shortcuts (4 columns) */}
+            <div className="grid grid-cols-4 gap-2 mt-4 pt-4 border-t border-slate-200/80 dark:border-slate-800">
               <button
                 type="button"
                 onClick={() => setActiveTab("housekeeping")}
-                className={`p-2.5 rounded-2xl border flex flex-col items-center text-center transition-all cursor-pointer group ${
+                className={`p-2 rounded-2xl border flex flex-col items-center text-center transition-all cursor-pointer group ${
                   activeTab === "housekeeping"
                     ? "bg-emerald-500/10 border-emerald-500/50 text-emerald-600 dark:text-emerald-400"
                     : "bg-slate-50 dark:bg-slate-950/60 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-300"
@@ -422,41 +430,85 @@ export default function RoomServiceMenuPage() {
                     <span className="h-2 w-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-ping absolute -top-1 -right-1" />
                   )}
                 </div>
-                <span className="text-[11px] font-bold">Suite Flow</span>
-                <span className="text-[9px] text-slate-500 dark:text-slate-500">
-                  {activeTasksCount > 0 ? `${activeTasksCount} In Flight` : "Live Status"}
+                <span className="text-[10px] sm:text-[11px] font-bold">Suite Flow</span>
+                <span className="text-[8px] sm:text-[9px] text-slate-500">
+                  {activeTasksCount > 0 ? `${activeTasksCount} Active` : "Status"}
                 </span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setActiveTab("dining")}
-                className={`p-2.5 rounded-2xl border flex flex-col items-center text-center transition-all cursor-pointer group ${
+                className={`p-2 rounded-2xl border flex flex-col items-center text-center transition-all cursor-pointer group ${
                   activeTab === "dining"
                     ? "bg-emerald-500/10 border-emerald-500/50 text-emerald-600 dark:text-emerald-400"
                     : "bg-slate-50 dark:bg-slate-950/60 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-300"
                 }`}
               >
                 <UtensilsCrossed className="h-4 w-4 text-cyan-600 dark:text-cyan-400 mb-1 group-hover:scale-110 transition-transform" />
-                <span className="text-[11px] font-bold">Dining Menu</span>
-                <span className="text-[9px] text-slate-500 dark:text-slate-500">In-Room Food</span>
+                <span className="text-[10px] sm:text-[11px] font-bold">Dining</span>
+                <span className="text-[8px] sm:text-[9px] text-slate-500">Food Menu</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsExtendStayModalOpen(true)}
+                className="p-2 rounded-2xl border border-emerald-500/40 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-700 dark:text-emerald-300 flex flex-col items-center text-center transition-all cursor-pointer group shadow-xs"
+              >
+                <CalendarDays className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mb-1 group-hover:scale-110 transition-transform" />
+                <span className="text-[10px] sm:text-[11px] font-bold">Extend Stay</span>
+                <span className="text-[8px] sm:text-[9px] text-emerald-600/80 dark:text-emerald-400/80">Add Nights</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setActiveTab("info")}
-                className={`p-2.5 rounded-2xl border flex flex-col items-center text-center transition-all cursor-pointer group ${
+                className={`p-2 rounded-2xl border flex flex-col items-center text-center transition-all cursor-pointer group ${
                   activeTab === "info"
                     ? "bg-emerald-500/10 border-emerald-500/50 text-emerald-600 dark:text-emerald-400"
                     : "bg-slate-50 dark:bg-slate-950/60 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-300"
                 }`}
               >
                 <Wifi className="h-4 w-4 text-amber-500 dark:text-amber-400 mb-1 group-hover:scale-110 transition-transform" />
-                <span className="text-[11px] font-bold">Suite Info</span>
-                <span className="text-[9px] text-slate-500 dark:text-slate-500">Wi-Fi & Concierge</span>
+                <span className="text-[10px] sm:text-[11px] font-bold">Suite Info</span>
+                <span className="text-[8px] sm:text-[9px] text-slate-500">Wi-Fi</span>
               </button>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* ── Persistent Stay Status & Extend Bar (Always Visible Across All Tabs) ── */}
+      <div className="max-w-xl mx-auto px-4 mt-3">
+        <div className="p-3 sm:p-3.5 rounded-2xl border border-emerald-500/30 bg-white/95 dark:bg-slate-900/95 shadow-md backdrop-blur-md flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="h-9 w-9 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/30">
+              <CalendarDays className="h-4 w-4" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-xs font-black text-slate-900 dark:text-white">
+                  {roomDisplay} Stay
+                </span>
+                <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold">
+                  In-House
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-400 truncate">
+                {roomInfo?.currentGuestExpectedCheckOut
+                  ? `Check-out: ${new Date(roomInfo.currentGuestExpectedCheckOut).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} • 11:00 AM`
+                  : "Scheduled Check-out: 11:00 AM UTC"}
+              </p>
+            </div>
+          </div>
+          <Button
+            size="sm"
+            onClick={() => setIsExtendStayModalOpen(true)}
+            className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shrink-0 shadow-md rounded-xl h-8 px-3 gap-1.5 cursor-pointer"
+          >
+            <CalendarDays className="h-3.5 w-3.5" />
+            <span>Extend Stay</span>
+          </Button>
         </div>
       </div>
 

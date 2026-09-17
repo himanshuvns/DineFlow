@@ -172,6 +172,13 @@ export default function RoomsDirectoryPage() {
   const [currentStaySummary, setCurrentStaySummary] = React.useState<any | null>(null);
   const [completedInvoice, setCompletedInvoice] = React.useState<any | null>(null);
 
+  // Extend Stay Modal
+  const [extendStayRoom, setExtendStayRoom] = React.useState<RoomItem | null>(null);
+  const [extendStayDate, setExtendStayDate] = React.useState("");
+  const [extendStayNights, setExtendStayNights] = React.useState(1);
+  const [extendStayNotes, setExtendStayNotes] = React.useState("");
+  const [extendingStay, setExtendingStay] = React.useState(false);
+
   // Edit Room Modal
   const [editingRoom, setEditingRoom] = React.useState<RoomItem | null>(null);
   const [editName, setEditName] = React.useState("");
@@ -437,6 +444,54 @@ export default function RoomsDirectoryPage() {
       fetchRooms();
     } catch (e: any) {
       addToast("error", "Check-Out Failed", e?.response?.data?.message || "Could not check out.");
+    }
+  };
+
+  const handleOpenExtendStay = (room: RoomItem) => {
+    setExtendStayRoom(room);
+    setExtendStayNotes("");
+    setExtendStayNights(1);
+    const baseDate = room.currentGuestExpectedCheckOut ? new Date(room.currentGuestExpectedCheckOut) : new Date();
+    if (isNaN(baseDate.getTime())) {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      baseDate.setTime(tomorrow.getTime());
+    }
+    const nextDay = new Date(baseDate);
+    nextDay.setDate(nextDay.getDate() + 1);
+    const y = nextDay.getFullYear();
+    const m = String(nextDay.getMonth() + 1).padStart(2, "0");
+    const d = String(nextDay.getDate()).padStart(2, "0");
+    setExtendStayDate(`${y}-${m}-${d}`);
+  };
+
+  const handleConfirmExtendStay = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!extendStayRoom || !extendStayDate) return;
+
+    try {
+      setExtendingStay(true);
+      const [y, m, d] = extendStayDate.split("-").map(Number);
+      const isoDate = new Date(Date.UTC(y, m - 1, d, 11, 0, 0)).toISOString();
+
+      await apiClient.post(`/rooms/${encodeURIComponent(extendStayRoom.id)}/extend-stay`, {
+        newCheckOut: isoDate,
+        additionalNights: extendStayNights,
+        notes: extendStayNotes,
+      });
+
+      addToast(
+        "success",
+        "Stay Extended Successfully",
+        `${extendStayRoom.name} reservation extended to ${new Date(isoDate).toLocaleDateString([], { day: "numeric", month: "short", year: "numeric" })} at 11:00 AM.`
+      );
+
+      setExtendStayRoom(null);
+      fetchRooms();
+    } catch (err: any) {
+      addToast("error", "Extension Failed", err?.response?.data?.message || err?.message || "Could not extend stay.");
+    } finally {
+      setExtendingStay(false);
     }
   };
 
@@ -709,9 +764,21 @@ export default function RoomsDirectoryPage() {
                             <Calendar className="h-3 w-3 text-emerald-500 shrink-0" />
                             <span>{metrics.checkInDate} → {metrics.checkOutDate}</span>
                           </div>
-                          <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
-                            {metrics.stayDurationLabel}
-                          </span>
+                          <div className="flex items-center gap-1">
+                            <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
+                              {metrics.stayDurationLabel}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenExtendStay(room);
+                              }}
+                              className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline bg-emerald-500/10 px-1.5 py-0.5 rounded cursor-pointer"
+                            >
+                              Extend
+                            </button>
+                          </div>
                         </div>
                       );
                     })()}
@@ -775,19 +842,30 @@ export default function RoomsDirectoryPage() {
                     className="h-7 text-[11px] px-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                     onClick={() => router.push(`/dashboard/rooms/${room.id}`)}
                   >
-                    <span>Manage Suite</span>
+                    <span>Manage</span>
                     <ArrowRight className="h-3 w-3 ml-1" />
                   </Button>
 
                   {isOccupied ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-7 text-[10px] px-2 text-rose-600 dark:text-rose-400 border-rose-500/30 hover:bg-rose-500/10"
-                      onClick={() => handleInitiateCheckOut(room)}
-                    >
-                      Check-Out
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-[10px] px-2 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10 font-bold flex items-center gap-1"
+                        onClick={() => handleOpenExtendStay(room)}
+                      >
+                        <Calendar className="h-3 w-3" />
+                        <span>Extend Stay</span>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-[10px] px-2 text-rose-600 dark:text-rose-400 border-rose-500/30 hover:bg-rose-500/10"
+                        onClick={() => handleInitiateCheckOut(room)}
+                      >
+                        Check-Out
+                      </Button>
+                    </div>
                   ) : isCleaning ? (
                     <Button
                       variant="secondary"
@@ -1371,6 +1449,134 @@ export default function RoomsDirectoryPage() {
               </>
             )}
           </div>
+        </Modal>
+      )}
+
+      {/* Staff Extend Stay Modal */}
+      {extendStayRoom && (
+        <Modal
+          isOpen={!!extendStayRoom}
+          onClose={() => setExtendStayRoom(null)}
+          title={`Extend Stay — ${extendStayRoom.name}`}
+          description={`Prolong reservation for ${extendStayRoom.activeGuest || extendStayRoom.currentGuestName || "In-House Guest"}`}
+          size="md"
+        >
+          <form onSubmit={handleConfirmExtendStay} className="space-y-4 pt-1">
+            <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">Active Guest:</span>
+                <span className="font-bold text-slate-900 dark:text-white">
+                  {extendStayRoom.activeGuest || extendStayRoom.currentGuestName || "Valued In-House Guest"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">Current Check-Out:</span>
+                <span className="font-semibold text-amber-600 dark:text-amber-400">
+                  {extendStayRoom.currentGuestExpectedCheckOut
+                    ? new Date(extendStayRoom.currentGuestExpectedCheckOut).toLocaleDateString([], {
+                        weekday: "short",
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      }) + " • 11:00 AM"
+                    : "Standard 11:00 AM"}
+                </span>
+              </div>
+            </div>
+
+            {/* Quick Presets */}
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                Quick Extension Presets
+              </label>
+              <div className="grid grid-cols-5 gap-1.5">
+                {[1, 2, 3, 5, 7].map((n) => {
+                  const isSelected = extendStayNights === n;
+                  return (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => {
+                        setExtendStayNights(n);
+                        const baseDate = extendStayRoom.currentGuestExpectedCheckOut
+                          ? new Date(extendStayRoom.currentGuestExpectedCheckOut)
+                          : new Date();
+                        if (isNaN(baseDate.getTime())) {
+                          baseDate.setTime(Date.now() + 24 * 3600 * 1000);
+                        }
+                        const target = new Date(baseDate);
+                        target.setDate(target.getDate() + n);
+                        const y = target.getFullYear();
+                        const m = String(target.getMonth() + 1).padStart(2, "0");
+                        const d = String(target.getDate()).padStart(2, "0");
+                        setExtendStayDate(`${y}-${m}-${d}`);
+                      }}
+                      className={`py-2 px-1 text-xs font-bold rounded-xl border transition-all text-center flex flex-col items-center justify-center cursor-pointer ${
+                        isSelected
+                          ? "border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500 shadow-sm"
+                          : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:border-slate-300"
+                      }`}
+                    >
+                      <span className="text-sm font-black">+{n}</span>
+                      <span className="text-[9px] opacity-75">{n === 1 ? "Night" : "Nights"}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Date input */}
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                Select Exact Check-Out Date
+              </label>
+              <input
+                type="date"
+                value={extendStayDate}
+                onChange={(e) => setExtendStayDate(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                required
+              />
+              <p className="text-[10px] text-slate-500 mt-1">
+                Standard check-out is set to 11:00 AM UTC.
+              </p>
+            </div>
+
+            {/* Staff notes */}
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                Staff / Folio Notes (Optional)
+              </label>
+              <textarea
+                rows={2}
+                value={extendStayNotes}
+                onChange={(e) => setExtendStayNotes(e.target.value)}
+                placeholder="e.g. Extended at front desk upon guest request. Digital keys renewed."
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-xs placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 resize-none"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setExtendStayRoom(null)}
+                disabled={extendingStay}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                size="sm"
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold gap-1.5"
+                disabled={extendingStay || !extendStayDate}
+              >
+                <Calendar className="h-3.5 w-3.5" />
+                <span>{extendingStay ? "Updating Stay..." : "Confirm Extension"}</span>
+              </Button>
+            </div>
+          </form>
         </Modal>
       )}
 

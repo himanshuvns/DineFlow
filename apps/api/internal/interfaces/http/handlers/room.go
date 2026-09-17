@@ -867,4 +867,79 @@ func (h *RoomHandler) PublicExtendStay(c *gin.Context) {
 	})
 }
 
+// StaffExtendStay allows hotel staff / management to extend an in-house guest's stay duration.
+func (h *RoomHandler) StaffExtendStay(c *gin.Context) {
+	tenantID := middleware.GetTenantID(c)
+	if tenantID == "" {
+		response.Unauthorized(c, "tenant context missing")
+		return
+	}
+	tOID, err := bson.ObjectIDFromHex(tenantID)
+	if err != nil {
+		response.BadRequest(c, "INVALID_TENANT_ID", "invalid tenant ID")
+		return
+	}
+
+	id := c.Param("id")
+	if id == "" {
+		response.BadRequest(c, "INVALID_ID", "room ID is required")
+		return
+	}
+
+	var req PublicExtendStayRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "INVALID_PAYLOAD", "newCheckOut date is required")
+		return
+	}
+
+	parsedDate, err := time.Parse(time.RFC3339, strings.TrimSpace(req.NewCheckOut))
+	if err != nil {
+		parsedDate, err = time.Parse("2006-01-02", strings.TrimSpace(req.NewCheckOut))
+		if err != nil {
+			response.BadRequest(c, "INVALID_DATE", "invalid date format; use ISO 8601 (YYYY-MM-DDTHH:MM:SSZ)")
+			return
+		}
+		parsedDate = time.Date(parsedDate.Year(), parsedDate.Month(), parsedDate.Day(), 11, 0, 0, 0, time.UTC)
+	}
+
+	input := domainroom.UpdateGuestStayInput{
+		ExpectedCheckOut: &parsedDate,
+	}
+	if strings.TrimSpace(req.Notes) != "" {
+		note := req.Notes
+		input.SpecialRequests = &note
+	}
+
+	updatedGuest, updatedRoom, err := h.roomService.UpdateGuestStay(c.Request.Context(), tOID, id, input)
+	if err != nil {
+		response.BadRequest(c, "EXTEND_STAY_FAILED", err.Error())
+		return
+	}
+
+	// Fire real-time notification to hotel staff & notification center
+	if h.notifService != nil {
+		go func() {
+			_ = h.notifService.EmitGuestStayExtended(
+				context.Background(),
+				tOID,
+				updatedGuest.Name,
+				updatedRoom.RoomNumber,
+				updatedRoom.ID.Hex(),
+				time.Now().UTC(),
+				parsedDate,
+				req.AdditionalNights,
+			)
+		}()
+	}
+
+	response.OK(c, gin.H{
+		"success":          true,
+		"message":          fmt.Sprintf("Suite %s stay successfully extended until %s", updatedRoom.RoomNumber, parsedDate.Format("02 Jan 2006, 03:04 PM")),
+		"newCheckOut":      parsedDate.Format(time.RFC3339),
+		"additionalNights": req.AdditionalNights,
+		"guest":            updatedGuest,
+		"room":             updatedRoom,
+	})
+}
+
 

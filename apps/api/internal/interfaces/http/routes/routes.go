@@ -157,6 +157,7 @@ func Setup(
 				roomGroup.PATCH("/:id/status", roomHandler.UpdateStatus)
 				roomGroup.POST("/:id/check-in", middleware.OwnerOrManager(), roomHandler.CheckIn)
 				roomGroup.POST("/:id/check-out", middleware.OwnerOrManager(), roomHandler.CheckOut)
+				roomGroup.POST("/:id/extend-stay", middleware.OwnerOrManager(), roomHandler.StaffExtendStay)
 				roomGroup.PUT("/:id/guest", middleware.OwnerOrManager(), roomHandler.UpdateStay)
 				roomGroup.PUT("/:id/stay", middleware.OwnerOrManager(), roomHandler.UpdateStay)
 				roomGroup.GET("/:id/orders", roomHandler.GetOrders)
