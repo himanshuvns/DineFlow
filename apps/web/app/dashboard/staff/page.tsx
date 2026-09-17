@@ -26,6 +26,7 @@ import {
   Building,
   CreditCard,
   Phone,
+  MessageSquare,
   CalendarCheck,
   Award,
 } from "lucide-react";
@@ -226,6 +227,7 @@ export default function StaffPage() {
   // ── Modals ──────────────────────────────────────────────────────────────────
   const [isInviteOpen, setIsInviteOpen] = React.useState(false);
   const [inviteName, setInviteName] = React.useState("");
+  const [invitePhone, setInvitePhone] = React.useState("");
   const [inviteEmail, setInviteEmail] = React.useState("");
   const [inviteRole, setInviteRole] = React.useState("waiter");
   const [inviteDepartment, setInviteDepartment] = React.useState("Floor Service");
@@ -234,6 +236,9 @@ export default function StaffPage() {
 
   const [isEditProfileOpen, setIsEditProfileOpen] = React.useState(false);
   const [selectedStaff, setSelectedStaff] = React.useState<StaffMember | null>(null);
+  const [profileName, setProfileName] = React.useState("");
+  const [profilePhone, setProfilePhone] = React.useState("");
+  const [profileEmail, setProfileEmail] = React.useState("");
   const [profileDepartment, setProfileDepartment] = React.useState("");
   const [profileEmpType, setProfileEmpType] = React.useState("full_time");
   const [profileShiftName, setProfileShiftName] = React.useState("");
@@ -589,10 +594,17 @@ export default function StaffPage() {
 
   const handleSendInvite = async (e: React.FormEvent) => {
     e.preventDefault();
+    const phone = invitePhone.trim();
+    const email = inviteEmail.trim();
+    if (!phone && !email) {
+      addToast("warning", "Contact Required", "Please enter a WhatsApp phone number or email address.");
+      return;
+    }
     try {
       await apiClient.post("/staff/invite", {
-        name: inviteName.trim() || inviteEmail.split("@")[0],
-        email: inviteEmail.trim(),
+        name: inviteName.trim() || phone || email.split("@")[0],
+        phone: phone,
+        email: email,
         role: inviteRole,
         department: inviteDepartment,
         employmentType: inviteType,
@@ -603,19 +615,28 @@ export default function StaffPage() {
           overtimeRate: 150,
         },
       });
-      addToast("success", "Invitation Sent!", `Sent onboarding invitation to ${inviteEmail}`);
+      addToast(
+        "success",
+        "Staff Enrolled!",
+        `Enrolled ${inviteName.trim()} with WhatsApp access (${phone || email}).`
+      );
       setIsInviteOpen(false);
       setInviteName("");
+      setInvitePhone("");
       setInviteEmail("");
       fetchStaff();
     } catch (err: unknown) {
-      const errorMsg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || "Could not create team invite.";
+      const errObj = (err as { response?: { data?: { error?: { message?: string } | string; message?: string } } })?.response?.data;
+      const errorMsg = (typeof errObj?.error === "object" ? errObj?.error?.message : errObj?.error) || errObj?.message || "Could not enroll staff member.";
       addToast("error", "Invite Failed", errorMsg);
     }
   };
 
   const handleOpenEditProfile = (member: StaffMember) => {
     setSelectedStaff(member);
+    setProfileName(member.name || "");
+    setProfilePhone(member.phone || "");
+    setProfileEmail(member.email || "");
     setProfileDepartment(member.department || "Floor Service");
     setProfileEmpType(member.employmentType || "full_time");
     setProfileShiftName(member.shiftName || "Morning Shift (09:00 - 18:00)");
@@ -635,6 +656,9 @@ export default function StaffPage() {
     if (!selectedStaff) return;
     try {
       await apiClient.put(`/staff/profiles/${selectedStaff.id}`, {
+        name: profileName.trim(),
+        phone: profilePhone.trim(),
+        email: profileEmail.trim(),
         department: profileDepartment,
         employmentType: profileEmpType,
         shiftName: profileShiftName,
@@ -654,11 +678,12 @@ export default function StaffPage() {
           phone: profileEmergPhone.trim(),
         },
       });
-      addToast("success", "Profile Updated", `Workforce profile updated for ${selectedStaff.name}`);
+      addToast("success", "Profile Updated", `Workforce profile updated for ${profileName.trim() || selectedStaff.name}`);
       setIsEditProfileOpen(false);
       fetchStaff();
     } catch (err: unknown) {
-      const errorMsg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || "Could not update profile.";
+      const errObj = (err as { response?: { data?: { error?: { message?: string } | string; message?: string } } })?.response?.data;
+      const errorMsg = (typeof errObj?.error === "object" ? errObj?.error?.message : errObj?.error) || errObj?.message || "Could not update profile.";
       addToast("error", "Update Failed", errorMsg);
     }
   };
@@ -859,7 +884,28 @@ export default function StaffPage() {
                                 </span>
                               )}
                             </div>
-                            <p className="text-[11px] text-slate-500 dark:text-slate-400">{member.email || member.phone || "No contact info"}</p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              {member.phone ? (
+                                <a
+                                  href={`https://wa.me/${member.phone.replace(/[^0-9]/g, "")}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400 hover:underline inline-flex items-center gap-1"
+                                >
+                                  <MessageSquare className="w-2.5 h-2.5" />
+                                  {member.phone}
+                                </a>
+                              ) : (
+                                <span className="text-[10px] text-amber-600 dark:text-amber-400">
+                                  No WhatsApp phone
+                                </span>
+                              )}
+                              {member.email && (
+                                <span className="text-[11px] text-slate-400 dark:text-slate-500">
+                                  &bull; {member.email}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </td>
@@ -1462,25 +1508,38 @@ export default function StaffPage() {
       <Modal
         isOpen={isInviteOpen}
         onClose={() => setIsInviteOpen(false)}
-        title="Invite Workforce Team Member"
-        description="Add a staff member with department, employment type, and salary structure."
+        title="Enroll Workforce Team Member"
+        description="Add a staff member with WhatsApp access for attendance, shift rosters, leave requests, and GPS clock-in."
       >
         <form onSubmit={handleSendInvite} className="space-y-4">
           <Input
             label="Full Name"
-            placeholder="Sarah Jenkins"
+            placeholder="e.g. Ramesh Kumar"
             value={inviteName}
             onChange={(e) => setInviteName(e.target.value)}
             required
           />
 
+          <div>
+            <Input
+              label="WhatsApp Phone Number"
+              placeholder="+91 98765 43210"
+              value={invitePhone}
+              onChange={(e) => setInvitePhone(e.target.value)}
+              required
+              leftIcon={<MessageSquare className="h-4 w-4 text-emerald-600" />}
+            />
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+              Staff will use this number on WhatsApp to clock in via GPS, apply for leave, and view payslips.
+            </p>
+          </div>
+
           <Input
-            label="Email Address"
+            label="Email Address (Optional)"
             type="email"
-            placeholder="colleague@restaurant.com"
+            placeholder="colleague@restaurant.com (Optional)"
             value={inviteEmail}
             onChange={(e) => setInviteEmail(e.target.value)}
-            required
             leftIcon={<Mail className="h-4 w-4" />}
           />
 
@@ -1542,8 +1601,8 @@ export default function StaffPage() {
             <Button variant="secondary" type="button" onClick={() => setIsInviteOpen(false)}>
               Cancel
             </Button>
-            <Button variant="glow" type="submit">
-              Send Invitation
+            <Button variant="glow" type="submit" leftIcon={<UserPlus className="h-4 w-4" />}>
+              Enroll Staff (WhatsApp)
             </Button>
           </div>
         </form>
@@ -1558,6 +1617,32 @@ export default function StaffPage() {
         size="lg"
       >
         <form onSubmit={handleSaveProfile} className="space-y-4 max-h-[75vh] overflow-y-auto pr-1">
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="Full Name"
+              value={profileName}
+              onChange={(e) => setProfileName(e.target.value)}
+              placeholder="e.g. Ramesh Kumar"
+              required
+            />
+            <Input
+              label="WhatsApp Phone Number"
+              value={profilePhone}
+              onChange={(e) => setProfilePhone(e.target.value)}
+              placeholder="+91 98765 43210"
+              leftIcon={<MessageSquare className="h-3.5 w-3.5 text-emerald-600" />}
+            />
+          </div>
+
+          <Input
+            label="Email Address"
+            type="email"
+            value={profileEmail}
+            onChange={(e) => setProfileEmail(e.target.value)}
+            placeholder="colleague@restaurant.com"
+            leftIcon={<Mail className="h-3.5 w-3.5" />}
+          />
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 block">Department</label>

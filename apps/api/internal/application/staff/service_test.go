@@ -2,6 +2,7 @@ package staff
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -26,8 +27,21 @@ func TestInviteStaff_Validation(t *testing.T) {
 	_, err = svc.InviteStaff(ctx, tid, InviteStaffInput{
 		Name: "Rohan",
 	})
-	if err == nil || err.Error() != "email or phone is required" {
-		t.Errorf("expected 'email or phone is required' error, got %v", err)
+	if err == nil || !strings.Contains(strings.ToLower(err.Error()), "required") {
+		t.Errorf("expected phone or email required error, got %v", err)
+	}
+
+	// Valid with WhatsApp phone only
+	user, err := svc.InviteStaff(ctx, tid, InviteStaffInput{
+		Name:  "Aarav Sharma",
+		Phone: "+91 98765 43210",
+		Role:  domainuser.RoleWaiter,
+	})
+	if err != nil {
+		t.Errorf("expected success with WhatsApp phone, got error: %v", err)
+	}
+	if user == nil || user.Phone != "+919876543210" {
+		t.Errorf("expected cleaned phone '+919876543210', got %+v", user)
 	}
 }
 

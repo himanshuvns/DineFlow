@@ -10,6 +10,7 @@ import (
 
 	domainnotif "github.com/dineflow/api/internal/domain/notification"
 	domainuser "github.com/dineflow/api/internal/domain/user"
+	domainwa "github.com/dineflow/api/internal/domain/whatsapp"
 	mongoinfra "github.com/dineflow/api/internal/infrastructure/mongodb"
 	notifapp "github.com/dineflow/api/internal/application/notification"
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -36,10 +37,43 @@ func (s *Service) SetNotificationService(ne NotificationEmitter) {
 
 // ── Staff Management & Profiles ─────────────────────────────────────────────
 
+// cleanPhoneNumber formats phone numbers into standard E.164-compatible strings.
+// Handles +91, 10-digit Indian numbers, and international prefixes.
+func cleanPhoneNumber(phone string) string {
+	phone = strings.TrimSpace(phone)
+	if phone == "" {
+		return ""
+	}
+	hasPlus := strings.HasPrefix(phone, "+")
+	var sb strings.Builder
+	for _, ch := range phone {
+		if ch >= '0' && ch <= '9' {
+			sb.WriteRune(ch)
+		}
+	}
+	digits := sb.String()
+	if digits == "" {
+		return ""
+	}
+	if hasPlus {
+		return "+" + digits
+	}
+	if len(digits) == 10 {
+		return "+91" + digits
+	}
+	if len(digits) == 11 && strings.HasPrefix(digits, "0") {
+		return "+91" + digits[1:]
+	}
+	if len(digits) == 12 && strings.HasPrefix(digits, "91") {
+		return "+" + digits
+	}
+	return "+" + digits
+}
+
 type InviteStaffInput struct {
 	Name           string                     `json:"name"`
-	Email          string                     `json:"email"`
 	Phone          string                     `json:"phone"`
+	Email          string                     `json:"email"`
 	Role           domainuser.Role            `json:"role"`
 	Department     string                     `json:"department"`
 	EmploymentType string                     `json:"employmentType"`
@@ -47,6 +81,9 @@ type InviteStaffInput struct {
 }
 
 type UpdateEmployeeProfileInput struct {
+	Name             string                     `json:"name"`
+	Phone            string                     `json:"phone"`
+	Email            string                     `json:"email"`
 	EmployeeID       string                     `json:"employeeId"`
 	Department       string                     `json:"department"`
 	EmploymentType   string                     `json:"employmentType"`
@@ -90,12 +127,17 @@ func (s *Service) ListStaff(ctx context.Context, tenantID bson.ObjectID) ([]doma
 }
 
 func (s *Service) InviteStaff(ctx context.Context, tenantID bson.ObjectID, input InviteStaffInput) (*domainuser.User, error) {
-	if input.Name == "" {
+	if strings.TrimSpace(input.Name) == "" {
 		return nil, errors.New("name is required")
 	}
-	if input.Email == "" && input.Phone == "" {
-		return nil, errors.New("email or phone is required")
+
+	cleanPhone := cleanPhoneNumber(input.Phone)
+	cleanEmail := strings.ToLower(strings.TrimSpace(input.Email))
+
+	if cleanPhone == "" && cleanEmail == "" {
+		return nil, errors.New("WhatsApp phone number or email is required")
 	}
+
 	if input.Role == "" {
 		input.Role = domainuser.RoleWaiter
 	}
@@ -117,59 +159,111 @@ func (s *Service) InviteStaff(ctx context.Context, tenantID bson.ObjectID, input
 		input.EmploymentType = "full_time"
 	}
 
-	coll := s.db.Collection("users")
-	scope := mongoinfra.NewScope(coll, tenantID)
+	if s.db != nil {
+		coll := s.db.Collection("users")
+		scope := mongoinfra.NewScope(coll, tenantID)
 
-	// Check if already exists in this tenant
-	filter := bson.M{}
-	if input.Email != "" {
-		filter["email"] = strings.ToLower(strings.TrimSpace(input.Email))
-	} else {
-		filter["phone"] = strings.TrimSpace(input.Phone)
+		// Check if already exists in this tenant
+		var orConditions []bson.M
+		if cleanPhone != "" {
+			norm := domainwa.NormalizePhoneNumber(cleanPhone)
+			orConditions = append(orConditions,
+				bson.M{"phone": cleanPhone},
+				bson.M{"phone": norm},
+				bson.M{"phone": "+91" + norm},
+			)
+		}
+		if cleanEmail != "" {
+			orConditions = append(orConditions, bson.M{"email": cleanEmail})
+		}
+
+		if len(orConditions) > 0 {
+			var existing domainuser.User
+			err := scope.FindOne(ctx, bson.M{"$or": orConditions}, &existing)
+			if err == nil {
+				if cleanPhone != "" && (existing.Phone == cleanPhone || strings.HasSuffix(existing.Phone, domainwa.NormalizePhoneNumber(cleanPhone))) {
+					return nil, errors.New("a staff member with this WhatsApp phone number already exists in this workspace")
+				}
+				return nil, errors.New("a staff member with this email already exists in this workspace")
+			} else if err != mongo.ErrNoDocuments {
+				return nil, err
+			}
+		}
+
+		// Global phone uniqueness check (idx_user_phone is unique across collection)
+		if cleanPhone != "" {
+			norm := domainwa.NormalizePhoneNumber(cleanPhone)
+			var globalExisting domainuser.User
+			gErr := coll.FindOne(ctx, bson.M{
+				"$or": []bson.M{
+					{"phone": cleanPhone},
+					{"phone": norm},
+					{"phone": "+91" + norm},
+				},
+			}).Decode(&globalExisting)
+			if gErr == nil {
+				if globalExisting.TenantID == tenantID {
+					return nil, errors.New("a staff member with this WhatsApp phone number already exists in this workspace")
+				}
+				return nil, errors.New("this phone number is already registered to another user on DineFlow")
+			}
+		}
+
+		// Generate employee ID count
+		count, _ := scope.Count(ctx, bson.M{})
+		empID := fmt.Sprintf("DF-EMP-%04d", count+1001)
+
+		now := time.Now().UTC()
+		newUser := domainuser.User{
+			ID:             bson.NewObjectID(),
+			TenantID:       tenantID,
+			Name:           strings.TrimSpace(input.Name),
+			Email:          cleanEmail,
+			Phone:          cleanPhone,
+			Role:           input.Role,
+			Permissions:    domainuser.DefaultPermissionsForRole(input.Role),
+			Status:         domainuser.StatusActive,
+			EmployeeID:     empID,
+			Department:     input.Department,
+			EmploymentType: input.EmploymentType,
+			Salary:         input.Salary,
+			JoiningDate:    &now,
+			CreatedAt:      now,
+			UpdatedAt:      now,
+		}
+
+		if _, err := scope.InsertOne(ctx, &newUser); err != nil {
+			return nil, err
+		}
+
+		// Also initialize default leave balance
+		go func() {
+			bgCtx := context.Background()
+			_ = s.initLeaveBalance(bgCtx, tenantID, newUser.ID)
+		}()
+
+		return &newUser, nil
 	}
 
-	var existing domainuser.User
-	err := scope.FindOne(ctx, filter, &existing)
-	if err == nil {
-		return nil, errors.New("staff member already exists in this workspace")
-	} else if err != mongo.ErrNoDocuments {
-		return nil, err
-	}
-
-	// Generate employee ID count
-	count, _ := scope.Count(ctx, bson.M{})
-	empID := fmt.Sprintf("DF-EMP-%04d", count+1001)
-
+	// In memory fallback for tests without db
 	now := time.Now().UTC()
-	newUser := domainuser.User{
+	return &domainuser.User{
 		ID:             bson.NewObjectID(),
 		TenantID:       tenantID,
 		Name:           strings.TrimSpace(input.Name),
-		Email:          strings.ToLower(strings.TrimSpace(input.Email)),
-		Phone:          strings.TrimSpace(input.Phone),
+		Email:          cleanEmail,
+		Phone:          cleanPhone,
 		Role:           input.Role,
 		Permissions:    domainuser.DefaultPermissionsForRole(input.Role),
 		Status:         domainuser.StatusActive,
-		EmployeeID:     empID,
+		EmployeeID:     "DF-EMP-1001",
 		Department:     input.Department,
 		EmploymentType: input.EmploymentType,
 		Salary:         input.Salary,
 		JoiningDate:    &now,
 		CreatedAt:      now,
 		UpdatedAt:      now,
-	}
-
-	if _, err := scope.InsertOne(ctx, &newUser); err != nil {
-		return nil, err
-	}
-
-	// Also initialize default leave balance
-	go func() {
-		bgCtx := context.Background()
-		_ = s.initLeaveBalance(bgCtx, tenantID, newUser.ID)
-	}()
-
-	return &newUser, nil
+	}, nil
 }
 
 func (s *Service) UpdateStaff(ctx context.Context, tenantID, userID bson.ObjectID, role domainuser.Role, status domainuser.Status) (*domainuser.User, error) {
@@ -210,6 +304,15 @@ func (s *Service) UpdateEmployeeProfile(ctx context.Context, tenantID, userID bs
 
 	setMap := bson.M{
 		"updatedAt": time.Now().UTC(),
+	}
+	if input.Name != "" {
+		setMap["name"] = strings.TrimSpace(input.Name)
+	}
+	if input.Phone != "" {
+		setMap["phone"] = cleanPhoneNumber(input.Phone)
+	}
+	if input.Email != "" {
+		setMap["email"] = strings.ToLower(strings.TrimSpace(input.Email))
 	}
 	if input.EmployeeID != "" {
 		setMap["employeeId"] = input.EmployeeID
