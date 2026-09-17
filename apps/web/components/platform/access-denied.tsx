@@ -1,12 +1,10 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ShieldAlert, ArrowLeft, Lock, Sparkles, CheckCircle2 } from "lucide-react";
+import { ShieldAlert, ArrowLeft, Lock, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/lib/stores/auth-store";
-import { useToast } from "@/components/ui/toast";
 
 export function AccessDenied({
   title = "Platform Access Restricted",
@@ -16,13 +14,12 @@ export function AccessDenied({
   description?: string;
 }) {
   const router = useRouter();
-  const { user, updateUser } = useAuthStore();
-  const { addToast } = useToast();
+  const { user, clearAuth } = useAuthStore();
 
-  const handleElevateForDemo = () => {
-    updateUser({ role: "super_admin" });
-    addToast("success", "Role Elevated", "Temporarily elevated to Platform Super Admin for verification.");
-    router.refresh();
+  const handleLoginAsSuperAdmin = () => {
+    // Clear the current client session entirely, then go to login
+    clearAuth();
+    router.replace("/login");
   };
 
   return (
@@ -72,10 +69,10 @@ export function AccessDenied({
           <Button
             variant="glow"
             className="flex-1 text-xs bg-rose-600 hover:bg-rose-500 text-white"
-            leftIcon={<Sparkles className="h-4 w-4" />}
-            onClick={handleElevateForDemo}
+            leftIcon={<LogIn className="h-4 w-4" />}
+            onClick={handleLoginAsSuperAdmin}
           >
-            Authorize as Super Admin
+            Sign in as Super Admin
           </Button>
         </div>
       </div>
