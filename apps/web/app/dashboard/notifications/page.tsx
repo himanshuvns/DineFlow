@@ -107,69 +107,71 @@ export default function NotificationsPage() {
   const totalPages = Math.ceil(total / 20)
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 px-4 py-6 sm:px-6 lg:px-8">
+    <div className="space-y-6 max-w-5xl mx-auto pb-12">
       {/* Header */}
-      <div className="max-w-4xl mx-auto mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.back()}
-            className="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-500 transition-colors"
+            className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors border border-slate-200 dark:border-slate-800 cursor-pointer"
+            aria-label="Go back"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
-          <div className="flex-1">
-            <h1 className="text-xl font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-              <Bell className="w-5 h-5" />
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <Bell className="w-5 h-5 text-emerald-500" />
               Notification Center
             </h1>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">
-              {total} total · {unreadCount} unread
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+              {total} total event{total === 1 ? "" : "s"} · {unreadCount} unread
             </p>
           </div>
-          <div className="flex gap-2">
-            {unreadCount > 0 && (
-              <button
-                onClick={() => void markAllAsRead()}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 font-medium hover:opacity-90 transition-opacity"
-              >
-                <CheckCheck className="w-4 h-4" />
-                Mark all read
-              </button>
-            )}
+        </div>
+
+        <div className="flex items-center gap-2">
+          {unreadCount > 0 && (
             <button
-              onClick={() => void clearRead()}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              onClick={() => void markAllAsRead()}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-sm shadow-emerald-500/20 transition-all cursor-pointer"
             >
-              <Trash2 className="w-4 h-4" />
-              Clear read
+              <CheckCheck className="w-4 h-4" />
+              Mark all read
             </button>
-          </div>
+          )}
+          <button
+            onClick={() => void clearRead()}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+          >
+            <Trash2 className="w-4 h-4" />
+            Clear read
+          </button>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto space-y-4">
+      <div className="space-y-4">
         {/* Filters */}
-        <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4 space-y-3">
+        <div className="bg-white dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 space-y-3 shadow-xs">
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               type="text"
               placeholder="Search notifications..."
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1) }}
-              className="w-full pl-9 pr-4 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm text-neutral-900 dark:text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
             />
           </div>
 
           <div className="flex flex-wrap gap-2 items-center">
-            <Filter className="w-4 h-4 text-neutral-400" />
+            <Filter className="w-4 h-4 text-slate-400 shrink-0" />
 
             {/* Category filter */}
             <select
               value={category}
               onChange={(e) => { setCategory(e.target.value); setPage(1) }}
-              className="text-sm px-2 py-1 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 focus:outline-none"
+              className="text-xs font-medium px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-emerald-500"
             >
               {CATEGORIES.map((c) => (
                 <option key={c} value={c}>
@@ -182,7 +184,7 @@ export default function NotificationsPage() {
             <select
               value={priority}
               onChange={(e) => { setPriority(e.target.value); setPage(1) }}
-              className="text-sm px-2 py-1 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 focus:outline-none"
+              className="text-xs font-medium px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-emerald-500"
             >
               {PRIORITIES.map((p) => (
                 <option key={p} value={p}>
@@ -196,10 +198,10 @@ export default function NotificationsPage() {
               <button
                 key={v}
                 onClick={() => { setReadFilter(v); setPage(1) }}
-                className={`text-xs px-3 py-1 rounded-full font-medium transition-colors ${
+                className={`text-xs px-3 py-1.5 rounded-xl font-semibold transition-colors cursor-pointer ${
                   readFilter === v
-                    ? 'bg-neutral-900 dark:bg-white text-white dark:text-neutral-900'
-                    : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700'
+                    ? 'bg-emerald-500 text-slate-950 shadow-xs'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
                 }`}
               >
                 {v.charAt(0).toUpperCase() + v.slice(1)}
@@ -209,16 +211,16 @@ export default function NotificationsPage() {
         </div>
 
         {/* Notification List */}
-        <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 overflow-hidden">
+        <div className="bg-white dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs">
           {isLoading ? (
             <div className="flex items-center justify-center py-16">
-              <Loader2 className="w-6 h-6 animate-spin text-neutral-400" />
+              <Loader2 className="w-6 h-6 animate-spin text-emerald-500" />
             </div>
           ) : notifications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-3 text-neutral-400">
-              <BellOff className="w-12 h-12" />
-              <p className="text-base font-medium">No notifications</p>
-              <p className="text-sm">Adjust the filters or check back later.</p>
+            <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-400">
+              <BellOff className="w-12 h-12 text-slate-300 dark:text-slate-600" />
+              <p className="text-base font-bold text-slate-800 dark:text-slate-200">No notifications found</p>
+              <p className="text-xs text-slate-500">Adjust the filters or check back later.</p>
             </div>
           ) : (
             notifications.map((notif) => {
@@ -230,44 +232,44 @@ export default function NotificationsPage() {
                     if (!notif.read) void markAsRead(notif.id)
                     if (notif.actionUrl) router.push(notif.actionUrl)
                   }}
-                  className={`flex items-start gap-4 px-5 py-4 border-b border-neutral-100 dark:border-neutral-800 cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors ${!notif.read ? 'bg-blue-50/30 dark:bg-blue-950/10' : ''}`}
+                  className={`flex items-start gap-3 sm:gap-4 px-4 sm:px-5 py-4 border-b border-slate-100 dark:border-slate-800/80 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors ${!notif.read ? 'bg-emerald-50/20 dark:bg-emerald-950/10' : ''}`}
                 >
                   {/* Unread dot */}
-                  <div className="mt-1 shrink-0">
+                  <div className="mt-1.5 shrink-0">
                     {!notif.read ? (
-                      <div className="w-2 h-2 rounded-full bg-blue-500" />
+                      <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                     ) : (
                       <div className="w-2 h-2 rounded-full bg-transparent" />
                     )}
                   </div>
 
                   {/* Category icon */}
-                  <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium shrink-0 mt-0.5 ${meta?.colorClass}`}>
+                  <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-semibold shrink-0 mt-0.5 ${meta?.colorClass}`}>
                     {meta?.icon}
-                    {meta?.label}
+                    <span className="hidden xs:inline">{meta?.label}</span>
                   </span>
 
                   {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{notif.title}</p>
+                      <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{notif.title}</p>
                       <div className="flex items-center gap-2">
-                        <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${PRIORITY_BADGE[notif.priority]}`}>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${PRIORITY_BADGE[notif.priority]}`}>
                           {notif.priority}
                         </span>
-                        <span className="text-xs text-neutral-400 dark:text-neutral-500">
+                        <span className="text-xs text-slate-400 dark:text-slate-500">
                           {timeAgo(notif.createdAt)}
                         </span>
                       </div>
                     </div>
-                    <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-0.5">{notif.message}</p>
+                    <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">{notif.message}</p>
                   </div>
 
                   {/* Mark read button */}
                   {!notif.read && (
                     <button
                       onClick={(e) => { e.stopPropagation(); void markAsRead(notif.id) }}
-                      className="shrink-0 p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-400 transition-colors"
+                      className="shrink-0 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
                       title="Mark as read"
                     >
                       <CheckCheck className="w-4 h-4" />
@@ -285,17 +287,17 @@ export default function NotificationsPage() {
             <button
               disabled={page <= 1}
               onClick={() => setPage((p) => p - 1)}
-              className="px-3 py-1.5 text-sm rounded-lg border border-neutral-200 dark:border-neutral-700 disabled:opacity-40 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              className="px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-800 disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
             >
               Previous
             </button>
-            <span className="text-sm text-neutral-500">
+            <span className="text-xs font-medium text-slate-500">
               {page} / {totalPages}
             </span>
             <button
               disabled={page >= totalPages}
               onClick={() => setPage((p) => p + 1)}
-              className="px-3 py-1.5 text-sm rounded-lg border border-neutral-200 dark:border-neutral-700 disabled:opacity-40 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              className="px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-800 disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
             >
               Next
             </button>
@@ -303,5 +305,5 @@ export default function NotificationsPage() {
         )}
       </div>
     </div>
-  )
+  );
 }

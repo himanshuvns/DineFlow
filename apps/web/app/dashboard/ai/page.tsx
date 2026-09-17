@@ -133,7 +133,7 @@ export default function AIStudioPage() {
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {STATS.map((stat) => (
           <Card key={stat.label} variant="glass">
             <CardContent className="p-5">

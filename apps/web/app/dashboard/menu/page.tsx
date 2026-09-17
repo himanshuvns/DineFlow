@@ -667,7 +667,7 @@ export default function MenuManagementPage() {
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Total Dishes</span>
+            <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Total Dishes</span>
             <div className="h-7 w-7 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
               <Utensils className="h-3.5 w-3.5" />
             </div>
@@ -678,14 +678,14 @@ export default function MenuManagementPage() {
             </span>
             <span className="text-[11px] text-slate-500 font-medium">items</span>
           </div>
-          <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
             Across {kpiStats.categoriesCount} categories
           </p>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Categories</span>
+            <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Categories</span>
             <div className="h-7 w-7 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
               <Layers className="h-3.5 w-3.5" />
             </div>
@@ -696,14 +696,14 @@ export default function MenuManagementPage() {
             </span>
             <span className="text-[11px] text-slate-500 font-medium">sections</span>
           </div>
-          <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
             Live menu taxonomy
           </p>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Live Availability</span>
+            <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Live Availability</span>
             <div className="h-7 w-7 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center">
               <CheckCircle2 className="h-3.5 w-3.5" />
             </div>
@@ -714,9 +714,9 @@ export default function MenuManagementPage() {
             </span>
             <span className="text-[11px] text-slate-500 font-medium">In Stock</span>
           </div>
-          <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
             {kpiStats.outOfStock > 0 ? (
-              <span className="text-amber-500 font-semibold">{kpiStats.outOfStock} dishes 86&apos;d</span>
+              <span className="text-amber-600 dark:text-amber-400 font-semibold">{kpiStats.outOfStock} dishes 86&apos;d</span>
             ) : (
               <span className="text-emerald-600 dark:text-emerald-400 font-semibold">100% available</span>
             )}
@@ -725,7 +725,7 @@ export default function MenuManagementPage() {
 
         <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Dietary Ratio</span>
+            <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Dietary Ratio</span>
             <div className="h-7 w-7 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
               <Flame className="h-3.5 w-3.5" />
             </div>
@@ -734,21 +734,21 @@ export default function MenuManagementPage() {
             <span className="text-xl font-black text-emerald-600 dark:text-emerald-400">
               {kpiStats.veg}
             </span>
-            <span className="text-xs text-slate-400 font-medium">Veg</span>
+            <span className="text-xs text-slate-500 font-medium">Veg</span>
             <span className="text-xs text-slate-300 dark:text-slate-700">/</span>
             <span className="text-xl font-black text-rose-600 dark:text-rose-400">
               {kpiStats.nonVeg}
             </span>
-            <span className="text-xs text-slate-400 font-medium">Non</span>
+            <span className="text-xs text-slate-500 font-medium">Non</span>
           </div>
-          <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
             {kpiStats.total > 0 ? `${Math.round((kpiStats.veg / kpiStats.total) * 100)}% Pure Veg` : "No dishes"}
           </p>
         </div>
 
         <div className="col-span-2 sm:col-span-1 p-3.5 rounded-2xl bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Average Price</span>
+            <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Average Price</span>
             <div className="h-7 w-7 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
               <IndianRupee className="h-3.5 w-3.5" />
             </div>
@@ -758,7 +758,7 @@ export default function MenuManagementPage() {
               ₹{kpiStats.avg}
             </span>
           </div>
-          <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
             Across entire catalog
           </p>
         </div>

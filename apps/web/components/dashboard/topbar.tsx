@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Menu,
   Search,
@@ -19,11 +19,83 @@ import { useToast } from "@/components/ui/toast";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { NotificationCenter } from "@/components/notifications/notification-center";
 
+const ROUTE_TITLES: Record<string, string> = {
+  "/dashboard": "Workspace Overview",
+  "/dashboard/orders": "Live KDS & Orders",
+  "/dashboard/menu": "Menu Management",
+  "/dashboard/tables": "Tables & QR Codes",
+  "/dashboard/rooms": "Rooms & Suites (PMS)",
+  "/dashboard/whatsapp": "WhatsApp Connect",
+  "/dashboard/staff": "Staff & Permissions",
+  "/dashboard/analytics": "Analytics & Sales",
+  "/dashboard/ai": "AI Studio",
+  "/dashboard/ai/menu-writer": "AI Menu Writer",
+  "/dashboard/ai/upsell": "Upsell Engine",
+  "/dashboard/ai/forecast": "Demand Forecast",
+  "/dashboard/ai/pricing": "Smart Pricing Alerts",
+  "/dashboard/notifications": "Notification Center",
+  "/dashboard/settings": "Settings & Billing",
+  "/pricing": "Subscription Plans",
+  "/admin": "Platform Admin",
+};
+
 export function TopBar() {
   const router = useRouter();
+  const pathname = usePathname();
   const { setMobileMenuOpen } = useUIStore();
   const { user, tenant, clearAuth } = useAuthStore();
   const { addToast } = useToast();
+  const searchInputRef = React.useRef<HTMLInputElement | null>(null);
+  const [searchValue, setSearchValue] = React.useState("");
+
+  // Determine current page title
+  const currentTitle = React.useMemo(() => {
+    if (ROUTE_TITLES[pathname]) return ROUTE_TITLES[pathname];
+    if (pathname.startsWith("/dashboard/rooms/")) return "Room Details & Guests";
+    if (pathname.startsWith("/dashboard/ai/")) return "AI Co-Pilot Studio";
+    return "Workspace Overview";
+  }, [pathname]);
+
+  // Global Cmd+K / Ctrl+K shortcut listener
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const query = searchValue.trim().toLowerCase();
+    if (!query) return;
+
+    if (query.includes("order") || query.includes("kds") || query.includes("kitchen") || query.includes("ticket")) {
+      router.push("/dashboard/orders");
+    } else if (query.includes("menu") || query.includes("dish") || query.includes("food") || query.includes("item")) {
+      router.push("/dashboard/menu");
+    } else if (query.includes("table") || query.includes("qr") || query.includes("seat")) {
+      router.push("/dashboard/tables");
+    } else if (query.includes("room") || query.includes("suite") || query.includes("hotel") || query.includes("stay") || query.includes("guest")) {
+      router.push("/dashboard/rooms");
+    } else if (query.includes("staff") || query.includes("employee") || query.includes("permission") || query.includes("team")) {
+      router.push("/dashboard/staff");
+    } else if (query.includes("analytics") || query.includes("sale") || query.includes("revenue") || query.includes("report")) {
+      router.push("/dashboard/analytics");
+    } else if (query.includes("ai") || query.includes("forecast") || query.includes("upsell") || query.includes("writer")) {
+      router.push("/dashboard/ai");
+    } else if (query.includes("whatsapp") || query.includes("bot") || query.includes("chat")) {
+      router.push("/dashboard/whatsapp");
+    } else if (query.includes("setting") || query.includes("bill") || query.includes("invoice") || query.includes("profile")) {
+      router.push("/dashboard/settings");
+    } else {
+      router.push(`/dashboard/menu?search=${encodeURIComponent(query)}`);
+    }
+    setSearchValue("");
+  };
 
   const handleSignOut = () => {
     clearAuth();
@@ -57,25 +129,30 @@ export function TopBar() {
               />
             </div>
           )}
-          <span className="text-slate-700 dark:text-slate-300 font-semibold truncate max-w-[120px] sm:max-w-[200px]">
+          <span className="text-slate-800 dark:text-slate-300 font-bold truncate max-w-[120px] sm:max-w-[200px]">
             {tenant?.name || "Your Restaurant"}
           </span>
           <span className="text-slate-400 dark:text-slate-600 hidden sm:inline">/</span>
-          <span className="text-emerald-600 dark:text-emerald-400 font-semibold hidden sm:inline truncate">Workspace Overview</span>
+          <span className="text-emerald-700 dark:text-emerald-400 font-bold hidden sm:inline truncate">
+            {currentTitle}
+          </span>
         </div>
       </div>
 
       {/* Middle: Quick Search */}
-      <div className="hidden lg:flex items-center w-72">
+      <form onSubmit={handleSearchSubmit} className="hidden lg:flex items-center w-72">
         <div className="relative w-full">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 dark:text-slate-500" />
           <input
+            ref={searchInputRef}
             type="text"
-            placeholder="Search orders, tables, dishes... (⌘K)"
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
+            placeholder="Search orders, rooms, menu... (⌘K)"
             className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-100/90 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-emerald-500/50 transition-all"
           />
         </div>
-      </div>
+      </form>
 
       {/* Right Actions */}
       <div className="flex items-center gap-2.5 sm:gap-3">

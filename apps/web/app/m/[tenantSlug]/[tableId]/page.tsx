@@ -392,7 +392,7 @@ export default function CustomerMenuPage() {
           <div className="absolute inset-0 bg-gradient-to-t from-slate-50 dark:from-slate-950 via-slate-50/60 dark:via-slate-950/50 to-transparent" />
 
           {/* Quick Action Badges */}
-          <div className="absolute top-3 right-3 sm:top-4 sm:right-4 flex items-center gap-1.5 xs:gap-2">
+          <div className="absolute top-3 right-3 sm:top-4 sm:right-4 flex items-center gap-1.5 xs:gap-2 max-w-[calc(100%-1.5rem)] flex-wrap justify-end">
             <button
               onClick={handleOpenWhatsApp}
               className="px-2.5 xs:px-3 h-8 xs:h-9 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-600/30 transition-transform active:scale-95 cursor-pointer"

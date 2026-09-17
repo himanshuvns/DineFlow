@@ -261,7 +261,7 @@ export default function DashboardOverviewPage() {
         {/* Metric 1 */}
         <Card variant="glass" hoverEffect>
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Today&apos;s Revenue</span>
+            <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Today&apos;s Revenue</span>
             <div className="h-8 w-8 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
               <TrendingUp className="h-4 w-4" />
             </div>
@@ -274,7 +274,7 @@ export default function DashboardOverviewPage() {
               <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center">
                 <ArrowUpRight className="h-3.5 w-3.5" /> {safeOrders.length > 0 ? "+100%" : "+0%"}
               </span>
-              <span className="text-slate-500 dark:text-slate-400">
+              <span className="text-slate-600 dark:text-slate-400 font-medium">
                 {safeOrders.length > 0 ? `across ${safeOrders.length} orders` : "ready for sales"}
               </span>
             </div>
@@ -284,7 +284,7 @@ export default function DashboardOverviewPage() {
         {/* Metric 2 */}
         <Card variant="glass" hoverEffect>
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Active Kitchen Orders</span>
+            <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Active Kitchen Orders</span>
             <div className="h-8 w-8 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400">
               <ShoppingBag className="h-4 w-4" />
             </div>
@@ -293,7 +293,7 @@ export default function DashboardOverviewPage() {
             <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
               {activeCount} Orders
             </h2>
-            <div className="flex items-center gap-2 mt-1 text-xs text-slate-500 dark:text-slate-400">
+            <div className="flex items-center gap-2 mt-1 text-xs text-slate-600 dark:text-slate-400 font-medium">
               <span className="text-amber-600 dark:text-amber-400 font-semibold">{preparingCount} preparing</span>
               <span>•</span>
               <span className="text-cyan-600 dark:text-cyan-400 font-semibold">{readyCount} ready</span>
@@ -304,7 +304,7 @@ export default function DashboardOverviewPage() {
         {/* Metric 3 */}
         <Card variant="glass" hoverEffect>
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Table Occupancy</span>
+            <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Table Occupancy</span>
             <div className="h-8 w-8 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
               <Users className="h-4 w-4" />
             </div>
@@ -317,7 +317,7 @@ export default function DashboardOverviewPage() {
               <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
                 {totalTables > 0 ? `${occupancyPct}% capacity` : "Setup required"}
               </span>
-              <span className="text-slate-500 dark:text-slate-400">
+              <span className="text-slate-600 dark:text-slate-400 font-medium">
                 {totalTables > 0 ? `(${totalTables - occupiedCount} free)` : ""}
               </span>
             </div>
@@ -327,7 +327,7 @@ export default function DashboardOverviewPage() {
         {/* Metric 4 */}
         <Card variant="glass" hoverEffect>
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Menu Catalog</span>
+            <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Menu Catalog</span>
             <div className="h-8 w-8 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
               <Utensils className="h-4 w-4" />
             </div>
@@ -340,7 +340,7 @@ export default function DashboardOverviewPage() {
               <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
                 {safeMenuItems.filter((i) => i?.available).length} Live
               </span>
-              <span className="text-slate-500 dark:text-slate-400">on contactless QR</span>
+              <span className="text-slate-600 dark:text-slate-400 font-medium">on contactless QR</span>
             </div>
           </div>
         </Card>
@@ -612,7 +612,7 @@ export default function DashboardOverviewPage() {
               <select
                 value={orderTable}
                 onChange={(e) => setOrderTable(e.target.value)}
-                className="w-full px-3 py-2 text-xs bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                className="w-full px-3 py-2 text-base sm:text-xs bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
               >
                 {safeTables.map((t) => (
                   <option key={t.id} value={t.name}>
@@ -625,7 +625,7 @@ export default function DashboardOverviewPage() {
                 type="text"
                 value={orderTable}
                 onChange={(e) => setOrderTable(e.target.value)}
-                className="w-full px-3 py-2 text-xs bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                className="w-full px-3 py-2 text-base sm:text-xs bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
                 placeholder="Table 01"
               />
             )}
@@ -641,7 +641,7 @@ export default function DashboardOverviewPage() {
               onChange={(e) => setOrderItemsText(e.target.value)}
               placeholder="e.g. 1x Special Thali, 2x Cold Brew"
               required
-              className="w-full px-3 py-2 text-xs bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+              className="w-full px-3 py-2 text-base sm:text-xs bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
             />
           </div>
 
@@ -656,7 +656,7 @@ export default function DashboardOverviewPage() {
               placeholder="450"
               min="0"
               required
-              className="w-full px-3 py-2 text-xs bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+              className="w-full px-3 py-2 text-base sm:text-xs bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
             />
           </div>
 

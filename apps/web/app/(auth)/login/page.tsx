@@ -137,7 +137,7 @@ export default function LoginPage() {
                   setPhone("+91 " + digits);
                 }}
                 required
-                className="w-full bg-transparent text-[14px] text-slate-900 dark:text-[#F8FAFC] placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none px-3 py-2"
+                className="w-full bg-transparent text-base sm:text-sm text-slate-900 dark:text-[#F8FAFC] placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none px-3 py-2"
               />
             </div>
           </div>

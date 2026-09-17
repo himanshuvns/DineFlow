@@ -189,18 +189,18 @@ export default function KDSOrdersPage() {
   };
 
   const getUrgencyClass = (secs: number, status: string) => {
-    if (status === "ready") return "text-blue-400 bg-blue-500/10 border-blue-500/30";
-    if (status === "served") return "text-slate-400 bg-slate-800 border-slate-700";
+    if (status === "ready") return "text-blue-700 dark:text-blue-400 bg-blue-500/10 border-blue-500/30";
+    if (status === "served") return "text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700";
     if (secs > 900) {
       // > 15 mins (urgent red)
-      return "text-rose-400 bg-rose-500/15 border-rose-500/40 animate-pulse";
+      return "text-rose-700 dark:text-rose-400 bg-rose-500/15 border-rose-500/40 animate-pulse";
     }
     if (secs > 480) {
       // 8 - 15 mins (amber warning)
-      return "text-amber-400 bg-amber-500/15 border-amber-500/30";
+      return "text-amber-700 dark:text-amber-400 bg-amber-500/15 border-amber-500/30";
     }
     // < 8 mins (normal emerald)
-    return "text-emerald-400 bg-emerald-500/10 border-emerald-500/20";
+    return "text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20";
   };
 
   // Bump bar transitions: pending -> preparing -> ready -> served
@@ -329,8 +329,8 @@ export default function KDSOrdersPage() {
       {/* Header & Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold mb-2">
-            <Flame className="h-3.5 w-3.5 text-amber-400" /> Multi-Station Kitchen Display (KDS)
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-semibold mb-2">
+            <Flame className="h-3.5 w-3.5 text-amber-500" /> Multi-Station Kitchen Display (KDS)
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
             Live Kitchen Display
@@ -612,7 +612,7 @@ export default function KDSOrdersPage() {
                         {order.status === "ready" && (isRoomService ? "Deliver to Suite" : "Dispatch")}
                       </Button>
                     ) : (
-                      <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1">
+                      <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                         <Check className="h-3.5 w-3.5" /> Done
                       </span>
                     )}

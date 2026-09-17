@@ -584,7 +584,7 @@ export default function RoomsDirectoryPage() {
       {/* Hotel PMS KPI Strip */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         <Card variant="glass" className="p-3.5 border border-slate-200 dark:border-slate-800">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 block">
             Occupied Rooms
           </span>
           <div className="flex items-baseline justify-between mt-1">
@@ -598,7 +598,7 @@ export default function RoomsDirectoryPage() {
         </Card>
 
         <Card variant="glass" className="p-3.5 border border-slate-200 dark:border-slate-800">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 block">
             Clean & Ready
           </span>
           <div className="flex items-baseline justify-between mt-1">
@@ -610,7 +610,7 @@ export default function RoomsDirectoryPage() {
         </Card>
 
         <Card variant="glass" className="p-3.5 border border-slate-200 dark:border-slate-800">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 block">
             Housekeeping
           </span>
           <div className="flex items-baseline justify-between mt-1">
@@ -622,7 +622,7 @@ export default function RoomsDirectoryPage() {
         </Card>
 
         <Card variant="glass" className="p-3.5 border border-slate-200 dark:border-slate-800">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 block">
             Check-Ins Today
           </span>
           <div className="flex items-baseline justify-between mt-1">
@@ -634,11 +634,11 @@ export default function RoomsDirectoryPage() {
         </Card>
 
         <Card variant="glass" className="p-3.5 border border-slate-200 dark:border-slate-800">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 block">
             Pending In-Room Dining
           </span>
           <div className="flex items-baseline justify-between mt-1">
-            <span className="text-xl font-black text-emerald-500 font-mono">
+            <span className="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
               {stats.pendingRoomService || 0}
             </span>
             <span className="text-[10px] text-slate-500 font-mono">Active</span>
@@ -835,7 +835,7 @@ export default function RoomsDirectoryPage() {
                   </button>
                 </div>
 
-                <div className="flex items-center justify-between gap-1 pt-1">
+                <div className="flex items-center justify-between gap-1.5 pt-1 flex-wrap">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -847,7 +847,7 @@ export default function RoomsDirectoryPage() {
                   </Button>
 
                   {isOccupied ? (
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 flex-wrap justify-end">
                       <Button
                         variant="outline"
                         size="sm"
