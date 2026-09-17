@@ -463,3 +463,148 @@ func ParseRating(text string) (int, bool) {
 
 	return 0, false
 }
+
+// ── Workforce Assistant Models & Constants ───────────────────────────────────
+
+type WorkforceState string
+
+const (
+	WFStateIdle                WorkforceState = "idle"
+	WFStateAwaitingLeaveDates  WorkforceState = "awaiting_leave_dates"
+	WFStateAwaitingLeaveReason WorkforceState = "awaiting_leave_reason"
+	WFStateAwaitingLateReason  WorkforceState = "awaiting_late_reason"
+)
+
+const (
+	BtnWFCheckIn      = "wf_checkin"
+	BtnWFCheckOut     = "wf_checkout"
+	BtnWFBreak        = "wf_break"
+	BtnWFLeave        = "wf_leave"
+	BtnWFLeaveBalance = "wf_leave_balance"
+	BtnWFAttendance   = "wf_attendance"
+	BtnWFShift        = "wf_shift"
+	BtnWFPayslip      = "wf_payslip"
+	BtnWFTasks        = "wf_tasks"
+	BtnWFHelp         = "wf_help"
+	BtnWFMainMenu     = "wf_main_menu"
+)
+
+type WorkforceSession struct {
+	ID              bson.ObjectID  `bson:"_id,omitempty" json:"id"`
+	TenantID        bson.ObjectID  `bson:"tenantId" json:"tenantId"`
+	UserID          bson.ObjectID  `bson:"userId" json:"userId"`
+	EmployeeID      string         `bson:"employeeId" json:"employeeId"`
+	Phone           string         `bson:"phone" json:"phone"`
+	State           WorkforceState `bson:"state" json:"state"`
+	DraftLeaveType  string         `bson:"draftLeaveType,omitempty" json:"draftLeaveType,omitempty"`
+	DraftLeaveStart string         `bson:"draftLeaveStart,omitempty" json:"draftLeaveStart,omitempty"`
+	DraftLeaveEnd   string         `bson:"draftLeaveEnd,omitempty" json:"draftLeaveEnd,omitempty"`
+	LastMessageAt   time.Time      `bson:"lastMessageAt" json:"lastMessageAt"`
+	CreatedAt       time.Time      `bson:"createdAt" json:"createdAt"`
+	UpdatedAt       time.Time      `bson:"updatedAt" json:"updatedAt"`
+}
+
+// NormalizePhoneNumber normalizes phone strings into standard digits for deterministic employee matching.
+// Handles +91, 91, leading 0, dashes, spaces, and brackets.
+func NormalizePhoneNumber(phone string) string {
+	var sb strings.Builder
+	for _, ch := range phone {
+		if ch >= '0' && ch <= '9' {
+			sb.WriteRune(ch)
+		}
+	}
+	digits := sb.String()
+
+	// If 12 digits starting with 91 (e.g. 919876543210), strip 91
+	if len(digits) == 12 && strings.HasPrefix(digits, "91") {
+		return digits[2:]
+	}
+	// If 11 digits starting with 0 (e.g. 09876543210), strip 0
+	if len(digits) == 11 && strings.HasPrefix(digits, "0") {
+		return digits[1:]
+	}
+
+	return digits
+}
+
+// ── Outbound Meta Interactive Payloads ────────────────────────────────────────
+
+type InteractiveButton struct {
+	Type  string `json:"type"` // "reply"
+	Reply struct {
+		ID    string `json:"id"`
+		Title string `json:"title"`
+	} `json:"reply"`
+}
+
+type InteractiveRow struct {
+	ID          string `json:"id"`
+	Title       string `json:"title"`
+	Description string `json:"description,omitempty"`
+}
+
+type InteractiveSection struct {
+	Title string           `json:"title"`
+	Rows  []InteractiveRow `json:"rows"`
+}
+
+type OutboundInteractivePayload struct {
+	MessagingProduct string `json:"messaging_product"`
+	RecipientType    string `json:"recipient_type"`
+	To               string `json:"to"`
+	Type             string `json:"type"` // "interactive"
+	Interactive      struct {
+		Type   string `json:"type"` // "button" or "list"
+		Header *struct {
+			Type string `json:"type"` // "text"
+			Text string `json:"text"`
+		} `json:"header,omitempty"`
+		Body struct {
+			Text string `json:"text"`
+		} `json:"body"`
+		Footer *struct {
+			Text string `json:"text"`
+		} `json:"footer,omitempty"`
+		Action struct {
+			Button   string               `json:"button,omitempty"` // For list: e.g. "Select Option"
+			Buttons  []InteractiveButton  `json:"buttons,omitempty"`
+			Sections []InteractiveSection `json:"sections,omitempty"`
+		} `json:"action"`
+	} `json:"interactive"`
+}
+
+type WorkforceCheckInInput struct {
+	Token      string  `json:"token" binding:"required"`
+	Latitude   float64 `json:"latitude"`
+	Longitude  float64 `json:"longitude"`
+	Accuracy   float64 `json:"accuracy"`
+	DeviceInfo string  `json:"deviceInfo"`
+}
+
+type WorkforceCheckInResult struct {
+	Success        bool    `json:"success"`
+	Action         string  `json:"action"` // "clock_in" or "clock_out"
+	Status         string  `json:"status"` // "present", "late", etc.
+	EmployeeName   string  `json:"employeeName"`
+	EmployeeID     string  `json:"employeeId"`
+	DistanceMeters float64 `json:"distanceMeters"`
+	AllowedRadius  float64 `json:"allowedRadius"`
+	WithinGeofence bool    `json:"withinGeofence"`
+	Timestamp      string  `json:"timestamp"`
+	Message        string  `json:"message"`
+}
+
+type WorkforceTokenVerifyResult struct {
+	Valid         bool    `json:"valid"`
+	EmployeeName  string  `json:"employeeName"`
+	EmployeeID    string  `json:"employeeId"`
+	Action        string  `json:"action"`
+	WorkplaceName string  `json:"workplaceName"`
+	WorkplaceLat  float64 `json:"workplaceLat"`
+	WorkplaceLng  float64 `json:"workplaceLng"`
+	RadiusMeters  float64 `json:"radiusMeters"`
+	ExpiresInSecs int64   `json:"expiresInSecs"`
+	Error         string  `json:"error,omitempty"`
+}
+
+

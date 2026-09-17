@@ -34,6 +34,12 @@ import {
   HelpCircle,
   AlertTriangle,
   Flame,
+  MapPin,
+  Coffee,
+  DollarSign,
+  Building2,
+  Smartphone,
+  Navigation,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -273,8 +279,8 @@ const INITIAL_CAMPAIGNS: CampaignItem[] = [
 export default function WhatsAppPage() {
   const { addToast } = useToast();
 
-  // Active Tab: overview | chatbot | campaigns | invoices | logs
-  const [activeTab, setActiveTab] = React.useState<"overview" | "chatbot" | "campaigns" | "invoices" | "logs">("overview");
+  // Active Tab: overview | chatbot | workforce | campaigns | invoices | logs
+  const [activeTab, setActiveTab] = React.useState<"overview" | "chatbot" | "workforce" | "campaigns" | "invoices" | "logs">("overview");
 
   // Config & Status State
   const [config, setConfig] = React.useState<WABAConfig>({
@@ -355,6 +361,34 @@ export default function WhatsAppPage() {
     },
   ]);
 
+  // Workforce Assistant State
+  const [enrolledStaff, setEnrolledStaff] = React.useState<Array<{
+    id: string;
+    name: string;
+    role: string;
+    department?: string;
+    phone?: string;
+    employeeId?: string;
+  }>>([
+    { id: "st-1", name: "Rahul Sharma", role: "waiter", department: "Floor Service", phone: "+91 98765 43210", employeeId: "DF-EMP-1002" },
+    { id: "st-2", name: "Ananya Deshmukh", role: "chef", department: "Kitchen", phone: "+91 98111 22334", employeeId: "DF-EMP-1003" },
+    { id: "st-3", name: "Laurent Bistro Owner", role: "owner", department: "Management", phone: "+91 99999 99999", employeeId: "DF-EMP-1000" },
+    { id: "st-4", name: "Vikram Malhotra", role: "manager", department: "Management", phone: "+91 99887 76655", employeeId: "DF-EMP-1001" },
+    { id: "st-5", name: "Pooja Verma", role: "cashier", department: "Front Desk & Billing", phone: "+91 97654 32109", employeeId: "DF-EMP-1004" },
+  ]);
+  const [selectedStaffPhone, setSelectedStaffPhone] = React.useState<string>("+91 98765 43210");
+  const [wfInput, setWfInput] = React.useState("");
+  const [wfMessages, setWfMessages] = React.useState<Array<{ role: "bot" | "user"; text: string; time: string }>>([
+    {
+      role: "bot",
+      text: "👋 *Hello Rahul Sharma!*\nWelcome to *The Grand Bistro Workforce Assistant*.\n\nReply with an option or number:\n1️⃣ 📍 *Clock In* (GPS Geofence)\n2️⃣ 🚪 *Clock Out* (GPS Geofence)\n3️⃣ ☕ *Break* (Take / Resume Break)\n4️⃣ 🌴 *Leave Balance & Apply*\n5️⃣ 📅 *Shift & Schedule*\n6️⃣ 🕒 *Attendance History*\n7️⃣ 💰 *Latest Payslip*\n8️⃣ 🛎️ *Tasks & Room Service*\n9️⃣ ❓ *Help / Menu*\n\n💡 _Or simply type 'apply sick leave tomorrow' or 'running 15 mins late'!_",
+      time: "Now",
+    },
+  ]);
+  const [isWfSimulating, setIsWfSimulating] = React.useState(false);
+  const [checkInTestLink, setCheckInTestLink] = React.useState<string>("");
+  const [isGeneratingCheckInLink, setIsGeneratingCheckInLink] = React.useState(false);
+
   // ── Fetch Initial Data ──────────────────────────────────────────────────────
 
   const fetchData = React.useCallback(async () => {
@@ -418,6 +452,27 @@ export default function WhatsAppPage() {
     } catch {
       // Keep defaults
     }
+
+    try {
+      // 6. Fetch Staff Directory
+      const staffRes = await apiClient.get("/staff");
+      if (staffRes.data?.data && Array.isArray(staffRes.data.data) && staffRes.data.data.length > 0) {
+        const mapped = staffRes.data.data.map((u: { id?: string; _id?: string; name: string; role: string; department?: string; phone?: string; employeeId?: string }) => ({
+          id: u.id || u._id || "st",
+          name: u.name,
+          role: u.role,
+          department: u.department,
+          phone: u.phone || "+91 98765 43210",
+          employeeId: u.employeeId,
+        }));
+        setEnrolledStaff(mapped);
+        if (mapped[0]?.phone) {
+          setSelectedStaffPhone(mapped[0].phone);
+        }
+      }
+    } catch {
+      // Keep defaults
+    }
   }, []);
 
   React.useEffect(() => {
@@ -425,6 +480,69 @@ export default function WhatsAppPage() {
   }, [fetchData]);
 
   // ── Handlers ────────────────────────────────────────────────────────────────
+
+  const handleSendWorkforceMessage = async (text: string, buttonId?: string) => {
+    const msgText = text.trim();
+    if (!msgText && !buttonId) return;
+
+    const nowTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    setWfMessages((prev) => [...prev, { role: "user", text: msgText || buttonId || "", time: nowTime }]);
+    setWfInput("");
+    setIsWfSimulating(true);
+
+    try {
+      const res = await apiClient.post("/whatsapp/webhook", {
+        fromNumber: selectedStaffPhone,
+        messageText: msgText,
+        buttonId: buttonId,
+      });
+
+      const botReply =
+        res.data?.data?.botReply ||
+        res.data?.botReply ||
+        "DineFlow Workforce Assistant response recorded.";
+
+      setWfMessages((prev) => [...prev, { role: "bot", text: botReply, time: "Just now" }]);
+    } catch {
+      setWfMessages((prev) => [
+        ...prev,
+        {
+          role: "bot",
+          text: "⚠️ [Offline Simulation Fallback]\nAttendance command received and processed.",
+          time: "Just now",
+        },
+      ]);
+    } finally {
+      setIsWfSimulating(false);
+    }
+  };
+
+  const handleGenerateCheckInLink = async (phone: string) => {
+    setIsGeneratingCheckInLink(true);
+    try {
+      const res = await apiClient.post("/whatsapp/webhook", {
+        fromNumber: phone,
+        messageText: "",
+        buttonId: "wf_checkin",
+      });
+      const botReply = res.data?.data?.botReply || res.data?.botReply || "";
+      const match = botReply.match(/https?:\/\/[^\s]+/);
+      if (match) {
+        setCheckInTestLink(match[0]);
+        addToast(
+          "success",
+          "Check-In Link Ready",
+          "15-minute GPS verification link generated successfully."
+        );
+      } else {
+        setCheckInTestLink("/m/check-in");
+      }
+    } catch {
+      setCheckInTestLink("/m/check-in");
+    } finally {
+      setIsGeneratingCheckInLink(false);
+    }
+  };
 
   const handleUpdateConfig = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -668,6 +786,7 @@ export default function WhatsAppPage() {
         {[
           { id: "overview", label: "Overview & WABA", icon: PhoneCall },
           { id: "chatbot", label: "AI Chatbot Studio", icon: BrainCircuit, badge: "Real-Time" },
+          { id: "workforce", label: "Workforce Assistant", icon: Users, badge: "GPS & HR" },
           { id: "campaigns", label: "Marketing Campaigns", icon: Layers, badge: `${campaigns.length}` },
           { id: "invoices", label: "GST Tax Invoices", icon: Receipt, badge: `${invoices.length}` },
           { id: "logs", label: "Dispatch Audit Logs", icon: Clock },
@@ -1000,6 +1119,389 @@ export default function WhatsAppPage() {
                   </Button>
                 </form>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB: WORKFORCE ASSISTANT (ATTENDANCE, LEAVES, SHIFTS & PAYSLIPS) ──── */}
+      {activeTab === "workforce" && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          {/* Top Status & KPI Banner */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card className="border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-950/20">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-emerald-500 text-white shadow-sm">
+                  <ShieldCheck className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">
+                    Workforce Assistant Status
+                  </p>
+                  <p className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
+                    Live & Automated <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  </p>
+                  <p className="text-[10px] text-slate-500">24/7 WhatsApp Cloud Webhook</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-slate-200 dark:border-slate-800">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-blue-500 text-white shadow-sm">
+                  <Navigation className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    GPS Geofence Policy
+                  </p>
+                  <p className="text-base font-extrabold text-slate-900 dark:text-white">
+                    100m Radius Enforced
+                  </p>
+                  <p className="text-[10px] text-slate-500">Haversine spherical distance</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-slate-200 dark:border-slate-800">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-purple-500 text-white shadow-sm">
+                  <Users className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    Enrolled Staff Directory
+                  </p>
+                  <p className="text-base font-extrabold text-slate-900 dark:text-white">
+                    {enrolledStaff.length} Team Members
+                  </p>
+                  <p className="text-[10px] text-slate-500">Phone numbers WhatsApp-linked</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-slate-200 dark:border-slate-800">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-amber-500 text-white shadow-sm">
+                  <Clock className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    Security Token Expiry
+                  </p>
+                  <p className="text-base font-extrabold text-slate-900 dark:text-white">
+                    15-Minute HMAC
+                  </p>
+                  <p className="text-[10px] text-slate-500">Anti-tamper signed URLs</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Main 2-Column Grid: Left Phone Simulator, Right Directory & Policies */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Left Column: Interactive Phone Simulator (5 Cols) */}
+            <div className="lg:col-span-6 space-y-4">
+              <Card className="border-slate-200 dark:border-slate-800 shadow-md">
+                <CardHeader className="pb-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <CardTitle className="text-sm font-bold flex items-center gap-2">
+                        <Smartphone className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                        Interactive Workforce WhatsApp Simulator
+                      </CardTitle>
+                      <CardDescription className="text-xs">
+                        Test staff commands, GPS links, leave flows & manager approvals.
+                      </CardDescription>
+                    </div>
+
+                    {/* Staff Selector */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] text-slate-500 font-medium">Staff:</span>
+                      <select
+                        value={selectedStaffPhone}
+                        onChange={(e) => {
+                          setSelectedStaffPhone(e.target.value);
+                          const st = enrolledStaff.find((s) => s.phone === e.target.value);
+                          if (st) {
+                            setWfMessages([
+                              {
+                                role: "bot",
+                                text: `👋 *Hello ${st.name}!*\nWelcome to *The Grand Bistro Workforce Assistant*.\n\nReply with an option or number:\n1️⃣ 📍 *Clock In* (GPS Geofence)\n2️⃣ 🚪 *Clock Out* (GPS Geofence)\n3️⃣ ☕ *Break* (Take / Resume Break)\n4️⃣ 🌴 *Leave Balance & Apply*\n5️⃣ 📅 *Shift & Schedule*\n6️⃣ 🕒 *Attendance History*\n7️⃣ 💰 *Latest Payslip*\n8️⃣ 🛎️ *Tasks & Room Service*\n9️⃣ ❓ *Help / Menu*`,
+                                time: "Now",
+                              },
+                            ]);
+                          }
+                        }}
+                        className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs rounded-lg px-2.5 py-1.5 font-medium text-slate-900 dark:text-white outline-none"
+                      >
+                        {enrolledStaff.map((s) => (
+                          <option key={s.id} value={s.phone || ""}>
+                            {s.name} ({s.role} - {s.phone})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="p-0">
+                  {/* Quick Action Chips */}
+                  <div className="p-3 bg-slate-50 dark:bg-slate-900/40 border-b border-slate-200 dark:border-slate-800 flex flex-wrap gap-1.5">
+                    {[
+                      { label: "📍 Clock In", buttonId: "wf_checkin" },
+                      { label: "🚪 Clock Out", buttonId: "wf_checkout" },
+                      { label: "☕ Break Toggle", buttonId: "wf_break" },
+                      { label: "🌴 Leave Balance", buttonId: "wf_leave_balance" },
+                      { label: "📅 My Shift", buttonId: "wf_shift" },
+                      { label: "🕒 Attendance Log", buttonId: "wf_attendance" },
+                      { label: "💰 View Payslip", buttonId: "wf_payslip" },
+                      { label: "🛎️ Room Tasks", buttonId: "wf_tasks" },
+                      { label: "⚠️ Running Late", text: "running late 15 mins stuck in metro" },
+                      { label: "🌴 Apply Sick Leave", text: "apply sick leave tomorrow due to fever" },
+                    ].map((chip, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => handleSendWorkforceMessage(chip.text || "", chip.buttonId)}
+                        disabled={isWfSimulating}
+                        className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-emerald-500 hover:text-emerald-600 transition shadow-xs cursor-pointer active:scale-95"
+                      >
+                        {chip.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* WhatsApp Simulator Chat Window */}
+                  <div className="h-96 overflow-y-auto p-4 space-y-3 bg-[#e5ddd5]/30 dark:bg-slate-950/60 font-sans text-xs">
+                    {wfMessages.map((m, idx) => {
+                      const isUser = m.role === "user";
+                      return (
+                        <div
+                          key={idx}
+                          className={`flex ${isUser ? "justify-end" : "justify-start"} animate-in fade-in duration-150`}
+                        >
+                          <div
+                            className={`max-w-[85%] rounded-2xl p-3 shadow-xs relative ${
+                              isUser
+                                ? "bg-emerald-600 text-white rounded-tr-xs"
+                                : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded-tl-xs"
+                            }`}
+                          >
+                            <div className="whitespace-pre-wrap leading-relaxed">
+                              {/* Parse links into clickable anchors */}
+                              {m.text.split(/(\bhttps?:\/\/[^\s]+)/g).map((part, pIdx) => {
+                                if (part.match(/^https?:\/\//)) {
+                                  return (
+                                    <a
+                                      key={pIdx}
+                                      href={part}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className={`font-bold underline break-all inline-flex items-center gap-1 ${
+                                        isUser ? "text-white" : "text-emerald-600 dark:text-emerald-400"
+                                      }`}
+                                    >
+                                      {part.includes("/m/check-in") ? "📲 Open Mobile GPS Check-In Radar" : part}
+                                      <ExternalLink className="w-3 h-3 inline" />
+                                    </a>
+                                  );
+                                }
+                                return part;
+                              })}
+                            </div>
+                            <div
+                              className={`text-[9px] text-right mt-1.5 font-medium ${
+                                isUser ? "text-emerald-100" : "text-slate-400"
+                              }`}
+                            >
+                              {m.time} {isUser && "✓✓"}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {isWfSimulating && (
+                      <div className="flex justify-start">
+                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl rounded-tl-xs p-3 shadow-xs flex items-center gap-2">
+                          <RefreshCw className="w-3.5 h-3.5 text-emerald-600 animate-spin" />
+                          <span className="text-[11px] text-slate-500">Workforce Assistant is typing...</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Input form */}
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleSendWorkforceMessage(wfInput);
+                    }}
+                    className="p-3 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center gap-2"
+                  >
+                    <input
+                      value={wfInput}
+                      onChange={(e) => setWfInput(e.target.value)}
+                      placeholder="Type a message (e.g. Check In, Break, Shift, Leaves)..."
+                      className="flex-1 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:border-emerald-500"
+                    />
+                    <Button variant="glow" size="sm" type="submit" disabled={isWfSimulating}>
+                      <Send className="h-3.5 w-3.5" />
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+
+              {/* Live Link Test Banner if generated */}
+              {checkInTestLink && (
+                <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-between gap-3 animate-in fade-in">
+                  <div className="flex items-center gap-2.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <div>
+                      <p className="text-xs font-bold text-emerald-900 dark:text-emerald-200">
+                        Live Check-In Link Generated
+                      </p>
+                      <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-mono truncate max-w-xs">
+                        {checkInTestLink}
+                      </p>
+                    </div>
+                  </div>
+                  <a
+                    href={checkInTestLink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shrink-0 transition"
+                  >
+                    Open Page <ExternalLink className="w-3 h-3 inline ml-1" />
+                  </a>
+                </div>
+              )}
+            </div>
+
+            {/* Right Column: Enrolled Staff Directory & Policies (6 Cols) */}
+            <div className="lg:col-span-6 space-y-6">
+              {/* Enrolled Staff Directory */}
+              <Card className="border-slate-200 dark:border-slate-800">
+                <CardHeader className="pb-3 border-b border-slate-200 dark:border-slate-800 flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle className="text-sm font-bold flex items-center gap-2">
+                      <Users className="h-4 w-4 text-emerald-600" />
+                      Enrolled Staff Directory ({enrolledStaff.length})
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      Employees configured to access WhatsApp HR & Attendance.
+                    </CardDescription>
+                  </div>
+                  <a
+                    href="/dashboard/staff"
+                    className="text-xs font-bold text-emerald-600 hover:underline inline-flex items-center gap-1"
+                  >
+                    Manage Staff <ArrowRight className="w-3.5 h-3.5" />
+                  </a>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 uppercase tracking-wider font-semibold">
+                        <tr>
+                          <th className="p-3">Employee</th>
+                          <th className="p-3">Department</th>
+                          <th className="p-3">WhatsApp Phone</th>
+                          <th className="p-3 text-right">Quick GPS Link</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                        {enrolledStaff.map((staff) => (
+                          <tr key={staff.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition">
+                            <td className="p-3 font-medium text-slate-900 dark:text-white">
+                              <div>{staff.name}</div>
+                              <span className="text-[10px] font-mono text-slate-400">
+                                {staff.employeeId || "DF-EMP-AUTO"}
+                              </span>
+                            </td>
+                            <td className="p-3">
+                              <Badge variant="neutral" size="sm" className="capitalize">
+                                {staff.role}
+                              </Badge>
+                            </td>
+                            <td className="p-3 font-mono text-[11px] text-slate-600 dark:text-slate-300">
+                              <a
+                                href={`https://wa.me/${staff.phone?.replace(/[^0-9]/g, "")}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-emerald-600 hover:underline inline-flex items-center gap-1"
+                              >
+                                {staff.phone || "No Phone"}
+                                <ExternalLink className="w-2.5 h-2.5" />
+                              </a>
+                            </td>
+                            <td className="p-3 text-right">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={isGeneratingCheckInLink || !staff.phone}
+                                onClick={() => handleGenerateCheckInLink(staff.phone || "")}
+                                className="h-7 text-[11px]"
+                              >
+                                Generate Link
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Workforce Assistant Feature Matrix */}
+              <Card className="border-slate-200 dark:border-slate-800">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-bold flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-emerald-600" />
+                    Workforce Assistant Capabilities
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/50 space-y-1">
+                      <p className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-emerald-600" /> High-Accuracy GPS Geofencing
+                      </p>
+                      <p className="text-[11px] text-slate-500 leading-relaxed">
+                        1-tap secure link opens radar in mobile browser, requests real-time device GPS, and validates distance within 100m.
+                      </p>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/50 space-y-1">
+                      <p className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <Coffee className="w-3.5 h-3.5 text-amber-600" /> Break Time Tracking
+                      </p>
+                      <p className="text-[11px] text-slate-500 leading-relaxed">
+                        Staff reply &apos;BREAK&apos; on WhatsApp to pause or resume shifts with precise duration logs in minutes.
+                      </p>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/50 space-y-1">
+                      <p className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5 text-teal-600" /> 1-Tap Manager Approvals
+                      </p>
+                      <p className="text-[11px] text-slate-500 leading-relaxed">
+                        Managers receive WhatsApp leave alerts with interactive [Approve] and [Reject] buttons, updating balances instantly.
+                      </p>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/50 space-y-1">
+                      <p className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <DollarSign className="w-3.5 h-3.5 text-emerald-600" /> Digital Tax Payslips
+                      </p>
+                      <p className="text-[11px] text-slate-500 leading-relaxed">
+                        Staff text &apos;PAYSLIP&apos; to instantly view take-home pay, earnings, PF/TDS deductions, and print official slips.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>

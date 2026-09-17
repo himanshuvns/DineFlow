@@ -58,6 +58,8 @@ func Setup(
 			publicGroup.GET("/room-tasks/:tenantSlug/:roomNumber", roomHandler.GetPublicRoomTasks)
 			publicGroup.POST("/room-tasks/:tenantSlug/:roomNumber", roomHandler.RequestPublicAmenity)
 			publicGroup.POST("/rooms/:tenantSlug/:roomNumber/extend-stay", roomHandler.PublicExtendStay)
+			publicGroup.GET("/workforce/verify-token", waHandler.VerifyCheckInToken)
+			publicGroup.POST("/workforce/check-in", waHandler.PublicWorkforceCheckIn)
 		}
 
 		// ── Public WhatsApp Webhook (Meta Cloud API) ──────────────────────
@@ -65,6 +67,8 @@ func Setup(
 		v1.POST("/whatsapp/webhook", waHandler.HandleWebhook)
 		v1.GET("/whatsapp/invoices/:id/receipt", waHandler.GetInvoiceReceiptHTML)
 		v1.GET("/staff/payslips/:id/view", staffHandler.GetPayslipHTML)
+		v1.GET("/workforce/verify-token", waHandler.VerifyCheckInToken)
+		v1.POST("/workforce/check-in", waHandler.PublicWorkforceCheckIn)
 
 		// ── Auth (Public) ─────────────────────────────────────────────────
 		auth := v1.Group("/auth")

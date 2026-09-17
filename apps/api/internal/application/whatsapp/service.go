@@ -3,6 +3,10 @@ package whatsapp
 import (
 	"bytes"
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,14 +14,17 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	notifapp "github.com/dineflow/api/internal/application/notification"
+	staffapp "github.com/dineflow/api/internal/application/staff"
 	domainnotif "github.com/dineflow/api/internal/domain/notification"
 	domainorder "github.com/dineflow/api/internal/domain/order"
 	"github.com/dineflow/api/internal/domain/tenant"
+	domainuser "github.com/dineflow/api/internal/domain/user"
 	domainwa "github.com/dineflow/api/internal/domain/whatsapp"
 	mongoinfra "github.com/dineflow/api/internal/infrastructure/mongodb"
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -31,6 +38,7 @@ type NotificationEmitter interface {
 type Service struct {
 	db           *mongoinfra.Client
 	notifService NotificationEmitter
+	staffService *staffapp.Service
 	optOuts      map[string]bool
 	optOutsLock  sync.RWMutex
 	httpClient   *http.Client
@@ -38,14 +46,18 @@ type Service struct {
 
 func NewService(db *mongoinfra.Client) *Service {
 	return &Service{
-		db:          db,
-		optOuts:     make(map[string]bool),
-		httpClient:  &http.Client{Timeout: 10 * time.Second},
+		db:         db,
+		optOuts:    make(map[string]bool),
+		httpClient: &http.Client{Timeout: 10 * time.Second},
 	}
 }
 
 func (s *Service) SetNotificationService(ne NotificationEmitter) {
 	s.notifService = ne
+}
+
+func (s *Service) SetStaffService(ss *staffapp.Service) {
+	s.staffService = ss
 }
 
 // ── Opt-out Management ────────────────────────────────────────────────────────
@@ -122,6 +134,55 @@ func (s *Service) dispatchMetaMessage(ctx context.Context, tenantID bson.ObjectI
 	return fmt.Sprintf("wamid.sandbox_%d_%s", time.Now().UnixNano(), cleanPhone), nil
 }
 
+func (s *Service) dispatchMetaInteractive(ctx context.Context, tenantID bson.ObjectID, recipientPhone string, payload domainwa.OutboundInteractivePayload) (string, error) {
+	cleanPhone := strings.TrimPrefix(strings.ReplaceAll(strings.ReplaceAll(recipientPhone, " ", ""), "-", ""), "+")
+	payload.To = cleanPhone
+	payload.MessagingProduct = "whatsapp"
+	payload.RecipientType = "individual"
+	payload.Type = "interactive"
+
+	config := s.GetWABAStatus(ctx, tenantID)
+	phoneID := config.PhoneNumberID
+	token := config.AccessToken
+
+	if phoneID == "" {
+		phoneID = os.Getenv("WHATSAPP_PHONE_NUMBER_ID")
+	}
+	if token == "" {
+		token = os.Getenv("WHATSAPP_ACCESS_TOKEN")
+	}
+
+	if phoneID != "" && token != "" && !strings.Contains(phoneID, "mock") {
+		url := fmt.Sprintf("https://graph.facebook.com/v21.0/%s/messages", phoneID)
+		bodyBytes, err := json.Marshal(payload)
+		if err == nil {
+			req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(bodyBytes))
+			if err == nil {
+				req.Header.Set("Authorization", "Bearer "+token)
+				req.Header.Set("Content-Type", "application/json")
+
+				resp, err := s.httpClient.Do(req)
+				if err == nil {
+					defer resp.Body.Close()
+					if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+						var metaResp struct {
+							Messages []struct {
+								ID string `json:"id"`
+							} `json:"messages"`
+						}
+						_ = json.NewDecoder(resp.Body).Decode(&metaResp)
+						if len(metaResp.Messages) > 0 {
+							return metaResp.Messages[0].ID, nil
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return fmt.Sprintf("wamid.interactive_sandbox_%d_%s", time.Now().UnixNano(), cleanPhone), nil
+}
+
 // ── Outbound Notifications ───────────────────────────────────────────────────
 
 func (s *Service) LogMessage(ctx context.Context, tenantID bson.ObjectID, recipient, customerName string, tmpl domainwa.TemplateType, body, location string, status domainwa.MessageStatus, extID string) (*domainwa.MessageLog, error) {
@@ -138,6 +199,10 @@ func (s *Service) LogMessage(ctx context.Context, tenantID bson.ObjectID, recipi
 		Location:     location,
 		CreatedAt:    now,
 		DeliveredAt:  &now,
+	}
+
+	if s.db == nil {
+		return log, nil
 	}
 
 	coll := s.db.Collection("whatsapp_logs")
@@ -202,12 +267,13 @@ func (s *Service) ListLogs(ctx context.Context, tenantID bson.ObjectID) ([]domai
 // ── Configuration & Connection Management ────────────────────────────────────
 
 func (s *Service) GetWABAStatus(ctx context.Context, tenantID bson.ObjectID) domainwa.WhatsAppConfig {
-	coll := s.db.Collection("whatsapp_configs")
-	var cfg domainwa.WhatsAppConfig
-
-	err := coll.FindOne(ctx, bson.M{"tenantId": tenantID}).Decode(&cfg)
-	if err == nil {
-		return cfg
+	if s.db != nil {
+		coll := s.db.Collection("whatsapp_configs")
+		var cfg domainwa.WhatsAppConfig
+		err := coll.FindOne(ctx, bson.M{"tenantId": tenantID}).Decode(&cfg)
+		if err == nil {
+			return cfg
+		}
 	}
 
 	// Default fallback config
@@ -255,9 +321,21 @@ type InboundResult struct {
 	BotReply    string `json:"botReply,omitempty"`
 }
 
-// HandleInboundMessage provides backward compatibility while delegating to ProcessChatbotMessage.
+// HandleInboundMessage routes staff to Workforce Assistant and guests to DineBot.
 func (s *Service) HandleInboundMessage(ctx context.Context, fromPhone, messageText string) InboundResult {
-	// Locate tenant from active config or fallback to first tenant
+	// First check if the sender is an enrolled staff member or manager
+	staff, err := s.FindStaffByPhone(ctx, fromPhone)
+	if err == nil && staff != nil {
+		reply, err := s.ProcessWorkforceMessage(ctx, staff, messageText, "")
+		if err == nil {
+			return InboundResult{
+				ActionTaken: fmt.Sprintf("Handled by DineFlow Workforce Assistant for %s (%s).", staff.Name, staff.Role),
+				BotReply:    reply,
+			}
+		}
+	}
+
+	// Fallback to customer dining chatbot
 	tenantID := s.resolveTenantIDForPhone(ctx, fromPhone)
 	reply, _ := s.ProcessChatbotMessage(ctx, tenantID, fromPhone, "Guest", messageText)
 
@@ -271,6 +349,10 @@ func (s *Service) HandleInboundMessage(ctx context.Context, fromPhone, messageTe
 }
 
 func (s *Service) resolveTenantIDForPhone(ctx context.Context, phone string) bson.ObjectID {
+	if s.db == nil {
+		return bson.NewObjectID()
+	}
+
 	var ord domainorder.Order
 	coll := s.db.Collection("orders")
 	if err := coll.FindOne(ctx, bson.M{"customerPhone": phone}, options.FindOne().SetSort(bson.D{{Key: "createdAt", Value: -1}})).Decode(&ord); err == nil && !ord.TenantID.IsZero() {
@@ -289,6 +371,10 @@ func (s *Service) resolveTenantIDForPhone(ctx context.Context, phone string) bso
 func (s *Service) getRestaurantDetails(ctx context.Context, tenantID bson.ObjectID) (name string, slug string) {
 	name = "The Grand Bistro"
 	slug = "the-grand-bistro"
+
+	if s.db == nil {
+		return
+	}
 
 	tenantColl := s.db.Collection("tenants")
 	var t tenant.Tenant
@@ -309,21 +395,24 @@ func (s *Service) ProcessChatbotMessage(ctx context.Context, tenantID bson.Objec
 	restName, restSlug := s.getRestaurantDetails(ctx, tenantID)
 
 	// 1. Session Retrieval or Upsert
-	sessionColl := s.db.Collection("chatbot_sessions")
 	var session domainwa.ChatbotSession
 	now := time.Now().UTC()
+	session = domainwa.ChatbotSession{
+		ID:            bson.NewObjectID(),
+		TenantID:      tenantID,
+		CustomerPhone: fromPhone,
+		CustomerName:  customerName,
+		State:         domainwa.ChatStateIdle,
+		LastMessageAt: now,
+		CreatedAt:     now,
+		UpdatedAt:     now,
+	}
 
-	sessionErr := sessionColl.FindOne(ctx, bson.M{"tenantId": tenantID, "customerPhone": fromPhone}).Decode(&session)
-	if sessionErr != nil {
-		session = domainwa.ChatbotSession{
-			ID:            bson.NewObjectID(),
-			TenantID:      tenantID,
-			CustomerPhone: fromPhone,
-			CustomerName:  customerName,
-			State:         domainwa.ChatStateIdle,
-			LastMessageAt: now,
-			CreatedAt:     now,
-			UpdatedAt:     now,
+	if s.db != nil {
+		sessionColl := s.db.Collection("chatbot_sessions")
+		var existing domainwa.ChatbotSession
+		if err := sessionColl.FindOne(ctx, bson.M{"tenantId": tenantID, "customerPhone": fromPhone}).Decode(&existing); err == nil {
+			session = existing
 		}
 	}
 
@@ -498,9 +587,12 @@ func (s *Service) ProcessChatbotMessage(ctx context.Context, tenantID bson.Objec
 	}
 
 	// Update session
-	session.LastMessageAt = now
-	session.UpdatedAt = now
-	_, _ = sessionColl.UpdateOne(ctx, bson.M{"_id": session.ID}, bson.M{"$set": session}, options.UpdateOne().SetUpsert(true))
+	if s.db != nil {
+		session.LastMessageAt = now
+		session.UpdatedAt = now
+		sessionColl := s.db.Collection("chatbot_sessions")
+		_, _ = sessionColl.UpdateOne(ctx, bson.M{"_id": session.ID}, bson.M{"$set": session}, options.UpdateOne().SetUpsert(true))
+	}
 
 	// Dispatch outbound reply via Meta Cloud API or Sandbox
 	extID, _ := s.dispatchMetaMessage(ctx, tenantID, fromPhone, reply)
@@ -536,19 +628,27 @@ func (s *Service) HandleMetaWebhook(ctx context.Context, payload domainwa.MetaWe
 				}
 
 				var bodyText string
+				var buttonID string
 				if msg.Text != nil {
 					bodyText = msg.Text.Body
 				} else if msg.Interactive != nil {
 					if msg.Interactive.ButtonReply != nil {
+						buttonID = msg.Interactive.ButtonReply.ID
 						bodyText = msg.Interactive.ButtonReply.Title
 					} else if msg.Interactive.ListReply != nil {
+						buttonID = msg.Interactive.ListReply.ID
 						bodyText = msg.Interactive.ListReply.Title
 					}
 				}
 
-				if bodyText != "" {
-					tenantID := s.resolveTenantIDForPhone(ctx, fromPhone)
-					_, _ = s.ProcessChatbotMessage(ctx, tenantID, fromPhone, customerName, bodyText)
+				if bodyText != "" || buttonID != "" {
+					staff, err := s.FindStaffByPhone(ctx, fromPhone)
+					if err == nil && staff != nil {
+						_, _ = s.ProcessWorkforceMessage(ctx, staff, bodyText, buttonID)
+					} else {
+						tenantID := s.resolveTenantIDForPhone(ctx, fromPhone)
+						_, _ = s.ProcessChatbotMessage(ctx, tenantID, fromPhone, customerName, bodyText)
+					}
 				}
 			}
 		}
@@ -1009,3 +1109,765 @@ func (s *Service) GenerateInvoiceHTML(ctx context.Context, invoiceIDStr string) 
 
 	return html, nil
 }
+
+// ── Workforce Assistant Engine ───────────────────────────────────────────────
+
+func (s *Service) getSigningSecret() []byte {
+	secret := os.Getenv("JWT_ACCESS_SECRET")
+	if secret == "" {
+		secret = os.Getenv("WHATSAPP_VERIFY_TOKEN")
+	}
+	if secret == "" {
+		secret = "dineflow_workforce_checkin_secret_key_2026"
+	}
+	return []byte(secret)
+}
+
+func (s *Service) GenerateCheckInToken(tenantID, userID bson.ObjectID, employeeID, action string) (string, error) {
+	expiresAt := time.Now().UTC().Add(15 * time.Minute).Unix()
+	payload := fmt.Sprintf("%s|%s|%s|%s|%d", tenantID.Hex(), userID.Hex(), employeeID, action, expiresAt)
+
+	h := hmac.New(sha256.New, s.getSigningSecret())
+	h.Write([]byte(payload))
+	sig := hex.EncodeToString(h.Sum(nil))
+
+	encodedPayload := base64.RawURLEncoding.EncodeToString([]byte(payload))
+	return fmt.Sprintf("%s.%s", encodedPayload, sig), nil
+}
+
+func (s *Service) ValidateCheckInToken(tokenStr string) (tenantID, userID bson.ObjectID, employeeID, action string, err error) {
+	parts := strings.Split(tokenStr, ".")
+	if len(parts) != 2 {
+		return bson.NilObjectID, bson.NilObjectID, "", "", errors.New("malformed check-in token")
+	}
+
+	payloadBytes, err := base64.RawURLEncoding.DecodeString(parts[0])
+	if err != nil {
+		return bson.NilObjectID, bson.NilObjectID, "", "", errors.New("invalid token encoding")
+	}
+
+	expectedSig := parts[1]
+	h := hmac.New(sha256.New, s.getSigningSecret())
+	h.Write(payloadBytes)
+	actualSig := hex.EncodeToString(h.Sum(nil))
+
+	if !hmac.Equal([]byte(expectedSig), []byte(actualSig)) {
+		return bson.NilObjectID, bson.NilObjectID, "", "", errors.New("invalid or tampered check-in token")
+	}
+
+	fields := strings.Split(string(payloadBytes), "|")
+	if len(fields) != 5 {
+		return bson.NilObjectID, bson.NilObjectID, "", "", errors.New("invalid token payload structure")
+	}
+
+	tOID, err := bson.ObjectIDFromHex(fields[0])
+	if err != nil {
+		return bson.NilObjectID, bson.NilObjectID, "", "", errors.New("invalid tenant ID in token")
+	}
+
+	uOID, err := bson.ObjectIDFromHex(fields[1])
+	if err != nil {
+		return bson.NilObjectID, bson.NilObjectID, "", "", errors.New("invalid user ID in token")
+	}
+
+	employeeID = fields[2]
+	action = fields[3]
+
+	expInt, err := strconv.ParseInt(fields[4], 10, 64)
+	if err != nil || time.Now().UTC().Unix() > expInt {
+		return bson.NilObjectID, bson.NilObjectID, "", "", errors.New("check-in link has expired (15-min limit). Please request a fresh link in WhatsApp")
+	}
+
+	return tOID, uOID, employeeID, action, nil
+}
+
+func (s *Service) getCheckInURL(token string) string {
+	baseURL := os.Getenv("FRONTEND_URL")
+	if baseURL == "" {
+		if os.Getenv("GIN_MODE") == "release" || os.Getenv("RAILWAY_ENVIRONMENT") != "" {
+			baseURL = "https://dineflow-steel.vercel.app"
+		} else {
+			baseURL = "http://localhost:3000"
+		}
+	}
+	return fmt.Sprintf("%s/m/check-in?token=%s", strings.TrimRight(baseURL, "/"), token)
+}
+
+func (s *Service) FindStaffByPhone(ctx context.Context, rawPhone string) (*domainuser.User, error) {
+	norm := domainwa.NormalizePhoneNumber(rawPhone)
+	if norm == "" {
+		return nil, errors.New("empty phone number")
+	}
+
+	if s.db == nil {
+		return nil, errors.New("database client not initialized")
+	}
+
+	coll := s.db.Collection("users")
+	filter := bson.M{
+		"status": bson.M{"$in": []string{"active", "invited"}},
+		"$or": []bson.M{
+			{"phone": rawPhone},
+			{"phone": "+" + rawPhone},
+			{"phone": norm},
+			{"phone": "+91" + norm},
+			{"phone": "91" + norm},
+			{"phone": bson.M{"$regex": norm + "$", "$options": "i"}},
+		},
+	}
+
+	var u domainuser.User
+	err := coll.FindOne(ctx, filter).Decode(&u)
+	if err != nil {
+		return nil, err
+	}
+	return &u, nil
+}
+
+func (s *Service) VerifyCheckInTokenDetails(ctx context.Context, tokenStr string) (*domainwa.WorkforceTokenVerifyResult, error) {
+	tenantID, userID, empID, action, err := s.ValidateCheckInToken(tokenStr)
+	if err != nil {
+		return &domainwa.WorkforceTokenVerifyResult{Valid: false, Error: err.Error()}, nil
+	}
+
+	var u domainuser.User
+	var gf domainuser.GeofenceConfig
+	if s.db != nil {
+		coll := s.db.Collection("users")
+		_ = coll.FindOne(ctx, bson.M{"_id": userID}).Decode(&u)
+
+		gfColl := s.db.Collection("geofence_configs")
+		_ = gfColl.FindOne(ctx, bson.M{"tenantId": tenantID}).Decode(&gf)
+	}
+
+	if gf.Latitude == 0 && gf.Longitude == 0 {
+		gf.Latitude = 28.6139
+		gf.Longitude = 77.2090
+		gf.RadiusMeters = 100
+	}
+
+	restName, _ := s.getRestaurantDetails(ctx, tenantID)
+
+	name := u.Name
+	if name == "" {
+		name = empID
+	}
+
+	return &domainwa.WorkforceTokenVerifyResult{
+		Valid:         true,
+		EmployeeName:  name,
+		EmployeeID:    empID,
+		Action:        action,
+		WorkplaceName: restName,
+		WorkplaceLat:  gf.Latitude,
+		WorkplaceLng:  gf.Longitude,
+		RadiusMeters:  gf.RadiusMeters,
+		ExpiresInSecs: 900,
+	}, nil
+}
+
+func (s *Service) ProcessWorkforceCheckIn(ctx context.Context, input domainwa.WorkforceCheckInInput) (*domainwa.WorkforceCheckInResult, error) {
+	tenantID, userID, empID, action, err := s.ValidateCheckInToken(input.Token)
+	if err != nil {
+		return nil, err
+	}
+
+	var gf domainuser.GeofenceConfig
+	var u domainuser.User
+	if s.db != nil {
+		gfColl := s.db.Collection("geofence_configs")
+		_ = gfColl.FindOne(ctx, bson.M{"tenantId": tenantID}).Decode(&gf)
+
+		usersColl := s.db.Collection("users")
+		_ = usersColl.FindOne(ctx, bson.M{"_id": userID}).Decode(&u)
+	}
+
+	if gf.Latitude == 0 && gf.Longitude == 0 {
+		gf.Latitude = 28.6139
+		gf.Longitude = 77.2090
+		gf.RadiusMeters = 100
+	}
+
+	distance := domainuser.CalculateDistanceMeters(input.Latitude, input.Longitude, gf.Latitude, gf.Longitude)
+	withinGeofence := distance <= gf.RadiusMeters
+
+	empName := u.Name
+	if empName == "" {
+		empName = empID
+	}
+
+	if gf.EnforceGeofence && !withinGeofence {
+		return &domainwa.WorkforceCheckInResult{
+			Success:        false,
+			Action:         action,
+			Status:         "out_of_bounds",
+			EmployeeName:   empName,
+			EmployeeID:     empID,
+			DistanceMeters: distance,
+			AllowedRadius:  gf.RadiusMeters,
+			WithinGeofence: false,
+			Timestamp:      time.Now().UTC().Format(time.RFC3339),
+			Message:        fmt.Sprintf("You are %.0fm away from workplace premises. Allowed geofence radius is %.0fm.", distance, gf.RadiusMeters),
+		}, fmt.Errorf("outside workplace geofence: %.0fm away (allowed: %.0fm)", distance, gf.RadiusMeters)
+	}
+
+	now := time.Now().UTC()
+	var attStatus domainuser.AttendanceStatus = domainuser.AttendancePresent
+
+	if action == "clock_out" {
+		if s.staffService != nil {
+			rec, err := s.staffService.ClockOut(ctx, tenantID, userID, input.Latitude, input.Longitude)
+			if err != nil {
+				return nil, err
+			}
+			reply := fmt.Sprintf("🚪 *Clock-Out Confirmed!*\n\n👤 *%s*\n⏱️ Time: %s\n⏳ Shift Duration: %.2f hrs\n☕ Total Break: %.0f mins\n📍 Distance: %.0fm from workplace\n\nThank you for your hard work today! Have a safe trip home.",
+				empName, now.Format("03:04 PM"), rec.WorkingHours, rec.BreakHours*60, distance)
+			_, _ = s.dispatchMetaMessage(ctx, tenantID, u.Phone, reply)
+			_, _ = s.LogMessage(ctx, tenantID, u.Phone, empName, domainwa.TemplateFeedbackRequest, reply, "Attendance GPS", domainwa.StatusDelivered, "")
+
+			return &domainwa.WorkforceCheckInResult{
+				Success:        true,
+				Action:         "clock_out",
+				Status:         string(rec.Status),
+				EmployeeName:   empName,
+				EmployeeID:     empID,
+				DistanceMeters: distance,
+				AllowedRadius:  gf.RadiusMeters,
+				WithinGeofence: withinGeofence,
+				Timestamp:      now.Format("03:04 PM, 02 Jan 2006"),
+				Message:        "Clock-out successfully verified and recorded.",
+			}, nil
+		}
+	} else {
+		// Clock In
+		if s.staffService != nil {
+			rec, err := s.staffService.ClockIn(ctx, tenantID, userID, input.Latitude, input.Longitude)
+			if err != nil {
+				return nil, err
+			}
+			attStatus = rec.Status
+
+			statusText := "On-Time ✅"
+			if attStatus == domainuser.AttendanceLate {
+				statusText = "Late Arrival ⚠️"
+				if s.notifService != nil {
+					_, _ = s.notifService.CreateNotification(ctx, notifapp.CreateNotificationInput{
+						TenantID:  tenantID,
+						Category:  domainnotif.CategoryStaff,
+						Title:     "Late Arrival Alert",
+						Message:   fmt.Sprintf("%s (%s) clocked in late at %s.", empName, u.Role, now.Format("03:04 PM")),
+						Priority:  domainnotif.PriorityMedium,
+						ActionURL: "/dashboard/staff",
+					})
+				}
+			}
+
+			reply := fmt.Sprintf("✅ *Clock-In Confirmed!*\n\n👤 *%s* (ID: %s)\n⏱️ Time: %s\n📍 Distance: %.0fm from workplace\n📊 Status: *%s*\n\nHave a productive and safe shift!",
+				empName, empID, now.Format("03:04 PM"), distance, statusText)
+			_, _ = s.dispatchMetaMessage(ctx, tenantID, u.Phone, reply)
+			_, _ = s.LogMessage(ctx, tenantID, u.Phone, empName, domainwa.TemplateFeedbackRequest, reply, "Attendance GPS", domainwa.StatusDelivered, "")
+
+			return &domainwa.WorkforceCheckInResult{
+				Success:        true,
+				Action:         "clock_in",
+				Status:         string(attStatus),
+				EmployeeName:   empName,
+				EmployeeID:     empID,
+				DistanceMeters: distance,
+				AllowedRadius:  gf.RadiusMeters,
+				WithinGeofence: withinGeofence,
+				Timestamp:      now.Format("03:04 PM, 02 Jan 2006"),
+				Message:        "Clock-in successfully verified and recorded.",
+			}, nil
+		}
+	}
+
+	return &domainwa.WorkforceCheckInResult{
+		Success:        true,
+		Action:         action,
+		Status:         string(attStatus),
+		EmployeeName:   empName,
+		EmployeeID:     empID,
+		DistanceMeters: distance,
+		AllowedRadius:  gf.RadiusMeters,
+		WithinGeofence: withinGeofence,
+		Timestamp:      now.Format("03:04 PM, 02 Jan 2006"),
+		Message:        "Attendance verified.",
+	}, nil
+}
+
+func (s *Service) notifyManagersOfLeaveRequest(ctx context.Context, tenantID bson.ObjectID, staff *domainuser.User, req *domainuser.LeaveRequest) {
+	usersColl := s.db.Collection("users")
+	cursor, err := usersColl.Find(ctx, bson.M{
+		"tenantId": tenantID,
+		"role":     bson.M{"$in": []string{"owner", "manager"}},
+		"status":   "active",
+	})
+	if err != nil {
+		return
+	}
+	defer cursor.Close(ctx)
+
+	var managers []domainuser.User
+	_ = cursor.All(ctx, &managers)
+
+	leaveIDStr := req.ID.Hex()
+	bodyText := fmt.Sprintf(
+		"🚨 *New Leave Request Submitted*\n\n👤 Employee: *%s* (ID: %s)\n💼 Role/Dept: %s (%s)\n🌴 Type: *%s Leave*\n📅 Dates: *%s to %s* (%.1f days)\n📝 Reason: \"%s\"\n\nPlease review directly below:",
+		staff.Name, staff.EmployeeID, staff.Role, staff.Department,
+		strings.ToUpper(string(req.LeaveType)), req.StartDate, req.EndDate, req.DaysCount, req.Reason,
+	)
+
+	for _, mgr := range managers {
+		if mgr.Phone == "" {
+			continue
+		}
+
+		var payload domainwa.OutboundInteractivePayload
+		payload.Interactive.Type = "button"
+		payload.Interactive.Body.Text = bodyText
+		payload.Interactive.Action.Buttons = []domainwa.InteractiveButton{
+			{
+				Type: "reply",
+				Reply: struct {
+					ID    string `json:"id"`
+					Title string `json:"title"`
+				}{
+					ID:    "leave_approve_" + leaveIDStr,
+					Title: "✅ Approve",
+				},
+			},
+			{
+				Type: "reply",
+				Reply: struct {
+					ID    string `json:"id"`
+					Title string `json:"title"`
+				}{
+					ID:    "leave_reject_" + leaveIDStr,
+					Title: "❌ Reject",
+				},
+			},
+		}
+
+		_, _ = s.dispatchMetaInteractive(ctx, tenantID, mgr.Phone, payload)
+		textNotice := fmt.Sprintf("%s\n\nReply:\n• *APPROVE %s*\n• *REJECT %s*", bodyText, leaveIDStr, leaveIDStr)
+		extID, _ := s.dispatchMetaMessage(ctx, tenantID, mgr.Phone, textNotice)
+		_, _ = s.LogMessage(ctx, tenantID, mgr.Phone, mgr.Name, domainwa.TemplateFeedbackRequest, textNotice, "Manager Leave Approval", domainwa.StatusDelivered, extID)
+	}
+
+	if s.notifService != nil {
+		_, _ = s.notifService.CreateNotification(ctx, notifapp.CreateNotificationInput{
+			TenantID:  tenantID,
+			Category:  domainnotif.CategoryStaff,
+			Title:     "New Leave Request",
+			Message:   fmt.Sprintf("%s applied for %s leave (%s to %s).", staff.Name, req.LeaveType, req.StartDate, req.EndDate),
+			Priority:  domainnotif.PriorityHigh,
+			ActionURL: "/dashboard/staff",
+		})
+	}
+}
+
+func (s *Service) ProcessWorkforceMessage(ctx context.Context, staff *domainuser.User, messageText, buttonID string) (string, error) {
+	cleanText := strings.TrimSpace(messageText)
+	lower := strings.ToLower(cleanText)
+	tenantID := staff.TenantID
+	restName, _ := s.getRestaurantDetails(ctx, tenantID)
+	now := time.Now().UTC()
+	todayStr := now.Format("2006-01-02")
+
+	var session domainwa.WorkforceSession
+	session = domainwa.WorkforceSession{
+		ID:            bson.NewObjectID(),
+		TenantID:      tenantID,
+		UserID:        staff.ID,
+		EmployeeID:    staff.EmployeeID,
+		Phone:         staff.Phone,
+		State:         domainwa.WFStateIdle,
+		LastMessageAt: now,
+		CreatedAt:     now,
+		UpdatedAt:     now,
+	}
+	if s.db != nil {
+		wfSessionColl := s.db.Collection("workforce_sessions")
+		var existing domainwa.WorkforceSession
+		if err := wfSessionColl.FindOne(ctx, bson.M{"tenantId": tenantID, "userId": staff.ID}).Decode(&existing); err == nil {
+			session = existing
+		}
+	}
+
+	var reply string
+
+	isManager := staff.Role == domainuser.RoleOwner || staff.Role == domainuser.RoleManager || staff.Permissions.CanApproveLeave
+
+	if isManager && (strings.HasPrefix(buttonID, "leave_approve_") || strings.HasPrefix(lower, "approve ")) {
+		leaveIDStr := strings.TrimPrefix(buttonID, "leave_approve_")
+		if leaveIDStr == "" || leaveIDStr == buttonID {
+			leaveIDStr = strings.TrimSpace(strings.TrimPrefix(cleanText, "approve"))
+			leaveIDStr = strings.TrimSpace(strings.TrimPrefix(leaveIDStr, "APPROVE"))
+		}
+		lOID, err := bson.ObjectIDFromHex(leaveIDStr)
+		if err == nil && s.staffService != nil {
+			req, appErr := s.staffService.ApproveLeave(ctx, tenantID, lOID, staff.Name)
+			if appErr == nil && req != nil {
+				reply = fmt.Sprintf("✅ *Leave Approved Successfully!*\n\nEmployee: *%s*\nType: %s\nDates: %s to %s (%.1f days)\nStatus: Approved by %s",
+					req.EmployeeName, req.LeaveType, req.StartDate, req.EndDate, req.DaysCount, staff.Name)
+
+				var empUser domainuser.User
+				if err := s.db.Collection("users").FindOne(ctx, bson.M{"_id": req.UserID}).Decode(&empUser); err == nil && empUser.Phone != "" {
+					empNotice := fmt.Sprintf("🎉 *Good News! Leave Approved*\n\nHello *%s*,\nYour requested *%s Leave* from *%s to %s* (%.1f days) has been APPROVED by %s.\n\nEnjoy your time off! ✨",
+						empUser.Name, strings.ToUpper(string(req.LeaveType)), req.StartDate, req.EndDate, req.DaysCount, staff.Name)
+					_, _ = s.dispatchMetaMessage(ctx, tenantID, empUser.Phone, empNotice)
+					_, _ = s.LogMessage(ctx, tenantID, empUser.Phone, empUser.Name, domainwa.TemplateFeedbackRequest, empNotice, "Leave Notification", domainwa.StatusDelivered, "")
+				}
+			} else {
+				reply = fmt.Sprintf("⚠️ Unable to approve leave request: %v", appErr)
+			}
+		} else {
+			reply = "⚠️ Invalid Leave ID. Please verify the request."
+		}
+	} else if isManager && (strings.HasPrefix(buttonID, "leave_reject_") || strings.HasPrefix(lower, "reject ")) {
+		leaveIDStr := strings.TrimPrefix(buttonID, "leave_reject_")
+		if leaveIDStr == "" || leaveIDStr == buttonID {
+			leaveIDStr = strings.TrimSpace(strings.TrimPrefix(cleanText, "reject"))
+			leaveIDStr = strings.TrimSpace(strings.TrimPrefix(leaveIDStr, "REJECT"))
+		}
+		lOID, err := bson.ObjectIDFromHex(leaveIDStr)
+		if err == nil && s.staffService != nil {
+			req, rejErr := s.staffService.RejectLeave(ctx, tenantID, lOID, staff.Name, "Operational requirements")
+			if rejErr == nil && req != nil {
+				reply = fmt.Sprintf("❌ *Leave Rejected*\n\nEmployee: *%s*\nType: %s\nDates: %s to %s\nStatus: Rejected by %s",
+					req.EmployeeName, req.LeaveType, req.StartDate, req.EndDate, staff.Name)
+
+				var empUser domainuser.User
+				if err := s.db.Collection("users").FindOne(ctx, bson.M{"_id": req.UserID}).Decode(&empUser); err == nil && empUser.Phone != "" {
+					empNotice := fmt.Sprintf("⚠️ *Leave Request Update*\n\nHello *%s*,\nYour requested *%s Leave* from *%s to %s* was not approved due to operational requirements.\nPlease connect with %s for details.",
+						empUser.Name, strings.ToUpper(string(req.LeaveType)), req.StartDate, req.EndDate, staff.Name)
+					_, _ = s.dispatchMetaMessage(ctx, tenantID, empUser.Phone, empNotice)
+				}
+			} else {
+				reply = fmt.Sprintf("⚠️ Unable to reject leave request: %v", rejErr)
+			}
+		} else {
+			reply = "⚠️ Invalid Leave ID. Please verify the request."
+		}
+	} else if session.State == domainwa.WFStateAwaitingLeaveDates && lower != "cancel" {
+		session.State = domainwa.WFStateIdle
+
+		leaveType := domainuser.LeaveCasual
+		if strings.Contains(lower, "sick") || strings.Contains(lower, "ill") || strings.Contains(lower, "fever") || strings.Contains(lower, "doctor") {
+			leaveType = domainuser.LeaveSick
+		} else if strings.Contains(lower, "earned") || strings.Contains(lower, "annual") || strings.Contains(lower, "vacation") {
+			leaveType = domainuser.LeaveEarned
+		}
+
+		startDate := todayStr
+		endDate := todayStr
+		days := 1.0
+
+		if strings.Contains(lower, "tomorrow") {
+			startDate = now.AddDate(0, 0, 1).Format("2006-01-02")
+			endDate = startDate
+		}
+
+		dateRe := regexp.MustCompile(`\d{4}-\d{2}-\d{2}`)
+		dates := dateRe.FindAllString(cleanText, -1)
+		if len(dates) == 1 {
+			startDate = dates[0]
+			endDate = dates[0]
+		} else if len(dates) >= 2 {
+			startDate = dates[0]
+			endDate = dates[1]
+			t1, _ := time.Parse("2006-01-02", startDate)
+			t2, _ := time.Parse("2006-01-02", endDate)
+			if t2.After(t1) {
+				days = math.Round(t2.Sub(t1).Hours()/24.0) + 1.0
+			}
+		}
+
+		leaveReq := domainuser.LeaveRequest{
+			LeaveType: leaveType,
+			StartDate: startDate,
+			EndDate:   endDate,
+			DaysCount: days,
+			Reason:    cleanText,
+		}
+
+		if s.staffService != nil {
+			created, err := s.staffService.ApplyLeave(ctx, tenantID, staff.ID, leaveReq)
+			if err != nil {
+				reply = fmt.Sprintf("⚠️ Could not submit leave request: %v", err)
+			} else {
+				s.notifyManagersOfLeaveRequest(ctx, tenantID, staff, created)
+				reply = fmt.Sprintf(
+					"🌴 *Leave Request Submitted Successfully!*\n\n"+
+						"👤 Employee: *%s* (ID: %s)\n"+
+						"🏷️ Type: *%s*\n"+
+						"📅 Dates: *%s to %s* (%.1f days)\n"+
+						"📝 Reason: \"%s\"\n"+
+						"⏱️ Status: *Pending Manager Approval*\n\n"+
+						"We'll message you here on WhatsApp as soon as your manager reviews it! ✨",
+					staff.Name, staff.EmployeeID, strings.ToUpper(string(leaveType)), startDate, endDate, days, cleanText,
+				)
+			}
+		}
+	} else if lower == "cancel" {
+		session.State = domainwa.WFStateIdle
+		reply = "Operation cancelled. Reply *MENU* or *HELP* to see available options."
+	} else if buttonID == domainwa.BtnWFCheckIn || lower == "checkin" || lower == "check in" || lower == "clock in" || lower == "clockin" || lower == "in" || lower == "1" {
+		token, err := s.GenerateCheckInToken(tenantID, staff.ID, staff.EmployeeID, "clock_in")
+		if err != nil {
+			reply = "⚠️ Error generating check-in link. Please try again."
+		} else {
+			link := s.getCheckInURL(token)
+			reply = fmt.Sprintf(
+				"📍 *Attendance Verification — Clock In*\n\n"+
+					"Hello *%s*! Tap the secure link below on your mobile device to verify GPS coordinates within workplace premises:\n\n"+
+					"👉 %s\n\n"+
+					"⏱️ _Link expires in 15 minutes._\n"+
+					"🏢 _Workplace: %s (Geofence: 100m)_",
+				staff.Name, link, restName,
+			)
+		}
+	} else if buttonID == domainwa.BtnWFCheckOut || lower == "checkout" || lower == "check out" || lower == "clock out" || lower == "clockout" || lower == "out" || lower == "2" {
+		token, err := s.GenerateCheckInToken(tenantID, staff.ID, staff.EmployeeID, "clock_out")
+		if err != nil {
+			reply = "⚠️ Error generating check-out link. Please try again."
+		} else {
+			link := s.getCheckInURL(token)
+			reply = fmt.Sprintf(
+				"🚪 *Attendance Verification — Clock Out*\n\n"+
+					"Hello *%s*! Tap the secure link below to verify your workplace GPS and complete checkout:\n\n"+
+					"👉 %s\n\n"+
+					"⏱️ _Link expires in 15 minutes._\n"+
+					"Thank you for your dedication today!",
+				staff.Name, link,
+			)
+		}
+	} else if buttonID == domainwa.BtnWFBreak || lower == "break" || lower == "tea" || lower == "lunch" || lower == "coffee" || lower == "pause" || lower == "3" {
+		if s.staffService != nil {
+			rec, err := s.staffService.ToggleBreak(ctx, tenantID, staff.ID)
+			if err != nil {
+				reply = fmt.Sprintf("⚠️ %v\nReply *CHECKIN* first if you haven't started your shift today.", err)
+			} else if rec.IsOnBreak {
+				reply = fmt.Sprintf(
+					"☕ *Break Started* at %s!\n\n"+
+						"Enjoy your break and refresh yourself! 🥐\n"+
+						"When you are ready to resume work, simply reply *BREAK* again.",
+					now.Format("03:04 PM"),
+				)
+			} else {
+				reply = fmt.Sprintf(
+					"✅ *Welcome Back! Break Ended*\n\n"+
+						"Resumed at: %s\n"+
+						"Total break time today: %.0f mins\n"+
+						"Your shift hours are actively counting. Have a great shift!",
+					now.Format("03:04 PM"), rec.BreakHours*60,
+				)
+			}
+		}
+	} else if buttonID == domainwa.BtnWFLeaveBalance || lower == "balance" || lower == "leave balance" || lower == "leaves" || lower == "4" {
+		if s.staffService != nil {
+			bal, err := s.staffService.GetLeaveBalances(ctx, tenantID, staff.ID)
+			if err != nil {
+				reply = fmt.Sprintf("⚠️ Could not retrieve leave balance: %v", err)
+			} else {
+				reply = fmt.Sprintf(
+					"🌴 *Your Leave Balances (%d)*\n\n"+
+						"👤 *%s* (ID: %s)\n\n"+
+						"• *Casual Leave*: %.1f available (Used: %.1f / %.1f)\n"+
+						"• *Sick Leave*: %.1f available (Used: %.1f / %.1f)\n"+
+						"• *Earned Leave*: %.1f available (Used: %.1f / %.1f)\n\n"+
+						"📝 Reply *LEAVE* to apply for leave directly.",
+					bal.Year, staff.Name, staff.EmployeeID,
+					bal.CasualTotal-bal.CasualUsed, bal.CasualUsed, bal.CasualTotal,
+					bal.SickTotal-bal.SickUsed, bal.SickUsed, bal.SickTotal,
+					bal.EarnedTotal-bal.EarnedUsed, bal.EarnedUsed, bal.EarnedTotal,
+				)
+			}
+		}
+	} else if buttonID == domainwa.BtnWFLeave || lower == "leave" || lower == "apply leave" || strings.HasPrefix(lower, "apply ") {
+		if strings.Contains(lower, "tomorrow") || strings.Contains(lower, "today") || regexp.MustCompile(`\d{4}-\d{2}-\d{2}`).MatchString(cleanText) {
+			session.State = domainwa.WFStateAwaitingLeaveDates
+			return s.ProcessWorkforceMessage(ctx, staff, messageText, "")
+		}
+
+		session.State = domainwa.WFStateAwaitingLeaveDates
+		reply = fmt.Sprintf(
+			"🌴 *Apply for Leave*\n\n"+
+				"Hello *%s*! Please reply with your requested dates and type, for example:\n"+
+				"• _\"Casual leave tomorrow\"_\n"+
+				"• _\"Sick leave on 2026-09-22 due to fever\"_\n"+
+				"• _\"Earned leave from 2026-09-25 to 2026-09-28 for family trip\"_\n\n"+
+				"Or reply *CANCEL* to return to menu.",
+			staff.Name,
+		)
+	} else if buttonID == domainwa.BtnWFShift || lower == "shift" || lower == "schedule" || lower == "timing" || lower == "hours" || lower == "5" {
+		shiftName := staff.ShiftName
+		if shiftName == "" {
+			shiftName = "General / Flexible Shift"
+		}
+		dept := staff.Department
+		if dept == "" {
+			dept = "Service & Operations"
+		}
+
+		reply = fmt.Sprintf(
+			"📅 *Your Work Schedule & Roster*\n\n"+
+				"👤 *%s* (ID: %s)\n"+
+				"💼 Department: *%s*\n"+
+				"🏷️ Assigned Shift: *%s*\n"+
+				"⏰ Typical Hours: 09:00 AM – 06:00 PM\n"+
+				"⏳ Grace Period: 15 mins\n"+
+				"☕ Standard Break: 60 mins\n\n"+
+				"📍 Workplace: %s\n"+
+				"Reply *CHECKIN* when you arrive on site!",
+			staff.Name, staff.EmployeeID, dept, shiftName, restName,
+		)
+	} else if buttonID == domainwa.BtnWFAttendance || lower == "attendance" || lower == "history" || lower == "log" || lower == "6" {
+		if s.staffService != nil {
+			startStr := now.AddDate(0, 0, -7).Format("2006-01-02")
+			endStr := todayStr
+			history, err := s.staffService.GetAttendanceHistory(ctx, tenantID, &staff.ID, startStr, endStr)
+			if err != nil || len(history) == 0 {
+				reply = "🕒 *Attendance History (Last 7 Days)*\n\nNo records found for the past week.\nReply *CHECKIN* to clock in today!"
+			} else {
+				var sb strings.Builder
+				sb.WriteString(fmt.Sprintf("🕒 *Attendance History (Last 7 Days)*\n👤 *%s*\n\n", staff.Name))
+				for _, h := range history {
+					icon := "✅"
+					if h.Status == domainuser.AttendanceLate {
+						icon = "⚠️"
+					} else if h.Status == domainuser.AttendanceHalfDay {
+						icon = "🌓"
+					} else if h.Status == domainuser.AttendanceOnLeave {
+						icon = "🌴"
+					}
+
+					inTime := "—"
+					if h.CheckInTime != nil {
+						inTime = h.CheckInTime.Format("03:04 PM")
+					}
+					outTime := "—"
+					if h.CheckOutTime != nil {
+						outTime = h.CheckOutTime.Format("03:04 PM")
+					}
+
+					sb.WriteString(fmt.Sprintf("• *%s*: %s %s (In: %s | Out: %s) [%.1f hrs]\n",
+						h.Date, icon, strings.ToUpper(string(h.Status)), inTime, outTime, h.WorkingHours))
+				}
+				reply = sb.String()
+			}
+		}
+	} else if buttonID == domainwa.BtnWFPayslip || lower == "payslip" || lower == "salary" || lower == "pay" || lower == "7" {
+		var p domainuser.PayrollRecord
+		var pFound bool
+		if s.db != nil {
+			payrollColl := s.db.Collection("payroll")
+			pErr := payrollColl.FindOne(ctx, bson.M{"tenantId": tenantID, "userId": staff.ID}, options.FindOne().SetSort(bson.D{{Key: "createdAt", Value: -1}})).Decode(&p)
+			pFound = pErr == nil && !p.ID.IsZero()
+		}
+		if pFound {
+			baseURL := os.Getenv("FRONTEND_URL")
+			if baseURL == "" {
+				baseURL = "https://dineflow-steel.vercel.app"
+			}
+			payslipURL := fmt.Sprintf("%s/staff/payslips/%s/view", baseURL, p.ID.Hex())
+
+			reply = fmt.Sprintf(
+				"💰 *Latest Payslip (%s)*\n\n"+
+					"👤 *%s* (ID: %s)\n"+
+					"💼 Role: %s | Dept: %s\n\n"+
+					"💵 Basic Salary: ₹%.2f\n"+
+					"🏠 HRA & Allowances: ₹%.2f\n"+
+					"⏱️ Overtime Pay: ₹%.2f (%.1f hrs)\n"+
+					"📈 Gross Earnings: ₹%.2f\n"+
+					"📉 Deductions (PF/TDS): ₹%.2f\n"+
+					"--------------------------------\n"+
+					"💳 *Net Take-Home: ₹%.2f* (%s)\n\n"+
+					"📄 Download & Print Digital Payslip:\n👉 %s",
+				p.Month, p.EmployeeName, p.EmployeeID, p.Role, p.Department,
+				p.BasicSalary, p.HRA+p.Allowances, p.OvertimePay, p.OvertimeHours,
+				p.GrossEarnings, p.Deductions, p.NetPay, strings.ToUpper(p.PaymentStatus),
+				payslipURL,
+			)
+		} else {
+			reply = fmt.Sprintf(
+				"💰 *Salary Information*\n\n"+
+					"👤 *%s* (ID: %s)\n"+
+					"💵 Basic: ₹%.2f | HRA: ₹%.2f\n"+
+					"⏱️ Overtime Rate: ₹%.2f/hr\n\n"+
+					"ℹ️ Monthly payslips are generated on the 1st of every month.",
+				staff.Name, staff.EmployeeID, staff.Salary.Basic, staff.Salary.HRA, staff.Salary.OvertimeRate,
+			)
+		}
+	} else if buttonID == domainwa.BtnWFTasks || lower == "tasks" || lower == "task" || lower == "rooms" || lower == "cleaning" || lower == "8" {
+		var roomOrders []domainorder.Order
+		if s.db != nil {
+			orderColl := s.db.Collection("orders")
+			cursor, _ := orderColl.Find(ctx, bson.M{
+				"tenantId":    tenantID,
+				"destination": "room_service",
+				"status":      bson.M{"$in": []string{"pending", "preparing", "ready"}},
+			}, options.Find().SetLimit(5))
+
+			if cursor != nil {
+				_ = cursor.All(ctx, &roomOrders)
+			}
+		}
+
+		if len(roomOrders) > 0 {
+			var sb strings.Builder
+			sb.WriteString(fmt.Sprintf("🛎️ *Active In-Room Service Tasks (%d)*\n\n", len(roomOrders)))
+			for _, ord := range roomOrders {
+				sb.WriteString(fmt.Sprintf("• Room *%s* (Order #%s) — %s (₹%.0f)\n", ord.RoomNumber, ord.OrderNumber, ord.Status, ord.TotalAmount))
+			}
+			sb.WriteString("\nCheck KDS or Room Service tab to update status.")
+			reply = sb.String()
+		} else {
+			reply = fmt.Sprintf("✨ *All Clear!*\nNo active room service orders or pending tasks in %s at this moment.", restName)
+		}
+	} else if strings.Contains(lower, "late") && (strings.Contains(lower, "running") || strings.Contains(lower, "traffic") || strings.Contains(lower, "delay") || strings.Contains(lower, "mins")) {
+		reply = fmt.Sprintf("⚠️ *Late Notice Acknowledged*\n\nThank you for updating us, *%s*. We have logged your delay message (\"%s\") and notified the floor manager. Please drive safely!", staff.Name, cleanText)
+
+		if s.notifService != nil {
+			_, _ = s.notifService.CreateNotification(ctx, notifapp.CreateNotificationInput{
+				TenantID:  tenantID,
+				Category:  domainnotif.CategoryStaff,
+				Title:     "Staff Delay Reported",
+				Message:   fmt.Sprintf("%s (%s) reported running late: \"%s\"", staff.Name, staff.Role, cleanText),
+				Priority:  domainnotif.PriorityMedium,
+				ActionURL: "/dashboard/staff",
+			})
+		}
+	} else {
+		reply = fmt.Sprintf(
+			"👋 *Hello %s!*\n"+
+				"Welcome to *%s Workforce Assistant*.\n\n"+
+				"Reply with an option or number:\n\n"+
+				"1️⃣ 📍 *Clock In* (GPS Geofence)\n"+
+				"2️⃣ 🚪 *Clock Out* (GPS Geofence)\n"+
+				"3️⃣ ☕ *Break* (Take / Resume Break)\n"+
+				"4️⃣ 🌴 *Leave Balance & Apply*\n"+
+				"5️⃣ 📅 *Shift & Schedule*\n"+
+				"6️⃣ 🕒 *Attendance History*\n"+
+				"7️⃣ 💰 *Latest Payslip*\n"+
+				"8️⃣ 🛎️ *Tasks & Room Service*\n"+
+				"9️⃣ ❓ *Help / Menu*\n\n"+
+				"💡 _Or simply type 'apply sick leave tomorrow' or 'running 15 mins late'!_",
+			staff.Name, restName,
+		)
+	}
+
+	if s.db != nil {
+		session.LastMessageAt = now
+		session.UpdatedAt = now
+		wfSessionColl := s.db.Collection("workforce_sessions")
+		_, _ = wfSessionColl.UpdateOne(ctx, bson.M{"_id": session.ID}, bson.M{"$set": session}, options.UpdateOne().SetUpsert(true))
+	}
+
+	extID, _ := s.dispatchMetaMessage(ctx, tenantID, staff.Phone, reply)
+	_, _ = s.LogMessage(ctx, tenantID, staff.Phone, staff.Name, domainwa.TemplateFeedbackRequest, reply, "Workforce Assistant", domainwa.StatusDelivered, extID)
+
+	return reply, nil
+}
+

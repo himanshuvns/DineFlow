@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -67,8 +68,20 @@ func (h *WhatsAppHandler) HandleWebhook(c *gin.Context) {
 	var legacyPayload struct {
 		FromNumber  string `json:"fromNumber"`
 		MessageText string `json:"messageText"`
+		ButtonID    string `json:"buttonId"`
 	}
 	if err := json.Unmarshal(bodyBytes, &legacyPayload); err == nil && legacyPayload.FromNumber != "" {
+		staff, err := h.waService.FindStaffByPhone(c.Request.Context(), legacyPayload.FromNumber)
+		if err == nil && staff != nil {
+			reply, _ := h.waService.ProcessWorkforceMessage(c.Request.Context(), staff, legacyPayload.MessageText, legacyPayload.ButtonID)
+			response.OK(c, gin.H{
+				"actionTaken": fmt.Sprintf("Handled by DineFlow Workforce Assistant for %s (%s).", staff.Name, staff.Role),
+				"botReply":    reply,
+				"isWorkforce": true,
+			})
+			return
+		}
+
 		result := h.waService.HandleInboundMessage(c.Request.Context(), legacyPayload.FromNumber, legacyPayload.MessageText)
 		response.OK(c, result)
 		return
@@ -411,3 +424,48 @@ func (h *WhatsAppHandler) GetInvoiceReceiptHTML(c *gin.Context) {
 
 	c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(html))
 }
+
+// VerifyCheckInToken godoc
+// GET /api/v1/public/workforce/verify-token
+func (h *WhatsAppHandler) VerifyCheckInToken(c *gin.Context) {
+	token := c.Query("token")
+	if token == "" {
+		response.BadRequest(c, "MISSING_TOKEN", "token query parameter is required")
+		return
+	}
+
+	result, err := h.waService.VerifyCheckInTokenDetails(c.Request.Context(), token)
+	if err != nil || !result.Valid {
+		errMsg := "Invalid or expired check-in link"
+		if result != nil && result.Error != "" {
+			errMsg = result.Error
+		}
+		response.BadRequest(c, "INVALID_TOKEN", errMsg)
+		return
+	}
+
+	response.OK(c, result)
+}
+
+// PublicWorkforceCheckIn godoc
+// POST /api/v1/public/workforce/check-in
+func (h *WhatsAppHandler) PublicWorkforceCheckIn(c *gin.Context) {
+	var input domainwa.WorkforceCheckInInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		response.BadRequest(c, "INVALID_PAYLOAD", err.Error())
+		return
+	}
+
+	res, err := h.waService.ProcessWorkforceCheckIn(c.Request.Context(), input)
+	if err != nil {
+		if res != nil && !res.Success {
+			response.BadRequest(c, "GEOFENCE_VIOLATION", res.Message)
+			return
+		}
+		response.BadRequest(c, "CHECKIN_FAILED", err.Error())
+		return
+	}
+
+	response.OK(c, res)
+}
+

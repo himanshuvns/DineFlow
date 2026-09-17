@@ -166,6 +166,7 @@ func main() {
 	// Inject notifService into order, whatsapp & staff services for real-time event emission
 	orderService.SetNotificationService(notifService)
 	waService.SetNotificationService(notifService)
+	waService.SetStaffService(staffService)
 	staffService.SetNotificationService(notifService)
 
 	// Inject ping functions for health endpoint
