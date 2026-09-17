@@ -8,6 +8,7 @@ import (
 
 	platformapp "github.com/dineflow/api/internal/application/platform"
 	domainplat "github.com/dineflow/api/internal/domain/platform"
+	"github.com/dineflow/api/internal/interfaces/http/middleware"
 	"github.com/dineflow/api/pkg/response"
 	"github.com/gin-gonic/gin"
 )
@@ -588,4 +589,27 @@ func (h *PlatformHandler) ExitImpersonation(c *gin.Context) {
 	})
 
 	response.OK(c, gin.H{"message": "Impersonation session concluded."})
+}
+
+// Logout godoc
+// POST /api/v1/platform/auth/logout
+// Securely terminates the platform super admin session, revokes tokens, and records audit trail.
+func (h *PlatformHandler) Logout(c *gin.Context) {
+	tokenID := middleware.GetTokenID(c)
+	actor := h.extractActor(c)
+
+	_ = h.svc.Logout(c.Request.Context(), tokenID, actor, c.ClientIP())
+
+	// Clear HttpOnly refresh token cookie
+	c.SetCookie(
+		"refresh_token",
+		"",
+		-1,
+		"/",
+		"",
+		false,
+		true,
+	)
+
+	response.OK(c, gin.H{"message": "Super Admin signed out successfully."})
 }

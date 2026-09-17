@@ -1336,6 +1336,25 @@ func (s *Service) FlushCache(ctx context.Context, actor domainplat.AuditActor, i
 	return nil
 }
 
+// Logout securely terminates an elevated platform admin session, revoking the token and logging an audit event.
+func (s *Service) Logout(ctx context.Context, tokenID string, actor domainplat.AuditActor, ip string) error {
+	if tokenID != "" && s.redis != nil {
+		_ = s.redis.RevokeRefreshToken(ctx, tokenID)
+	}
+
+	s.RecordAuditLog(ctx, domainplat.AuditLogRecord{
+		Timestamp: time.Now().UTC(),
+		Actor:     actor,
+		Action:    "platform.super_admin_logout",
+		Category:  "security",
+		TargetID:  "platform_console",
+		IPAddress: ip,
+		Details:   fmt.Sprintf("Super Admin %s (%s) securely signed out from Platform Console.", actor.Name, actor.Email),
+	})
+
+	return nil
+}
+
 // ─── Platform Notifications ───────────────────────────────────────────────────
 
 func (s *Service) ListNotifications(ctx context.Context, page, limit int) ([]domainplat.PlatformNotificationRecord, int64, int64, error) {

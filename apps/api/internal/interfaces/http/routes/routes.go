@@ -290,6 +290,9 @@ func Setup(
 
 				// CSV Exports
 				platformGroup.GET("/export/:entity", middleware.FinanceAdminOrAbove(), platformHandler.ExportCSV)
+
+				// Super Admin Logout
+				platformGroup.POST("/auth/logout", platformHandler.Logout)
 			}
 
 			// ── WhatsApp Marketing & Invoicing (Meta Cloud API, AI Chatbot & GST Invoicing) ───

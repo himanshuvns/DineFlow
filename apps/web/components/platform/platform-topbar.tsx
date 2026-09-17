@@ -43,10 +43,21 @@ export function PlatformTopbar() {
     fetchNotifications,
     markNotificationRead,
     markAllNotificationsRead,
+    logoutPlatform,
   } = usePlatformStore();
   const [searchOpen, setSearchOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [notificationsOpen, setNotificationsOpen] = React.useState(false);
+  const [isLoggingOut, setIsLoggingOut] = React.useState(false);
+
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    try {
+      await logoutPlatform();
+    } catch {}
+    router.push("/login");
+  };
 
   React.useEffect(() => {
     fetchNotifications();
@@ -255,6 +266,17 @@ export function PlatformTopbar() {
               {getRoleLabel(user?.role || "super_admin")}
             </span>
           </div>
+
+          {/* Dedicated Sign Out Button */}
+          <button
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50/70 hover:bg-rose-100/90 dark:bg-rose-950/25 dark:hover:bg-rose-950/50 text-rose-700 dark:text-rose-300 text-xs font-bold transition-all cursor-pointer shadow-xs disabled:opacity-50"
+            title="Sign out of Super Admin Console"
+          >
+            <LogOut className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">{isLoggingOut ? "Signing out…" : "Sign Out"}</span>
+          </button>
         </div>
       </div>
     </header>

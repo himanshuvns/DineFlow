@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { apiClient } from "@/lib/api";
+import { useAuthStore } from "./auth-store";
 
 export type BusinessType = "restaurant" | "hotel" | "cafe" | "cloud_kitchen" | "bar";
 export type PlanTier = "trial" | "starter" | "growth" | "hotel_pro" | "enterprise";
@@ -640,6 +641,7 @@ interface PlatformState {
   setGlobalAnnouncement: (announcement: PlatformState["globalAnnouncement"]) => void;
   flushCache: () => Promise<void>;
   downloadCsvExport: (entity: string) => Promise<void>;
+  logoutPlatform: () => Promise<void>;
 }
 
 export const usePlatformStore = create<PlatformState>()(
@@ -1216,6 +1218,15 @@ export const usePlatformStore = create<PlatformState>()(
         } catch {
           // Fallback handled in component if needed
         }
+      },
+
+      logoutPlatform: async () => {
+        try {
+          await apiClient.post("/platform/auth/logout");
+        } catch {
+          // Ignore network errors on logout
+        }
+        useAuthStore.getState().clearAuth();
       },
     }),
     {
