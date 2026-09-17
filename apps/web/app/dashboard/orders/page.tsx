@@ -33,6 +33,7 @@ import { ThermalPrintModal } from "@/components/orders/thermal-receipt-modal";
 import { useToast } from "@/components/ui/toast";
 import { formatCurrency } from "@/lib/utils";
 import { useTenantData } from "@/lib/stores/tenant-data-store";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface KdsItem {
   name: string;
@@ -474,12 +475,17 @@ export default function KDSOrdersPage() {
       {/* KDS Ticket Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {filteredOrders.length === 0 ? (
-          <div className="col-span-full p-12 text-center bg-slate-100/60 dark:bg-slate-900/40 rounded-3xl border border-slate-200 dark:border-slate-800">
-            <ChefHat className="h-10 w-10 text-slate-400 dark:text-slate-600 mx-auto mb-3" />
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">All Clear in this Station!</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              No active tickets waiting in the selected queue.
-            </p>
+          <div className="col-span-full py-6">
+            <EmptyState
+              icon={<ChefHat className="h-8 w-8 text-slate-400 dark:text-slate-500" />}
+              title="All Clear in this Station!"
+              description="No active tickets waiting in the selected queue."
+              action={{
+                label: "Manual Ticket",
+                icon: <Plus className="h-4 w-4" />,
+                onClick: () => setIsManualModalOpen(true),
+              }}
+            />
           </div>
         ) : (
           filteredOrders.map((order) => {

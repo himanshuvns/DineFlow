@@ -26,7 +26,7 @@ export function Card({
       className={cn(
         variantStyles[variant],
         hoverEffect &&
-          "transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-xl hover:shadow-emerald-500/5",
+          "transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-lg hover:shadow-emerald-500/5 dark:hover:shadow-emerald-500/5",
         className
       )}
       {...props}

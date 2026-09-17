@@ -37,6 +37,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
+import { EmptyState } from "@/components/ui/empty-state";
 import { apiClient } from "@/lib/api";
 import { useAuthStore } from "@/lib/stores/auth-store";
 
@@ -858,8 +859,8 @@ export default function StaffPage() {
             </CardHeader>
             <CardContent className="p-0 overflow-x-auto">
               <table className="w-full min-w-[750px] text-left text-xs">
-                <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-wider text-[10px] bg-slate-50/50 dark:bg-slate-900/40">
+                <thead className="sticky top-0 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm z-10">
+                  <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
                     <th className="py-3.5 pl-6">Employee</th>
                     <th className="py-3.5">Department</th>
                     <th className="py-3.5">Role</th>
@@ -870,7 +871,24 @@ export default function StaffPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
-                  {displayStaff.map((member) => (
+                  {displayStaff.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-12">
+                        <EmptyState
+                          compact
+                          icon={<Briefcase className="h-6 w-6 text-slate-400" />}
+                          title="No staff members found"
+                          description="Add team members to track attendance, calculate payroll, and assign shifts."
+                          action={{
+                            label: "Enroll Staff",
+                            icon: <UserPlus className="h-3.5 w-3.5" />,
+                            onClick: () => setIsInviteOpen(true),
+                          }}
+                        />
+                      </td>
+                    </tr>
+                  ) : (
+                    displayStaff.map((member) => (
                     <tr key={member.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                       <td className="py-3.5 pl-6">
                         <div className="flex items-center gap-3">
@@ -953,7 +971,7 @@ export default function StaffPage() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  )))}
                 </tbody>
               </table>
             </CardContent>
@@ -1095,8 +1113,8 @@ export default function StaffPage() {
             </CardHeader>
             <CardContent className="p-0 overflow-x-auto">
               <table className="w-full min-w-[700px] text-left text-xs">
-                <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-wider text-[10px] bg-slate-50/50 dark:bg-slate-900/40">
+                <thead className="sticky top-0 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm z-10">
+                  <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
                     <th className="py-3.5 pl-6">Staff Member</th>
                     <th className="py-3.5">Department</th>
                     <th className="py-3.5">Check-In</th>
@@ -1109,8 +1127,13 @@ export default function StaffPage() {
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
                   {todayAttendance.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-8 text-center text-slate-500 dark:text-slate-400">
-                        No check-ins recorded yet today. Staff can clock in using the terminal above.
+                      <td colSpan={7} className="py-12">
+                        <EmptyState
+                          compact
+                          icon={<Clock className="h-6 w-6 text-slate-400" />}
+                          title="No check-ins recorded yet today"
+                          description="Staff members can clock in using GPS or the WhatsApp Workforce Assistant."
+                        />
                       </td>
                     </tr>
                   ) : (
@@ -1261,8 +1284,8 @@ export default function StaffPage() {
             </CardHeader>
             <CardContent className="p-0 overflow-x-auto">
               <table className="w-full min-w-[700px] text-left text-xs">
-                <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-wider text-[10px] bg-slate-50/50 dark:bg-slate-900/40">
+                <thead className="sticky top-0 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm z-10">
+                  <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
                     <th className="py-3.5 pl-6">Employee</th>
                     <th className="py-3.5">Leave Type</th>
                     <th className="py-3.5">Duration</th>
@@ -1274,8 +1297,18 @@ export default function StaffPage() {
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
                   {leaves.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-8 text-center text-slate-500 dark:text-slate-400">
-                        No leave applications submitted yet. Click &quot;Apply Leave&quot; above to test.
+                      <td colSpan={6} className="py-12">
+                        <EmptyState
+                          compact
+                          icon={<CalendarCheck className="h-6 w-6 text-slate-400" />}
+                          title="No leave applications yet"
+                          description="Staff leave requests submitted via WhatsApp or dashboard will show here."
+                          action={{
+                            label: "Apply Leave",
+                            icon: <Plus className="h-3.5 w-3.5" />,
+                            onClick: () => setIsApplyLeaveOpen(true),
+                          }}
+                        />
                       </td>
                     </tr>
                   ) : (
@@ -1393,8 +1426,8 @@ export default function StaffPage() {
             </CardHeader>
             <CardContent className="p-0 overflow-x-auto">
               <table className="w-full min-w-[800px] text-left text-xs">
-                <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-wider text-[10px] bg-slate-50/50 dark:bg-slate-900/40">
+                <thead className="sticky top-0 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm z-10">
+                  <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
                     <th className="py-3.5 pl-6">Employee</th>
                     <th className="py-3.5">Designation</th>
                     <th className="py-3.5">Days / OT</th>
@@ -1408,8 +1441,18 @@ export default function StaffPage() {
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
                   {payrollRecords.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="py-8 text-center text-slate-500 dark:text-slate-400">
-                        No payroll executed for {selectedPayrollMonth} yet. Click &quot;Run Payroll&quot; above to calculate.
+                      <td colSpan={8} className="py-12">
+                        <EmptyState
+                          compact
+                          icon={<CreditCard className="h-6 w-6 text-slate-400" />}
+                          title={`No payroll executed for ${selectedPayrollMonth} yet`}
+                          description="Generate monthly staff compensation statements with PF, PT, and overtime."
+                          action={{
+                            label: "Run Payroll",
+                            icon: <Sparkles className="h-3.5 w-3.5" />,
+                            onClick: handleRunPayroll,
+                          }}
+                        />
                       </td>
                     </tr>
                   ) : (
@@ -1474,8 +1517,8 @@ export default function StaffPage() {
             </CardHeader>
             <CardContent className="p-0 overflow-x-auto">
               <table className="w-full min-w-[600px] text-left text-xs">
-                <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-wider text-[10px] bg-slate-50/50 dark:bg-slate-900/40">
+                <thead className="sticky top-0 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm z-10">
+                  <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
                     <th className="py-3.5 pl-6">Holiday Name</th>
                     <th className="py-3.5">Date</th>
                     <th className="py-3.5">Type</th>

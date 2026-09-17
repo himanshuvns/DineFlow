@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { useNotificationStore, type NotificationCategory, type NotificationPriority } from '@/lib/stores/notification-store'
 import { sanitizeNotification } from '@/components/notifications/notification-center'
+import { EmptyState } from '@/components/ui/empty-state'
 
 // ── Inline time helper ────────────────────────────────────────────────────────
 function timeAgo(dateStr: string): string {
@@ -218,10 +219,29 @@ export default function NotificationsPage() {
               <Loader2 className="w-6 h-6 animate-spin text-emerald-500" />
             </div>
           ) : notifications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-400">
-              <BellOff className="w-12 h-12 text-slate-300 dark:text-slate-600" />
-              <p className="text-base font-bold text-slate-800 dark:text-slate-200">No notifications found</p>
-              <p className="text-xs text-slate-500">Adjust the filters or check back later.</p>
+            <div className="py-16">
+              <EmptyState
+                icon={<BellOff className="w-8 h-8 text-slate-400 dark:text-slate-500" />}
+                title="No notifications found"
+                description={
+                  category !== 'all' || priority !== 'all' || readFilter !== 'all' || search
+                    ? "No alerts match your current filter criteria. Try resetting filters."
+                    : "You're all caught up! Live kitchen, guest orders, and system alerts will appear here."
+                }
+                action={
+                  category !== 'all' || priority !== 'all' || readFilter !== 'all' || search
+                    ? {
+                        label: "Clear Filters",
+                        onClick: () => {
+                          setCategory('all')
+                          setPriority('all')
+                          setReadFilter('all')
+                          setSearch('')
+                        },
+                      }
+                    : undefined
+                }
+              />
             </div>
           ) : (
             notifications.map((notif) => {

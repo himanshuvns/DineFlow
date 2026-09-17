@@ -43,6 +43,7 @@ import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
 import { QRCodeImage } from "@/components/ui/qr-code-image";
 import { useAuthStore } from "@/lib/stores/auth-store";
+import { EmptyState } from "@/components/ui/empty-state";
 import { apiClient } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
 import { validateIndianPhone, formatIndianPhoneInput } from "@/lib/validation";
@@ -702,8 +703,37 @@ export default function RoomsDirectoryPage() {
 
       {/* Grid of Hotel Rooms */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {filteredRooms.map((room) => {
-          const isOccupied = room.status === "occupied";
+        {filteredRooms.length === 0 ? (
+          <div className="col-span-full py-8">
+            <EmptyState
+              icon={<Hotel className="h-8 w-8 text-slate-400 dark:text-slate-500" />}
+              title={searchQuery || floorFilter !== "all" || statusFilter !== "all" ? "No suites match your filter" : "No suites configured yet"}
+              description={
+                searchQuery || floorFilter !== "all" || statusFilter !== "all"
+                  ? "Try resetting filters or searching with a different room number."
+                  : "Add your hotel rooms, luxury suites, or chalets to enable contactless QR service."
+              }
+              action={
+                searchQuery || floorFilter !== "all" || statusFilter !== "all"
+                  ? {
+                      label: "Reset Filters",
+                      onClick: () => {
+                        setSearchQuery("");
+                        setFloorFilter("all");
+                        setStatusFilter("all");
+                      },
+                    }
+                  : {
+                      label: "Add Room",
+                      icon: <Plus className="h-4 w-4" />,
+                      onClick: () => setIsAddRoomOpen(true),
+                    }
+              }
+            />
+          </div>
+        ) : (
+          filteredRooms.map((room) => {
+            const isOccupied = room.status === "occupied";
           const isCleaning = room.status === "cleaning";
 
           return (
@@ -897,7 +927,7 @@ export default function RoomsDirectoryPage() {
               </div>
             </Card>
           );
-        })}
+        }))}
       </div>
 
       {/* Selected Room Tent Card Modal */}

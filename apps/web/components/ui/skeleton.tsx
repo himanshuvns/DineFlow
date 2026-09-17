@@ -8,7 +8,7 @@ export function Skeleton({
   return (
     <div
       className={cn(
-        "rounded-xl bg-slate-800/60 animate-shimmer relative overflow-hidden",
+        "rounded-xl bg-slate-200/80 dark:bg-slate-800/60 animate-shimmer relative overflow-hidden",
         className
       )}
       {...props}

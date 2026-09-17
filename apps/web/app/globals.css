@@ -123,7 +123,7 @@ body {
   background: rgba(15, 23, 42, 0.85);
 }
 
-/* Subtle Shimmer Animation */
+/* Subtle Shimmer Animation (Light & Dark Adaptive) */
 @keyframes shimmer {
   0% {
     background-position: -200% 0;
@@ -134,9 +134,36 @@ body {
 }
 
 .animate-shimmer {
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.03) 100%);
+  background: linear-gradient(
+    90deg,
+    rgba(15, 23, 42, 0.03) 0%,
+    rgba(15, 23, 42, 0.09) 50%,
+    rgba(15, 23, 42, 0.03) 100%
+  );
   background-size: 200% 100%;
-  animation: shimmer 2s infinite ease-in-out;
+  animation: shimmer 1.8s infinite ease-in-out;
+}
+
+.dark .animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.02) 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+  background-size: 200% 100%;
+}
+
+/* Accessibility: Respect Reduced Motion Preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Custom Scrollbar */

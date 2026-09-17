@@ -30,6 +30,7 @@ import { useTenantData, STARTER_TEMPLATES } from "@/lib/stores/tenant-data-store
 import { useToast } from "@/components/ui/toast";
 import { formatCurrency } from "@/lib/utils";
 import { HospitalityLoader } from "@/components/ui/hospitality-loader";
+import NumberFlow from "@number-flow/react";
 
 export default function DashboardOverviewPage() {
   const [mounted, setMounted] = React.useState(false);
@@ -303,8 +304,24 @@ export default function DashboardOverviewPage() {
             </div>
           </div>
           <div className="mt-3">
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-              {formatCurrency(displayRevenue, tenant?.currency || "INR")}
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center">
+              <NumberFlow
+                value={displayRevenue}
+                prefix={
+                  tenant?.currency === "USD"
+                    ? "$"
+                    : tenant?.currency === "EUR"
+                    ? "€"
+                    : tenant?.currency === "GBP"
+                    ? "£"
+                    : tenant?.currency === "INR" || !tenant?.currency
+                    ? "₹"
+                    : `${tenant.currency} `
+                }
+                locales={tenant?.currency === "INR" || !tenant?.currency ? "en-IN" : "en-US"}
+                format={{ minimumFractionDigits: 0, maximumFractionDigits: 0 }}
+                willChange
+              />
             </h2>
             <div className="flex items-center gap-1.5 mt-1 text-xs">
               <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center">
@@ -326,8 +343,9 @@ export default function DashboardOverviewPage() {
             </div>
           </div>
           <div className="mt-3">
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-              {activeCount} Orders
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-1.5">
+              <NumberFlow value={activeCount} willChange />
+              <span>Orders</span>
             </h2>
             <div className="flex items-center gap-2 mt-1 text-xs text-slate-600 dark:text-slate-400 font-medium">
               <span className="text-amber-600 dark:text-amber-400 font-semibold">{preparingCount} preparing</span>
@@ -346,8 +364,16 @@ export default function DashboardOverviewPage() {
             </div>
           </div>
           <div className="mt-3">
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-              {totalTables > 0 ? `${occupiedCount} / ${totalTables}` : "0 Tables"}
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-1.5">
+              {totalTables > 0 ? (
+                <>
+                  <NumberFlow value={occupiedCount} willChange />
+                  <span>/</span>
+                  <span>{totalTables}</span>
+                </>
+              ) : (
+                "0 Tables"
+              )}
             </h2>
             <div className="flex items-center gap-1.5 mt-1 text-xs">
               <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
@@ -369,8 +395,9 @@ export default function DashboardOverviewPage() {
             </div>
           </div>
           <div className="mt-3">
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-              {safeMenuItems.length} Dishes
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-1.5">
+              <NumberFlow value={safeMenuItems.length} willChange />
+              <span>Dishes</span>
             </h2>
             <div className="flex items-center gap-1.5 mt-1 text-xs">
               <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
