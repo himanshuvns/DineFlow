@@ -948,7 +948,7 @@ export function GlobalSearch() {
 
       {/* Desktop Dropdown Popover */}
       {isOpen && !mobileSearchOpen && (
-        <div className="hidden lg:block absolute left-0 top-full mt-2 w-[520px] xl:w-[560px] max-w-[calc(100vw-2rem)] bg-white/95 dark:bg-[#0B0F19]/95 backdrop-blur-xl border border-slate-200/90 dark:border-slate-800/90 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in-50 zoom-in-95 duration-150">
+        <div className="hidden lg:block absolute left-0 top-full mt-2 w-[520px] xl:w-[560px] max-w-[calc(100vw-2rem)] bg-white dark:bg-[#0B0F19] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in-50 zoom-in-95 duration-150">
           {/* Filter Chips Bar */}
           {renderFilterChips()}
 

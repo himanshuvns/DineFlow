@@ -70,7 +70,7 @@ export function TopBar() {
     : "Restaurant Owner";
 
   return (
-    <header className="h-16 border-b border-slate-200/80 dark:border-slate-800/80 bg-white/80 dark:bg-[#090D16]/80 backdrop-blur-md sticky top-0 z-20 flex items-center justify-between px-4 sm:px-8 transition-colors duration-200">
+    <header className="h-16 border-b border-slate-200/80 dark:border-slate-800/80 bg-white/90 dark:bg-[#090D16]/90 backdrop-blur-md sticky top-0 z-40 flex items-center justify-between px-4 sm:px-8 transition-colors duration-200">
       {/* Left: Mobile trigger & Breadcrumbs */}
       <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1 mr-2">
         <button

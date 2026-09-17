@@ -72,7 +72,7 @@ export function Dropdown({
             role="menu"
             aria-orientation="vertical"
             className={cn(
-              "absolute z-50 mt-2 w-56 rounded-2xl glass-panel border border-slate-200 dark:border-slate-700/80 p-1.5 shadow-2xl backdrop-blur-xl",
+              "absolute z-50 mt-2 w-56 rounded-2xl bg-white dark:bg-[#0B0F19] border border-slate-200 dark:border-slate-800 p-1.5 shadow-2xl",
               align === "right" ? "right-0" : "left-0",
               className
             )}

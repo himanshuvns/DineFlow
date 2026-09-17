@@ -564,9 +564,9 @@
     "semantic_hash": "fb3d216d06d08716a65bcb486f6db956"
   },
   "apps/web/app/dashboard/menu/page.tsx": {
-    "mtime": 1789630192.6955364,
-    "seen": 1789630312.801952,
-    "ast_hash": "200867cc30e74cf6567de4b96103fba6",
+    "mtime": 1789670325.4766335,
+    "seen": 1789670466.005044,
+    "ast_hash": "04e6a78ef54f5a78dd41a633ef3789ce",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/notifications/page.tsx": {
@@ -594,9 +594,9 @@
     "semantic_hash": "e146b1ff3bcd96604ade2dd514bb9ef4"
   },
   "apps/web/app/dashboard/rooms/page.tsx": {
-    "mtime": 1789663723.1748574,
-    "seen": 1789663872.874203,
-    "ast_hash": "994c2406880af2e5e95d00c118be5443",
+    "mtime": 1789670333.6701221,
+    "seen": 1789670466.005047,
+    "ast_hash": "0e1db1eed604529447404f42d593ada4",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/settings/page.tsx": {
@@ -612,9 +612,9 @@
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/tables/page.tsx": {
-    "mtime": 1789630243.6293197,
-    "seen": 1789630312.8019578,
-    "ast_hash": "bf9a1e0e2a9aa4dfdbcc7fa4bd64179d",
+    "mtime": 1789670312.3214068,
+    "seen": 1789670466.005049,
+    "ast_hash": "ca8efac480240c910a272c12bf61327d",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/whatsapp/page.tsx": {
@@ -774,9 +774,9 @@
     "semantic_hash": ""
   },
   "apps/web/components/dashboard/topbar.tsx": {
-    "mtime": 1789660862.1193838,
-    "seen": 1789660917.243828,
-    "ast_hash": "87277cc150304576e287e17e7597660b",
+    "mtime": 1789670274.7031157,
+    "seen": 1789670466.0050712,
+    "ast_hash": "67903a9ddd84787a8bc7ebfbca25a56d",
     "semantic_hash": ""
   },
   "apps/web/components/menu/camera-menu-scanner-modal.tsx": {
@@ -804,9 +804,9 @@
     "semantic_hash": "33ebfaf3ca59588a6f96930408f55205"
   },
   "apps/web/components/notifications/notification-center.tsx": {
-    "mtime": 1789628766.7816656,
-    "seen": 1789628835.393507,
-    "ast_hash": "4ae0c7a27549dbb2e3123a32db900b72",
+    "mtime": 1789670283.384466,
+    "seen": 1789670466.005074,
+    "ast_hash": "6aa8ed3f080c77c7cd314995042460a0",
     "semantic_hash": ""
   },
   "apps/web/components/orders/thermal-receipt-modal.tsx": {
@@ -864,9 +864,9 @@
     "semantic_hash": "b5db6a87ec9fd26d093538889fe46be4"
   },
   "apps/web/components/ui/dropdown.tsx": {
-    "mtime": 1789663594.1567569,
-    "seen": 1789663872.874235,
-    "ast_hash": "82711b613b9ce80eed437e896079229b",
+    "mtime": 1789670298.151428,
+    "seen": 1789670466.0050812,
+    "ast_hash": "8469366b1e2475820697fb6bb76d4808",
     "semantic_hash": ""
   },
   "apps/web/components/ui/hospitality-loader.tsx": {
@@ -942,9 +942,9 @@
     "semantic_hash": "536769a9ee4ccf3e2bf9de3ee7a1f99b"
   },
   "apps/web/components/ui/toast.tsx": {
-    "mtime": 1789663580.246654,
-    "seen": 1789663872.8742452,
-    "ast_hash": "fad3045b6080d99df8d145a11cf077df",
+    "mtime": 1789670304.7711914,
+    "seen": 1789670466.0050912,
+    "ast_hash": "54bacda4178de7b81c36a97aa5555076",
     "semantic_hash": ""
   },
   "apps/web/components/ui/tubes-curor.tsx": {
@@ -1656,9 +1656,9 @@
     "semantic_hash": ""
   },
   "apps/web/components/dashboard/global-search.tsx": {
-    "mtime": 1789635547.69338,
-    "seen": 1789635649.955002,
-    "ast_hash": "fa149fb7d2cad389ce2185cbdef83e50",
+    "mtime": 1789670290.005482,
+    "seen": 1789670466.005069,
+    "ast_hash": "3cf8d4203a010527206138abe34ca224",
     "semantic_hash": ""
   },
   "apps/api/internal/application/staff/service_test.go": {
@@ -1701,6 +1701,12 @@
     "mtime": 1789665052.763721,
     "seen": 1789665767.193841,
     "ast_hash": "4b1f2e62ac013ee84a25d40742f6a079",
+    "semantic_hash": ""
+  },
+  "apps/web/components/ui/view-toggle.tsx": {
+    "mtime": 1789668290.8704703,
+    "seen": 1789669092.532099,
+    "ast_hash": "a29702e193fe636f8cf02d49d5f39faf",
     "semantic_hash": ""
   }
 }

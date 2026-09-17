@@ -206,7 +206,7 @@ export default function TablesManagementPage() {
       {/* STICKY TOOLBAR: ZONES, SEARCH, STATUS & VIEW TOGGLE      */}
       {/* ======================================================== */}
       {tables.length > 0 && (
-        <div className="sticky top-0 z-20 bg-slate-50/95 dark:bg-[#090D16]/95 backdrop-blur-md pt-2 pb-3 -mx-3 px-3 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 border-b border-slate-200/60 dark:border-slate-800/60 space-y-2.5 transition-all">
+        <div className="sticky top-0 z-10 bg-slate-50/95 dark:bg-[#090D16]/95 backdrop-blur-md pt-2 pb-3 -mx-3 px-3 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 border-b border-slate-200/60 dark:border-slate-800/60 space-y-2.5 transition-all">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             {/* Zone Filter Chips */}
             <div className="flex items-center gap-1.5 overflow-x-auto min-w-0 flex-1 pb-1 sm:pb-0">

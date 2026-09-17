@@ -779,7 +779,7 @@ export default function MenuManagementPage() {
       {/* ======================================================== */}
       {/* 2. STICKY TOOLBAR: TABS, SEARCH, FILTERS & VIEW TOGGLE    */}
       {/* ======================================================== */}
-      <div className="sticky top-0 z-20 bg-slate-50/95 dark:bg-[#090D16]/95 backdrop-blur-md pt-2 pb-3 -mx-3 px-3 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 border-b border-slate-200/60 dark:border-slate-800/60 space-y-2.5 transition-all">
+      <div className="sticky top-0 z-10 bg-slate-50/95 dark:bg-[#090D16]/95 backdrop-blur-md pt-2 pb-3 -mx-3 px-3 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 border-b border-slate-200/60 dark:border-slate-800/60 space-y-2.5 transition-all">
         {/* Top Row: Category Tabs + Search Bar + View Toggle */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="min-w-0 flex-1 overflow-x-auto">
@@ -957,7 +957,7 @@ export default function MenuManagementPage() {
                 <button
                   type="button"
                   onClick={() => handleToggleSelectDish(item.id)}
-                  className={`absolute top-3 left-3 z-20 h-6 w-6 rounded-md flex items-center justify-center transition-all cursor-pointer ${
+                  className={`absolute top-3 left-3 z-[2] h-6 w-6 rounded-md flex items-center justify-center transition-all cursor-pointer ${
                     isSelected
                       ? "bg-emerald-500 text-slate-950 shadow-md"
                       : "bg-slate-900/60 backdrop-blur text-white/80 hover:text-white border border-white/20"

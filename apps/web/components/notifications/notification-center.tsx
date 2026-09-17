@@ -236,15 +236,26 @@ export function NotificationCenter() {
     }
   }, [open, activeCategory, fetchNotifications])
 
-  // Click outside to close
+  // Click outside or Escape to close
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
+    const handleClickOutside = (e: MouseEvent) => {
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
         setOpen(false)
       }
     }
-    if (open) document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setOpen(false)
+      }
+    }
+    if (open) {
+      document.addEventListener('mousedown', handleClickOutside)
+      document.addEventListener('keydown', handleKeyDown)
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
   }, [open])
 
   const filteredNotifs = notifications
@@ -268,7 +279,7 @@ export function NotificationCenter() {
       {/* Popover Panel */}
       {open && (
         <div
-          className="absolute right-0 top-full mt-2 w-[410px] max-w-[calc(100vw-1.25rem)] rounded-2xl shadow-2xl border border-slate-200/90 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl z-[200] flex flex-col overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150"
+          className="fixed sm:absolute inset-x-3 sm:inset-x-auto sm:right-0 top-18 sm:top-full sm:mt-2 sm:w-[420px] max-w-[calc(100vw-1.5rem)] sm:max-w-none rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B0F19] z-50 flex flex-col overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150"
           style={{ maxHeight: '560px' }}
         >
           {/* Header (shrink-0 ensures it is never compressed by flexbox) */}
