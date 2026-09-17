@@ -54,6 +54,13 @@ export default function LoginPage() {
     setPhoneTouched(false);
   };
 
+  const handleFillSuperAdmin = () => {
+    setPhone("+91 98888 88888");
+    setPassword("SuperAdmin@2026");
+    setError("");
+    setPhoneTouched(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -90,7 +97,11 @@ export default function LoginPage() {
         setIsRedirecting(true);
         addToast("success", isFirst ? `Welcome, ${name}!` : `Welcome back, ${name}!`, `Signed in to ${tenant?.name || "your restaurant"}`);
         const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
-        const destination = params?.get("from") || "/dashboard";
+        const defaultDestination =
+          user?.role === "super_admin" || user?.role === "platform_admin"
+            ? "/platform"
+            : "/dashboard";
+        const destination = params?.get("from") || defaultDestination;
         setTimeout(() => {
           router.push(destination);
         }, 2200);
@@ -146,15 +157,25 @@ export default function LoginPage() {
         <div className="mb-3 p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex flex-col xs:flex-row items-start xs:items-center justify-between gap-1.5">
           <div className="flex items-center gap-1.5 text-xs text-emerald-700 dark:text-[#14F1C7] font-medium">
             <Sparkles className="h-3.5 w-3.5 text-emerald-600 dark:text-[#14F1C7] shrink-0" />
-            <span>Quick test account available</span>
+            <span>Quick test credentials</span>
           </div>
-          <button
-            type="button"
-            onClick={handleFillDemo}
-            className="text-xs font-semibold text-emerald-600 dark:text-[#14F1C7] hover:underline cursor-pointer transition-colors"
-          >
-            Auto-fill demo
-          </button>
+          <div className="flex items-center gap-2 text-xs">
+            <button
+              type="button"
+              onClick={handleFillDemo}
+              className="font-semibold text-emerald-600 dark:text-[#14F1C7] hover:underline cursor-pointer transition-colors"
+            >
+              Demo Client
+            </button>
+            <span className="text-slate-300 dark:text-slate-600">•</span>
+            <button
+              type="button"
+              onClick={handleFillSuperAdmin}
+              className="font-bold text-rose-600 dark:text-rose-400 hover:underline cursor-pointer transition-colors"
+            >
+              Super Admin
+            </button>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-2.5">
