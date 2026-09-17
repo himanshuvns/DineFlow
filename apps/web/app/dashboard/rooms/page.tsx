@@ -47,6 +47,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { apiClient } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
 import { validateIndianPhone, formatIndianPhoneInput } from "@/lib/validation";
+import { ViewToggle, useViewMode } from "@/components/ui/view-toggle";
 
 interface RoomItem {
   id: string;
@@ -134,6 +135,7 @@ export default function RoomsDirectoryPage() {
     activeHousekeepingTasks: 0,
   });
 
+  const [viewMode, setViewMode] = useViewMode("rooms", "grid");
   const [floorFilter, setFloorFilter] = React.useState("all");
   const [wingFilter, setWingFilter] = React.useState("all");
   const [statusFilter, setStatusFilter] = React.useState("all");
@@ -655,84 +657,92 @@ export default function RoomsDirectoryPage() {
         </Card>
       </div>
 
-      {/* Filters Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-          {floors.map((f) => (
-            <button
-              key={f}
-              onClick={() => setFloorFilter(f)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors ${
-                floorFilter === f
-                  ? "bg-emerald-500 text-slate-950 shadow"
-                  : "bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white"
-              }`}
-            >
-              {f === "all" ? "All Floors" : f}
-            </button>
-          ))}
+      {/* ======================================================== */}
+      {/* STICKY TOOLBAR: FLOORS, STATUSES, SEARCH & VIEW TOGGLE   */}
+      {/* ======================================================== */}
+      <div className="sticky top-0 z-20 bg-slate-50/95 dark:bg-[#090D16]/95 backdrop-blur-md pt-2 pb-3 -mx-3 px-3 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 border-b border-slate-200/60 dark:border-slate-800/60 space-y-2.5 transition-all">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none min-w-0 flex-1">
+            {floors.map((f) => (
+              <button
+                key={f}
+                onClick={() => setFloorFilter(f)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                  floorFilter === f
+                    ? "bg-emerald-500 text-slate-950 shadow font-bold"
+                    : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white"
+                }`}
+              >
+                {f === "all" ? "All Floors" : f}
+              </button>
+            ))}
 
-          <div className="h-4 w-px bg-slate-300 dark:bg-slate-800 shrink-0 mx-1" />
+            <div className="h-4 w-px bg-slate-300 dark:bg-slate-800 shrink-0 mx-1" />
 
-          {statuses.map((s) => (
-            <button
-              key={s}
-              onClick={() => setStatusFilter(s)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors capitalize ${
-                statusFilter === s
-                  ? "bg-cyan-500 text-slate-950 shadow"
-                  : "bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white"
-              }`}
-            >
-              {s === "all" ? "All Statuses" : s}
-            </button>
-          ))}
-        </div>
+            {statuses.map((s) => (
+              <button
+                key={s}
+                onClick={() => setStatusFilter(s)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer capitalize ${
+                  statusFilter === s
+                    ? "bg-cyan-500 text-slate-950 shadow font-bold"
+                    : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white"
+                }`}
+              >
+                {s === "all" ? "All Statuses" : s}
+              </button>
+            ))}
+          </div>
 
-        <div className="relative w-full sm:w-60">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
-          <input
-            type="text"
-            placeholder="Search suite number, guest..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-xs text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
-          />
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="relative w-full sm:w-56">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
+              <input
+                type="text"
+                placeholder="Search suite number, guest..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-xs text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 shadow-xs"
+              />
+            </div>
+
+            <ViewToggle view={viewMode} onViewChange={setViewMode} />
+          </div>
         </div>
       </div>
 
-      {/* Grid of Hotel Rooms */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {filteredRooms.length === 0 ? (
-          <div className="col-span-full py-8">
-            <EmptyState
-              icon={<Hotel className="h-8 w-8 text-slate-400 dark:text-slate-500" />}
-              title={searchQuery || floorFilter !== "all" || statusFilter !== "all" ? "No suites match your filter" : "No suites configured yet"}
-              description={
-                searchQuery || floorFilter !== "all" || statusFilter !== "all"
-                  ? "Try resetting filters or searching with a different room number."
-                  : "Add your hotel rooms, luxury suites, or chalets to enable contactless QR service."
-              }
-              action={
-                searchQuery || floorFilter !== "all" || statusFilter !== "all"
-                  ? {
-                      label: "Reset Filters",
-                      onClick: () => {
-                        setSearchQuery("");
-                        setFloorFilter("all");
-                        setStatusFilter("all");
-                      },
-                    }
-                  : {
-                      label: "Add Room",
-                      icon: <Plus className="h-4 w-4" />,
-                      onClick: () => setIsAddRoomOpen(true),
-                    }
-              }
-            />
-          </div>
-        ) : (
-          filteredRooms.map((room) => {
+      {/* Hotel Rooms: Empty State OR Grid / List View */}
+      {filteredRooms.length === 0 ? (
+        <div className="py-8">
+          <EmptyState
+            icon={<Hotel className="h-8 w-8 text-slate-400 dark:text-slate-500" />}
+            title={searchQuery || floorFilter !== "all" || statusFilter !== "all" ? "No suites match your filter" : "No suites configured yet"}
+            description={
+              searchQuery || floorFilter !== "all" || statusFilter !== "all"
+                ? "Try resetting filters or searching with a different room number."
+                : "Add your hotel rooms, luxury suites, or chalets to enable contactless QR service."
+            }
+            action={
+              searchQuery || floorFilter !== "all" || statusFilter !== "all"
+                ? {
+                    label: "Reset Filters",
+                    onClick: () => {
+                      setSearchQuery("");
+                      setFloorFilter("all");
+                      setStatusFilter("all");
+                    },
+                  }
+                : {
+                    label: "Add Room",
+                    icon: <Plus className="h-4 w-4" />,
+                    onClick: () => setIsAddRoomOpen(true),
+                  }
+            }
+          />
+        </div>
+      ) : viewMode === "grid" ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {filteredRooms.map((room) => {
             const isOccupied = room.status === "occupied";
           const isCleaning = room.status === "cleaning";
 
@@ -927,8 +937,191 @@ export default function RoomsDirectoryPage() {
               </div>
             </Card>
           );
-        }))}
+        })}
       </div>
+      ) : (
+        /* ─── ENTERPRISE ROOMS LIST VIEW ─── */
+        <div className="space-y-1.5">
+          {/* Column headers — desktop only */}
+          <div className="hidden lg:grid lg:grid-cols-12 gap-4 px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-500 border-b border-slate-200 dark:border-slate-800">
+            <div className="col-span-3">Room</div>
+            <div className="col-span-2">Type / Floor</div>
+            <div className="col-span-3">Guest &amp; Stay</div>
+            <div className="col-span-2">Status</div>
+            <div className="col-span-2 text-right">Actions</div>
+          </div>
+
+          {filteredRooms.map((room) => {
+            const isOccupied = room.status === "occupied";
+            const isCleaning = room.status === "cleaning";
+            const isMaintenance = room.status === "maintenance";
+            const metrics = getStayMetrics(room.currentGuestCheckIn, room.currentGuestExpectedCheckOut);
+
+            return (
+              <div
+                key={room.id}
+                className={`group relative flex flex-col lg:grid lg:grid-cols-12 gap-3 lg:gap-4 items-start lg:items-center px-4 py-3.5 rounded-xl border transition-all bg-white dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-900/70 ${
+                  room.doNotDisturb
+                    ? "border-rose-500/40"
+                    : isOccupied
+                    ? "border-amber-500/30"
+                    : isCleaning
+                    ? "border-cyan-500/30"
+                    : "border-slate-200 dark:border-slate-800"
+                }`}
+              >
+                {/* Room name + floor + wing */}
+                <div className="col-span-3 flex items-center gap-3 min-w-0">
+                  <div className={`h-9 w-9 rounded-xl flex items-center justify-center shrink-0 ${
+                    isOccupied ? "bg-amber-500/10 text-amber-500" : isCleaning ? "bg-cyan-500/10 text-cyan-500" : "bg-emerald-500/10 text-emerald-500"
+                  }`}>
+                    <Hotel className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-bold text-sm text-slate-900 dark:text-white truncate">{room.name}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{room.floor} · {room.wing}</p>
+                  </div>
+                </div>
+
+                {/* Type / Capacity */}
+                <div className="col-span-2 flex flex-wrap gap-1.5 lg:flex-col">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[11px] font-medium text-slate-700 dark:text-slate-300 capitalize">
+                    {room.type || "Standard"}
+                  </span>
+                  {room.capacity && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[11px] text-slate-500 dark:text-slate-400">
+                      <Users className="h-3 w-3" />
+                      {room.capacity} guests
+                    </span>
+                  )}
+                </div>
+
+                {/* Guest & Stay info */}
+                <div className="col-span-3 min-w-0">
+                  {isOccupied && (room.activeGuest || room.currentGuestName) ? (
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <Users className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                        <span className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                          {room.activeGuest || room.currentGuestName}
+                        </span>
+                        {room.currentGuestCount && room.currentGuestCount > 1 && (
+                          <span className="text-xs text-slate-500">+{room.currentGuestCount - 1}</span>
+                        )}
+                      </div>
+                      {metrics && (
+                        <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
+                          <span>{metrics.checkInDate} → {metrics.checkOutDate}</span>
+                          <span className="font-mono bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded font-semibold">
+                            {metrics.nights}N
+                          </span>
+                          {room.folioEnabled && (
+                            <span className="flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400 font-semibold">
+                              <FileCheck className="h-3 w-3" />Folio OK
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <span className={`text-xs ${isCleaning ? "text-cyan-600 dark:text-cyan-400" : isMaintenance ? "text-orange-500" : "text-slate-400 dark:text-slate-500"}`}>
+                      {isCleaning ? "Housekeeping in progress" : isMaintenance ? "Under maintenance" : "Suite vacant & ready"}
+                    </span>
+                  )}
+                </div>
+
+                {/* Status badges */}
+                <div className="col-span-2 flex flex-wrap gap-1.5">
+                  <Badge
+                    variant={isOccupied ? "warning" : isCleaning ? "danger" : "success"}
+                    size="sm"
+                    dot
+                  >
+                    {isOccupied ? "Guest In-House" : isCleaning ? "Cleaning" : isMaintenance ? "Maintenance" : "Clean & Ready"}
+                  </Badge>
+                  {room.doNotDisturb && (
+                    <Badge variant="danger" size="sm">
+                      <BellOff className="h-3 w-3 mr-0.5" />DND
+                    </Badge>
+                  )}
+                </div>
+
+                {/* Quick Actions */}
+                <div className="col-span-2 flex flex-wrap items-center gap-1.5 lg:justify-end w-full lg:w-auto border-t border-slate-100 dark:border-slate-800 lg:border-0 pt-2 lg:pt-0">
+                  {isOccupied ? (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-[11px] px-2 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"
+                        onClick={() => handleOpenExtendStay(room)}
+                      >
+                        <Calendar className="h-3 w-3 mr-1" />Extend
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-[11px] px-2 text-rose-600 dark:text-rose-400 border-rose-500/30 hover:bg-rose-500/10"
+                        onClick={() => handleInitiateCheckOut(room)}
+                      >
+                        Check-Out
+                      </Button>
+                    </>
+                  ) : isCleaning ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-[11px] px-2 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"
+                      onClick={() => handleMarkClean(room.id, room.name)}
+                    >
+                      <CheckCircle className="h-3 w-3 mr-1" />Mark Ready
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-[11px] px-2 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"
+                      onClick={() => handleStartCheckIn(room)}
+                    >
+                      Check-In
+                    </Button>
+                  )}
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0 text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                    title={room.doNotDisturb ? "Cancel DND" : "Set DND"}
+                    onClick={() => handleToggleDND(room.id, room.doNotDisturb)}
+                  >
+                    <BellOff className={`h-3.5 w-3.5 ${room.doNotDisturb ? "text-rose-500" : ""}`} />
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0 text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                    title="Tent QR"
+                    onClick={() => setSelectedRoom(room)}
+                  >
+                    <QrCode className="h-3.5 w-3.5" />
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0 text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                    title="Manage Room"
+                    onClick={() => router.push(`/dashboard/rooms/${room.id}`)}
+                  >
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Selected Room Tent Card Modal */}
       {selectedRoom && (

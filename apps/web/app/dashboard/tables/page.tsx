@@ -28,6 +28,7 @@ import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
 import { QRCodeImage } from "@/components/ui/qr-code-image";
 import { useTenantData, TableItem, STARTER_TEMPLATES } from "@/lib/stores/tenant-data-store";
+import { ViewToggle, useViewMode } from "@/components/ui/view-toggle";
 
 export default function TablesManagementPage() {
   const { addToast } = useToast();
@@ -36,14 +37,18 @@ export default function TablesManagementPage() {
     tenantSlug,
     isDemoTenant,
     tables,
+    orders,
     addTable,
     updateTableStatus,
     deleteTable,
     applyStarterTemplate,
   } = useTenantData();
 
+  const [viewMode, setViewMode] = useViewMode("tables", "grid");
   const [selectedTable, setSelectedTable] = React.useState<TableItem | null>(null);
   const [filterZone, setFilterZone] = React.useState("all");
+  const [filterStatus, setFilterStatus] = React.useState<"all" | "available" | "occupied" | "reserved">("all");
+  const [searchQuery, setSearchQuery] = React.useState("");
 
   // QR Mode: "web" for Digital Menu, "whatsapp" for Direct WhatsApp ordering
   const [qrTarget, setQrTarget] = React.useState<"web" | "whatsapp">("web");
@@ -146,6 +151,15 @@ export default function TablesManagementPage() {
 
   const filteredTables = tables.filter((t) => {
     if (filterZone !== "all" && t.zone !== filterZone) return false;
+    if (filterStatus !== "all" && t.status !== filterStatus) return false;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const matchName = t.name.toLowerCase().includes(q);
+      const matchId = t.id.toLowerCase().includes(q);
+      const matchZone = t.zone.toLowerCase().includes(q);
+      const matchSeats = t.seats.toString() === q;
+      if (!matchName && !matchId && !matchZone && !matchSeats) return false;
+    }
     return true;
   });
 
@@ -188,22 +202,56 @@ export default function TablesManagementPage() {
         </div>
       </div>
 
-      {/* Zone Filters */}
+      {/* ======================================================== */}
+      {/* STICKY TOOLBAR: ZONES, SEARCH, STATUS & VIEW TOGGLE      */}
+      {/* ======================================================== */}
       {tables.length > 0 && (
-        <div className="flex items-center gap-2 overflow-x-auto pb-1">
-          {zones.map((zone) => (
-            <button
-              key={zone}
-              onClick={() => setFilterZone(zone)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold capitalize transition-colors cursor-pointer ${
-                filterZone === zone
-                  ? "bg-emerald-500 text-slate-950 shadow-md"
-                  : "bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white shadow-xs"
-              }`}
-            >
-              {zone === "all" ? "All Locations" : zone}
-            </button>
-          ))}
+        <div className="sticky top-0 z-20 bg-slate-50/95 dark:bg-[#090D16]/95 backdrop-blur-md pt-2 pb-3 -mx-3 px-3 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 border-b border-slate-200/60 dark:border-slate-800/60 space-y-2.5 transition-all">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            {/* Zone Filter Chips */}
+            <div className="flex items-center gap-1.5 overflow-x-auto min-w-0 flex-1 pb-1 sm:pb-0">
+              {zones.map((zone) => (
+                <button
+                  key={zone}
+                  onClick={() => setFilterZone(zone)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold capitalize transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                    filterZone === zone
+                      ? "bg-emerald-500 text-slate-950 shadow-md font-bold"
+                      : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white"
+                  }`}
+                >
+                  {zone === "all" ? "All Locations" : zone}
+                </button>
+              ))}
+            </div>
+
+            {/* Right: Search + Status Filter + View Toggle */}
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="relative w-full sm:w-44">
+                <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search tables..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-8 pr-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 shadow-xs"
+                />
+              </div>
+
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value as any)}
+                className="px-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 shadow-xs cursor-pointer font-medium"
+              >
+                <option value="all">All Statuses</option>
+                <option value="available">🟢 Available</option>
+                <option value="occupied">🟠 Occupied</option>
+                <option value="reserved">⚪ Reserved</option>
+              </select>
+
+              <ViewToggle view={viewMode} onViewChange={setViewMode} />
+            </div>
+          </div>
         </div>
       )}
 
@@ -263,7 +311,22 @@ export default function TablesManagementPage() {
             </Button>
           </div>
         </div>
-      ) : (
+      ) : filteredTables.length === 0 ? (
+        <div className="p-8 text-center bg-slate-50 dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs text-slate-500">
+          No tables match your search or filter.{" "}
+          <button
+            type="button"
+            onClick={() => {
+              setSearchQuery("");
+              setFilterZone("all");
+              setFilterStatus("all");
+            }}
+            className="text-emerald-600 dark:text-emerald-400 font-bold underline cursor-pointer"
+          >
+            Reset filters
+          </button>
+        </div>
+      ) : viewMode === "grid" ? (
         /* Grid of Tables */
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {filteredTables.map((table) => {
@@ -328,6 +391,127 @@ export default function TablesManagementPage() {
                   </Button>
                 </div>
               </Card>
+            );
+          })}
+        </div>
+      ) : (
+        /* ======================================================== */
+        /* ENTERPRISE TABLES LIST VIEW                              */
+        /* ======================================================== */
+        <div className="space-y-2">
+          {/* Table Header (Desktop) */}
+          <div className="hidden lg:grid grid-cols-12 gap-3 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-slate-200/80 dark:border-slate-800/80 select-none">
+            <div className="col-span-3">Table & Zone</div>
+            <div className="col-span-2">Capacity</div>
+            <div className="col-span-2">Status</div>
+            <div className="col-span-3">Live Order & QR</div>
+            <div className="col-span-2 text-right">Actions</div>
+          </div>
+
+          {filteredTables.map((table) => {
+            const currentOrder = orders.find(
+              (o) => o.table === table.name || o.table === table.id
+            );
+
+            return (
+              <div
+                key={table.id}
+                className="group flex flex-col lg:grid lg:grid-cols-12 gap-3 items-start lg:items-center px-4 py-3 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/70 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-xs transition-all duration-150"
+              >
+                {/* Col 1 (Span 3): Table Name + Zone + ID */}
+                <div className="col-span-3 flex items-center gap-3 min-w-0 w-full">
+                  <div className="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-sm shrink-0 border border-emerald-500/20">
+                    <Utensils className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                        {table.name}
+                      </span>
+                      <span className="font-mono text-[10px] text-slate-400 dark:text-slate-500">
+                        ({table.id})
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 block truncate">
+                      {table.zone}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Col 2 (Span 2): Capacity */}
+                <div className="col-span-2 flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300 font-medium">
+                  <Users className="h-3.5 w-3.5 text-slate-400" />
+                  <span>{table.seats} Guests Max</span>
+                </div>
+
+                {/* Col 3 (Span 2): Status Badge & Status Switcher */}
+                <div className="col-span-2 flex items-center gap-2">
+                  <select
+                    value={table.status}
+                    onChange={(e) => handleToggleStatus(table, e.target.value as TableItem["status"])}
+                    className={`text-xs font-semibold px-2.5 py-1 rounded-lg border cursor-pointer focus:outline-none transition-colors ${
+                      table.status === "available"
+                        ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
+                        : table.status === "occupied"
+                        ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700"
+                    }`}
+                  >
+                    <option value="available">🟢 Available</option>
+                    <option value="occupied">🟠 Occupied</option>
+                    <option value="reserved">⚪ Reserved</option>
+                  </select>
+                </div>
+
+                {/* Col 4 (Span 3): Live Order / QR Status */}
+                <div className="col-span-3 flex items-center gap-2 min-w-0 w-full lg:w-auto">
+                  {currentOrder ? (
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-700 dark:text-amber-300 min-w-0">
+                      <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
+                      <span className="font-bold truncate">#{currentOrder.id.slice(-4).toUpperCase()}</span>
+                      <span className="text-[11px] text-amber-600/80 dark:text-amber-400/80">
+                        • {currentOrder.status}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-[11px] text-slate-400 dark:text-slate-500 italic">
+                      No active ticket
+                    </span>
+                  )}
+                </div>
+
+                {/* Col 5 (Span 2): Actions */}
+                <div className="col-span-2 flex items-center justify-end gap-1.5 w-full lg:w-auto pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-200/60 dark:border-slate-800/60">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedTable(table)}
+                    className="h-8 px-2.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                    title="View QR Stand"
+                  >
+                    <QrCode className="h-3.5 w-3.5" />
+                    <span>QR Stand</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => copyQRLink(table)}
+                    className="h-8 w-8 rounded-lg text-slate-500 hover:text-emerald-600 hover:bg-emerald-500/10 flex items-center justify-center transition-colors cursor-pointer"
+                    title="Copy QR Link"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </button>
+
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                    onClick={() => handleDeleteTable(table.id, table.name)}
+                    title="Delete Table"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
             );
           })}
         </div>

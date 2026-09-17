@@ -47,6 +47,7 @@ import { CameraMenuScannerModal } from "@/components/menu/camera-menu-scanner-mo
 import { MenuUploadModal } from "@/components/menu/menu-upload-modal";
 import { MenuStagingPreviewModal } from "@/components/menu/menu-staging-preview-modal";
 import { MenuBulkToolbar } from "@/components/menu/menu-bulk-toolbar";
+import { ViewToggle, useViewMode } from "@/components/ui/view-toggle";
 
 const IMAGE_PRESETS = [
   { label: "Paneer Butter Masala", url: "https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=600&q=80" },
@@ -82,6 +83,7 @@ export default function MenuManagementPage() {
   } = useTenantData();
 
   // Search & Navigation
+  const [viewMode, setViewMode] = useViewMode("menu", "grid");
   const [activeCategory, setActiveCategory] = React.useState("all");
   const [searchQuery, setSearchQuery] = React.useState("");
 
@@ -775,102 +777,107 @@ export default function MenuManagementPage() {
       </div>
 
       {/* ======================================================== */}
-      {/* 2. CATEGORY TABS & SEARCH BAR                           */}
+      {/* 2. STICKY TOOLBAR: TABS, SEARCH, FILTERS & VIEW TOGGLE    */}
       {/* ======================================================== */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <Tabs tabs={categoriesTabs} activeTab={activeCategory} onChange={setActiveCategory} />
+      <div className="sticky top-0 z-20 bg-slate-50/95 dark:bg-[#090D16]/95 backdrop-blur-md pt-2 pb-3 -mx-3 px-3 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 border-b border-slate-200/60 dark:border-slate-800/60 space-y-2.5 transition-all">
+        {/* Top Row: Category Tabs + Search Bar + View Toggle */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="min-w-0 flex-1 overflow-x-auto">
+            <Tabs tabs={categoriesTabs} activeTab={activeCategory} onChange={setActiveCategory} />
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="relative w-full sm:w-60">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search dishes or Hindi name..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 shadow-xs"
+              />
+            </div>
+
+            <ViewToggle view={viewMode} onViewChange={setViewMode} />
+          </div>
         </div>
 
-        <div className="relative w-full sm:w-64">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search dishes or Hindi name..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 shadow-xs"
-          />
-        </div>
-      </div>
+        {/* Bottom Row: Multi-Filter Chips Bar + Price Sorter */}
+        <div className="flex flex-wrap items-center justify-between gap-2.5 p-2 rounded-2xl bg-white/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80 text-xs shadow-2xs">
+          {/* Left: Filter Buttons */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1 mr-1">
+              <Filter className="h-3 w-3" /> Filters:
+            </span>
 
-      {/* ======================================================== */}
-      {/* 3. MULTI-FILTER CHIPS BAR                               */}
-      {/* ======================================================== */}
-      <div className="flex flex-wrap items-center justify-between gap-2.5 p-2.5 rounded-2xl bg-slate-100/80 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 text-xs">
-        {/* Left: Filter Buttons */}
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1 mr-1">
-            <Filter className="h-3 w-3" /> Filters:
-          </span>
+            {/* Dietary Filter */}
+            {(["all", "veg", "non_veg"] as const).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => setDietaryFilter(mode)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold cursor-pointer transition-all ${
+                  dietaryFilter === mode
+                    ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs border border-slate-300 dark:border-slate-700"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                }`}
+              >
+                {mode === "all" ? "All Diets" : mode === "veg" ? "Pure Veg 🟢" : "Non-Veg 🔴"}
+              </button>
+            ))}
 
-          {/* Dietary Filter */}
-          {(["all", "veg", "non_veg"] as const).map((mode) => (
-            <button
-              key={mode}
-              type="button"
-              onClick={() => setDietaryFilter(mode)}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold cursor-pointer transition-all ${
-                dietaryFilter === mode
-                  ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs border border-slate-300 dark:border-slate-700"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-              }`}
+            <span className="text-slate-300 dark:text-slate-700">|</span>
+
+            {/* Availability Filter */}
+            {(["all", "available", "unavailable"] as const).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => setAvailabilityFilter(mode)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold cursor-pointer transition-all ${
+                  availabilityFilter === mode
+                    ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs border border-slate-300 dark:border-slate-700"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                }`}
+              >
+                {mode === "all" ? "All Stock" : mode === "available" ? "In Stock" : "86'd (Sold Out)"}
+              </button>
+            ))}
+
+            <span className="text-slate-300 dark:text-slate-700">|</span>
+
+            {/* Highlights Filter */}
+            {(["all", "bestseller", "recommended"] as const).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => setHighlightFilter(mode)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold cursor-pointer transition-all ${
+                  highlightFilter === mode
+                    ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs border border-slate-300 dark:border-slate-700"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                }`}
+              >
+                {mode === "all" ? "All Items" : mode === "bestseller" ? "⭐ Bestsellers" : "✨ Recommended"}
+              </button>
+            ))}
+          </div>
+
+          {/* Right: Price Sorter */}
+          <div className="flex items-center gap-1.5">
+            <ArrowUpDown className="h-3 w-3 text-slate-400" />
+            <select
+              value={priceSort}
+              onChange={(e) => setPriceSort(e.target.value as any)}
+              className="px-2 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 shadow-xs"
             >
-              {mode === "all" ? "All Diets" : mode === "veg" ? "Pure Veg 🟢" : "Non-Veg 🔴"}
-            </button>
-          ))}
-
-          <span className="text-slate-300 dark:text-slate-700">|</span>
-
-          {/* Availability Filter */}
-          {(["all", "available", "unavailable"] as const).map((mode) => (
-            <button
-              key={mode}
-              type="button"
-              onClick={() => setAvailabilityFilter(mode)}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold cursor-pointer transition-all ${
-                availabilityFilter === mode
-                  ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs border border-slate-300 dark:border-slate-700"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-              }`}
-            >
-              {mode === "all" ? "All Stock" : mode === "available" ? "In Stock" : "86'd (Sold Out)"}
-            </button>
-          ))}
-
-          <span className="text-slate-300 dark:text-slate-700">|</span>
-
-          {/* Highlights Filter */}
-          {(["all", "bestseller", "recommended"] as const).map((mode) => (
-            <button
-              key={mode}
-              type="button"
-              onClick={() => setHighlightFilter(mode)}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold cursor-pointer transition-all ${
-                highlightFilter === mode
-                  ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs border border-slate-300 dark:border-slate-700"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-              }`}
-            >
-              {mode === "all" ? "All Items" : mode === "bestseller" ? "⭐ Bestsellers" : "✨ Recommended"}
-            </button>
-          ))}
-        </div>
-
-        {/* Right: Price Sorter */}
-        <div className="flex items-center gap-1.5">
-          <ArrowUpDown className="h-3 w-3 text-slate-400" />
-          <select
-            value={priceSort}
-            onChange={(e) => setPriceSort(e.target.value as any)}
-            className="px-2 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 shadow-xs"
-          >
-            <option value="none">Sort by: Default</option>
-            <option value="low_to_high">Price: Low to High</option>
-            <option value="high_to_low">Price: High to Low</option>
-            <option value="name_asc">Name: A to Z</option>
-            <option value="name_desc">Name: Z to A</option>
-          </select>
+              <option value="none">Sort by: Default</option>
+              <option value="low_to_high">Price: Low to High</option>
+              <option value="high_to_low">Price: High to Low</option>
+              <option value="name_asc">Name: A to Z</option>
+              <option value="name_desc">Name: Z to A</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -929,7 +936,7 @@ export default function MenuManagementPage() {
             </Button>
           </div>
         </div>
-      ) : (
+      ) : viewMode === "grid" ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredItems.map((item) => {
             const isSelected = selectedIds.includes(item.id);
@@ -1115,6 +1122,220 @@ export default function MenuManagementPage() {
                   </div>
                 </div>
               </Card>
+            );
+          })}
+        </div>
+      ) : (
+        /* ======================================================== */
+        /* ENTERPRISE MENU LIST VIEW                                */
+        /* ======================================================== */
+        <div className="space-y-2">
+          {/* Table Column Headers (Desktop) */}
+          <div className="hidden lg:grid grid-cols-12 gap-3 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-slate-200/80 dark:border-slate-800/80 select-none">
+            <div className="col-span-5 flex items-center gap-2.5">
+              <button
+                type="button"
+                onClick={selectedIds.length === filteredItems.length ? handleDeselectAll : handleSelectAll}
+                className="text-slate-400 hover:text-emerald-500 transition-colors cursor-pointer"
+                title={selectedIds.length === filteredItems.length ? "Deselect All" : "Select All"}
+              >
+                {selectedIds.length > 0 && selectedIds.length === filteredItems.length ? (
+                  <CheckSquare className="h-4 w-4 text-emerald-500" />
+                ) : (
+                  <Square className="h-4 w-4" />
+                )}
+              </button>
+              <span>Dish & Culinary Details</span>
+            </div>
+            <div className="col-span-2">Category</div>
+            <div className="col-span-2">Price</div>
+            <div className="col-span-1">Status</div>
+            <div className="col-span-2 text-right">Quick Actions</div>
+          </div>
+
+          {/* List Rows */}
+          {filteredItems.map((item) => {
+            const isSelected = selectedIds.includes(item.id);
+
+            return (
+              <div
+                key={item.id}
+                className={`group flex flex-col lg:grid lg:grid-cols-12 gap-3 items-start lg:items-center px-3.5 py-2.5 rounded-2xl border transition-all duration-150 ${
+                  isSelected
+                    ? "ring-2 ring-emerald-500/40 border-emerald-500 bg-emerald-500/5 dark:bg-emerald-500/10"
+                    : !item.available
+                    ? "bg-slate-50/60 dark:bg-slate-900/30 border-rose-200/60 dark:border-rose-900/30 opacity-75"
+                    : "bg-white dark:bg-slate-900/70 border-slate-200/80 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-xs"
+                }`}
+              >
+                {/* Col 1 (Span 5): Multi-select + Thumbnail + Veg Dot + Name & Highlights */}
+                <div className="col-span-5 flex items-center gap-3 min-w-0 w-full">
+                  <button
+                    type="button"
+                    onClick={() => handleToggleSelectDish(item.id)}
+                    className="shrink-0 h-5 w-5 rounded flex items-center justify-center text-slate-400 hover:text-emerald-500 transition-colors cursor-pointer"
+                    title={isSelected ? "Deselect" : "Select"}
+                  >
+                    {isSelected ? (
+                      <CheckSquare className="h-4 w-4 text-emerald-500" />
+                    ) : (
+                      <Square className="h-4 w-4" />
+                    )}
+                  </button>
+
+                  {/* Thumbnail */}
+                  <div className="h-11 w-11 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0 border border-slate-200/80 dark:border-slate-700/60 relative">
+                    {item.imageUrl ? (
+                      <img
+                        src={item.imageUrl}
+                        alt={item.name}
+                        onError={(e) => {
+                          (e.currentTarget as HTMLElement).style.display = "none";
+                        }}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="h-full w-full flex items-center justify-center text-slate-400">
+                        <Utensils className="h-4 w-4" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Veg / Non-Veg Dot Box */}
+                  <span
+                    className={`inline-flex items-center justify-center h-4 w-4 rounded border shrink-0 ${
+                      item.isVeg
+                        ? "border-emerald-500 text-emerald-600 dark:text-emerald-400"
+                        : "border-rose-500 text-rose-600 dark:text-rose-400"
+                    }`}
+                    title={item.isVeg ? "Pure Vegetarian" : "Non-Vegetarian"}
+                  >
+                    <span
+                      className={`h-1.5 w-1.5 rounded-full ${
+                        item.isVeg ? "bg-emerald-500" : "bg-rose-500"
+                      }`}
+                    />
+                  </span>
+
+                  {/* Titles & Highlights */}
+                  <div
+                    className="min-w-0 flex-1 cursor-pointer"
+                    onClick={() => handleOpenEditDish(item)}
+                    title="Click to edit dish"
+                  >
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-sm font-bold text-slate-900 dark:text-white truncate group-hover:text-emerald-600 dark:group-hover:text-[#14F1C7] transition-colors">
+                        {item.name}
+                      </span>
+                      {item.bestseller && (
+                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-amber-500/15 text-[10px] font-bold text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                          <Star className="h-2.5 w-2.5 fill-amber-500" /> Bestseller
+                        </span>
+                      )}
+                      {item.recommended && (
+                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                          <Sparkles className="h-2.5 w-2.5" /> Chef Pick
+                        </span>
+                      )}
+                      {item.spicyLevel && item.spicyLevel > 0 ? (
+                        <span className="text-[10px]" title={`Spicy Level: ${item.spicyLevel}`}>
+                          {"🌶️".repeat(item.spicyLevel)}
+                        </span>
+                      ) : null}
+                    </div>
+
+                    {item.hindiName ? (
+                      <span className="text-[11px] text-slate-400 block truncate">
+                        {item.hindiName}
+                      </span>
+                    ) : null}
+
+                    {item.desc ? (
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                        {item.desc}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+
+                {/* Col 2 (Span 2): Category Pill & Prep Time */}
+                <div className="col-span-2 hidden lg:flex items-center gap-1.5 min-w-0">
+                  <span className="px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 text-xs font-semibold text-slate-700 dark:text-slate-300 truncate">
+                    {item.category}
+                  </span>
+                  {item.prepTimeMinutes ? (
+                    <span className="text-[10px] text-slate-500 shrink-0 flex items-center gap-0.5">
+                      <Clock className="h-2.5 w-2.5" /> {item.prepTimeMinutes}m
+                    </span>
+                  ) : null}
+                </div>
+
+                {/* Col 3 (Span 2): Price & Variants */}
+                <div className="col-span-2 flex items-center justify-between lg:justify-start gap-2 w-full lg:w-auto">
+                  <span className="text-sm font-bold font-mono text-slate-900 dark:text-white">
+                    {formatCurrency(item.price, tenant?.currency || "INR")}
+                  </span>
+                  {item.variantsCount && item.variantsCount > 0 ? (
+                    <Badge variant="neutral" size="sm" className="text-[10px] py-0 px-1.5">
+                      {item.variantsCount} sizes
+                    </Badge>
+                  ) : null}
+                </div>
+
+                {/* Col 4 (Span 1): Availability Badge */}
+                <div className="col-span-1 flex items-center">
+                  <button
+                    type="button"
+                    onClick={() => handleToggleAvailability(item.id, item.available)}
+                    className="cursor-pointer"
+                    title={`Click to mark as ${item.available ? "86'd" : "In Stock"}`}
+                  >
+                    <Badge variant={item.available ? "success" : "danger"} size="sm" dot>
+                      {item.available ? "In Stock" : "86'd"}
+                    </Badge>
+                  </button>
+                </div>
+
+                {/* Col 5 (Span 2): Quick Actions */}
+                <div className="col-span-2 flex items-center justify-end gap-1 w-full lg:w-auto pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-200/60 dark:border-slate-800/60">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenEditDish(item)}
+                    className="h-8 px-2.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-semibold text-xs flex items-center gap-1 transition-colors cursor-pointer"
+                    title="Edit dish details"
+                  >
+                    <Edit2 className="h-3.5 w-3.5" />
+                    <span>Edit</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleDuplicateDish(item)}
+                    className="h-8 w-8 rounded-lg text-slate-500 hover:text-emerald-600 hover:bg-emerald-500/10 flex items-center justify-center transition-colors cursor-pointer"
+                    title="Duplicate dish"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </button>
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 text-xs text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white font-medium px-2"
+                    onClick={() => handleToggleAvailability(item.id, item.available)}
+                  >
+                    {item.available ? "86" : "Restock"}
+                  </Button>
+
+                  <button
+                    type="button"
+                    onClick={() => setDishToDelete({ id: item.id, name: item.name })}
+                    className="h-8 w-8 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-500/10 flex items-center justify-center transition-colors cursor-pointer"
+                    title="Delete dish"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
             );
           })}
         </div>
