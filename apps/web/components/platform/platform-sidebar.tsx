@@ -157,7 +157,7 @@ export function PlatformSidebar() {
         </nav>
       </div>
 
-      {/* Footer Controls: Switcher & Logout */}
+      {/* Footer Controls: Client Dashboard switcher & Sign Out */}
       <div className="p-3 border-t border-slate-200/80 dark:border-slate-800/60 shrink-0 space-y-1.5">
         <Link
           href="/dashboard"
@@ -173,13 +173,11 @@ export function PlatformSidebar() {
 
         <button
           onClick={handleLogout}
-          className="w-full flex items-center justify-between p-2 rounded-xl bg-rose-50 hover:bg-rose-100/80 dark:bg-rose-950/20 dark:hover:bg-rose-950/40 text-rose-700 dark:text-rose-300 text-xs font-semibold transition-all group cursor-pointer border border-rose-200/60 dark:border-rose-900/40"
+          className="w-full flex items-center gap-2.5 p-2 rounded-xl bg-rose-50 hover:bg-rose-100/80 dark:bg-rose-950/20 dark:hover:bg-rose-950/40 text-rose-700 dark:text-rose-300 text-xs font-semibold transition-all group cursor-pointer border border-rose-200/60 dark:border-rose-900/40"
           title="Sign out of Super Admin Console"
         >
-          <div className="flex items-center gap-2.5 min-w-0">
-            <LogOut className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400 group-hover:scale-110 transition-transform" />
-            {!collapsed && <span className="truncate font-bold">Sign Out</span>}
-          </div>
+          <LogOut className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400 shrink-0 group-hover:scale-110 transition-transform" />
+          {!collapsed && <span className="truncate font-bold">Sign Out</span>}
         </button>
       </div>
     </aside>
