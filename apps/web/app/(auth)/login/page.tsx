@@ -56,13 +56,15 @@ export default function LoginPage() {
       const res = await apiClient.post("/auth/login", { phone, password });
       if (res.data?.success) {
         const { user, tenant, accessToken, isFirstLogin } = res.data.data;
-        const isFirst = Boolean(isFirstLogin ?? user?.isFirstLogin);
+        const storageKey = user?.id ? `dineflow_has_logged_in_${user.id}` : "dineflow_has_logged_in";
+        const hasLoggedInBefore = typeof window !== "undefined" ? localStorage.getItem(storageKey) : null;
+        const isFirst = isFirstLogin === true || user?.isFirstLogin === true || !hasLoggedInBefore;
         setIsFirstLoginUser(isFirst);
         setAuth(user, tenant, accessToken, isFirst);
         const name = user.name || user.firstName || "Chef";
         setWelcomeName(name);
         setIsRedirecting(true);
-        addToast("success", isFirst ? `Welcome, ${name}!` : "Welcome back!", `Signed in to ${tenant?.name || "your restaurant"}`);
+        addToast("success", isFirst ? `Welcome, ${name}!` : `Welcome back, ${name}!`, `Signed in to ${tenant?.name || "your restaurant"}`);
         const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
         const destination = params?.get("from") || "/dashboard";
         setTimeout(() => {

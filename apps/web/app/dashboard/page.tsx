@@ -59,39 +59,30 @@ export default function DashboardOverviewPage() {
   const userDisplayName =
     user?.firstName || user?.name || (isDemoTenant ? "Laurent" : "Restaurant Owner");
 
-  // Track first login vs returning login
-  const [isFirstLogin, setIsFirstLogin] = React.useState<boolean>(false);
+  // Track first login vs returning login - defaults to true so initial view is always "Welcome, {name}"
+  const [isFirstLogin, setIsFirstLogin] = React.useState<boolean>(true);
 
   React.useEffect(() => {
     if (!mounted) return;
     const userId = user?.id || (user as any)?._id || "";
     const storageKey = userId ? `dineflow_has_logged_in_${userId}` : "dineflow_has_logged_in";
 
-    // 1. Explicit backend response flag takes precedence
+    // 1. Explicit backend first login flag takes precedence
     if (user?.isFirstLogin === true) {
       setIsFirstLogin(true);
       return;
     }
 
-    if (user?.isFirstLogin === false) {
-      setIsFirstLogin(false);
-      try {
-        localStorage.setItem(storageKey, "true");
-      } catch {}
-      return;
-    }
-
-    // 2. Client-side visit history fallback:
-    // If user hasn't logged out or this key is not yet set in localStorage, it's their first login
+    // 2. Check localStorage session history: only show "Welcome back" if user previously logged out
     try {
       const hasLoggedInBefore = typeof window !== "undefined" ? localStorage.getItem(storageKey) : null;
-      if (!hasLoggedInBefore) {
-        setIsFirstLogin(true);
-      } else {
+      if (hasLoggedInBefore === "true") {
         setIsFirstLogin(false);
+      } else {
+        setIsFirstLogin(true);
       }
     } catch {
-      setIsFirstLogin(false);
+      setIsFirstLogin(true);
     }
   }, [mounted, user?.id, user?.isFirstLogin]);
 

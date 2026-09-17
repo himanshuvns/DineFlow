@@ -110,6 +110,9 @@ export function Sidebar() {
                 )}
                 title={sidebarCollapsed ? item.label : undefined}
               >
+                {isActive && (
+                  <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+                )}
                 <Icon
                   className={cn(
                     "h-4 w-4 shrink-0 transition-colors",
