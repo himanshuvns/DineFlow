@@ -101,14 +101,6 @@ func Setup(
 			// Staff & Workforce management
 			staffGroup := protected.Group("/staff")
 			{
-				// Core Staff
-				staffGroup.GET("", middleware.OwnerOrManager(), staffHandler.List)
-				staffGroup.POST("/invite", middleware.OwnerOrManager(), staffHandler.Invite)
-				staffGroup.GET("/:userId", middleware.OwnerOrManager(), staffHandler.Get)
-				staffGroup.PATCH("/:userId", middleware.OwnerOrManager(), staffHandler.Update)
-				staffGroup.PUT("/profiles/:userId", middleware.OwnerOrManager(), staffHandler.UpdateProfile)
-				staffGroup.DELETE("/:userId", middleware.OwnerOnly(), staffHandler.Delete)
-
 				// Geofencing
 				staffGroup.GET("/geofence", staffHandler.GetGeofence)
 				staffGroup.PUT("/geofence", middleware.OwnerOrManager(), staffHandler.UpdateGeofence)
@@ -139,6 +131,14 @@ func Setup(
 				// Holidays
 				staffGroup.GET("/holidays", staffHandler.ListHolidays)
 				staffGroup.POST("/holidays", middleware.OwnerOrManager(), staffHandler.CreateHoliday)
+
+				// Core Staff Management & Profiles
+				staffGroup.GET("", middleware.OwnerOrManager(), staffHandler.List)
+				staffGroup.POST("/invite", middleware.OwnerOrManager(), staffHandler.Invite)
+				staffGroup.PUT("/profiles/:userId", middleware.OwnerOrManager(), staffHandler.UpdateProfile)
+				staffGroup.GET("/:userId", middleware.OwnerOrManager(), staffHandler.Get)
+				staffGroup.PATCH("/:userId", middleware.OwnerOrManager(), staffHandler.Update)
+				staffGroup.DELETE("/:userId", middleware.OwnerOnly(), staffHandler.Delete)
 			}
 
 			// Storage (authenticated file uploads)
