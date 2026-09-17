@@ -437,15 +437,30 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
   initialized: false,
 
   initializeTenant: async (tenant: Tenant | null, user: User | null) => {
-    const tenantId = tenant?.id || "6aa52dd1187698227bc298ae";
-    const tenantName = tenant?.name || "The Grand Bistro";
-    const isDemoTenant =
-      !tenant ||
-      tenantId === "demo-tenant" ||
-      tenantId === "6aa52dd1187698227bc298ae" ||
+    if (!tenant && !user) {
+      set({
+        tenantId: "",
+        tenantName: "",
+        tenantSlug: "",
+        isDemoTenant: false,
+        menuItems: [],
+        categories: [],
+        tables: [],
+        orders: [],
+        isLoading: false,
+        initialized: false,
+      });
+      return;
+    }
+
+    const tenantId = tenant?.id || "";
+    const tenantName = tenant?.name || "";
+    const isDemoTenant = Boolean(
+      (tenant && (tenantId === "demo-tenant" || tenantId === "6aa52dd1187698227bc298ae" || tenantName.toLowerCase().includes("grand bistro"))) ||
       user?.phone === "+91 98765 43210" ||
-      tenantName.toLowerCase().includes("grand bistro");
-    const tenantSlug = tenant?.slug || "the-grand-bistro";
+      user?.phone === "+919876543210"
+    );
+    const tenantSlug = tenant?.slug || "";
 
     // Don't reinitialize if already loaded for same tenant
     if (get().initialized && get().tenantId === tenantId) {
@@ -498,23 +513,13 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
       // Do not return early: allow SWR background fetch to sync latest database items
     }
 
-    // Try to fetch from backend API if user is authenticated
+    // Only fetch from backend API if user has an active authenticated session
+    if (!useAuthStore.getState().accessToken) {
+      set({ isLoading: false });
+      return;
+    }
+
     try {
-      // Auto-authenticate demo session if unauthenticated so backend data syncs to MongoDB
-      if (!useAuthStore.getState().accessToken && isDemoTenant) {
-        try {
-          const loginRes = await apiClient.post("/auth/login", {
-            phone: "+919876543210",
-            password: "DineFlow@2026",
-          });
-          if (loginRes.data?.data?.accessToken) {
-            const { user: authedUser, tenant: authedTenant, accessToken } = loginRes.data.data;
-            useAuthStore.getState().setAuth(authedUser, authedTenant, accessToken);
-          }
-        } catch (authErr) {
-          console.warn("[tenant-store] Auto-auth for demo tenant skipped:", authErr);
-        }
-      }
 
       const [itemsRes, categoriesRes, tablesRes, ordersRes] = await Promise.allSettled([
         apiClient.get("/menu/items"),
@@ -1016,20 +1021,9 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
       );
     const shouldReplace = options?.replaceExisting ?? (isOnlyStarterItems || state.menuItems.length === 0);
 
-    // 1. Ensure authenticated session so sync persists to MongoDB
-    if (!useAuthStore.getState().accessToken && state.isDemoTenant) {
-      try {
-        const loginRes = await apiClient.post("/auth/login", {
-          phone: "+919876543210",
-          password: "DineFlow@2026",
-        });
-        if (loginRes.data?.data?.accessToken) {
-          const { user: authedUser, tenant: authedTenant, accessToken } = loginRes.data.data;
-          useAuthStore.getState().setAuth(authedUser, authedTenant, accessToken);
-        }
-      } catch (authErr) {
-        console.warn("[tenant-store] Auto-auth before bulk save skipped:", authErr);
-      }
+    // 1. Skip backend persistence if unauthenticated
+    if (!useAuthStore.getState().accessToken) {
+      return [];
     }
 
     // 2. If replacing existing menu, purge old items from backend database

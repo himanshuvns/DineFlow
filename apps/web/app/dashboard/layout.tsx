@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Sidebar, NAV_ITEMS } from "@/components/dashboard/sidebar";
 import { TopBar } from "@/components/dashboard/topbar";
 import { useUIStore } from "@/lib/stores/ui-store";
@@ -10,6 +10,7 @@ import { useAuthStore } from "@/lib/stores/auth-store";
 import { X, UtensilsCrossed, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { HospitalityLoader } from "@/components/ui/hospitality-loader";
 
 export default function DashboardLayout({
   children,
@@ -17,8 +18,46 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { mobileMenuOpen, setMobileMenuOpen } = useUIStore();
-  const tenant = useAuthStore((state) => state.tenant);
+  const { tenant, isAuthenticated, accessToken } = useAuthStore();
+  const [isAuthorized, setIsAuthorized] = React.useState(false);
+
+  React.useEffect(() => {
+    // 1. Check live Zustand store state
+    const store = useAuthStore.getState();
+    let authed = Boolean(store.isAuthenticated && store.accessToken);
+
+    // 2. Check persisted localStorage cache during initial client hydration
+    if (!authed && typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem("dineflow_auth");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed?.state?.accessToken && parsed?.state?.isAuthenticated) {
+            authed = true;
+          }
+        }
+      } catch {}
+    }
+
+    if (!authed) {
+      router.replace(`/login?from=${encodeURIComponent(pathname)}`);
+    } else {
+      setIsAuthorized(true);
+    }
+  }, [pathname, router, isAuthenticated, accessToken]);
+
+  if (!isAuthorized) {
+    return (
+      <HospitalityLoader
+        fullscreen
+        variant="cloche"
+        title="Securing Dining Room Session…"
+        subtitle="Verifying credentials and restaurant workspace permissions"
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen flex bg-slate-50 text-slate-900 dark:bg-[#090D16] dark:text-slate-100 transition-colors duration-200">

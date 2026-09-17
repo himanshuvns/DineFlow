@@ -101,11 +101,17 @@ apiClient.interceptors.response.use(
         } else {
           useAuthStore.getState().clearAuth();
           processQueue(error, null);
+          if (typeof window !== "undefined" && window.location.pathname.startsWith("/dashboard")) {
+            window.location.href = `/login?from=${encodeURIComponent(window.location.pathname)}&expired=true`;
+          }
           return Promise.reject(error);
         }
       } catch (refreshErr) {
         useAuthStore.getState().clearAuth();
         processQueue(refreshErr as AxiosError, null);
+        if (typeof window !== "undefined" && window.location.pathname.startsWith("/dashboard")) {
+          window.location.href = `/login?from=${encodeURIComponent(window.location.pathname)}&expired=true`;
+        }
         return Promise.reject(refreshErr);
       } finally {
         isRefreshing = false;

@@ -30,6 +30,16 @@ export default function LoginPage() {
   const [welcomeName, setWelcomeName] = React.useState("");
   const [error, setError] = React.useState("");
 
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("expired") === "true") {
+        setError("Your session has expired. Please sign in again to continue.");
+        addToast("warning", "Session Expired", "Your session has expired. Please sign in again.");
+      }
+    }
+  }, [addToast]);
+
   const handleFillDemo = () => {
     setPhone("+91 9876543210");
     setPassword("DineFlow@2026");
@@ -50,8 +60,10 @@ export default function LoginPage() {
         setWelcomeName(name);
         setIsRedirecting(true);
         addToast("success", "Welcome back!", `Signed in to ${tenant?.name || "your restaurant"}`);
+        const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+        const destination = params?.get("from") || "/dashboard";
         setTimeout(() => {
-          router.push("/dashboard");
+          router.push(destination);
         }, 2200);
         return;
       }
