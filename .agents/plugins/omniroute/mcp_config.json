@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "omniroute": {
+      "command": "/Users/himanshu.singh/.local/bin/omniroute",
+      "args": ["mcp", "status"]
+    }
+  }
+}

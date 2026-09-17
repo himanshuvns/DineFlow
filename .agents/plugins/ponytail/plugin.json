@@ -1,0 +1,4 @@
+{
+  "name": "ponytail",
+  "description": "Enforces YAGNI (You Aren't Gonna Need It) and prevents over-engineering across AI-generated code."
+}
