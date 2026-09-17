@@ -53,13 +53,22 @@ func (s *Service) CreateNotification(ctx context.Context, input CreateNotificati
 		return nil, errors.New("tenantId is required")
 	}
 
+	cleanTitle := strings.TrimSpace(input.Title)
+	for strings.Contains(cleanTitle, "##") {
+		cleanTitle = strings.ReplaceAll(cleanTitle, "##", "#")
+	}
+	cleanMessage := strings.TrimSpace(input.Message)
+	for strings.Contains(cleanMessage, "Table Table") {
+		cleanMessage = strings.ReplaceAll(cleanMessage, "Table Table", "Table")
+	}
+
 	notif := &domainnotification.Notification{
 		ID:        bson.NewObjectID(),
 		TenantID:  input.TenantID,
 		UserID:    input.UserID,
 		Category:  input.Category,
-		Title:     strings.TrimSpace(input.Title),
-		Message:   strings.TrimSpace(input.Message),
+		Title:     cleanTitle,
+		Message:   cleanMessage,
 		Priority:  input.Priority,
 		Read:      false,
 		ActionURL: strings.TrimSpace(input.ActionURL),
@@ -269,17 +278,66 @@ func (s *Service) ClearRead(ctx context.Context, tenantID bson.ObjectID) (int64,
 
 // ─── Domain Event Emitters ──────────────────────────────────────────────────
 
+func cleanOrderNumber(num string) string {
+	clean := strings.TrimSpace(num)
+	for strings.HasPrefix(clean, "#") {
+		clean = strings.TrimPrefix(clean, "#")
+	}
+	if clean == "" {
+		return "ORD"
+	}
+	return clean
+}
+
+func cleanTableName(tbl string) string {
+	trimmed := strings.TrimSpace(tbl)
+	if trimmed == "" {
+		return "Table"
+	}
+	for strings.HasPrefix(strings.ToLower(trimmed), "table table") {
+		trimmed = strings.TrimPrefix(trimmed, "Table ")
+		trimmed = strings.TrimPrefix(trimmed, "table ")
+	}
+	if strings.HasPrefix(strings.ToLower(trimmed), "table") {
+		return trimmed
+	}
+	return "Table " + trimmed
+}
+
+func cleanGuestName(name string) string {
+	trimmed := strings.TrimSpace(name)
+	if trimmed == "" {
+		return "Guest"
+	}
+	// Detect raw hex ID strings (e.g. 6 to 24 hex characters)
+	if len(trimmed) >= 6 && len(trimmed) <= 24 {
+		isHex := true
+		for _, c := range trimmed {
+			if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
+				isHex = false
+				break
+			}
+		}
+		if isHex {
+			return "Guest"
+		}
+	}
+	return trimmed
+}
+
 // EmitOrderCreated fires a notification when a customer places a new order.
 func (s *Service) EmitOrderCreated(ctx context.Context, tenantID bson.ObjectID, ord *domainorder.Order) error {
 	category := domainnotification.CategoryOrders
 	priority := domainnotification.PriorityHigh
-	title := fmt.Sprintf("New Order Received — #%s", ord.OrderNumber)
-	message := fmt.Sprintf("Table %s • %d item(s) • ₹%.0f", ord.TableName, len(ord.Items), ord.TotalAmount)
+	cleanOrdNum := cleanOrderNumber(ord.OrderNumber)
+	cleanTbl := cleanTableName(ord.TableName)
+	title := fmt.Sprintf("New Order Received — #%s", cleanOrdNum)
+	message := fmt.Sprintf("%s • %d item(s) • ₹%.0f", cleanTbl, len(ord.Items), ord.TotalAmount)
 	actionURL := "/dashboard/orders"
 
 	if ord.Destination == "room_service" {
 		category = domainnotification.CategoryRoomService
-		title = fmt.Sprintf("Room Service Order — #%s", ord.OrderNumber)
+		title = fmt.Sprintf("Room Service Order — #%s", cleanOrdNum)
 		message = fmt.Sprintf("Room %s • %d item(s) • ₹%.0f", ord.RoomNumber, len(ord.Items), ord.TotalAmount)
 		actionURL = "/dashboard/rooms"
 	}
@@ -293,8 +351,8 @@ func (s *Service) EmitOrderCreated(ctx context.Context, tenantID bson.ObjectID, 
 		ActionURL: actionURL,
 		Metadata: map[string]interface{}{
 			"orderId":     ord.ID.Hex(),
-			"orderNumber": ord.OrderNumber,
-			"table":       ord.TableName,
+			"orderNumber": cleanOrdNum,
+			"table":       cleanTbl,
 			"destination": string(ord.Destination),
 		},
 	})
@@ -306,19 +364,21 @@ func (s *Service) EmitOrderUpdated(ctx context.Context, tenantID bson.ObjectID, 
 	var title, message string
 	priority := domainnotification.PriorityMedium
 	category := domainnotification.CategoryOrders
+	cleanOrdNum := cleanOrderNumber(ord.OrderNumber)
+	cleanTbl := cleanTableName(ord.TableName)
 
 	switch ord.Status {
 	case domainorder.StatusServed:
-		title = fmt.Sprintf("Order Delivered — #%s", ord.OrderNumber)
-		message = fmt.Sprintf("Table %s order has been delivered to the customer.", ord.TableName)
+		title = fmt.Sprintf("Order Delivered — #%s", cleanOrdNum)
+		message = fmt.Sprintf("%s order has been delivered to the customer.", cleanTbl)
 	case domainorder.StatusCancelled:
-		title = fmt.Sprintf("Order Cancelled — #%s", ord.OrderNumber)
-		message = fmt.Sprintf("Order #%s has been cancelled.", ord.OrderNumber)
+		title = fmt.Sprintf("Order Cancelled — #%s", cleanOrdNum)
+		message = fmt.Sprintf("Order #%s has been cancelled.", cleanOrdNum)
 		priority = domainnotification.PriorityHigh
 	case domainorder.StatusPaid:
 		category = domainnotification.CategoryPayments
-		title = fmt.Sprintf("Payment Received — #%s", ord.OrderNumber)
-		message = fmt.Sprintf("₹%.0f payment recorded for Order #%s.", ord.TotalAmount, ord.OrderNumber)
+		title = fmt.Sprintf("Payment Received — #%s", cleanOrdNum)
+		message = fmt.Sprintf("₹%.0f payment recorded for Order #%s.", ord.TotalAmount, cleanOrdNum)
 		priority = domainnotification.PriorityMedium
 	default:
 		return nil // no notification for other status transitions
@@ -333,7 +393,7 @@ func (s *Service) EmitOrderUpdated(ctx context.Context, tenantID bson.ObjectID, 
 		ActionURL: "/dashboard/orders",
 		Metadata: map[string]interface{}{
 			"orderId":     ord.ID.Hex(),
-			"orderNumber": ord.OrderNumber,
+			"orderNumber": cleanOrdNum,
 			"status":      string(ord.Status),
 		},
 	})
@@ -342,46 +402,40 @@ func (s *Service) EmitOrderUpdated(ctx context.Context, tenantID bson.ObjectID, 
 
 // EmitGuestCheckedIn fires when a guest checks into a room.
 func (s *Service) EmitGuestCheckedIn(ctx context.Context, tenantID bson.ObjectID, guestName, roomNumber, roomID string) error {
-	if strings.TrimSpace(guestName) == "" {
-		guestName = "Guest"
-	}
+	gName := cleanGuestName(guestName)
 	_, err := s.CreateNotification(ctx, CreateNotificationInput{
 		TenantID:  tenantID,
 		Category:  domainnotification.CategoryReservations,
 		Title:     fmt.Sprintf("Guest Checked In — Room %s", roomNumber),
-		Message:   fmt.Sprintf("%s has checked in to Room %s.", guestName, roomNumber),
+		Message:   fmt.Sprintf("%s has checked in to Room %s.", gName, roomNumber),
 		Priority:  domainnotification.PriorityHigh,
 		ActionURL: fmt.Sprintf("/dashboard/rooms/%s", roomID),
-		Metadata:  map[string]interface{}{"roomId": roomID, "roomNumber": roomNumber, "guestName": guestName},
+		Metadata:  map[string]interface{}{"roomId": roomID, "roomNumber": roomNumber, "guestName": gName},
 	})
 	return err
 }
 
 // EmitGuestCheckedOut fires when a guest checks out of a room.
 func (s *Service) EmitGuestCheckedOut(ctx context.Context, tenantID bson.ObjectID, guestName, roomNumber, roomID string) error {
-	if strings.TrimSpace(guestName) == "" {
-		guestName = "Guest"
-	}
+	gName := cleanGuestName(guestName)
 	_, err := s.CreateNotification(ctx, CreateNotificationInput{
 		TenantID:  tenantID,
 		Category:  domainnotification.CategoryReservations,
 		Title:     fmt.Sprintf("Guest Checked Out — Room %s", roomNumber),
-		Message:   fmt.Sprintf("%s has checked out from Room %s.", guestName, roomNumber),
+		Message:   fmt.Sprintf("%s has checked out from Room %s.", gName, roomNumber),
 		Priority:  domainnotification.PriorityMedium,
 		ActionURL: fmt.Sprintf("/dashboard/rooms/%s", roomID),
-		Metadata:  map[string]interface{}{"roomId": roomID, "roomNumber": roomNumber, "guestName": guestName},
+		Metadata:  map[string]interface{}{"roomId": roomID, "roomNumber": roomNumber, "guestName": gName},
 	})
 	return err
 }
 
 // EmitGuestStayExtended fires when an in-house guest extends their stay from the customer portal.
 func (s *Service) EmitGuestStayExtended(ctx context.Context, tenantID bson.ObjectID, guestName, roomNumber, roomID string, oldCheckOut, newCheckOut time.Time, nights int) error {
-	if strings.TrimSpace(guestName) == "" {
-		guestName = "Guest"
-	}
+	gName := cleanGuestName(guestName)
 	formattedDate := newCheckOut.Format("02 Jan 2006, 03:04 PM")
 	title := fmt.Sprintf("Stay Extended — Suite %s", roomNumber)
-	message := fmt.Sprintf("%s extended stay until %s (+%d night(s)).", guestName, formattedDate, nights)
+	message := fmt.Sprintf("%s extended stay until %s (+%d night(s)).", gName, formattedDate, nights)
 
 	_, err := s.CreateNotification(ctx, CreateNotificationInput{
 		TenantID:  tenantID,
@@ -393,7 +447,7 @@ func (s *Service) EmitGuestStayExtended(ctx context.Context, tenantID bson.Objec
 		Metadata: map[string]interface{}{
 			"roomId":           roomID,
 			"roomNumber":       roomNumber,
-			"guestName":        guestName,
+			"guestName":        gName,
 			"oldCheckOut":      oldCheckOut.Format(time.RFC3339),
 			"newCheckOut":      newCheckOut.Format(time.RFC3339),
 			"additionalNights": nights,

@@ -1402,18 +1402,23 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
     if (status === "served" || status === "cancelled" || status === "paid") {
       const order = state.orders.find((o) => o.id === id);
       const isRoom = order?.destination === "room_service" || (order?.table || "").toLowerCase().includes("suite");
+      const cleanId = String(id || "").replace(/^#+/, "").trim();
+      const rawTable = (order?.table || "").trim();
+      const cleanTable = rawTable
+        ? (rawTable.toLowerCase().startsWith("table") ? rawTable : `Table ${rawTable}`)
+        : "Table";
       const titleMap: Record<string, string> = {
-        served: `Order Delivered — #${id}`,
-        cancelled: `Order Cancelled — #${id}`,
-        paid: `Payment Received — #${id}`,
+        served: `Order Delivered — #${cleanId}`,
+        cancelled: `Order Cancelled — #${cleanId}`,
+        paid: `Payment Received — #${cleanId}`,
       };
       apiClient.post("/notifications", {
         category: status === "paid" ? "payments" : (isRoom ? "room_service" : "orders"),
-        title: titleMap[status] || `Order ${status} — #${id}`,
-        message: `${order?.table || "Table"} order marked as ${status}.`,
+        title: titleMap[status] || `Order ${status} — #${cleanId}`,
+        message: `${cleanTable} order marked as ${status}.`,
         priority: status === "cancelled" ? "high" : "medium",
         actionUrl: isRoom ? "/dashboard/rooms" : "/dashboard/orders",
-        metadata: { orderId: id, status },
+        metadata: { orderId: cleanId, status },
       }).catch(() => {});
     }
 

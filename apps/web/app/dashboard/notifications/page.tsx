@@ -8,6 +8,7 @@ import {
   ArrowLeft,
 } from 'lucide-react'
 import { useNotificationStore, type NotificationCategory, type NotificationPriority } from '@/lib/stores/notification-store'
+import { sanitizeNotification } from '@/components/notifications/notification-center'
 
 // ── Inline time helper ────────────────────────────────────────────────────────
 function timeAgo(dateStr: string): string {
@@ -225,6 +226,7 @@ export default function NotificationsPage() {
           ) : (
             notifications.map((notif) => {
               const meta = CATEGORY_META[notif.category]
+              const { title: cleanTitle, message: cleanMessage } = sanitizeNotification(notif.title, notif.message)
               return (
                 <div
                   key={notif.id}
@@ -244,7 +246,7 @@ export default function NotificationsPage() {
                   </div>
 
                   {/* Category icon */}
-                  <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-semibold shrink-0 mt-0.5 ${meta?.colorClass}`}>
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold shrink-0 mt-0.5 ${meta?.colorClass}`}>
                     {meta?.icon}
                     <span className="hidden xs:inline">{meta?.label}</span>
                   </span>
@@ -252,7 +254,7 @@ export default function NotificationsPage() {
                   {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{notif.title}</p>
+                      <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{cleanTitle}</p>
                       <div className="flex items-center gap-2">
                         <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${PRIORITY_BADGE[notif.priority]}`}>
                           {notif.priority}
@@ -262,7 +264,7 @@ export default function NotificationsPage() {
                         </span>
                       </div>
                     </div>
-                    <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">{notif.message}</p>
+                    <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">{cleanMessage}</p>
                   </div>
 
                   {/* Mark read button */}
