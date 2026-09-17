@@ -64,6 +64,7 @@ func Setup(
 		v1.GET("/whatsapp/webhook", waHandler.VerifyWebhook)
 		v1.POST("/whatsapp/webhook", waHandler.HandleWebhook)
 		v1.GET("/whatsapp/invoices/:id/receipt", waHandler.GetInvoiceReceiptHTML)
+		v1.GET("/staff/payslips/:id/view", staffHandler.GetPayslipHTML)
 
 		// ── Auth (Public) ─────────────────────────────────────────────────
 		auth := v1.Group("/auth")
@@ -97,14 +98,47 @@ func Setup(
 				tenantGroup.PATCH("/onboarding/:step", tenantHandler.UpdateOnboardingStep)
 			}
 
-			// Staff management
+			// Staff & Workforce management
 			staffGroup := protected.Group("/staff")
 			{
+				// Core Staff
 				staffGroup.GET("", middleware.OwnerOrManager(), staffHandler.List)
 				staffGroup.POST("/invite", middleware.OwnerOrManager(), staffHandler.Invite)
 				staffGroup.GET("/:userId", middleware.OwnerOrManager(), staffHandler.Get)
 				staffGroup.PATCH("/:userId", middleware.OwnerOrManager(), staffHandler.Update)
+				staffGroup.PUT("/profiles/:userId", middleware.OwnerOrManager(), staffHandler.UpdateProfile)
 				staffGroup.DELETE("/:userId", middleware.OwnerOnly(), staffHandler.Delete)
+
+				// Geofencing
+				staffGroup.GET("/geofence", staffHandler.GetGeofence)
+				staffGroup.PUT("/geofence", middleware.OwnerOrManager(), staffHandler.UpdateGeofence)
+
+				// Shifts
+				staffGroup.GET("/shifts", staffHandler.ListShifts)
+				staffGroup.POST("/shifts", middleware.OwnerOrManager(), staffHandler.CreateShift)
+
+				// Attendance
+				staffGroup.POST("/attendance/clock-in", staffHandler.ClockIn)
+				staffGroup.POST("/attendance/clock-out", staffHandler.ClockOut)
+				staffGroup.POST("/attendance/break", staffHandler.ToggleBreak)
+				staffGroup.GET("/attendance/today", staffHandler.GetTodayAttendance)
+				staffGroup.GET("/attendance/history", staffHandler.GetAttendanceHistory)
+
+				// Leaves
+				staffGroup.POST("/leaves", staffHandler.ApplyLeave)
+				staffGroup.GET("/leaves", staffHandler.ListLeaves)
+				staffGroup.POST("/leaves/:id/approve", middleware.OwnerOrManager(), staffHandler.ApproveLeave)
+				staffGroup.POST("/leaves/:id/reject", middleware.OwnerOrManager(), staffHandler.RejectLeave)
+				staffGroup.GET("/leaves/balance", staffHandler.GetLeaveBalances)
+
+				// Payroll
+				staffGroup.POST("/payroll/run", middleware.OwnerOrManager(), staffHandler.RunPayroll)
+				staffGroup.GET("/payroll", middleware.OwnerOrManager(), staffHandler.ListPayslips)
+				staffGroup.GET("/payslips/:id", staffHandler.GetPayslip)
+
+				// Holidays
+				staffGroup.GET("/holidays", staffHandler.ListHolidays)
+				staffGroup.POST("/holidays", middleware.OwnerOrManager(), staffHandler.CreateHoliday)
 			}
 
 			// Storage (authenticated file uploads)

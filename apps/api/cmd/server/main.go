@@ -163,9 +163,10 @@ func main() {
 	notifHandler := handlers.NewNotificationHandler(notifService, hub)
 	searchHandler := handlers.NewSearchHandler(searchService)
 
-	// Inject notifService into order & whatsapp services for real-time event emission
+	// Inject notifService into order, whatsapp & staff services for real-time event emission
 	orderService.SetNotificationService(notifService)
 	waService.SetNotificationService(notifService)
+	staffService.SetNotificationService(notifService)
 
 	// Inject ping functions for health endpoint
 	handlers.SetHealthDeps(
