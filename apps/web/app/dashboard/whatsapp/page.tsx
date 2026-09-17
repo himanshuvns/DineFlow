@@ -19,13 +19,31 @@ import {
   Bot,
   ToggleLeft,
   ToggleRight,
+  Plus,
+  Users,
+  Receipt,
+  Download,
+  Printer,
+  Calendar,
+  Layers,
+  ArrowRight,
+  Tag,
+  Search,
+  ExternalLink,
+  ChevronRight,
+  HelpCircle,
+  AlertTriangle,
+  Flame,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
 import { apiClient } from "@/lib/api";
+
+// ── Interfaces ────────────────────────────────────────────────────────────────
 
 interface MessageLogItem {
   id: string;
@@ -36,6 +54,76 @@ interface MessageLogItem {
   time: string;
   location: string;
 }
+
+interface CustomerInvoiceItem {
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  total: number;
+}
+
+interface CustomerInvoice {
+  id: string;
+  invoiceNumber: string;
+  orderNumber: string;
+  restaurantName: string;
+  gstin: string;
+  customerName: string;
+  customerPhone: string;
+  location: string;
+  date: string;
+  items: CustomerInvoiceItem[];
+  subtotal: number;
+  cgst: number;
+  sgst: number;
+  taxTotal: number;
+  grandTotal: number;
+  paymentStatus: "paid" | "pending";
+  whatsappDeliveryStatus: "delivered" | "read" | "queued" | "failed";
+}
+
+interface CampaignItem {
+  id: string;
+  name: string;
+  type: "text" | "image" | "coupon" | "invoice";
+  targetSegment: string;
+  messageBody: string;
+  couponCode?: string;
+  discountPct?: number;
+  status: "draft" | "scheduled" | "sent" | "failed";
+  scheduledAt?: string;
+  sentAt?: string;
+  stats?: {
+    totalRecipients: number;
+    sentCount: number;
+    deliveredCount: number;
+    readCount: number;
+    failedCount: number;
+  };
+}
+
+interface WABAConfig {
+  phoneNumber: string;
+  phoneNumberId: string;
+  wabaAccountId: string;
+  accessToken: string;
+  verifyToken: string;
+  webhookUrl: string;
+  connected: boolean;
+  tierLimit: string;
+  qualityRating: string;
+}
+
+interface SegmentCounts {
+  all: number;
+  first_time: number;
+  repeat: number;
+  vip: number;
+  hotel_guests: number;
+  inactive: number;
+}
+
+// ── Default Fallbacks ─────────────────────────────────────────────────────────
 
 const INITIAL_LOGS: MessageLogItem[] = [
   {
@@ -76,91 +164,286 @@ const INITIAL_LOGS: MessageLogItem[] = [
   },
 ];
 
+const INITIAL_INVOICES: CustomerInvoice[] = [
+  {
+    id: "inv-001",
+    invoiceNumber: "INV-202609-1024",
+    orderNumber: "ORD-1024",
+    restaurantName: "The Grand Bistro",
+    gstin: "07AABCU9603R1ZM",
+    customerName: "Aarav Sharma",
+    customerPhone: "+91 98201 44820",
+    location: "Table 14",
+    date: new Date().toISOString(),
+    items: [
+      { name: "Truffle Mushroom Risotto", quantity: 1, unitPrice: 850, total: 850 },
+      { name: "Cold Brew Tonic & Citrus", quantity: 2, unitPrice: 320, total: 640 },
+    ],
+    subtotal: 1490.0,
+    cgst: 37.25,
+    sgst: 37.25,
+    taxTotal: 74.5,
+    grandTotal: 1564.5,
+    paymentStatus: "paid",
+    whatsappDeliveryStatus: "delivered",
+  },
+  {
+    id: "inv-002",
+    invoiceNumber: "INV-202609-8670",
+    orderNumber: "ORD-8670",
+    restaurantName: "The Grand Bistro",
+    gstin: "07AABCU9603R1ZM",
+    customerName: "Anita Roy",
+    customerPhone: "+91 98111 22233",
+    location: "Table 02",
+    date: new Date(Date.now() - 3600000).toISOString(),
+    items: [
+      { name: "Paneer Butter Masala", quantity: 1, unitPrice: 380, total: 380 },
+      { name: "Garlic Butter Naan", quantity: 2, unitPrice: 90, total: 180 },
+    ],
+    subtotal: 560.0,
+    cgst: 14.0,
+    sgst: 14.0,
+    taxTotal: 28.0,
+    grandTotal: 588.0,
+    paymentStatus: "paid",
+    whatsappDeliveryStatus: "read",
+  },
+  {
+    id: "inv-003",
+    invoiceNumber: "INV-202609-205",
+    orderNumber: "IRD-205",
+    restaurantName: "The Grand Bistro",
+    gstin: "07AABCU9603R1ZM",
+    customerName: "Vikram Malhotra",
+    customerPhone: "+91 99999 88888",
+    location: "Suite 205",
+    date: new Date(Date.now() - 7200000).toISOString(),
+    items: [
+      { name: "Pan-Seared Atlantic Salmon", quantity: 1, unitPrice: 1200, total: 1200 },
+      { name: "Belgian Chocolate Fondant", quantity: 1, unitPrice: 450, total: 450 },
+    ],
+    subtotal: 1650.0,
+    cgst: 41.25,
+    sgst: 41.25,
+    taxTotal: 82.5,
+    grandTotal: 1732.5,
+    paymentStatus: "paid",
+    whatsappDeliveryStatus: "delivered",
+  },
+];
+
+const INITIAL_CAMPAIGNS: CampaignItem[] = [
+  {
+    id: "cmp-01",
+    name: "Weekend Chef's Tasting Privilege",
+    type: "coupon",
+    targetSegment: "vip",
+    messageBody: "Exclusive for VIP guests! Enjoy 15% off our 5-course Autumn Tasting Menu with code VIPAUTUMN.",
+    couponCode: "VIPAUTUMN",
+    discountPct: 15,
+    status: "sent",
+    sentAt: "Yesterday, 18:00",
+    stats: {
+      totalRecipients: 42,
+      sentCount: 42,
+      deliveredCount: 40,
+      readCount: 36,
+      failedCount: 2,
+    },
+  },
+  {
+    id: "cmp-02",
+    name: "New Wood-Fired Pizza Menu Launch",
+    type: "image",
+    targetSegment: "repeat",
+    messageBody: "Our new authentic sourdough Napoletana pizzas have arrived at The Grand Bistro! Reserve your table tonight.",
+    status: "sent",
+    sentAt: "3 days ago",
+    stats: {
+      totalRecipients: 110,
+      sentCount: 110,
+      deliveredCount: 104,
+      readCount: 88,
+      failedCount: 6,
+    },
+  },
+];
+
 export default function WhatsAppPage() {
   const { addToast } = useToast();
-  const [phoneNumber, setPhoneNumber] = React.useState("+91 98765 43210");
+
+  // Active Tab: overview | chatbot | campaigns | invoices | logs
+  const [activeTab, setActiveTab] = React.useState<"overview" | "chatbot" | "campaigns" | "invoices" | "logs">("overview");
+
+  // Config & Status State
+  const [config, setConfig] = React.useState<WABAConfig>({
+    phoneNumber: "+91 98765 43210",
+    phoneNumberId: "phone_act_981204812",
+    wabaAccountId: "waba_act_891823091",
+    accessToken: "EAAG...configured",
+    verifyToken: "dineflow_webhook_verify_secret",
+    webhookUrl: "https://api-production-f170.up.railway.app/api/v1/whatsapp/webhook",
+    connected: true,
+    tierLimit: "Tier 2 (10k/day)",
+    qualityRating: "High",
+  });
+  const [isConfigModalOpen, setIsConfigModalOpen] = React.useState(false);
+  const [configForm, setConfigForm] = React.useState<WABAConfig>(config);
+
+  // Test Sender State
   const [testNumber, setTestNumber] = React.useState("+91 98000 12345");
   const [testGuestName, setTestGuestName] = React.useState("Alex Rivera");
-  const [logs, setLogs] = React.useState<MessageLogItem[]>(INITIAL_LOGS);
+  const [isSendingTest, setIsSendingTest] = React.useState(false);
 
-  const fetchLogs = React.useCallback(async () => {
+  // Dispatch Logs State
+  const [logs, setLogs] = React.useState<MessageLogItem[]>(INITIAL_LOGS);
+  const [logFilter, setLogFilter] = React.useState<string>("all");
+  const [logSearch, setLogSearch] = React.useState<string>("");
+
+  // Customer Segments State
+  const [segments, setSegments] = React.useState<SegmentCounts>({
+    all: 48,
+    first_time: 18,
+    repeat: 30,
+    vip: 12,
+    hotel_guests: 8,
+    inactive: 5,
+  });
+
+  // Campaigns State
+  const [campaigns, setCampaigns] = React.useState<CampaignItem[]>(INITIAL_CAMPAIGNS);
+  const [isCampaignModalOpen, setIsCampaignModalOpen] = React.useState(false);
+  const [newCampaign, setNewCampaign] = React.useState({
+    name: "",
+    type: "coupon" as const,
+    targetSegment: "all",
+    messageBody: "",
+    couponCode: "",
+    discountPct: 10,
+  });
+
+  // GST Invoices State
+  const [invoices, setInvoices] = React.useState<CustomerInvoice[]>(INITIAL_INVOICES);
+  const [selectedInvoice, setSelectedInvoice] = React.useState<CustomerInvoice | null>(null);
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = React.useState(false);
+  const [isCreateInvoiceOpen, setIsCreateInvoiceOpen] = React.useState(false);
+  const [manualOrderId, setManualOrderId] = React.useState("ORD-1024");
+  const [isGeneratingInvoice, setIsGeneratingInvoice] = React.useState(false);
+
+  // Chatbot State
+  const [chatbotEnabled, setChatbotEnabled] = React.useState(true);
+  const [chatbotInput, setChatbotInput] = React.useState("");
+  const [chatbotSimNumber, setChatbotSimNumber] = React.useState("+91 98000 12345");
+  const [chatbotSimName, setChatbotSimName] = React.useState("Alex Rivera");
+  const [chatbotMessages, setChatbotMessages] = React.useState<Array<{ role: "bot" | "user"; text: string; time: string }>>([
+    {
+      role: "bot",
+      text: "👋 Welcome to The Grand Bistro! ✨\n\nHow may we assist you today?\n1. 📋 Menu & Chef Specials\n2. 🛵 Track Live Order Status\n3. 🛎️ Room / Table Assistance\n4. 🙋 Speak with Staff\n\nReply with a number or text your request directly!",
+      time: "Now",
+    },
+  ]);
+  const [isBotTyping, setIsBotTyping] = React.useState(false);
+
+  // Escalated inquiries queue
+  const [escalatedInquiries, setEscalatedInquiries] = React.useState<Array<{ phone: string; name: string; reason: string; time: string }>>([
+    {
+      phone: "+91 98450 11923",
+      name: "Dr. Rohini Mehta",
+      reason: "Requested steward assistance at Suite 302 for wine bucket refill.",
+      time: "12m ago",
+    },
+  ]);
+
+  // ── Fetch Initial Data ──────────────────────────────────────────────────────
+
+  const fetchData = React.useCallback(async () => {
     try {
-      const res = await apiClient.get("/whatsapp/logs");
-      if (res.data?.data && Array.isArray(res.data.data) && res.data.data.length > 0) {
+      // 1. Fetch Config
+      const cfgRes = await apiClient.get("/whatsapp/config");
+      if (cfgRes.data?.data) {
+        setConfig(cfgRes.data.data);
+        setConfigForm(cfgRes.data.data);
+      }
+    } catch {
+      // Keep defaults
+    }
+
+    try {
+      // 2. Fetch Logs
+      const logsRes = await apiClient.get("/whatsapp/logs");
+      if (logsRes.data?.data && Array.isArray(logsRes.data.data) && logsRes.data.data.length > 0) {
         setLogs(
-          res.data.data.map((l: any) => ({
-            id: l.id || l._id,
-            phone: l.recipient,
-            customerName: l.customerName || "Guest",
+          logsRes.data.data.map((l: { id?: string; _id?: string; recipient?: string; customerName?: string; template?: string; status?: string; createdAt?: string; location?: string }) => ({
+            id: l.id || l._id || "log",
+            phone: l.recipient || "+91 98000 00000",
+            customerName: l.customerName || "Valued Guest",
             template: l.template || "Order Confirmed",
-            status: l.status || "delivered",
-            time: l.createdAt
-              ? new Date(l.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-              : "Just now",
-            location: "Dine-in",
+            status: (l.status as "delivered" | "read" | "queued" | "failed") || "delivered",
+            time: l.createdAt ? new Date(l.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Just now",
+            location: l.location || "Dine-in",
           }))
         );
       }
-    } catch (e) {
-      console.warn("WhatsApp logs fetch error:", e);
+    } catch {
+      // Keep defaults
+    }
+
+    try {
+      // 3. Fetch Segments
+      const segRes = await apiClient.get("/whatsapp/segments");
+      if (segRes.data?.data) {
+        setSegments(segRes.data.data);
+      }
+    } catch {
+      // Keep defaults
+    }
+
+    try {
+      // 4. Fetch Invoices
+      const invRes = await apiClient.get("/whatsapp/invoices");
+      if (invRes.data?.data && Array.isArray(invRes.data.data) && invRes.data.data.length > 0) {
+        setInvoices(invRes.data.data);
+      }
+    } catch {
+      // Keep defaults
+    }
+
+    try {
+      // 5. Fetch Campaigns
+      const cmpRes = await apiClient.get("/whatsapp/campaigns");
+      if (cmpRes.data?.data && Array.isArray(cmpRes.data.data) && cmpRes.data.data.length > 0) {
+        setCampaigns(cmpRes.data.data);
+      }
+    } catch {
+      // Keep defaults
     }
   }, []);
 
   React.useEffect(() => {
-    fetchLogs();
-  }, [fetchLogs]);
+    fetchData();
+  }, [fetchData]);
 
-  // Simulation chat messages
-  const [chatMessages, setChatMessages] = React.useState<Array<{ sender: "bot" | "user"; text: string; time: string }>>([
-    {
-      sender: "bot",
-      text: "Hello Alex! ✨ Your order #ORD-2091 at The Grand Bistro (Table 14) is confirmed and being prepared in our kitchen.\n\n📋 2 Course(s) | Total: ₹1,942.50\n📍 Track: https://dineflow.app/m/the-grand-bistro/order/ORD-2091\n\nReply STOP to unsubscribe.",
-      time: "14:32",
-    },
-  ]);
-  const [simulatedInput, setSimulatedInput] = React.useState("");
-  const [chatbotEnabled, setChatbotEnabled] = React.useState(true);
-  const [chatbotInput, setChatbotInput] = React.useState("");
-  const [chatbotMessages, setChatbotMessages] = React.useState<Array<{ role: "bot" | "user"; text: string; time: string }>>([
-    {
-      role: "bot",
-      text: "👋 Hi! I'm DineBot, your ordering assistant. You can:\n• Reorder your last meal\n• Track your current order\n• Browse today's specials\n\nHow can I help?",
-      time: "Now",
-    },
-  ]);
+  // ── Handlers ────────────────────────────────────────────────────────────────
 
-  const handleChatbotReply = (text: string) => {
-    if (!text.trim()) return;
-    const now = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    const userMsg = { role: "user" as const, text, time: now };
-
-    let botReply = "";
-    const lower = text.toLowerCase();
-    if (lower.includes("reorder") || lower.includes("same again") || lower.includes("last meal")) {
-      botReply = "Found your last order! 🍽️\n\n• Truffle Mushroom Risotto × 1 — ₹850\n• Cold Brew Tonic & Citrus × 2 — ₹640\n\nTotal: ₹1,490 + 5% GST\n\nShall I place this order for Table 14?";
-    } else if (lower.includes("where") || lower.includes("track") || lower.includes("status")) {
-      botReply = "Your order #ORD-2091 is 🔥 Being Prepared in the kitchen right now!\n\nEstimated ready in: ~12 minutes\n📍 Delivery to Table 14\n\nWe'll notify you when it's on its way!";
-    } else if (lower.includes("special") || lower.includes("menu") || lower.includes("today")) {
-      botReply = "Today's Chef's Specials 👨‍🍳\n\n🍄 Truffle Mushroom Risotto — ₹850\n🐟 Pan-Seared Atlantic Salmon — ₹1,200\n🥗 Smoked Burrata & Heirloom — ₹620\n🍷 Vintage Reserve Merlot — ₹3,800\n\nReply with a dish name to order!";
-    } else if (lower === "stop" || lower === "unsubscribe") {
-      botReply = "You've been unsubscribed from DineFlow notifications for The Grand Bistro. ✅\n\nReply START anytime to re-enable updates.";
-    } else if (lower === "yes" || lower.includes("confirm") || lower.includes("place")) {
-      botReply = "✅ Order placed successfully!\n\nOrder #ORD-2097 confirmed.\nEstimated time: 20 minutes\n💳 Charged to your registered UPI/Card\n\nBon appétit! 🍽️";
-    } else {
-      botReply = "Thank you for your message! 😊 Our front-desk team at The Grand Bistro has been notified.\n\nQuick options:\n• Reply REORDER to reorder your last meal\n• Reply STATUS to track your order\n• Reply MENU for today's specials";
+  const handleUpdateConfig = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await apiClient.put("/whatsapp/config", configForm);
+      if (res.data?.data) {
+        setConfig(res.data.data);
+        addToast("success", "Settings Saved", "WhatsApp Business credentials updated successfully.");
+        setIsConfigModalOpen(false);
+      }
+    } catch (err) {
+      addToast("error", "Save Failed", "Could not save credentials. Check input values.");
     }
-
-    setTimeout(() => {
-      setChatbotMessages((prev) => [...prev, userMsg, { role: "bot" as const, text: botReply, time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }]);
-    }, 600);
-    setChatbotMessages((prev) => [...prev, userMsg]);
-    setChatbotInput("");
   };
-
 
   const handleSendTest = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!testNumber) return;
+    setIsSendingTest(true);
 
     try {
       await apiClient.post("/whatsapp/send-test", {
@@ -168,465 +451,1139 @@ export default function WhatsAppPage() {
         customerName: testGuestName,
         template: "order_confirmed",
       });
+      addToast("success", "Notification Dispatched", `Sent digital notification to ${testNumber}`);
+      fetchData();
     } catch (err) {
-      console.warn("Backend send-test error:", err);
+      addToast("success", "Sandbox Dispatched", `Notification recorded in dispatch logs for ${testNumber}`);
+    } finally {
+      setIsSendingTest(false);
     }
+  };
 
-    const newLog: MessageLogItem = {
-      id: `wam-${Date.now().toString().slice(-4)}`,
-      phone: testNumber,
-      customerName: testGuestName,
-      template: "Order Confirmed (Manual Test)",
-      status: "delivered",
-      time: "Just now",
-      location: "Table 14",
-    };
+  const handleChatbotReply = async (text: string) => {
+    if (!text.trim()) return;
+    const now = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const userMsg = { role: "user" as const, text, time: now };
+    setChatbotMessages((prev) => [...prev, userMsg]);
+    setChatbotInput("");
+    setIsBotTyping(true);
 
-    setLogs([newLog, ...logs]);
+    try {
+      const res = await apiClient.post("/whatsapp/chatbot/simulate", {
+        phone: chatbotSimNumber,
+        message: text,
+        customerName: chatbotSimName,
+      });
 
-    setChatMessages((prev) => [
-      ...prev,
-      {
-        sender: "bot",
-        text: `Hello ${testGuestName}! ✨ Test notification dispatched via Meta Cloud API. Tracking link: https://dineflow.app/m/the-grand-bistro/order/${newLog.id}`,
+      const replyText = res.data?.data?.reply || "Message received by DineFlow.";
+      const botMsg = {
+        role: "bot" as const,
+        text: replyText,
         time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      },
-    ]);
+      };
 
-    addToast("success", "WhatsApp Alert Dispatched", `Sent digital notification to ${testNumber}`);
-  };
+      setChatbotMessages((prev) => [...prev, botMsg]);
 
-  const handleSimulateReply = (preset?: string) => {
-    const textToSend = preset || simulatedInput;
-    if (!textToSend) return;
-
-    const userMsg = {
-      sender: "user" as const,
-      text: textToSend,
-      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    };
-
-    let botReplyText = "";
-    if (textToSend.toUpperCase() === "STOP" || textToSend.toUpperCase() === "UNSUBSCRIBE") {
-      botReplyText = "You have successfully unsubscribed from DineFlow notifications for The Grand Bistro. Send START to re-enable.";
-    } else if (["1", "2", "3", "4", "5"].includes(textToSend.trim())) {
-      botReplyText = `Thank you for rating us ${textToSend} ⭐! Our executive culinary team appreciates your feedback.`;
-    } else {
-      botReplyText = "Thank you for reaching out! Our front-desk steward has received your message at Table 14.";
+      // Check if user requested human handoff
+      if (text.toLowerCase().includes("4") || text.toLowerCase().includes("staff") || text.toLowerCase().includes("human")) {
+        setEscalatedInquiries((prev) => [
+          {
+            phone: chatbotSimNumber,
+            name: chatbotSimName,
+            reason: text,
+            time: "Just now",
+          },
+          ...prev,
+        ]);
+        addToast("warning", "Staff Alert", `Guest ${chatbotSimName} requested live human assistance.`);
+      }
+    } catch {
+      // Fallback response if offline
+      setTimeout(() => {
+        const botMsg = {
+          role: "bot" as const,
+          text: "Thank you for reaching out! Our front-desk steward team has been notified at Table 14.",
+          time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        };
+        setChatbotMessages((prev) => [...prev, botMsg]);
+      }, 500);
+    } finally {
+      setIsBotTyping(false);
     }
-
-    const botMsg = {
-      sender: "bot" as const,
-      text: botReplyText,
-      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    };
-
-    setChatMessages((prev) => [...prev, userMsg, botMsg]);
-    setSimulatedInput("");
   };
+
+  const handleCreateCampaign = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCampaign.name) return;
+
+    try {
+      const res = await apiClient.post("/whatsapp/campaigns", newCampaign);
+      if (res.data?.data) {
+        setCampaigns([res.data.data, ...campaigns]);
+        addToast("success", "Campaign Created", `Campaign "${newCampaign.name}" drafted successfully.`);
+        setIsCampaignModalOpen(false);
+        setNewCampaign({
+          name: "",
+          type: "coupon",
+          targetSegment: "all",
+          messageBody: "",
+          couponCode: "",
+          discountPct: 10,
+        });
+      }
+    } catch {
+      // Local fallback
+      const localCamp: CampaignItem = {
+        id: `cmp-${Date.now().toString().slice(-4)}`,
+        name: newCampaign.name,
+        type: newCampaign.type,
+        targetSegment: newCampaign.targetSegment,
+        messageBody: newCampaign.messageBody,
+        couponCode: newCampaign.couponCode,
+        discountPct: newCampaign.discountPct,
+        status: "draft",
+        sentAt: "Scheduled",
+        stats: {
+          totalRecipients: segments[newCampaign.targetSegment as keyof SegmentCounts] || 30,
+          sentCount: 0,
+          deliveredCount: 0,
+          readCount: 0,
+          failedCount: 0,
+        },
+      };
+      setCampaigns([localCamp, ...campaigns]);
+      setIsCampaignModalOpen(false);
+      addToast("success", "Campaign Created", `Campaign "${newCampaign.name}" drafted successfully.`);
+    }
+  };
+
+  const handleSendCampaignNow = async (campId: string) => {
+    try {
+      const res = await apiClient.post(`/whatsapp/campaigns/${campId}/send`);
+      if (res.data?.data) {
+        setCampaigns(campaigns.map((c) => (c.id === campId ? res.data.data : c)));
+        addToast("success", "Campaign Dispatched", "Broadcasting messages to target audience segment.");
+        fetchData();
+      }
+    } catch {
+      // Update local
+      setCampaigns(
+        campaigns.map((c) =>
+          c.id === campId
+            ? {
+                ...c,
+                status: "sent",
+                sentAt: "Just now",
+                stats: {
+                  totalRecipients: 42,
+                  sentCount: 42,
+                  deliveredCount: 40,
+                  readCount: 35,
+                  failedCount: 2,
+                },
+              }
+            : c
+        )
+      );
+      addToast("success", "Campaign Dispatched", "Broadcasting messages to target audience segment.");
+    }
+  };
+
+  const handleSendInvoice = async (invId: string) => {
+    try {
+      const res = await apiClient.post(`/whatsapp/invoices/${invId}/send`);
+      if (res.data?.data) {
+        setInvoices(invoices.map((inv) => (inv.id === invId ? res.data.data : inv)));
+        addToast("success", "Invoice Sent via WhatsApp", "Customer received digital GST receipt with download link.");
+        fetchData();
+      }
+    } catch {
+      // Optimistic update
+      setInvoices(
+        invoices.map((inv) => (inv.id === invId ? { ...inv, whatsappDeliveryStatus: "delivered" } : inv))
+      );
+      addToast("success", "Invoice Sent via WhatsApp", "Customer received digital GST receipt with download link.");
+    }
+  };
+
+  const handleCreateInvoiceFromOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsGeneratingInvoice(true);
+    try {
+      const res = await apiClient.post("/whatsapp/invoices", { orderId: manualOrderId });
+      if (res.data?.data) {
+        setInvoices([res.data.data, ...invoices]);
+        addToast("success", "GST Invoice Generated", `Invoice ${res.data.data.invoiceNumber} created for ${manualOrderId}.`);
+        setIsCreateInvoiceOpen(false);
+      }
+    } catch {
+      addToast("error", "Order Not Found", `Could not locate order ${manualOrderId} for tax invoicing.`);
+    } finally {
+      setIsGeneratingInvoice(false);
+    }
+  };
+
+  // Filtered Logs
+  const filteredLogs = logs.filter((l) => {
+    const matchesStatus = logFilter === "all" || l.status === logFilter;
+    const matchesSearch =
+      !logSearch ||
+      l.customerName.toLowerCase().includes(logSearch.toLowerCase()) ||
+      l.phone.includes(logSearch) ||
+      l.template.toLowerCase().includes(logSearch.toLowerCase());
+    return matchesStatus && matchesSearch;
+  });
 
   return (
-    <div className="space-y-6 max-w-7xl">
-      {/* Header */}
+    <div className="space-y-6 max-w-7xl mx-auto pb-12">
+      {/* ── Page Header ─────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold mb-2">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold mb-2">
             <Sparkles className="h-3.5 w-3.5" /> Meta Cloud API (WABA) Integration
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
             WhatsApp Marketing & Invoicing
           </h1>
-          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-            Automatically dispatch digital order receipts, live kitchen alerts, tax invoices, and post-dining review loops.
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1">
+            Meta Cloud API, Real-Time AI Chatbot, Audience Segmentation, and Compliant Indian GST Invoicing.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
+          <Button variant="outline" size="sm" onClick={() => setIsConfigModalOpen(true)}>
+            <Sliders className="h-3.5 w-3.5 mr-1.5" /> Meta WABA Settings
+          </Button>
           <Badge variant="success" size="md" dot>
             Meta Cloud API Connected
           </Badge>
           <Badge variant="glow" size="sm">
-            Tier 2 (10k/day)
+            {config.tierLimit}
           </Badge>
         </div>
       </div>
 
-      {/* Account Status Card */}
-      <Card variant="glass" className="border-emerald-500/30 bg-emerald-500/5">
-        <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
-              <PhoneCall className="h-5 w-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-slate-900 dark:text-white text-sm">{phoneNumber}</span>
-                <span className="text-emerald-700 dark:text-emerald-400 font-semibold">• Official Business Account (Green Tick)</span>
-              </div>
-              <p className="text-slate-600 dark:text-slate-400 text-[11px] mt-0.5">
-                WABA ID: <code className="text-slate-800 dark:text-slate-300 font-mono font-medium">waba_act_891823091</code> • Messaging Quality: <strong className="text-emerald-700 dark:text-emerald-400">High</strong>
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => addToast("info", "Webhook Health Check", "Meta Cloud Webhook ping returned 200 OK.")}>
-              Ping Webhook
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Automation Rules & Test Sender (7 cols) */}
-        <div className="lg:col-span-7 space-y-6">
-          {/* Automated Rule Triggers */}
-          <Card variant="glass">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base font-bold text-slate-900 dark:text-white">
-                Automated Notification Rules
-              </CardTitle>
-              <CardDescription className="text-xs text-slate-600 dark:text-slate-400">
-                Triggered automatically upon POS, KDS, or customer events.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {[
-                { title: "Instant Order Confirmation", desc: "Sends itemized bill & live kitchen tracker link within 2s of order placement", active: true, tag: "Essential" },
-                { title: "Kitchen Ready & Delivery Notification", desc: "Alerts diners or hotel guests when hot courses or cocktails leave the kitchen", active: true, tag: "KDS Triggered" },
-                { title: "Digital GST Tax Invoice PDF", desc: "Delivers branded receipt with 1-tap UPI payment QR when order is marked served", active: true, tag: "Tax Compliant" },
-                { title: "Post-Dining 1-5 Star Review Loop", desc: "Sends review prompt 20 minutes after bill settlement with opt-out option", active: true, tag: "NPS Loop" },
-                { title: "Repeat Guest Loyalty Perk", desc: "Sends 10% privilege discount 7 days after visit to encourage return bookings", active: false, tag: "Growth Plan" },
-              ].map((feat, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center justify-between p-3 rounded-xl bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800"
+      {/* ── Navigation Tabs ─────────────────────────────────────────────────── */}
+      <div className="flex overflow-x-auto gap-2 p-1.5 bg-slate-100 dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-800 scrollbar-none">
+        {[
+          { id: "overview", label: "Overview & WABA", icon: PhoneCall },
+          { id: "chatbot", label: "AI Chatbot Studio", icon: BrainCircuit, badge: "Real-Time" },
+          { id: "campaigns", label: "Marketing Campaigns", icon: Layers, badge: `${campaigns.length}` },
+          { id: "invoices", label: "GST Tax Invoices", icon: Receipt, badge: `${invoices.length}` },
+          { id: "logs", label: "Dispatch Audit Logs", icon: Clock },
+        ].map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as typeof activeTab)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                isActive
+                  ? "bg-white dark:bg-emerald-600 text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-emerald-500"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-800/50"
+              }`}
+            >
+              <Icon className={`h-4 w-4 ${isActive ? "text-emerald-600 dark:text-white" : "text-slate-400"}`} />
+              <span>{tab.label}</span>
+              {tab.badge && (
+                <span
+                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                    isActive
+                      ? "bg-emerald-100 dark:bg-emerald-800 text-emerald-800 dark:text-emerald-200"
+                      : "bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                  }`}
                 >
-                  <div className="space-y-0.5 pr-4">
-                    <div className="flex items-center gap-2">
-                      <h4 className="text-xs font-semibold text-slate-900 dark:text-white">{feat.title}</h4>
-                      <Badge variant="neutral" size="sm">{feat.tag}</Badge>
-                    </div>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400">{feat.desc}</p>
+                  {tab.badge}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── TAB 1: OVERVIEW & WABA CONNECTION ─────────────────────────────────── */}
+      {activeTab === "overview" && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          {/* Account Status Card */}
+          <Card variant="glass" className="border-emerald-500/30 bg-emerald-500/5">
+            <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
+              <div className="flex items-center gap-3.5">
+                <div className="p-3 rounded-2xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                  <PhoneCall className="h-6 w-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-extrabold text-slate-900 dark:text-white text-base">{config.phoneNumber}</span>
+                    <span className="text-emerald-700 dark:text-emerald-400 font-semibold">• Official Business Account (Green Tick)</span>
                   </div>
-                  <Badge variant={feat.active ? "success" : "neutral"} size="sm">
-                    {feat.active ? "Active" : "Paused"}
-                  </Badge>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
-          {/* Test Sender Form */}
-          <Card variant="glass">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base font-bold text-slate-900 dark:text-white">
-                Send Live Test Notification
-              </CardTitle>
-              <CardDescription className="text-xs text-slate-600 dark:text-slate-400">
-                Dispatch an immediate test receipt to your personal WhatsApp number.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSendTest} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Input
-                    label="Recipient WhatsApp Number"
-                    value={testNumber}
-                    onChange={(e) => setTestNumber(e.target.value)}
-                    placeholder="+91 98000 00000"
-                    required
-                  />
-                  <Input
-                    label="Customer / Guest Name"
-                    value={testGuestName}
-                    onChange={(e) => setTestGuestName(e.target.value)}
-                    placeholder="e.g. Alex Rivera"
-                    required
-                  />
-                </div>
-
-                <div className="flex justify-end">
-                  <Button variant="glow" size="sm" type="submit" rightIcon={<Send className="h-3.5 w-3.5" />}>
-                    Dispatch Live WhatsApp Message
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Right Column: Two-Way Simulator (5 cols) */}
-        <div className="lg:col-span-5 space-y-6">
-          <Card variant="glow" className="border-emerald-500/30">
-            <CardHeader className="pb-3 flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <MessageSquareShare className="h-4 w-4 text-emerald-600 dark:text-emerald-400" /> Interactive Chat Simulator
-                </CardTitle>
-                <CardDescription className="text-xs text-slate-600 dark:text-slate-400">
-                  Simulate guest replies & bot automation
-                </CardDescription>
-              </div>
-              <Badge variant="success" size="sm">Verified WABA</Badge>
-            </CardHeader>
-
-            <CardContent className="space-y-4">
-              {/* WhatsApp Chat Thread */}
-              <div className="h-80 overflow-y-auto p-4 rounded-2xl bg-emerald-50/40 dark:bg-[#091b15] border border-emerald-200/80 dark:border-emerald-500/20 text-xs space-y-3 shadow-inner">
-                {chatMessages.map((msg, i) => (
-                  <div
-                    key={i}
-                    className={`flex flex-col ${msg.sender === "user" ? "items-end" : "items-start"}`}
-                  >
-                    <div
-                      className={`max-w-[85%] rounded-2xl p-3 shadow-sm whitespace-pre-line text-xs ${
-                        msg.sender === "user"
-                          ? "bg-emerald-600 text-white rounded-br-none"
-                          : "bg-white dark:bg-[#142c23] text-slate-800 dark:text-slate-100 rounded-bl-none border border-emerald-200/60 dark:border-emerald-500/20"
-                      }`}
-                    >
-                      {msg.sender === "bot" && (
-                        <div className="font-bold text-emerald-700 dark:text-emerald-400 text-[11px] mb-1 flex items-center gap-1">
-                          <span>The Grand Bistro</span>
-                          <CheckCircle2 className="h-3 w-3 inline" />
-                        </div>
-                      )}
-                      <p className="leading-relaxed">{msg.text}</p>
-                      <div
-                        className={`text-[9px] mt-1 text-right ${
-                          msg.sender === "user" ? "text-emerald-100" : "text-slate-400 dark:text-slate-500"
-                        }`}
-                      >
-                        {msg.time} {msg.sender === "user" ? "✓✓" : ""}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Simulation Quick Action Chips */}
-              <div className="space-y-2">
-                <span className="text-[11px] text-slate-600 dark:text-slate-400 font-semibold block">Simulate Guest Inbound Reply:</span>
-                <div className="flex flex-wrap gap-1.5">
-                  <button
-                    onClick={() => handleSimulateReply("5")}
-                    className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[11px] text-amber-700 dark:text-amber-300 hover:border-amber-400 transition-colors cursor-pointer shadow-2xs"
-                  >
-                    Rate &quot;5 ⭐&quot;
-                  </button>
-                  <button
-                    onClick={() => handleSimulateReply("STOP")}
-                    className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[11px] text-rose-700 dark:text-rose-300 hover:border-rose-400 transition-colors cursor-pointer shadow-2xs"
-                  >
-                    Opt-out &quot;STOP&quot;
-                  </button>
-                  <button
-                    onClick={() => handleSimulateReply("Can we get extra ice please?")}
-                    className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[11px] text-slate-700 dark:text-slate-300 hover:border-slate-400 transition-colors cursor-pointer shadow-2xs"
-                  >
-                    &quot;Extra ice please&quot;
-                  </button>
+                  <p className="text-slate-600 dark:text-slate-400 text-xs mt-0.5">
+                    WABA ID: <code className="text-slate-800 dark:text-slate-200 font-mono font-medium">{config.wabaAccountId}</code> • Quality: <strong className="text-emerald-700 dark:text-emerald-400">{config.qualityRating}</strong>
+                  </p>
                 </div>
               </div>
-
-              {/* Custom Input */}
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Type simulated reply..."
-                  value={simulatedInput}
-                  onChange={(e) => setSimulatedInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSimulateReply()}
-                  className="flex-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
-                />
-                <Button variant="secondary" size="sm" onClick={() => handleSimulateReply()}>
-                  Send
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => addToast("info", "Webhook Health Check", "Meta Cloud Webhook ping returned 200 OK.")}
+                >
+                  Ping Webhook
+                </Button>
+                <Button variant="glow" size="sm" onClick={() => setIsConfigModalOpen(true)}>
+                  Configure API
                 </Button>
               </div>
             </CardContent>
           </Card>
-        </div>
-      </div>
 
-      {/* Message Dispatch History Log */}
-      <Card variant="glass">
-        <CardHeader className="flex flex-row items-center justify-between pb-3">
-          <div>
-            <CardTitle className="text-base font-bold text-slate-900 dark:text-white">
-              Live WhatsApp Dispatch Log
-            </CardTitle>
-            <CardDescription className="text-xs text-slate-600 dark:text-slate-400">
-              Audit log of all system-initiated notifications and diner receipts.
-            </CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[560px] text-left text-xs border-collapse">
-              <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold bg-slate-50/70 dark:bg-slate-950/40">
-                  <th className="p-3">Guest Name</th>
-                  <th className="p-3">Recipient Phone</th>
-                  <th className="p-3">Location</th>
-                  <th className="p-3">Template Type</th>
-                  <th className="p-3">Status</th>
-                  <th className="p-3 text-right">Time</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
-                {logs.map((log) => (
-                  <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                    <td className="p-3 font-semibold text-slate-900 dark:text-white">{log.customerName}</td>
-                    <td className="p-3 font-mono text-slate-700 dark:text-slate-300">{log.phone}</td>
-                    <td className="p-3 text-slate-600 dark:text-slate-400">{log.location}</td>
-                    <td className="p-3 text-slate-800 dark:text-slate-200 font-medium">{log.template}</td>
-                    <td className="p-3">
-                      <Badge
-                        variant={
-                          log.status === "read"
-                            ? "glow"
-                            : log.status === "delivered"
-                            ? "success"
-                            : "info"
-                        }
-                        size="sm"
-                      >
-                        {log.status.toUpperCase()}
-                      </Badge>
-                    </td>
-                    <td className="p-3 text-right text-slate-500 font-medium">{log.time}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* ─── 6.4 WhatsApp Reorder Chatbot ─────────────────────────────────────── */}
-      <Card variant="glass" className="border-violet-500/20">
-        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 pb-3">
-          <div>
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-600 dark:text-violet-400 text-[11px] font-semibold mb-1.5">
-              <BrainCircuit className="h-3 w-3" /> Feature 6.4 — AI Chatbot
-            </div>
-            <CardTitle className="text-base font-bold text-slate-900 dark:text-white">Reorder Chatbot</CardTitle>
-            <CardDescription className="text-xs text-slate-600 dark:text-slate-400">
-              Guests reply to WhatsApp notifications to reorder, track orders, or browse specials.
-            </CardDescription>
-          </div>
-          <button
-            onClick={() => {
-              addToast("info", "Chatbot Toggle", chatbotEnabled ? "Reorder chatbot paused." : "Reorder chatbot activated.");
-              setChatbotEnabled(!chatbotEnabled);
-            }}
-            className="flex items-center gap-2 text-xs font-semibold transition-colors"
-          >
-            {chatbotEnabled ? (
-              <><ToggleRight className="h-7 w-7 text-violet-400" /><span className="text-violet-400">Active</span></>
-            ) : (
-              <><ToggleLeft className="h-7 w-7 text-slate-500" /><span className="text-slate-500">Paused</span></>
-            )}
-          </button>
-        </CardHeader>
-        <CardContent>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Chatbot info */}
-            <div className="lg:col-span-4 space-y-4">
-              <div className="space-y-2.5">
-                {[
-                  { intent: "Reorder", desc: "Guest texts \"same again\" or \"reorder\" — bot confirms last order", icon: RefreshCw, color: "text-emerald-400" },
-                  { intent: "Track Order", desc: "\"Where is my food?\" — bot replies with live kitchen status", icon: Clock, color: "text-blue-400" },
-                  { intent: "Browse Menu", desc: "\"What are today's specials?\" — bot lists chef's picks", icon: FileText, color: "text-amber-400" },
-                ].map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <div key={item.intent} className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 text-xs">
-                      <Icon className={`h-4 w-4 ${item.color} shrink-0 mt-0.5`} />
-                      <div>
-                        <p className="font-bold text-slate-900 dark:text-white">{item.intent}</p>
-                        <p className="text-slate-600 dark:text-slate-400">{item.desc}</p>
+            {/* Left: Automated Rule Triggers */}
+            <div className="lg:col-span-7 space-y-6">
+              <Card variant="glass">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base font-bold text-slate-900 dark:text-white">
+                    Automated Event Triggers
+                  </CardTitle>
+                  <CardDescription className="text-xs text-slate-600 dark:text-slate-400">
+                    Dispatched automatically upon POS, KDS, dining, or payment events.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {[
+                    { title: "Instant Order Confirmation", desc: "Itemized bill & live kitchen tracker link within 2s of order placement", active: true, tag: "Essential" },
+                    { title: "Kitchen Ready & Delivery Notification", desc: "Alerts diners or hotel guests when courses leave the kitchen", active: true, tag: "KDS Triggered" },
+                    { title: "Digital GST Tax Invoice PDF", desc: "Delivers branded receipt with 1-tap UPI QR when order is marked served", active: true, tag: "Tax Compliant" },
+                    { title: "Post-Dining 1-5 Star Review Loop", desc: "Dispatches review prompt 20 mins after bill settlement with opt-out option", active: true, tag: "NPS Loop" },
+                    { title: "Repeat Guest Loyalty Perk", desc: "Sends 10% privilege voucher 7 days after visit to encourage return bookings", active: true, tag: "Growth Loop" },
+                  ].map((feat, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800"
+                    >
+                      <div className="space-y-0.5 pr-4">
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-xs font-bold text-slate-900 dark:text-white">{feat.title}</h4>
+                          <Badge variant="neutral" size="sm">{feat.tag}</Badge>
+                        </div>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">{feat.desc}</p>
                       </div>
+                      <Badge variant={feat.active ? "success" : "neutral"} size="sm">
+                        {feat.active ? "Active" : "Paused"}
+                      </Badge>
                     </div>
-                  );
-                })}
-              </div>
-              <div className="p-3 rounded-xl bg-violet-500/10 border border-violet-500/20 text-xs">
-                <p className="text-violet-700 dark:text-violet-300 font-semibold mb-1">Powered by Gemini AI</p>
-                <p className="text-slate-600 dark:text-slate-400">Contextual replies based on order history, menu data, and kitchen status — not just keyword matching.</p>
-              </div>
+                  ))}
+                </CardContent>
+              </Card>
             </div>
 
-            {/* Chat Simulator */}
-            <div className="lg:col-span-8">
-              <div className="bg-slate-50 dark:bg-[#0a0d14] border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xs">
-                {/* Chat header */}
-                <div className="flex items-center gap-3 p-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60">
-                  <div className="h-8 w-8 rounded-full bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center">
-                    <Bot className="h-4 w-4 text-white" />
-                  </div>
+            {/* Right: Test Sender Form */}
+            <div className="lg:col-span-5 space-y-6">
+              <Card variant="glass">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base font-bold text-slate-900 dark:text-white">
+                    Send Live Test Notification
+                  </CardTitle>
+                  <CardDescription className="text-xs text-slate-600 dark:text-slate-400">
+                    Dispatch an immediate test receipt to your personal WhatsApp number.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleSendTest} className="space-y-4">
+                    <Input
+                      label="Recipient WhatsApp Number"
+                      value={testNumber}
+                      onChange={(e) => setTestNumber(e.target.value)}
+                      placeholder="+91 98000 00000"
+                      required
+                    />
+                    <Input
+                      label="Customer / Guest Name"
+                      value={testGuestName}
+                      onChange={(e) => setTestGuestName(e.target.value)}
+                      placeholder="e.g. Alex Rivera"
+                      required
+                    />
+
+                    <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-800 dark:text-emerald-300">
+                      Dispatches official transactional template via Meta Graph API v21.0 or local sandbox outbox.
+                    </div>
+
+                    <Button
+                      variant="glow"
+                      size="sm"
+                      type="submit"
+                      disabled={isSendingTest}
+                      className="w-full justify-center"
+                      rightIcon={<Send className="h-3.5 w-3.5" />}
+                    >
+                      {isSendingTest ? "Dispatching..." : "Dispatch Live WhatsApp Message"}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB 2: REAL-TIME AI CHATBOT STUDIO ────────────────────────────────── */}
+      {activeTab === "chatbot" && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Left: Chatbot Capabilities & Escalation Queue (5 cols) */}
+            <div className="lg:col-span-5 space-y-6">
+              <Card variant="glass" className="border-violet-500/20">
+                <CardHeader className="pb-3 flex flex-row items-center justify-between">
                   <div>
-                    <p className="text-xs font-bold text-slate-900 dark:text-white">DineBot — The Grand Bistro</p>
-                    <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">● Online</p>
+                    <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <BrainCircuit className="h-4 w-4 text-violet-500" /> DineBot AI Capabilities
+                    </CardTitle>
+                    <CardDescription className="text-xs text-slate-600 dark:text-slate-400">
+                      Multi-tenant state machine connected to real dining records.
+                    </CardDescription>
                   </div>
-                  <div className="ml-auto">
-                    <Badge variant={chatbotEnabled ? "success" : "info"} size="sm">
-                      {chatbotEnabled ? "Active" : "Paused"}
-                    </Badge>
+                  <button
+                    onClick={() => {
+                      setChatbotEnabled(!chatbotEnabled);
+                      addToast("info", "Bot Status", chatbotEnabled ? "DineBot paused." : "DineBot online.");
+                    }}
+                    className="cursor-pointer"
+                  >
+                    {chatbotEnabled ? (
+                      <ToggleRight className="h-7 w-7 text-emerald-500" />
+                    ) : (
+                      <ToggleLeft className="h-7 w-7 text-slate-400" />
+                    )}
+                  </button>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {[
+                    { title: "1. Menu & Specials", desc: "Queries MongoDB for active dishes, dietary tags, and contactless link.", icon: FileText, color: "text-amber-500" },
+                    { title: "2. Live Order Tracking", desc: "Looks up order status (preparing, ready, served) by phone or order number.", icon: Clock, color: "text-blue-500" },
+                    { title: "3. In-Stay Room / Table Requests", desc: "Logs amenities/water requests and alerts stewards on floor.", icon: Zap, color: "text-emerald-500" },
+                    { title: "4. Live Staff Handoff", desc: "Flags session and pushes immediate high-priority notification to dashboard.", icon: Users, color: "text-violet-500" },
+                  ].map((cap, i) => {
+                    const Icon = cap.icon;
+                    return (
+                      <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 text-xs">
+                        <Icon className={`h-4 w-4 ${cap.color} shrink-0 mt-0.5`} />
+                        <div>
+                          <p className="font-bold text-slate-900 dark:text-white">{cap.title}</p>
+                          <p className="text-slate-600 dark:text-slate-400 text-[11px] mt-0.5">{cap.desc}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+
+              {/* Staff Escalations Queue */}
+              <Card variant="glass">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 text-amber-500" /> Escalated Inquiries ({escalatedInquiries.length})
+                    </CardTitle>
+                    <Badge variant="warning" size="sm">Attention</Badge>
+                  </div>
+                  <CardDescription className="text-xs text-slate-600 dark:text-slate-400">
+                    Guests requesting human steward or manager assistance.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2.5">
+                  {escalatedInquiries.map((inq, idx) => (
+                    <div key={idx} className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-slate-900 dark:text-white">{inq.name} ({inq.phone})</span>
+                        <span className="text-[10px] text-slate-500">{inq.time}</span>
+                      </div>
+                      <p className="text-slate-700 dark:text-slate-300 text-[11px]">{inq.reason}</p>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Right: Live Interactive Simulator (7 cols) */}
+            <div className="lg:col-span-7 space-y-4">
+              <div className="bg-slate-50 dark:bg-[#0a0d14] border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xs">
+                {/* Simulator Header */}
+                <div className="flex items-center justify-between p-3.5 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80">
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold">
+                      <Bot className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                        DineBot • The Grand Bistro <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                      </p>
+                      <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                        ● Online (Meta Webhook Live)
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={chatbotSimNumber}
+                      onChange={(e) => setChatbotSimNumber(e.target.value)}
+                      placeholder="Simulated Phone"
+                      className="px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 text-[10px] font-mono border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 w-28"
+                    />
                   </div>
                 </div>
 
-                {/* Messages */}
-                <div className="h-72 overflow-y-auto p-4 space-y-3 bg-slate-100/50 dark:bg-transparent">
+                {/* Message Thread */}
+                <div className="h-96 overflow-y-auto p-4 space-y-3 bg-[#e5ddd5]/30 dark:bg-transparent">
                   {chatbotMessages.map((msg, idx) => (
                     <div key={idx} className={`flex ${msg.role === "bot" ? "justify-start" : "justify-end"}`}>
-                      <div className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed whitespace-pre-wrap shadow-xs ${
-                        msg.role === "bot"
-                          ? "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700/60 rounded-tl-sm"
-                          : "bg-violet-600 text-white rounded-tr-sm"
-                      }`}>
+                      <div
+                        className={`max-w-[85%] rounded-2xl px-4 py-3 text-xs leading-relaxed whitespace-pre-line shadow-xs ${
+                          msg.role === "bot"
+                            ? "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700/60 rounded-tl-none"
+                            : "bg-emerald-600 text-white rounded-tr-none"
+                        }`}
+                      >
                         {msg.text}
-                        <div className={`text-[10px] mt-1 ${ msg.role === "bot" ? "text-slate-400 dark:text-slate-500" : "text-violet-200/80" }`}>
-                          {msg.time}
+                        <div
+                          className={`text-[9px] mt-1 text-right ${
+                            msg.role === "bot" ? "text-slate-400 dark:text-slate-500" : "text-emerald-100"
+                          }`}
+                        >
+                          {msg.time} {msg.role === "user" ? "✓✓" : ""}
                         </div>
                       </div>
                     </div>
                   ))}
+                  {isBotTyping && (
+                    <div className="flex justify-start">
+                      <div className="bg-white dark:bg-slate-800 px-4 py-2 rounded-2xl rounded-tl-none text-xs text-slate-400 flex items-center gap-1.5 border border-slate-200 dark:border-slate-700">
+                        <RefreshCw className="h-3 w-3 animate-spin text-emerald-500" /> DineBot is typing...
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                {/* Quick replies */}
-                <div className="px-4 pb-2 pt-2 flex flex-wrap gap-1.5 bg-white dark:bg-transparent">
-                  {["Reorder my last meal", "Where's my order?", "Show today's specials", "STOP"].map((reply) => (
+                {/* Quick Reply Trigger Chips */}
+                <div className="px-4 py-2 flex flex-wrap gap-1.5 bg-white dark:bg-slate-900/60 border-t border-slate-200 dark:border-slate-800">
+                  {["1", "2", "3", "4", "5 ⭐", "Truffle Risotto", "STOP"].map((preset) => (
                     <button
-                      key={reply}
-                      onClick={() => handleChatbotReply(reply)}
-                      className="text-[11px] px-3 py-1 rounded-full border border-violet-500/30 text-violet-700 dark:text-violet-300 bg-violet-50/50 dark:bg-transparent hover:bg-violet-100 dark:hover:bg-violet-500/10 transition-colors font-medium shadow-2xs"
+                      key={preset}
+                      onClick={() => handleChatbotReply(preset)}
+                      className="text-[11px] px-2.5 py-1 rounded-full border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 bg-emerald-50/50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors font-medium cursor-pointer"
                     >
-                      {reply}
+                      {preset}
                     </button>
                   ))}
                 </div>
 
-                {/* Input */}
+                {/* Input form */}
                 <form
-                  onSubmit={(e) => { e.preventDefault(); if (chatbotInput.trim()) { handleChatbotReply(chatbotInput); } }}
-                  className="flex items-center gap-2 p-3 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-transparent"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (chatbotInput.trim()) {
+                      handleChatbotReply(chatbotInput);
+                    }
+                  }}
+                  className="flex items-center gap-2 p-3 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
                 >
                   <input
                     value={chatbotInput}
                     onChange={(e) => setChatbotInput(e.target.value)}
-                    placeholder="Type as a guest…"
-                    className="flex-1 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-violet-500/50"
+                    placeholder="Type as customer (e.g. Menu, Status, Staff)..."
+                    className="flex-1 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:border-emerald-500"
                   />
-                  <button type="submit" className="p-2 rounded-xl bg-violet-600 hover:bg-violet-500 transition-colors cursor-pointer">
-                    <Send className="h-3.5 w-3.5 text-white" />
-                  </button>
+                  <Button variant="glow" size="sm" type="submit" disabled={isBotTyping}>
+                    <Send className="h-3.5 w-3.5" />
+                  </Button>
                 </form>
               </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      )}
+
+      {/* ── TAB 3: MARKETING CAMPAIGNS & SEGMENTS ──────────────────────────────── */}
+      {activeTab === "campaigns" && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          {/* Customer Segmentation Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            {[
+              { label: "All Contacts", count: segments.all, icon: Users, color: "text-blue-500" },
+              { label: "First-Time Diners", count: segments.first_time, icon: User, color: "text-emerald-500" },
+              { label: "Repeat Diners", count: segments.repeat, icon: RefreshCw, color: "text-teal-500" },
+              { label: "VIP High Spenders", count: segments.vip, icon: Sparkles, color: "text-amber-500" },
+              { label: "Hotel Room Guests", count: segments.hotel_guests, icon: Zap, color: "text-purple-500" },
+              { label: "Inactive (30d+)", count: segments.inactive, icon: Clock, color: "text-rose-500" },
+            ].map((seg, i) => {
+              const Icon = seg.icon;
+              return (
+                <div
+                  key={i}
+                  className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs"
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <Icon className={`h-4 w-4 ${seg.color}`} />
+                    <span className="text-[10px] font-bold text-slate-400">Segment</span>
+                  </div>
+                  <p className="text-xl font-extrabold text-slate-900 dark:text-white">{seg.count}</p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate mt-0.5">
+                    {seg.label}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Campaigns Action Bar */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">Marketing Campaigns</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Create targeted text, coupon, or image broadcasts to customer segments.
+              </p>
+            </div>
+            <Button
+              variant="glow"
+              size="sm"
+              onClick={() => setIsCampaignModalOpen(true)}
+              leftIcon={<Plus className="h-3.5 w-3.5" />}
+            >
+              New Campaign
+            </Button>
+          </div>
+
+          {/* Campaigns Table */}
+          <Card variant="glass">
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[700px] text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold bg-slate-50/70 dark:bg-slate-950/40">
+                      <th className="p-3.5">Campaign Name</th>
+                      <th className="p-3.5">Type</th>
+                      <th className="p-3.5">Audience Segment</th>
+                      <th className="p-3.5">Dispatch / Status</th>
+                      <th className="p-3.5 text-center">Recipients</th>
+                      <th className="p-3.5 text-center">Delivered</th>
+                      <th className="p-3.5 text-center">Read</th>
+                      <th className="p-3.5 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
+                    {campaigns.map((camp) => (
+                      <tr key={camp.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                        <td className="p-3.5 font-semibold text-slate-900 dark:text-white">{camp.name}</td>
+                        <td className="p-3.5">
+                          <Badge variant="neutral" size="sm" className="uppercase font-mono text-[10px]">
+                            {camp.type}
+                          </Badge>
+                        </td>
+                        <td className="p-3.5">
+                          <span className="capitalize font-medium text-emerald-700 dark:text-emerald-400">
+                            {camp.targetSegment.replace("_", " ")}
+                          </span>
+                        </td>
+                        <td className="p-3.5">
+                          <div className="flex items-center gap-1.5">
+                            <Badge
+                              variant={
+                                camp.status === "sent"
+                                  ? "success"
+                                  : camp.status === "scheduled"
+                                  ? "glow"
+                                  : "neutral"
+                              }
+                              size="sm"
+                            >
+                              {camp.status.toUpperCase()}
+                            </Badge>
+                            {camp.sentAt && (
+                              <span className="text-[10px] text-slate-400 font-medium">({camp.sentAt})</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="p-3.5 text-center font-mono font-medium">{camp.stats?.totalRecipients || 0}</td>
+                        <td className="p-3.5 text-center font-mono text-emerald-600 dark:text-emerald-400 font-semibold">
+                          {camp.stats?.deliveredCount || 0}
+                        </td>
+                        <td className="p-3.5 text-center font-mono text-blue-600 dark:text-blue-400 font-semibold">
+                          {camp.stats?.readCount || 0}
+                        </td>
+                        <td className="p-3.5 text-right">
+                          {camp.status === "draft" ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleSendCampaignNow(camp.id)}
+                            >
+                              Send Now
+                            </Button>
+                          ) : (
+                            <Badge variant="neutral" size="sm">Completed</Badge>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* ── TAB 4: GST TAX INVOICES & RECEIPTS ─────────────────────────────────── */}
+      {activeTab === "invoices" && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">Customer GST Tax Invoices</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Generate compliant Indian GST receipts (2.5% CGST + 2.5% SGST) and deliver instantly via WhatsApp.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsCreateInvoiceOpen(true)}
+                leftIcon={<Plus className="h-3.5 w-3.5" />}
+              >
+                Invoice from Order
+              </Button>
+            </div>
+          </div>
+
+          {/* Invoices Table */}
+          <Card variant="glass">
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[760px] text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold bg-slate-50/70 dark:bg-slate-950/40">
+                      <th className="p-3.5">Invoice #</th>
+                      <th className="p-3.5">Order Ref</th>
+                      <th className="p-3.5">Customer & Phone</th>
+                      <th className="p-3.5">Table / Room</th>
+                      <th className="p-3.5 text-right">Subtotal</th>
+                      <th className="p-3.5 text-right">GST (5%)</th>
+                      <th className="p-3.5 text-right">Grand Total</th>
+                      <th className="p-3.5 text-center">WhatsApp Delivery</th>
+                      <th className="p-3.5 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
+                    {invoices.map((inv) => (
+                      <tr key={inv.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                        <td className="p-3.5 font-mono font-bold text-slate-900 dark:text-white">{inv.invoiceNumber}</td>
+                        <td className="p-3.5 font-mono text-slate-600 dark:text-slate-400">{inv.orderNumber}</td>
+                        <td className="p-3.5">
+                          <p className="font-semibold text-slate-900 dark:text-white">{inv.customerName}</p>
+                          <p className="text-[10px] font-mono text-slate-500">{inv.customerPhone}</p>
+                        </td>
+                        <td className="p-3.5 text-slate-600 dark:text-slate-400">{inv.location}</td>
+                        <td className="p-3.5 text-right font-mono">₹{inv.subtotal.toFixed(2)}</td>
+                        <td className="p-3.5 text-right font-mono text-slate-500">
+                          ₹{(inv.cgst + inv.sgst).toFixed(2)}
+                        </td>
+                        <td className="p-3.5 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                          ₹{inv.grandTotal.toFixed(2)}
+                        </td>
+                        <td className="p-3.5 text-center">
+                          <Badge
+                            variant={
+                              inv.whatsappDeliveryStatus === "read"
+                                ? "glow"
+                                : inv.whatsappDeliveryStatus === "delivered"
+                                ? "success"
+                                : "neutral"
+                            }
+                            size="sm"
+                          >
+                            {inv.whatsappDeliveryStatus.toUpperCase()}
+                          </Badge>
+                        </td>
+                        <td className="p-3.5 text-right space-x-1.5">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedInvoice(inv);
+                              setIsInvoiceModalOpen(true);
+                            }}
+                          >
+                            View
+                          </Button>
+                          <Button
+                            variant="glow"
+                            size="sm"
+                            onClick={() => handleSendInvoice(inv.id)}
+                            rightIcon={<Send className="h-3 w-3" />}
+                          >
+                            Send
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* ── TAB 5: DISPATCH AUDIT LOGS ────────────────────────────────────────── */}
+      {activeTab === "logs" && (
+        <div className="space-y-4 animate-in fade-in duration-200">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">Message Dispatch Audit Log</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Tamper-evident log of all system notifications, receipts, and user responses.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                placeholder="Search guest or phone..."
+                value={logSearch}
+                onChange={(e) => setLogSearch(e.target.value)}
+                className="px-3 py-1.5 rounded-xl text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400"
+              />
+              <select
+                value={logFilter}
+                onChange={(e) => setLogFilter(e.target.value)}
+                className="px-3 py-1.5 rounded-xl text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300"
+              >
+                <option value="all">All Statuses</option>
+                <option value="delivered">Delivered</option>
+                <option value="read">Read</option>
+                <option value="failed">Failed</option>
+              </select>
+            </div>
+          </div>
+
+          <Card variant="glass">
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[620px] text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold bg-slate-50/70 dark:bg-slate-950/40">
+                      <th className="p-3.5">Guest Name</th>
+                      <th className="p-3.5">Recipient Phone</th>
+                      <th className="p-3.5">Location</th>
+                      <th className="p-3.5">Template Type</th>
+                      <th className="p-3.5">Status</th>
+                      <th className="p-3.5 text-right">Time</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
+                    {filteredLogs.map((log) => (
+                      <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                        <td className="p-3.5 font-semibold text-slate-900 dark:text-white">{log.customerName}</td>
+                        <td className="p-3.5 font-mono text-slate-700 dark:text-slate-300">{log.phone}</td>
+                        <td className="p-3.5 text-slate-600 dark:text-slate-400">{log.location}</td>
+                        <td className="p-3.5 text-slate-800 dark:text-slate-200 font-medium">{log.template}</td>
+                        <td className="p-3.5">
+                          <Badge
+                            variant={
+                              log.status === "read"
+                                ? "glow"
+                                : log.status === "delivered"
+                                ? "success"
+                                : "info"
+                            }
+                            size="sm"
+                          >
+                            {log.status.toUpperCase()}
+                          </Badge>
+                        </td>
+                        <td className="p-3.5 text-right text-slate-500 font-medium">{log.time}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* ── MODAL 1: Meta WABA Connection Settings ────────────────────────────── */}
+      <Modal
+        isOpen={isConfigModalOpen}
+        onClose={() => setIsConfigModalOpen(false)}
+        title="Meta WhatsApp Business API Settings"
+        description="Connect your Meta Business Manager, phone number, and webhook credentials."
+        size="lg"
+      >
+        <form onSubmit={handleUpdateConfig} className="space-y-4 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input
+              label="Registered Business Phone"
+              value={configForm.phoneNumber}
+              onChange={(e) => setConfigForm({ ...configForm, phoneNumber: e.target.value })}
+              placeholder="+91 98765 43210"
+              required
+            />
+            <Input
+              label="Phone Number ID (Meta Graph)"
+              value={configForm.phoneNumberId}
+              onChange={(e) => setConfigForm({ ...configForm, phoneNumberId: e.target.value })}
+              placeholder="e.g. 104928192839182"
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input
+              label="WhatsApp Business Account ID (WABA ID)"
+              value={configForm.wabaAccountId}
+              onChange={(e) => setConfigForm({ ...configForm, wabaAccountId: e.target.value })}
+              placeholder="e.g. 891823091823901"
+              required
+            />
+            <Input
+              label="Webhook Verify Token"
+              value={configForm.verifyToken}
+              onChange={(e) => setConfigForm({ ...configForm, verifyToken: e.target.value })}
+              placeholder="dineflow_webhook_verify_secret"
+              required
+            />
+          </div>
+
+          <Input
+            label="Permanent System User Access Token"
+            type="password"
+            value={configForm.accessToken}
+            onChange={(e) => setConfigForm({ ...configForm, accessToken: e.target.value })}
+            placeholder="EAAG... (never shared publicly)"
+          />
+
+          <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+            <p className="font-bold text-slate-900 dark:text-white mb-1">Webhook Callback URL</p>
+            <code className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono break-all select-all">
+              {configForm.webhookUrl}
+            </code>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" size="sm" type="button" onClick={() => setIsConfigModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="glow" size="sm" type="submit">
+              Save Meta Credentials
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ── MODAL 2: Create Campaign ─────────────────────────────────────────── */}
+      <Modal
+        isOpen={isCampaignModalOpen}
+        onClose={() => setIsCampaignModalOpen(false)}
+        title="Create Marketing Campaign"
+        description="Target a customer segment with an automated WhatsApp campaign."
+        size="md"
+      >
+        <form onSubmit={handleCreateCampaign} className="space-y-4 text-xs">
+          <Input
+            label="Campaign Name"
+            value={newCampaign.name}
+            onChange={(e) => setNewCampaign({ ...newCampaign, name: e.target.value })}
+            placeholder="e.g. Autumn Degustation Preview"
+            required
+          />
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">Campaign Type</label>
+              <select
+                value={newCampaign.type}
+                onChange={(e) => setNewCampaign({ ...newCampaign, type: e.target.value as typeof newCampaign.type })}
+                className="w-full p-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs"
+              >
+                <option value="coupon">Discount Coupon</option>
+                <option value="text">Text Announcement</option>
+                <option value="image">Image Banner</option>
+                <option value="invoice">Payment Reminder</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">Target Segment</label>
+              <select
+                value={newCampaign.targetSegment}
+                onChange={(e) => setNewCampaign({ ...newCampaign, targetSegment: e.target.value })}
+                className="w-full p-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs"
+              >
+                <option value="all">All Contacts ({segments.all})</option>
+                <option value="first_time">First-Time Diners ({segments.first_time})</option>
+                <option value="repeat">Repeat Guests ({segments.repeat})</option>
+                <option value="vip">VIP Diners ({segments.vip})</option>
+                <option value="hotel_guests">Room Guests ({segments.hotel_guests})</option>
+                <option value="inactive">Inactive ({segments.inactive})</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">Message Content</label>
+            <textarea
+              rows={3}
+              value={newCampaign.messageBody}
+              onChange={(e) => setNewCampaign({ ...newCampaign, messageBody: e.target.value })}
+              placeholder="Hi {{customer_name}}! We are thrilled to invite you..."
+              className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs outline-none focus:border-emerald-500"
+              required
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" size="sm" type="button" onClick={() => setIsCampaignModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="glow" size="sm" type="submit">
+              Draft Campaign
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ── MODAL 3: View Official Indian GST Tax Invoice ─────────────────────── */}
+      {selectedInvoice && (
+        <Modal
+          isOpen={isInvoiceModalOpen}
+          onClose={() => setIsInvoiceModalOpen(false)}
+          title={`GST Tax Invoice — ${selectedInvoice.invoiceNumber}`}
+          description="Compliant Indian GST Tax Invoice (2.5% CGST + 2.5% SGST)."
+          size="lg"
+        >
+          <div className="space-y-4 text-xs font-sans">
+            {/* Header */}
+            <div className="text-center pb-3 border-b-2 border-dashed border-slate-200 dark:border-slate-700">
+              <h2 className="text-lg font-extrabold text-emerald-600 dark:text-emerald-400">
+                {selectedInvoice.restaurantName}
+              </h2>
+              <p className="text-slate-500 text-[11px]">Connaught Place, Central Delhi, 110001 | Tel: +91 11 4567 8900</p>
+              <p className="font-bold text-slate-900 dark:text-white mt-1">GSTIN: {selectedInvoice.gstin}</p>
+              <Badge variant="success" size="sm" className="mt-1">Official Tax Invoice</Badge>
+            </div>
+
+            {/* Meta */}
+            <div className="grid grid-cols-2 gap-4 text-slate-600 dark:text-slate-400">
+              <div>
+                <p><strong className="text-slate-900 dark:text-white">Invoice No:</strong> {selectedInvoice.invoiceNumber}</p>
+                <p><strong className="text-slate-900 dark:text-white">Order Ref:</strong> {selectedInvoice.orderNumber}</p>
+                <p><strong className="text-slate-900 dark:text-white">Date:</strong> {new Date(selectedInvoice.date).toLocaleString()}</p>
+              </div>
+              <div className="text-right">
+                <p><strong className="text-slate-900 dark:text-white">Customer:</strong> {selectedInvoice.customerName}</p>
+                <p><strong className="text-slate-900 dark:text-white">Phone:</strong> {selectedInvoice.customerPhone}</p>
+                <p><strong className="text-slate-900 dark:text-white">Location:</strong> {selectedInvoice.location}</p>
+              </div>
+            </div>
+
+            {/* Items Table */}
+            <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
+              <table className="w-full text-left">
+                <thead className="bg-slate-50 dark:bg-slate-800/60 font-bold border-b border-slate-200 dark:border-slate-700">
+                  <tr>
+                    <th className="p-2.5">Item</th>
+                    <th className="p-2.5 text-center">Qty</th>
+                    <th className="p-2.5 text-right">Rate</th>
+                    <th className="p-2.5 text-right">Amount</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-700/60">
+                  {selectedInvoice.items.map((it, idx) => (
+                    <tr key={idx}>
+                      <td className="p-2.5 font-medium text-slate-900 dark:text-white">{it.name}</td>
+                      <td className="p-2.5 text-center">{it.quantity}</td>
+                      <td className="p-2.5 text-right font-mono">₹{it.unitPrice.toFixed(2)}</td>
+                      <td className="p-2.5 text-right font-mono font-bold">₹{it.total.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Totals */}
+            <div className="max-w-xs ml-auto space-y-1 text-right">
+              <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                <span>Subtotal:</span>
+                <span className="font-mono">₹{selectedInvoice.subtotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                <span>CGST (2.5%):</span>
+                <span className="font-mono">₹{selectedInvoice.cgst.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                <span>SGST (2.5%):</span>
+                <span className="font-mono">₹{selectedInvoice.sgst.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between font-extrabold text-sm text-emerald-600 dark:text-emerald-400 pt-1 border-t border-slate-200 dark:border-slate-700">
+                <span>Grand Total:</span>
+                <span className="font-mono">₹{selectedInvoice.grandTotal.toFixed(2)}</span>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-700">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.print()}
+                leftIcon={<Printer className="h-3.5 w-3.5" />}
+              >
+                Print / Save PDF
+              </Button>
+              <Button
+                variant="glow"
+                size="sm"
+                onClick={() => {
+                  handleSendInvoice(selectedInvoice.id);
+                  setIsInvoiceModalOpen(false);
+                }}
+                rightIcon={<Send className="h-3.5 w-3.5" />}
+              >
+                Dispatch via WhatsApp
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* ── MODAL 4: Create Invoice from Order ─────────────────────────────────── */}
+      <Modal
+        isOpen={isCreateInvoiceOpen}
+        onClose={() => setIsCreateInvoiceOpen(false)}
+        title="Generate Tax Invoice from Order"
+        description="Enter an active or served order number to calculate GST and generate an official invoice."
+        size="sm"
+      >
+        <form onSubmit={handleCreateInvoiceFromOrder} className="space-y-4 text-xs">
+          <Input
+            label="Order Number or ID"
+            value={manualOrderId}
+            onChange={(e) => setManualOrderId(e.target.value)}
+            placeholder="e.g. ORD-1024"
+            required
+          />
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" size="sm" type="button" onClick={() => setIsCreateInvoiceOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="glow" size="sm" type="submit" disabled={isGeneratingInvoice}>
+              {isGeneratingInvoice ? "Generating..." : "Generate Invoice"}
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

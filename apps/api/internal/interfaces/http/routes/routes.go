@@ -63,6 +63,7 @@ func Setup(
 		// ── Public WhatsApp Webhook (Meta Cloud API) ──────────────────────
 		v1.GET("/whatsapp/webhook", waHandler.VerifyWebhook)
 		v1.POST("/whatsapp/webhook", waHandler.HandleWebhook)
+		v1.GET("/whatsapp/invoices/:id/receipt", waHandler.GetInvoiceReceiptHTML)
 
 		// ── Auth (Public) ─────────────────────────────────────────────────
 		auth := v1.Group("/auth")
@@ -193,12 +194,23 @@ func Setup(
 				adminGroup.POST("/platform/override-plan", subHandler.AdminOverridePlan)
 			}
 
-			// ── WhatsApp Marketing & Invoicing (Phase 5) ───────────────────
+			// ── WhatsApp Marketing & Invoicing (Meta Cloud API, AI Chatbot & GST Invoicing) ───
 			waGroup := protected.Group("/whatsapp")
 			{
 				waGroup.GET("/status", waHandler.GetStatus)
+				waGroup.GET("/config", waHandler.GetConfig)
+				waGroup.PUT("/config", waHandler.UpdateConfig)
 				waGroup.POST("/send-test", waHandler.SendTestMessage)
 				waGroup.GET("/logs", waHandler.ListLogs)
+				waGroup.GET("/segments", waHandler.GetSegments)
+				waGroup.GET("/campaigns", waHandler.ListCampaigns)
+				waGroup.POST("/campaigns", waHandler.CreateCampaign)
+				waGroup.POST("/campaigns/:id/send", waHandler.SendCampaign)
+				waGroup.GET("/templates", waHandler.ListTemplates)
+				waGroup.POST("/chatbot/simulate", waHandler.SimulateChatbot)
+				waGroup.GET("/invoices", waHandler.ListInvoices)
+				waGroup.POST("/invoices", waHandler.CreateInvoice)
+				waGroup.POST("/invoices/:id/send", waHandler.SendInvoiceWhatsApp)
 			}
 
 			// ── Sales & Operational Analytics (Phase 5) ────────────────────

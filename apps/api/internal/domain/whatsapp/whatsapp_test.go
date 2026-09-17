@@ -78,3 +78,53 @@ func TestParseRating(t *testing.T) {
 		}
 	}
 }
+
+func TestCalculateGST(t *testing.T) {
+	subtotal := 1000.00
+	cgst, sgst, totalTax := CalculateGST(subtotal)
+
+	if cgst != 25.00 {
+		t.Errorf("expected CGST 25.00, got %.2f", cgst)
+	}
+	if sgst != 25.00 {
+		t.Errorf("expected SGST 25.00, got %.2f", sgst)
+	}
+	if totalTax != 50.00 {
+		t.Errorf("expected total tax 50.00, got %.2f", totalTax)
+	}
+}
+
+func TestInterpolateTemplate(t *testing.T) {
+	tmpl := "Hello {{customer_name}}! Welcome to {{restaurant_name}}."
+	vars := map[string]string{
+		"customer_name":   "Vikram",
+		"restaurant_name": "Royal Bistro",
+	}
+
+	res := InterpolateTemplate(tmpl, vars)
+	expected := "Hello Vikram! Welcome to Royal Bistro."
+	if res != expected {
+		t.Errorf("expected %q, got %q", expected, res)
+	}
+}
+
+func TestGetStandardTemplates(t *testing.T) {
+	tmpls := GetStandardTemplates()
+	if len(tmpls) < 5 {
+		t.Errorf("expected at least 5 standard templates, got %d", len(tmpls))
+	}
+
+	foundOrderConfirmed := false
+	for _, tmpl := range tmpls {
+		if tmpl.ID == string(TemplateOrderConfirmed) {
+			foundOrderConfirmed = true
+			if len(tmpl.Variables) == 0 {
+				t.Errorf("expected variables in Order Confirmed template")
+			}
+		}
+	}
+
+	if !foundOrderConfirmed {
+		t.Errorf("Order Confirmed template not found in standard templates")
+	}
+}

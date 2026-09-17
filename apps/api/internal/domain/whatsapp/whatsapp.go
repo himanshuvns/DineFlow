@@ -2,6 +2,7 @@ package whatsapp
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -15,6 +16,7 @@ const (
 	TypeText        MessageType = "text"
 	TypeTemplate    MessageType = "template"
 	TypeInteractive MessageType = "interactive"
+	TypeMedia       MessageType = "media"
 )
 
 type MessageStatus string
@@ -34,21 +36,355 @@ const (
 	TemplateKitchenReady    TemplateType = "kitchen_ready"
 	TemplateTaxInvoice      TemplateType = "tax_invoice"
 	TemplateFeedbackRequest TemplateType = "feedback_request"
+	TemplateRoomService     TemplateType = "room_service_alert"
+	TemplateReservation     TemplateType = "reservation_reminder"
+	TemplateFestivalOffer   TemplateType = "festival_offer"
+	TemplateNewMenuLaunch   TemplateType = "new_menu_launch"
 )
 
+// MessageLog tracks all outbound and inbound message activity per tenant.
 type MessageLog struct {
-	ID          bson.ObjectID `bson:"_id,omitempty" json:"id"`
-	TenantID    bson.ObjectID `bson:"tenantId" json:"tenantId"`
-	Recipient   string        `bson:"recipient" json:"recipient"`
-	CustomerName string       `bson:"customerName" json:"customerName"`
-	Template    TemplateType  `bson:"template" json:"template"`
-	Body        string        `bson:"body" json:"body"`
-	Status      MessageStatus `bson:"status" json:"status"`
-	ExternalID  string        `bson:"externalId,omitempty" json:"externalId,omitempty"`
-	CreatedAt   time.Time     `bson:"createdAt" json:"createdAt"`
-	DeliveredAt *time.Time    `bson:"deliveredAt,omitempty" json:"deliveredAt,omitempty"`
-	ReadAt      *time.Time    `bson:"readAt,omitempty" json:"readAt,omitempty"`
+	ID           bson.ObjectID `bson:"_id,omitempty" json:"id"`
+	TenantID     bson.ObjectID `bson:"tenantId" json:"tenantId"`
+	Recipient    string        `bson:"recipient" json:"recipient"`
+	CustomerName string        `bson:"customerName" json:"customerName"`
+	Template     TemplateType  `bson:"template" json:"template"`
+	Body         string        `bson:"body" json:"body"`
+	Status       MessageStatus `bson:"status" json:"status"`
+	ExternalID   string        `bson:"externalId,omitempty" json:"externalId,omitempty"`
+	Location     string        `bson:"location,omitempty" json:"location,omitempty"`
+	CreatedAt    time.Time     `bson:"createdAt" json:"createdAt"`
+	DeliveredAt  *time.Time    `bson:"deliveredAt,omitempty" json:"deliveredAt,omitempty"`
+	ReadAt       *time.Time    `bson:"readAt,omitempty" json:"readAt,omitempty"`
 }
+
+// ── Official Meta WhatsApp Cloud API Webhook Payloads ─────────────────────────
+
+type MetaWebhookPayload struct {
+	Object string      `json:"object"`
+	Entry  []MetaEntry `json:"entry"`
+}
+
+type MetaEntry struct {
+	ID      string       `json:"id"`
+	Changes []MetaChange `json:"changes"`
+}
+
+type MetaChange struct {
+	Value MetaValue `json:"value"`
+	Field string    `json:"field"`
+}
+
+type MetaValue struct {
+	MessagingProduct string            `json:"messaging_product"`
+	Metadata         MetaMetadata      `json:"metadata"`
+	Contacts         []MetaContact     `json:"contacts,omitempty"`
+	Messages         []MetaMessage     `json:"messages,omitempty"`
+	Statuses         []MetaStatusEvent `json:"statuses,omitempty"`
+}
+
+type MetaMetadata struct {
+	DisplayPhoneNumber string `json:"display_phone_number"`
+	PhoneNumberID      string `json:"phone_number_id"`
+}
+
+type MetaContact struct {
+	Profile struct {
+		Name string `json:"name"`
+	} `json:"profile"`
+	WaID string `json:"wa_id"`
+}
+
+type MetaMessage struct {
+	From        string           `json:"from"`
+	ID          string           `json:"id"`
+	Timestamp   string           `json:"timestamp"`
+	Type        string           `json:"type"`
+	Text        *MetaText        `json:"text,omitempty"`
+	Interactive *MetaInteractive `json:"interactive,omitempty"`
+}
+
+type MetaText struct {
+	Body string `json:"body"`
+}
+
+type MetaInteractive struct {
+	Type        string `json:"type"`
+	ButtonReply *struct {
+		ID    string `json:"id"`
+		Title string `json:"title"`
+	} `json:"button_reply,omitempty"`
+	ListReply *struct {
+		ID          string `json:"id"`
+		Title       string `json:"title"`
+		Description string `json:"description"`
+	} `json:"list_reply,omitempty"`
+}
+
+type MetaStatusEvent struct {
+	ID          string `json:"id"`
+	Status      string `json:"status"` // sent, delivered, read, failed
+	Timestamp   string `json:"timestamp"`
+	RecipientID string `json:"recipient_id"`
+}
+
+// ── Campaign & Marketing Models ──────────────────────────────────────────────
+
+type CampaignStatus string
+
+const (
+	CampaignStatusDraft     CampaignStatus = "draft"
+	CampaignStatusScheduled CampaignStatus = "scheduled"
+	CampaignStatusSending   CampaignStatus = "sending"
+	CampaignStatusSent      CampaignStatus = "sent"
+	CampaignStatusFailed    CampaignStatus = "failed"
+)
+
+type CampaignType string
+
+const (
+	CampaignTypeText    CampaignType = "text"
+	CampaignTypeImage   CampaignType = "image"
+	CampaignTypePDF     CampaignType = "pdf"
+	CampaignTypeCoupon  CampaignType = "coupon"
+	CampaignTypeInvoice CampaignType = "invoice"
+)
+
+type TargetSegment string
+
+const (
+	SegmentAll        TargetSegment = "all"
+	SegmentFirstTime  TargetSegment = "first_time"
+	SegmentRepeat     TargetSegment = "repeat"
+	SegmentVIP        TargetSegment = "vip"
+	SegmentHotelGuest TargetSegment = "hotel_guests"
+	SegmentInactive   TargetSegment = "inactive"
+)
+
+type CampaignStats struct {
+	TotalRecipients int `bson:"totalRecipients" json:"totalRecipients"`
+	SentCount       int `bson:"sentCount" json:"sentCount"`
+	DeliveredCount  int `bson:"deliveredCount" json:"deliveredCount"`
+	ReadCount       int `bson:"readCount" json:"readCount"`
+	FailedCount     int `bson:"failedCount" json:"failedCount"`
+}
+
+type Campaign struct {
+	ID            bson.ObjectID  `bson:"_id,omitempty" json:"id"`
+	TenantID      bson.ObjectID  `bson:"tenantId" json:"tenantId"`
+	Name          string         `bson:"name" json:"name"`
+	Type          CampaignType   `bson:"type" json:"type"`
+	TargetSegment TargetSegment  `bson:"targetSegment" json:"targetSegment"`
+	TemplateID    string         `bson:"templateId,omitempty" json:"templateId,omitempty"`
+	MessageBody   string         `bson:"messageBody" json:"messageBody"`
+	MediaURL      string         `bson:"mediaUrl,omitempty" json:"mediaUrl,omitempty"`
+	CouponCode    string         `bson:"couponCode,omitempty" json:"couponCode,omitempty"`
+	DiscountPct   float64        `bson:"discountPct,omitempty" json:"discountPct,omitempty"`
+	Status        CampaignStatus `bson:"status" json:"status"`
+	ScheduledAt   *time.Time     `bson:"scheduledAt,omitempty" json:"scheduledAt,omitempty"`
+	SentAt        *time.Time     `bson:"sentAt,omitempty" json:"sentAt,omitempty"`
+	Stats         CampaignStats  `bson:"stats" json:"stats"`
+	CreatedAt     time.Time      `bson:"createdAt" json:"createdAt"`
+	UpdatedAt     time.Time      `bson:"updatedAt" json:"updatedAt"`
+}
+
+// ── Real-Time Chatbot Session Models ─────────────────────────────────────────
+
+type ChatbotState string
+
+const (
+	ChatStateIdle        ChatbotState = "idle"
+	ChatStateMenu        ChatbotState = "menu"
+	ChatStateOrderStatus ChatbotState = "order_status"
+	ChatStateRoomService ChatbotState = "room_service"
+	ChatStateFeedback    ChatbotState = "feedback"
+	ChatStateEscalated   ChatbotState = "escalated"
+)
+
+type ChatbotSession struct {
+	ID               bson.ObjectID `bson:"_id,omitempty" json:"id"`
+	TenantID         bson.ObjectID `bson:"tenantId" json:"tenantId"`
+	CustomerPhone    string        `bson:"customerPhone" json:"customerPhone"`
+	CustomerName     string        `bson:"customerName" json:"customerName"`
+	State            ChatbotState  `bson:"state" json:"state"`
+	ActiveOrderID    string        `bson:"activeOrderId,omitempty" json:"activeOrderId,omitempty"`
+	RoomNumber       string        `bson:"roomNumber,omitempty" json:"roomNumber,omitempty"`
+	EscalatedToStaff bool          `bson:"escalatedToStaff" json:"escalatedToStaff"`
+	EscalationReason string        `bson:"escalationReason,omitempty" json:"escalationReason,omitempty"`
+	LastMessageAt    time.Time     `bson:"lastMessageAt" json:"lastMessageAt"`
+	CreatedAt        time.Time     `bson:"createdAt" json:"createdAt"`
+	UpdatedAt        time.Time     `bson:"updatedAt" json:"updatedAt"`
+}
+
+// ── Customer GST Invoicing Models ─────────────────────────────────────────────
+
+type CustomerInvoiceItem struct {
+	Name      string  `bson:"name" json:"name"`
+	Quantity  int     `bson:"quantity" json:"quantity"`
+	UnitPrice float64 `bson:"unitPrice" json:"unitPrice"`
+	Total     float64 `bson:"total" json:"total"`
+}
+
+type CustomerInvoice struct {
+	ID                     bson.ObjectID         `bson:"_id,omitempty" json:"id"`
+	TenantID               bson.ObjectID         `bson:"tenantId" json:"tenantId"`
+	InvoiceNumber          string                `bson:"invoiceNumber" json:"invoiceNumber"`
+	OrderID                *bson.ObjectID        `bson:"orderId,omitempty" json:"orderId,omitempty"`
+	OrderNumber            string                `bson:"orderNumber" json:"orderNumber"`
+	RestaurantName         string                `bson:"restaurantName" json:"restaurantName"`
+	GSTIN                  string                `bson:"gstin" json:"gstin"`
+	Address                string                `bson:"address,omitempty" json:"address,omitempty"`
+	Phone                  string                `bson:"phone,omitempty" json:"phone,omitempty"`
+	CustomerName           string                `bson:"customerName" json:"customerName"`
+	CustomerPhone          string                `bson:"customerPhone" json:"customerPhone"`
+	Location               string                `bson:"location" json:"location"` // Table 14 or Suite 302
+	Date                   time.Time             `bson:"date" json:"date"`
+	Items                  []CustomerInvoiceItem `bson:"items" json:"items"`
+	Subtotal               float64               `bson:"subtotal" json:"subtotal"`
+	CGST                   float64               `bson:"cgst" json:"cgst"`         // 2.5%
+	SGST                   float64               `bson:"sgst" json:"sgst"`         // 2.5%
+	TaxTotal               float64               `bson:"taxTotal" json:"taxTotal"` // 5.0%
+	RoomServiceFee         float64               `bson:"roomServiceFee,omitempty" json:"roomServiceFee,omitempty"`
+	GrandTotal             float64               `bson:"grandTotal" json:"grandTotal"`
+	PaymentStatus          string                `bson:"paymentStatus" json:"paymentStatus"` // "paid", "pending"
+	WhatsAppDeliveryStatus MessageStatus         `bson:"whatsappDeliveryStatus" json:"whatsappDeliveryStatus"`
+	CreatedAt              time.Time             `bson:"createdAt" json:"createdAt"`
+	UpdatedAt              time.Time             `bson:"updatedAt" json:"updatedAt"`
+}
+
+// CalculateGST calculates 5% GST split into CGST (2.5%) and SGST (2.5%).
+func CalculateGST(subtotal float64) (cgst float64, sgst float64, totalTax float64) {
+	cgst = math.Round(subtotal*0.025*100) / 100
+	sgst = math.Round(subtotal*0.025*100) / 100
+	totalTax = cgst + sgst
+	return
+}
+
+// ── WhatsApp Connection Config Model ──────────────────────────────────────────
+
+type WhatsAppConfig struct {
+	ID            bson.ObjectID `bson:"_id,omitempty" json:"id"`
+	TenantID      bson.ObjectID `bson:"tenantId" json:"tenantId"`
+	PhoneNumber   string        `bson:"phoneNumber" json:"phoneNumber"`
+	PhoneNumberID string        `bson:"phoneNumberId" json:"phoneNumberId"`
+	WABAAccountID string        `bson:"wabaAccountId" json:"wabaAccountId"`
+	AccessToken   string        `bson:"accessToken,omitempty" json:"accessToken,omitempty"`
+	VerifyToken   string        `bson:"verifyToken" json:"verifyToken"`
+	WebhookURL    string        `bson:"webhookUrl" json:"webhookUrl"`
+	Connected     bool          `bson:"connected" json:"connected"`
+	TierLimit     string        `bson:"tierLimit" json:"tierLimit"`
+	QualityRating string        `bson:"qualityRating" json:"qualityRating"`
+	UpdatedAt     time.Time     `bson:"updatedAt" json:"updatedAt"`
+}
+
+// ── Message Templates Registry ───────────────────────────────────────────────
+
+type TemplateVariable struct {
+	Key   string `json:"key"`
+	Label string `json:"label"`
+}
+
+type TemplateDefinition struct {
+	ID        string             `json:"id"`
+	Name      string             `json:"name"`
+	Category  string             `json:"category"`
+	Body      string             `json:"body"`
+	Variables []TemplateVariable `json:"variables"`
+	Status    string             `json:"status"` // "APPROVED", "PENDING"
+}
+
+func GetStandardTemplates() []TemplateDefinition {
+	return []TemplateDefinition{
+		{
+			ID:       string(TemplateOrderConfirmed),
+			Name:     "Order Confirmed",
+			Category: "TRANSACTIONAL",
+			Body:     "Hello {{customer_name}}! ✨ Your order #{{order_number}} at {{restaurant_name}} ({{location}}) has been confirmed and is being freshly prepared.\n\n📋 Total: {{total_amount}}\n📍 Live Kitchen Tracker: {{tracking_url}}\n\nReply STOP to opt-out.",
+			Variables: []TemplateVariable{
+				{Key: "customer_name", Label: "Customer Name"},
+				{Key: "order_number", Label: "Order Number"},
+				{Key: "restaurant_name", Label: "Restaurant Name"},
+				{Key: "location", Label: "Table / Room"},
+				{Key: "total_amount", Label: "Total Amount"},
+				{Key: "tracking_url", Label: "Tracker URL"},
+			},
+			Status: "APPROVED",
+		},
+		{
+			ID:       string(TemplateKitchenReady),
+			Name:     "Kitchen Ready",
+			Category: "UTILITY",
+			Body:     "🔔 Chef's update for {{customer_name}}: Your freshly prepared courses at {{restaurant_name}} are ready and on their way to {{location}}! Bon appétit.\n\nReply STOP to unsubscribe.",
+			Variables: []TemplateVariable{
+				{Key: "customer_name", Label: "Customer Name"},
+				{Key: "restaurant_name", Label: "Restaurant Name"},
+				{Key: "location", Label: "Table / Room"},
+			},
+			Status: "APPROVED",
+		},
+		{
+			ID:       string(TemplateTaxInvoice),
+			Name:     "Tax Invoice Delivery",
+			Category: "TRANSACTIONAL",
+			Body:     "Dear {{customer_name}}, thank you for dining at {{restaurant_name}}! 🧾 Your digital GST Tax Invoice #{{invoice_number}} for {{total_amount}} is ready.\n\n📄 Download Receipt: {{invoice_url}}\n\nWe look forward to welcoming you back!",
+			Variables: []TemplateVariable{
+				{Key: "customer_name", Label: "Customer Name"},
+				{Key: "restaurant_name", Label: "Restaurant Name"},
+				{Key: "invoice_number", Label: "Invoice Number"},
+				{Key: "total_amount", Label: "Total Amount"},
+				{Key: "invoice_url", Label: "Invoice URL"},
+			},
+			Status: "APPROVED",
+		},
+		{
+			ID:       string(TemplateFeedbackRequest),
+			Name:     "Feedback & Review",
+			Category: "MARKETING",
+			Body:     "Thank you for visiting {{restaurant_name}} today, {{customer_name}}! ⭐\n\nHow was your culinary experience? Reply with a number from 1 (Poor) to 5 (Exceptional) to share your feedback.\n\nReply STOP to opt-out.",
+			Variables: []TemplateVariable{
+				{Key: "customer_name", Label: "Customer Name"},
+				{Key: "restaurant_name", Label: "Restaurant Name"},
+			},
+			Status: "APPROVED",
+		},
+		{
+			ID:       string(TemplateRoomService),
+			Name:     "Room Service Dispatch",
+			Category: "UTILITY",
+			Body:     "🛎️ In-Room Dining Update: Your room service request for {{location}} at {{restaurant_name}} has been received and steward dispatch is in progress.",
+			Variables: []TemplateVariable{
+				{Key: "restaurant_name", Label: "Restaurant Name"},
+				{Key: "location", Label: "Room Number"},
+			},
+			Status: "APPROVED",
+		},
+		{
+			ID:       string(TemplateFestivalOffer),
+			Name:     "Special Privilege Offer",
+			Category: "MARKETING",
+			Body:     "Exclusive perk for you, {{customer_name}}! 🎁 Enjoy {{discount_pct}}% off your next dining experience at {{restaurant_name}} with promo code {{coupon_code}}.\n\nValid until {{expiry_date}}. Table reservations: {{booking_url}}\n\nReply STOP to unsubscribe.",
+			Variables: []TemplateVariable{
+				{Key: "customer_name", Label: "Customer Name"},
+				{Key: "discount_pct", Label: "Discount Percentage"},
+				{Key: "restaurant_name", Label: "Restaurant Name"},
+				{Key: "coupon_code", Label: "Coupon Code"},
+				{Key: "expiry_date", Label: "Expiry Date"},
+				{Key: "booking_url", Label: "Booking Link"},
+			},
+			Status: "APPROVED",
+		},
+	}
+}
+
+func InterpolateTemplate(templateBody string, vars map[string]string) string {
+	res := templateBody
+	for k, v := range vars {
+		res = strings.ReplaceAll(res, "{{"+k+"}}", v)
+	}
+	return res
+}
+
+// ── Legacy Helpers Preserved for Backward Compatibility ───────────────────────
 
 type OrderConfirmationData struct {
 	CustomerName   string
@@ -61,7 +397,6 @@ type OrderConfirmationData struct {
 	TrackingURL    string
 }
 
-// BuildOrderConfirmationMessage formats a luxury WhatsApp order receipt.
 func BuildOrderConfirmationMessage(data OrderConfirmationData) string {
 	curr := data.Currency
 	if curr == "INR" || curr == "" {
@@ -84,7 +419,6 @@ func BuildOrderConfirmationMessage(data OrderConfirmationData) string {
 	)
 }
 
-// BuildKitchenReadyMessage formats an alert when an order is ready for service or delivery.
 func BuildKitchenReadyMessage(customerName, restaurantName, locationName string) string {
 	return fmt.Sprintf(
 		"🔔 Chef's update for %s: Your freshly prepared courses at %s are ready and on their way to %s! Enjoy your meal.\n\nReply STOP to unsubscribe.",
@@ -94,7 +428,6 @@ func BuildKitchenReadyMessage(customerName, restaurantName, locationName string)
 	)
 }
 
-// BuildFeedbackRequestMessage formats a post-dining 1-5 star review prompt.
 func BuildFeedbackRequestMessage(customerName, restaurantName string) string {
 	return fmt.Sprintf(
 		"Thank you for dining at %s today, %s! ⭐\n\n"+
@@ -105,7 +438,6 @@ func BuildFeedbackRequestMessage(customerName, restaurantName string) string {
 	)
 }
 
-// IsOptOutKeyword checks if an incoming message is requesting to unsubscribe.
 func IsOptOutKeyword(text string) bool {
 	clean := strings.TrimSpace(strings.ToUpper(text))
 	switch clean {
@@ -116,7 +448,6 @@ func IsOptOutKeyword(text string) bool {
 	}
 }
 
-// ParseRating extracts an integer rating (1 to 5) from guest responses.
 func ParseRating(text string) (int, bool) {
 	clean := strings.TrimSpace(text)
 	if len(clean) == 1 {
@@ -125,7 +456,6 @@ func ParseRating(text string) (int, bool) {
 			return val, true
 		}
 	}
-	// Check for emoji star count
 	starCount := strings.Count(text, "⭐") + strings.Count(text, "★")
 	if starCount >= 1 && starCount <= 5 {
 		return starCount, true

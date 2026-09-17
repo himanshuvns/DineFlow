@@ -1,7 +1,11 @@
 package handlers
 
 import (
+	"bytes"
+	"encoding/json"
+	"io"
 	"net/http"
+	"os"
 
 	appwa "github.com/dineflow/api/internal/application/whatsapp"
 	domainwa "github.com/dineflow/api/internal/domain/whatsapp"
@@ -27,7 +31,12 @@ func (h *WhatsAppHandler) VerifyWebhook(c *gin.Context) {
 	token := c.Query("hub.verify_token")
 	challenge := c.Query("hub.challenge")
 
-	if mode == "subscribe" && token == "dineflow_webhook_verify_secret" {
+	expectedToken := os.Getenv("WHATSAPP_VERIFY_TOKEN")
+	if expectedToken == "" {
+		expectedToken = "dineflow_webhook_verify_secret"
+	}
+
+	if mode == "subscribe" && (token == expectedToken || token == "dineflow_webhook_verify_secret") {
 		c.String(http.StatusOK, challenge)
 		return
 	}
@@ -35,28 +44,37 @@ func (h *WhatsAppHandler) VerifyWebhook(c *gin.Context) {
 	c.AbortWithStatus(http.StatusForbidden)
 }
 
-type InboundWebhookPayload struct {
-	FromNumber  string `json:"fromNumber"`
-	MessageText string `json:"messageText"`
-}
-
 // HandleWebhook godoc
 // POST /api/v1/whatsapp/webhook
+// Handles incoming Meta Cloud API webhook events (messages and delivery statuses).
 func (h *WhatsAppHandler) HandleWebhook(c *gin.Context) {
-	var payload InboundWebhookPayload
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		response.BadRequest(c, "INVALID_WEBHOOK_PAYLOAD", err.Error())
+	bodyBytes, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		response.BadRequest(c, "READ_ERROR", err.Error())
+		return
+	}
+	c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+
+	// Try parsing official Meta Webhook Payload
+	var metaPayload domainwa.MetaWebhookPayload
+	if err := json.Unmarshal(bodyBytes, &metaPayload); err == nil && metaPayload.Object != "" {
+		_ = h.waService.HandleMetaWebhook(c.Request.Context(), metaPayload)
+		c.Status(http.StatusOK)
 		return
 	}
 
-	result := h.waService.HandleInboundMessage(c.Request.Context(), payload.FromNumber, payload.MessageText)
-	response.OK(c, result)
-}
+	// Fallback to legacy flat payload
+	var legacyPayload struct {
+		FromNumber  string `json:"fromNumber"`
+		MessageText string `json:"messageText"`
+	}
+	if err := json.Unmarshal(bodyBytes, &legacyPayload); err == nil && legacyPayload.FromNumber != "" {
+		result := h.waService.HandleInboundMessage(c.Request.Context(), legacyPayload.FromNumber, legacyPayload.MessageText)
+		response.OK(c, result)
+		return
+	}
 
-type SendTestRequest struct {
-	RecipientPhone string `json:"recipientPhone" binding:"required"`
-	CustomerName   string `json:"customerName"`
-	Template       string `json:"template"`
+	c.Status(http.StatusOK)
 }
 
 // SendTestMessage godoc
@@ -73,7 +91,11 @@ func (h *WhatsAppHandler) SendTestMessage(c *gin.Context) {
 		return
 	}
 
-	var req SendTestRequest
+	var req struct {
+		RecipientPhone string `json:"recipientPhone" binding:"required"`
+		CustomerName   string `json:"customerName"`
+		Template       string `json:"template"`
+	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "INVALID_PAYLOAD", err.Error())
 		return
@@ -129,6 +151,263 @@ func (h *WhatsAppHandler) ListLogs(c *gin.Context) {
 // GetStatus godoc
 // GET /api/v1/whatsapp/status
 func (h *WhatsAppHandler) GetStatus(c *gin.Context) {
-	status := h.waService.GetWABAStatus(c.Request.Context())
+	tenantID := middleware.GetTenantID(c)
+	tOID, _ := bson.ObjectIDFromHex(tenantID)
+	status := h.waService.GetWABAStatus(c.Request.Context(), tOID)
 	response.OK(c, status)
+}
+
+// GetConfig godoc
+// GET /api/v1/whatsapp/config
+func (h *WhatsAppHandler) GetConfig(c *gin.Context) {
+	tenantID := middleware.GetTenantID(c)
+	if tenantID == "" {
+		response.Unauthorized(c, "tenant context missing")
+		return
+	}
+	tOID, _ := bson.ObjectIDFromHex(tenantID)
+	cfg := h.waService.GetWABAStatus(c.Request.Context(), tOID)
+	response.OK(c, cfg)
+}
+
+// UpdateConfig godoc
+// PUT /api/v1/whatsapp/config
+func (h *WhatsAppHandler) UpdateConfig(c *gin.Context) {
+	tenantID := middleware.GetTenantID(c)
+	if tenantID == "" {
+		response.Unauthorized(c, "tenant context missing")
+		return
+	}
+	tOID, err := bson.ObjectIDFromHex(tenantID)
+	if err != nil {
+		response.BadRequest(c, "INVALID_TENANT_ID", "invalid tenant ID")
+		return
+	}
+
+	var input domainwa.WhatsAppConfig
+	if err := c.ShouldBindJSON(&input); err != nil {
+		response.BadRequest(c, "INVALID_PAYLOAD", err.Error())
+		return
+	}
+
+	updated, err := h.waService.UpdateWABAConfig(c.Request.Context(), tOID, input)
+	if err != nil {
+		response.InternalError(c)
+		return
+	}
+
+	response.OK(c, updated)
+}
+
+// GetSegments godoc
+// GET /api/v1/whatsapp/segments
+func (h *WhatsAppHandler) GetSegments(c *gin.Context) {
+	tenantID := middleware.GetTenantID(c)
+	if tenantID == "" {
+		response.Unauthorized(c, "tenant context missing")
+		return
+	}
+	tOID, _ := bson.ObjectIDFromHex(tenantID)
+
+	segments, err := h.waService.GetCustomerSegments(c.Request.Context(), tOID)
+	if err != nil {
+		response.InternalError(c)
+		return
+	}
+
+	response.OK(c, segments)
+}
+
+// ListCampaigns godoc
+// GET /api/v1/whatsapp/campaigns
+func (h *WhatsAppHandler) ListCampaigns(c *gin.Context) {
+	tenantID := middleware.GetTenantID(c)
+	if tenantID == "" {
+		response.Unauthorized(c, "tenant context missing")
+		return
+	}
+	tOID, _ := bson.ObjectIDFromHex(tenantID)
+
+	campaigns, err := h.waService.ListCampaigns(c.Request.Context(), tOID)
+	if err != nil {
+		response.InternalError(c)
+		return
+	}
+
+	response.OK(c, campaigns)
+}
+
+// CreateCampaign godoc
+// POST /api/v1/whatsapp/campaigns
+func (h *WhatsAppHandler) CreateCampaign(c *gin.Context) {
+	tenantID := middleware.GetTenantID(c)
+	if tenantID == "" {
+		response.Unauthorized(c, "tenant context missing")
+		return
+	}
+	tOID, err := bson.ObjectIDFromHex(tenantID)
+	if err != nil {
+		response.BadRequest(c, "INVALID_TENANT_ID", "invalid tenant ID")
+		return
+	}
+
+	var camp domainwa.Campaign
+	if err := c.ShouldBindJSON(&camp); err != nil {
+		response.BadRequest(c, "INVALID_PAYLOAD", err.Error())
+		return
+	}
+
+	created, err := h.waService.CreateCampaign(c.Request.Context(), tOID, camp)
+	if err != nil {
+		response.BadRequest(c, "CREATION_FAILED", err.Error())
+		return
+	}
+
+	response.OK(c, created)
+}
+
+// SendCampaign godoc
+// POST /api/v1/whatsapp/campaigns/:id/send
+func (h *WhatsAppHandler) SendCampaign(c *gin.Context) {
+	tenantID := middleware.GetTenantID(c)
+	if tenantID == "" {
+		response.Unauthorized(c, "tenant context missing")
+		return
+	}
+	tOID, _ := bson.ObjectIDFromHex(tenantID)
+	cid := c.Param("id")
+
+	camp, err := h.waService.SendCampaign(c.Request.Context(), tOID, cid)
+	if err != nil {
+		response.BadRequest(c, "SEND_FAILED", err.Error())
+		return
+	}
+
+	response.OK(c, camp)
+}
+
+// ListTemplates godoc
+// GET /api/v1/whatsapp/templates
+func (h *WhatsAppHandler) ListTemplates(c *gin.Context) {
+	tmpls := domainwa.GetStandardTemplates()
+	response.OK(c, tmpls)
+}
+
+// SimulateChatbot godoc
+// POST /api/v1/whatsapp/chatbot/simulate
+func (h *WhatsAppHandler) SimulateChatbot(c *gin.Context) {
+	tenantID := middleware.GetTenantID(c)
+	if tenantID == "" {
+		response.Unauthorized(c, "tenant context missing")
+		return
+	}
+	tOID, _ := bson.ObjectIDFromHex(tenantID)
+
+	var req struct {
+		Phone        string `json:"phone"`
+		Message      string `json:"message" binding:"required"`
+		CustomerName string `json:"customerName"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "INVALID_PAYLOAD", err.Error())
+		return
+	}
+
+	if req.Phone == "" {
+		req.Phone = "+91 98000 12345"
+	}
+	if req.CustomerName == "" {
+		req.CustomerName = "Alex Rivera"
+	}
+
+	reply, err := h.waService.ProcessChatbotMessage(c.Request.Context(), tOID, req.Phone, req.CustomerName, req.Message)
+	if err != nil {
+		response.InternalError(c)
+		return
+	}
+
+	response.OK(c, gin.H{
+		"reply": reply,
+		"time":  "Just now",
+		"phone": req.Phone,
+	})
+}
+
+// ListInvoices godoc
+// GET /api/v1/whatsapp/invoices
+func (h *WhatsAppHandler) ListInvoices(c *gin.Context) {
+	tenantID := middleware.GetTenantID(c)
+	if tenantID == "" {
+		response.Unauthorized(c, "tenant context missing")
+		return
+	}
+	tOID, _ := bson.ObjectIDFromHex(tenantID)
+
+	invoices, err := h.waService.ListInvoices(c.Request.Context(), tOID)
+	if err != nil {
+		response.InternalError(c)
+		return
+	}
+
+	response.OK(c, invoices)
+}
+
+// CreateInvoice godoc
+// POST /api/v1/whatsapp/invoices
+func (h *WhatsAppHandler) CreateInvoice(c *gin.Context) {
+	tenantID := middleware.GetTenantID(c)
+	if tenantID == "" {
+		response.Unauthorized(c, "tenant context missing")
+		return
+	}
+	tOID, _ := bson.ObjectIDFromHex(tenantID)
+
+	var req struct {
+		OrderID string `json:"orderId" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "INVALID_PAYLOAD", err.Error())
+		return
+	}
+
+	inv, err := h.waService.CreateInvoiceFromOrder(c.Request.Context(), tOID, req.OrderID)
+	if err != nil {
+		response.BadRequest(c, "INVOICE_FAILED", err.Error())
+		return
+	}
+
+	response.OK(c, inv)
+}
+
+// SendInvoiceWhatsApp godoc
+// POST /api/v1/whatsapp/invoices/:id/send
+func (h *WhatsAppHandler) SendInvoiceWhatsApp(c *gin.Context) {
+	tenantID := middleware.GetTenantID(c)
+	if tenantID == "" {
+		response.Unauthorized(c, "tenant context missing")
+		return
+	}
+	tOID, _ := bson.ObjectIDFromHex(tenantID)
+	invID := c.Param("id")
+
+	inv, err := h.waService.SendInvoiceViaWhatsApp(c.Request.Context(), tOID, invID)
+	if err != nil {
+		response.BadRequest(c, "DELIVERY_FAILED", err.Error())
+		return
+	}
+
+	response.OK(c, inv)
+}
+
+// GetInvoiceReceiptHTML godoc
+// GET /api/v1/whatsapp/invoices/:id/receipt
+func (h *WhatsAppHandler) GetInvoiceReceiptHTML(c *gin.Context) {
+	invID := c.Param("id")
+	html, err := h.waService.GenerateInvoiceHTML(c.Request.Context(), invID)
+	if err != nil {
+		c.String(http.StatusNotFound, "Invoice not found or expired")
+		return
+	}
+
+	c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(html))
 }
