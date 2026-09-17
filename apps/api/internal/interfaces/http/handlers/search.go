@@ -49,7 +49,15 @@ func (h *SearchHandler) Search(c *gin.Context) {
 		return
 	}
 
-	res, err := h.searchService.SearchAll(c.Request.Context(), tOID, q)
+	opts := appsearch.SearchFilterOptions{
+		Category: c.Query("category"),
+		Status:   c.Query("status"),
+		Type:     c.Query("type"),
+		Date:     c.Query("date"),
+		Sort:     c.Query("sort"),
+	}
+
+	res, err := h.searchService.SearchAllWithOptions(c.Request.Context(), tOID, q, opts)
 	if err != nil {
 		response.InternalError(c)
 		return

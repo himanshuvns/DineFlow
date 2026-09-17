@@ -1638,9 +1638,9 @@
     "semantic_hash": ""
   },
   "apps/api/internal/application/search/service.go": {
-    "mtime": 1789630287.7158475,
-    "seen": 1789630312.801895,
-    "ast_hash": "05a56977a9a53beb7bb63c76c3266066",
+    "mtime": 1789635483.8864365,
+    "seen": 1789635649.954924,
+    "ast_hash": "4c3db0f160597d3a693562f5985fdc28",
     "semantic_hash": ""
   },
   "apps/api/internal/application/search/service_test.go": {
@@ -1650,15 +1650,15 @@
     "semantic_hash": ""
   },
   "apps/api/internal/interfaces/http/handlers/search.go": {
-    "mtime": 1789630080.426762,
-    "seen": 1789630312.801922,
-    "ast_hash": "74552a32116a374a46460543e53ea00c",
+    "mtime": 1789635498.5376842,
+    "seen": 1789635649.9549499,
+    "ast_hash": "2091549c28c3a43ef92847aa4aedec32",
     "semantic_hash": ""
   },
   "apps/web/components/dashboard/global-search.tsx": {
-    "mtime": 1789630128.9872122,
-    "seen": 1789630312.801976,
-    "ast_hash": "867d53bcf468f47d47493f05d867c83c",
+    "mtime": 1789635547.69338,
+    "seen": 1789635649.955002,
+    "ast_hash": "fa149fb7d2cad389ce2185cbdef83e50",
     "semantic_hash": ""
   }
 }
