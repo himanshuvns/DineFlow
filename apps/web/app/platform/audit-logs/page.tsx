@@ -26,7 +26,11 @@ import { usePlatformStore, AuditLogEntry } from "@/lib/stores/platform-store";
 
 export default function PlatformAuditLogsPage() {
   const { toast } = useToast();
-  const auditLogs = usePlatformStore((s) => s.auditLogs);
+  const { auditLogs, fetchAuditLogs, downloadCsvExport } = usePlatformStore();
+
+  React.useEffect(() => {
+    fetchAuditLogs();
+  }, [fetchAuditLogs]);
 
   const [searchQuery, setSearchQuery] = React.useState("");
   const [selectedCategory, setSelectedCategory] = React.useState<string>("all");
@@ -44,25 +48,33 @@ export default function PlatformAuditLogsPage() {
     return matchesCategory && matchesSearch;
   });
 
-  const handleExportCsv = () => {
-    const headers = "ID,Timestamp,Actor Name,Actor Email,Actor Role,Action,Category,Target,IP Address,Details\n";
-    const rows = filteredLogs
-      .map(
-        (l) =>
-          `"${l.id}","${l.timestamp}","${l.actor.name}","${l.actor.email}","${l.actor.role}","${l.action}","${l.category}","${l.targetName || l.targetId || "N/A"}","${l.ipAddress}","${l.details.replace(/"/g, '""')}"`
-      )
-      .join("\n");
-    const blob = new Blob([headers + rows], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `dineflow_audit_trail_${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
+  const handleExportCsv = async () => {
+    try {
+      await downloadCsvExport("audit_logs");
+      toast({
+        title: "Audit Trail Exported",
+        description: `Exported verified compliance ledger entries to CSV.`,
+      });
+    } catch {
+      const headers = "ID,Timestamp,Actor Name,Actor Email,Actor Role,Action,Category,Target,IP Address,Details\n";
+      const rows = filteredLogs
+        .map(
+          (l) =>
+            `"${l.id}","${l.timestamp}","${l.actor.name}","${l.actor.email}","${l.actor.role}","${l.action}","${l.category}","${l.targetName || l.targetId || "N/A"}","${l.ipAddress}","${l.details.replace(/"/g, '""')}"`
+        )
+        .join("\n");
+      const blob = new Blob([headers + rows], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `dineflow_audit_trail_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
 
-    toast({
-      title: "Audit Trail Exported",
-      description: `Exported ${filteredLogs.length} verified ledger entries to CSV.`,
-    });
+      toast({
+        title: "Audit Trail Exported",
+        description: `Exported ${filteredLogs.length} verified ledger entries to CSV.`,
+      });
+    }
   };
 
   return (

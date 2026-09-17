@@ -36,6 +36,8 @@ export default function PlatformClientsPage() {
   const { startImpersonation } = useAuthStore();
   const {
     clients,
+    fetchClients,
+    downloadCsvExport,
     activateClient,
     suspendClient,
     changeClientPlan,
@@ -45,7 +47,12 @@ export default function PlatformClientsPage() {
     bulkSuspend,
     bulkChangePlan,
     addAuditLog,
+    isLoading,
   } = usePlatformStore();
+
+  React.useEffect(() => {
+    fetchClients();
+  }, [fetchClients]);
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = React.useState("");
@@ -136,21 +143,26 @@ export default function PlatformClientsPage() {
     setPlanChangeClient(null);
   };
 
-  const handleExportCSV = () => {
-    const headers = "ID,Name,Owner,Phone,Email,Type,Plan,Status,MRR,City,HealthScore\n";
-    const rows = filteredClients
-      .map(
-        (c) =>
-          `"${c.id}","${c.name}","${c.ownerName}","${c.ownerPhone}","${c.ownerEmail}","${c.businessType}","${c.plan}","${c.status}",${c.mrr},"${c.city}",${c.healthScore}`
-      )
-      .join("\n");
-    const blob = new Blob([headers + rows], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `dineflow_clients_${Date.now()}.csv`;
-    a.click();
-    addToast("info", "Export Complete", "Client directory exported to CSV.");
+  const handleExportCSV = async () => {
+    try {
+      await downloadCsvExport("clients");
+      addToast("success", "Export Complete", "Live client directory exported to CSV.");
+    } catch {
+      const headers = "ID,Name,Owner,Phone,Email,Type,Plan,Status,MRR,City,HealthScore\n";
+      const rows = filteredClients
+        .map(
+          (c) =>
+            `"${c.id}","${c.name}","${c.ownerName}","${c.ownerPhone}","${c.ownerEmail}","${c.businessType}","${c.plan}","${c.status}",${c.mrr},"${c.city}",${c.healthScore}`
+        )
+        .join("\n");
+      const blob = new Blob([headers + rows], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `dineflow_clients_${Date.now()}.csv`;
+      a.click();
+      addToast("info", "Export Complete", "Client directory exported to CSV.");
+    }
   };
 
   return (

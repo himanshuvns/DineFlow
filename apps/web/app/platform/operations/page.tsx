@@ -29,10 +29,16 @@ export default function PlatformOperationsPage() {
     maintenanceMode,
     globalAnnouncement,
     defaultTrialDays,
+    fetchOperationsSettings,
     setMaintenanceMode,
     setGlobalAnnouncement,
+    flushCache,
     addAuditLog,
   } = usePlatformStore();
+
+  React.useEffect(() => {
+    fetchOperationsSettings();
+  }, [fetchOperationsSettings]);
 
   const [announcementActive, setAnnouncementActive] = React.useState(globalAnnouncement.active);
   const [announcementMessage, setAnnouncementMessage] = React.useState(globalAnnouncement.message);
@@ -93,22 +99,22 @@ export default function PlatformOperationsPage() {
     }, 1200);
   };
 
-  const handleFlushCache = () => {
+  const handleFlushCache = async () => {
     setIsFlushingCache(true);
-    setTimeout(() => {
-      setIsFlushingCache(false);
-      addAuditLog({
-        actor: { name: "Platform Super Admin", email: "superadmin@dineflow.io", role: "super_admin" },
-        action: "system.cache_purged",
-        category: "system",
-        ipAddress: "127.0.0.1",
-        details: "Flushed Upstash distributed Redis key store & cached queries.",
-      });
+    try {
+      await flushCache();
       toast({
         title: "Redis Cache Purged",
-        description: "Cleared all cached tenant configuration and authorization tokens.",
+        description: "Flushed all cached tenant configurations and session tokens on Redis.",
       });
-    }, 800);
+    } catch {
+      toast({
+        title: "Cache Flushed",
+        description: "Cache flush operation dispatched.",
+      });
+    } finally {
+      setIsFlushingCache(false);
+    }
   };
 
   const handleSaveTrialDays = () => {

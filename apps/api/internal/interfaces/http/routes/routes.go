@@ -29,6 +29,7 @@ func Setup(
 	roomHandler *handlers.RoomHandler,
 	notifHandler *handlers.NotificationHandler,
 	searchHandler *handlers.SearchHandler,
+	platformHandler *handlers.PlatformHandler,
 ) {
 	// Auth middleware (used on protected routes)
 	authMiddleware := middleware.Auth(tokenMaker)
@@ -230,6 +231,65 @@ func Setup(
 			{
 				adminGroup.GET("/platform/overview", subHandler.GetPlatformOverview)
 				adminGroup.POST("/platform/override-plan", middleware.PlatformAdminOrAbove(), subHandler.AdminOverridePlan)
+			}
+
+			// ── Platform Super-Admin Console APIs (/api/v1/platform/*) ───────────
+			platformGroup := protected.Group("/platform", middleware.SupportOrAbove())
+			{
+				// Dashboard & Metrics
+				platformGroup.GET("/dashboard/metrics", platformHandler.GetDashboardMetrics)
+				platformGroup.GET("/overview", platformHandler.GetDashboardMetrics)
+
+				// Client / Tenant Management
+				platformGroup.GET("/tenants", platformHandler.ListTenants)
+				platformGroup.GET("/tenants/:id", platformHandler.GetTenant360)
+				platformGroup.PATCH("/tenants/:id", middleware.PlatformAdminOrAbove(), platformHandler.UpdateTenant)
+				platformGroup.POST("/tenants/:id/activate", middleware.PlatformAdminOrAbove(), platformHandler.ActivateTenant)
+				platformGroup.POST("/tenants/:id/suspend", middleware.PlatformAdminOrAbove(), platformHandler.SuspendTenant)
+				platformGroup.DELETE("/tenants/:id", middleware.SuperAdminOnly(), platformHandler.SoftDeleteTenant)
+				platformGroup.POST("/tenants/:id/extend-trial", middleware.PlatformAdminOrAbove(), platformHandler.ExtendTrial)
+				platformGroup.POST("/tenants/:id/plan", middleware.PlatformAdminOrAbove(), platformHandler.ChangePlan)
+				platformGroup.POST("/tenants/bulk", middleware.PlatformAdminOrAbove(), platformHandler.BulkAction)
+
+				// Revenue & Billing
+				platformGroup.GET("/revenue/overview", middleware.FinanceAdminOrAbove(), platformHandler.GetRevenueOverview)
+				platformGroup.GET("/revenue/invoices", middleware.FinanceAdminOrAbove(), platformHandler.ListInvoices)
+
+				// Feature Flags
+				platformGroup.GET("/feature-flags", platformHandler.ListFeatureFlags)
+				platformGroup.PUT("/feature-flags/:key/default", middleware.PlatformAdminOrAbove(), platformHandler.ToggleGlobalFlag)
+				platformGroup.PUT("/feature-flags/tenants/:id/:key", middleware.PlatformAdminOrAbove(), platformHandler.SetTenantFeatureOverride)
+
+				// Support Tickets
+				platformGroup.GET("/support/tickets", platformHandler.ListSupportTickets)
+				platformGroup.POST("/support/tickets", platformHandler.CreateSupportTicket)
+				platformGroup.PATCH("/support/tickets/:id/status", platformHandler.UpdateTicketStatus)
+				platformGroup.POST("/support/tickets/:id/notes", platformHandler.AddTicketNote)
+
+				// Audit Logs
+				platformGroup.GET("/audit-logs", platformHandler.ListAuditLogs)
+				platformGroup.POST("/audit-logs", platformHandler.CreateAuditLog)
+
+				// Infrastructure & System Health
+				platformGroup.GET("/system-health", platformHandler.GetSystemHealth)
+
+				// Operations & Emergency Lockdown
+				platformGroup.GET("/operations/settings", platformHandler.GetOperationsSettings)
+				platformGroup.PUT("/operations/maintenance", middleware.SuperAdminOnly(), platformHandler.SetMaintenanceMode)
+				platformGroup.PUT("/operations/announcement", middleware.SuperAdminOnly(), platformHandler.SetGlobalAnnouncement)
+				platformGroup.POST("/operations/flush-cache", middleware.SuperAdminOnly(), platformHandler.FlushCache)
+
+				// Notifications
+				platformGroup.GET("/notifications", platformHandler.ListNotifications)
+				platformGroup.PATCH("/notifications/:id/read", platformHandler.MarkNotificationRead)
+				platformGroup.POST("/notifications/mark-all-read", platformHandler.MarkAllNotificationsRead)
+
+				// Impersonation
+				platformGroup.POST("/impersonate/:id", middleware.PlatformAdminOrAbove(), platformHandler.ImpersonateTenant)
+				platformGroup.POST("/impersonate/exit", middleware.PlatformAdminOrAbove(), platformHandler.ExitImpersonation)
+
+				// CSV Exports
+				platformGroup.GET("/export/:entity", middleware.FinanceAdminOrAbove(), platformHandler.ExportCSV)
 			}
 
 			// ── WhatsApp Marketing & Invoicing (Meta Cloud API, AI Chatbot & GST Invoicing) ───

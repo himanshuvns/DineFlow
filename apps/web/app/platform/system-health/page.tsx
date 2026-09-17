@@ -23,20 +23,23 @@ import { usePlatformStore, SystemServiceHealth } from "@/lib/stores/platform-sto
 
 export default function PlatformSystemHealthPage() {
   const { toast } = useToast();
-  const systemServices = usePlatformStore((s) => s.systemServices);
+  const { systemServices, fetchSystemHealth } = usePlatformStore();
   const [isProbing, setIsProbing] = React.useState(false);
   const [lastProbedAt, setLastProbedAt] = React.useState("Just now");
 
-  const handleRunHealthCheck = () => {
+  React.useEffect(() => {
+    fetchSystemHealth();
+  }, [fetchSystemHealth]);
+
+  const handleRunHealthCheck = async () => {
     setIsProbing(true);
-    setTimeout(() => {
-      setIsProbing(false);
-      setLastProbedAt("Just now");
-      toast({
-        title: "Telemetry Probe Completed",
-        description: "All 6 distributed microservices and third-party APIs responded with 200 OK.",
-      });
-    }, 900);
+    await fetchSystemHealth();
+    setIsProbing(false);
+    setLastProbedAt(new Date().toLocaleTimeString());
+    toast({
+      title: "Telemetry Probe Completed",
+      description: "Live health status probed from core Go API, MongoDB Atlas, and Redis.",
+    });
   };
 
   const allHealthy = systemServices.every((s) => s.status === "healthy");

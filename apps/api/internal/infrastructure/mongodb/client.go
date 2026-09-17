@@ -124,6 +124,29 @@ func (c *Client) EnsureIndexes(ctx context.Context) error {
 			{Keys: bson.D{{Key: "tenantId", Value: 1}, {Key: "tableId", Value: 1}, {Key: "status", Value: 1}}, Options: options.Index().SetName("idx_tenant_table_status")},
 			{Keys: bson.D{{Key: "orderNumber", Value: 1}}, Options: options.Index().SetUnique(true).SetName("idx_order_number")},
 		},
+		"support_tickets": {
+			{Keys: bson.D{{Key: "ticketId", Value: 1}}, Options: options.Index().SetUnique(true).SetName("idx_ticket_id")},
+			{Keys: bson.D{{Key: "tenantId", Value: 1}, {Key: "status", Value: 1}}, Options: options.Index().SetName("idx_ticket_tenant_status")},
+			{Keys: bson.D{{Key: "status", Value: 1}, {Key: "priority", Value: 1}}, Options: options.Index().SetName("idx_ticket_status_prio")},
+			{Keys: bson.D{{Key: "createdAt", Value: -1}}, Options: options.Index().SetName("idx_ticket_created")},
+		},
+		"audit_logs": {
+			{Keys: bson.D{{Key: "timestamp", Value: -1}}, Options: options.Index().SetName("idx_audit_timestamp")},
+			{Keys: bson.D{{Key: "actor.email", Value: 1}, {Key: "timestamp", Value: -1}}, Options: options.Index().SetName("idx_audit_actor")},
+			{Keys: bson.D{{Key: "targetId", Value: 1}, {Key: "timestamp", Value: -1}}, Options: options.Index().SetName("idx_audit_target")},
+			{Keys: bson.D{{Key: "category", Value: 1}, {Key: "timestamp", Value: -1}}, Options: options.Index().SetName("idx_audit_category")},
+		},
+		"feature_flags": {
+			{Keys: bson.D{{Key: "tenantId", Value: 1}, {Key: "feature", Value: 1}}, Options: options.Index().SetUnique(true).SetName("idx_feature_tenant")},
+		},
+		"platform_notifications": {
+			{Keys: bson.D{{Key: "read", Value: 1}, {Key: "createdAt", Value: -1}}, Options: options.Index().SetName("idx_notif_read_date")},
+		},
+		"invoices": {
+			{Keys: bson.D{{Key: "invoiceNumber", Value: 1}}, Options: options.Index().SetUnique(true).SetName("idx_inv_num")},
+			{Keys: bson.D{{Key: "tenantId", Value: 1}, {Key: "createdAt", Value: -1}}, Options: options.Index().SetName("idx_inv_tenant_date")},
+			{Keys: bson.D{{Key: "status", Value: 1}}, Options: options.Index().SetName("idx_inv_status")},
+		},
 	}
 
 	for collName, models := range indexDefs {

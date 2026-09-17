@@ -118,19 +118,33 @@ const MOCK_INVOICES: InvoiceRecord[] = [
 
 export default function PlatformRevenuePage() {
   const { toast } = useToast();
-  const clients = usePlatformStore((s) => s.clients);
+  const {
+    clients,
+    invoices: storeInvoices,
+    revenueOverview,
+    fetchRevenueOverview,
+    fetchInvoices,
+    downloadCsvExport,
+  } = usePlatformStore();
+
+  React.useEffect(() => {
+    fetchRevenueOverview();
+    fetchInvoices();
+  }, [fetchRevenueOverview, fetchInvoices]);
+
   const [currency, setCurrency] = React.useState<"INR" | "USD">("INR");
   const [dateRange, setDateRange] = React.useState("This Month");
   const [searchQuery, setSearchQuery] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<string>("all");
-  const [invoices, setInvoices] = React.useState<InvoiceRecord[]>(MOCK_INVOICES);
 
-  // Financial aggregates
-  const totalMrr = clients
+  const invoices: InvoiceRecord[] = (storeInvoices.length > 0 ? storeInvoices : MOCK_INVOICES) as any;
+
+  // Financial aggregates (prefer live backend calculations when loaded)
+  const totalMrr = revenueOverview?.mrr ?? clients
     .filter((c) => c.status === "active" || c.status === "grace_period")
     .reduce((sum, c) => sum + c.mrr, 0);
-  const totalArr = totalMrr * 12;
-  const payingClientsCount = clients.filter(
+  const totalArr = revenueOverview?.arr ?? totalMrr * 12;
+  const payingClientsCount = revenueOverview?.activeSubscriptions ?? clients.filter(
     (c) => c.mrr > 0 && (c.status === "active" || c.status === "grace_period")
   ).length;
   const arpu = payingClientsCount > 0 ? Math.round(totalMrr / payingClientsCount) : 0;
@@ -172,31 +186,35 @@ export default function PlatformRevenuePage() {
       title: "Retry Link Dispatched",
       description: `Sent Razorpay instant payment mandate link to ${clientName}.`,
     });
-    setInvoices((prev) =>
-      prev.map((inv) =>
-        inv.id === invoiceId ? { ...inv, status: "pending" } : inv
-      )
-    );
+    fetchInvoices();
   };
 
-  const handleExportCsv = () => {
-    const headers = "Invoice ID,Client,Amount,Plan,Status,Date,Payment Method\n";
-    const rows = filteredInvoices
-      .map(
-        (i) =>
-          `${i.id},"${i.clientName}",${i.amount},${i.plan},${i.status},${i.date},"${i.paymentMethod}"`
-      )
-      .join("\n");
-    const blob = new Blob([headers + rows], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `dineflow_revenue_ledger_${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    toast({
-      title: "Revenue Ledger Exported",
-      description: "Downloaded CSV format ledger.",
-    });
+  const handleExportCsv = async () => {
+    try {
+      await downloadCsvExport("revenue");
+      toast({
+        title: "Revenue Ledger Exported",
+        description: "Downloaded verified billing ledger directly from database.",
+      });
+    } catch {
+      const headers = "Invoice ID,Client,Amount,Plan,Status,Date,Payment Method\n";
+      const rows = filteredInvoices
+        .map(
+          (i) =>
+            `${i.id},"${i.clientName}",${i.amount},${i.plan},${i.status},${i.date},"${i.paymentMethod}"`
+        )
+        .join("\n");
+      const blob = new Blob([headers + rows], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `dineflow_revenue_ledger_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      toast({
+        title: "Revenue Ledger Exported",
+        description: "Downloaded CSV format ledger.",
+      });
+    }
   };
 
   return (

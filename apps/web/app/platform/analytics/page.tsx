@@ -26,7 +26,14 @@ import { usePlatformStore } from "@/lib/stores/platform-store";
 
 export default function PlatformAnalyticsPage() {
   const clients = usePlatformStore((s) => s.clients);
+  const fetchClients = usePlatformStore((s) => s.fetchClients);
+  const fetchDashboardMetrics = usePlatformStore((s) => s.fetchDashboardMetrics);
   const [timeRange, setTimeRange] = React.useState<"30d" | "90d" | "1y">("30d");
+
+  React.useEffect(() => {
+    fetchClients();
+    fetchDashboardMetrics();
+  }, [fetchClients, fetchDashboardMetrics]);
 
   // Aggregates
   const totalOrders = clients.reduce((sum, c) => sum + c.ordersCount, 0);

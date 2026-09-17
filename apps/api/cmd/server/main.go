@@ -14,6 +14,7 @@ import (
 	menuapp "github.com/dineflow/api/internal/application/menu"
 	notifapp "github.com/dineflow/api/internal/application/notification"
 	orderapp "github.com/dineflow/api/internal/application/order"
+	platformapp "github.com/dineflow/api/internal/application/platform"
 	roomapp "github.com/dineflow/api/internal/application/room"
 	searchapp "github.com/dineflow/api/internal/application/search"
 	staffapp "github.com/dineflow/api/internal/application/staff"
@@ -147,6 +148,7 @@ func main() {
 	aiService := aiapp.NewService(cfg.AI.GeminiAPIKey, mongoDB)
 	notifService := notifapp.NewService(mongoDB, hub)
 	searchService := searchapp.NewService(mongoDB)
+	platformService := platformapp.NewService(mongoDB, rdb)
 
 	authHandler := handlers.NewAuthHandler(authService)
 	tenantHandler := handlers.NewTenantHandler(mongoDB)
@@ -162,6 +164,7 @@ func main() {
 	aiHandler := handlers.NewAIHandler(aiService)
 	notifHandler := handlers.NewNotificationHandler(notifService, hub)
 	searchHandler := handlers.NewSearchHandler(searchService)
+	platformHandler := handlers.NewPlatformHandler(platformService)
 
 	// Inject notifService into order, whatsapp & staff services for real-time event emission
 	orderService.SetNotificationService(notifService)
@@ -202,6 +205,7 @@ func main() {
 		roomHandler,
 		notifHandler,
 		searchHandler,
+		platformHandler,
 	)
 
 	// ── HTTP Server ───────────────────────────────────────────────────────────

@@ -34,10 +34,18 @@ export default function PlatformSupportPage() {
   const {
     supportTickets,
     clients,
+    fetchSupportTickets,
+    fetchClients,
+    createSupportTicket,
     updateSupportTicketStatus,
     addTicketInternalNote,
   } = usePlatformStore();
   const startImpersonation = useAuthStore((s) => s.startImpersonation);
+
+  React.useEffect(() => {
+    fetchSupportTickets();
+    fetchClients();
+  }, [fetchSupportTickets, fetchClients]);
 
   const [searchQuery, setSearchQuery] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<string>("all");
@@ -115,7 +123,7 @@ export default function PlatformSupportPage() {
     router.push("/dashboard");
   };
 
-  const handleCreateTicket = () => {
+  const handleCreateTicket = async () => {
     if (!newSubject.trim() || !newDescription.trim()) {
       toast({
         title: "Missing Information",
@@ -125,32 +133,27 @@ export default function PlatformSupportPage() {
       return;
     }
 
-    const tenant = clients.find((c) => c.id === newTenantId);
-    const newId = `TCK-${Math.floor(100 + Math.random() * 900)}`;
+    try {
+      const ticket = await createSupportTicket({
+        tenantId: newTenantId,
+        subject: newSubject,
+        description: newDescription,
+        priority: newPriority,
+        category: newCategory,
+        assignedAgent: "Aarav Sharma",
+      });
 
-    const created: SupportTicket = {
-      id: newId,
-      tenantId: newTenantId,
-      tenantName: tenant?.name || "Client Workspace",
-      subject: newSubject,
-      description: newDescription,
-      priority: newPriority,
-      status: "open",
-      category: newCategory,
-      assignedAgent: "Aarav Sharma",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      internalNotes: ["Ticket opened via Platform Super Admin desk."],
-    };
-
-    usePlatformStore.setState((s) => ({
-      supportTickets: [created, ...s.supportTickets],
-    }));
-
-    toast({
-      title: "Ticket Logged",
-      description: `Support inquiry ${newId} assigned to Level 2 support.`,
-    });
+      toast({
+        title: "Ticket Logged",
+        description: `Support inquiry ${ticket?.id || "TCK"} assigned to Level 2 support and persisted to database.`,
+      });
+    } catch {
+      toast({
+        title: "Error",
+        description: "Could not create support ticket.",
+        variant: "destructive",
+      });
+    }
 
     setIsCreateModalOpen(false);
     setNewSubject("");

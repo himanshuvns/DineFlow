@@ -27,9 +27,16 @@ export default function PlatformFeatureFlagsPage() {
   const {
     featureFlags,
     clients,
+    fetchFeatureFlags,
+    fetchClients,
     togglePlatformDefaultFlag,
     setClientFeatureOverride,
   } = usePlatformStore();
+
+  React.useEffect(() => {
+    fetchFeatureFlags();
+    fetchClients();
+  }, [fetchFeatureFlags, fetchClients]);
 
   const [searchQuery, setSearchQuery] = React.useState("");
   const [selectedCategory, setSelectedCategory] = React.useState<string>("all");

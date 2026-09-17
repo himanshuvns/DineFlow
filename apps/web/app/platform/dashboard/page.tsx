@@ -21,6 +21,7 @@ import {
   ChevronRight,
   Sparkles,
   ExternalLink,
+  RefreshCw,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,32 +30,54 @@ import { usePlatformStore } from "@/lib/stores/platform-store";
 
 export default function PlatformDashboardPage() {
   const router = useRouter();
-  const { clients, supportTickets, auditLogs, systemServices } = usePlatformStore();
+  const {
+    clients,
+    supportTickets,
+    auditLogs,
+    systemServices,
+    dashboardMetrics,
+    fetchDashboardMetrics,
+    fetchClients,
+    isLoading,
+  } = usePlatformStore();
 
-  const totalClients = clients.length;
-  const activeClients = clients.filter((c) => c.status === "active").length;
-  const trialClients = clients.filter((c) => c.status === "trial").length;
-  const graceClients = clients.filter((c) => c.status === "grace_period").length;
-  const suspendedClients = clients.filter((c) => c.status === "suspended").length;
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
 
-  const totalMRR = clients
+  React.useEffect(() => {
+    fetchDashboardMetrics();
+    fetchClients();
+  }, [fetchDashboardMetrics, fetchClients]);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await Promise.all([fetchDashboardMetrics(), fetchClients()]);
+    setIsRefreshing(false);
+  };
+
+  const totalClients = dashboardMetrics?.totalClients ?? clients.length;
+  const activeClients = dashboardMetrics?.activeClients ?? clients.filter((c) => c.status === "active").length;
+  const trialClients = dashboardMetrics?.trialClients ?? clients.filter((c) => c.status === "trial").length;
+  const graceClients = dashboardMetrics?.graceClients ?? clients.filter((c) => c.status === "grace_period").length;
+  const suspendedClients = dashboardMetrics?.suspendedClients ?? clients.filter((c) => c.status === "suspended").length;
+
+  const totalMRR = dashboardMetrics?.totalMRR ?? clients
     .filter((c) => c.status === "active" || c.status === "grace_period")
     .reduce((sum, c) => sum + c.mrr, 0);
 
-  const totalARR = totalMRR * 12;
+  const totalARR = dashboardMetrics?.totalARR ?? totalMRR * 12;
 
-  const totalOrders = clients.reduce((sum, c) => sum + c.ordersCount, 0);
-  const totalStaff = clients.reduce((sum, c) => sum + c.staffCount, 0);
-  const totalRooms = clients.reduce((sum, c) => sum + c.roomsCount, 0);
-  const totalTables = clients.reduce((sum, c) => sum + c.tablesCount, 0);
+  const totalOrders = dashboardMetrics?.totalOrders ?? clients.reduce((sum, c) => sum + c.ordersCount, 0);
+  const totalStaff = dashboardMetrics?.totalStaff ?? clients.reduce((sum, c) => sum + c.staffCount, 0);
+  const totalRooms = dashboardMetrics?.totalRooms ?? clients.reduce((sum, c) => sum + c.roomsCount, 0);
+  const totalTables = dashboardMetrics?.totalTables ?? clients.reduce((sum, c) => sum + c.tablesCount, 0);
 
   // Sector breakdown
-  const hotelsCount = clients.filter((c) => c.businessType === "hotel").length;
-  const restaurantsCount = clients.filter((c) => c.businessType === "restaurant").length;
-  const cafesCount = clients.filter((c) => c.businessType === "cafe").length;
-  const cloudKitchensCount = clients.filter((c) => c.businessType === "cloud_kitchen").length;
+  const hotelsCount = dashboardMetrics?.hotelsCount ?? clients.filter((c) => c.businessType === "hotel").length;
+  const restaurantsCount = dashboardMetrics?.restaurantsCount ?? clients.filter((c) => c.businessType === "restaurant").length;
+  const cafesCount = dashboardMetrics?.cafesCount ?? clients.filter((c) => c.businessType === "cafe").length;
+  const cloudKitchensCount = dashboardMetrics?.cloudKitchensCount ?? clients.filter((c) => c.businessType === "cloud_kitchen").length;
 
-  const openTickets = supportTickets.filter((t) => t.status === "open").length;
+  const openTickets = dashboardMetrics?.openTickets ?? supportTickets.filter((t) => t.status === "open").length;
 
   return (
     <div className="space-y-6">
@@ -73,6 +96,15 @@ export default function PlatformDashboardPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleRefresh}
+            leftIcon={<RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin text-rose-500" : ""}`} />}
+          >
+            {isRefreshing ? "Syncing..." : "Sync Live Data"}
+          </Button>
+
           <Button
             variant="secondary"
             size="sm"

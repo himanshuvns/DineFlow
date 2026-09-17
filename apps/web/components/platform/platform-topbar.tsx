@@ -36,9 +36,21 @@ export function PlatformTopbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, clearAuth } = useAuthStore();
-  const { clients } = usePlatformStore();
+  const {
+    clients,
+    notifications,
+    unreadNotificationsCount,
+    fetchNotifications,
+    markNotificationRead,
+    markAllNotificationsRead,
+  } = usePlatformStore();
   const [searchOpen, setSearchOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
+  const [notificationsOpen, setNotificationsOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
 
   const pageTitle = React.useMemo(() => {
     if (PLATFORM_TITLES[pathname]) return PLATFORM_TITLES[pathname];
@@ -136,6 +148,90 @@ export function PlatformTopbar() {
       {/* Right Controls */}
       <div className="flex items-center gap-2.5 shrink-0">
         <ThemeToggle />
+
+        {/* Notification Bell */}
+        <div className="relative">
+          <button
+            onClick={() => setNotificationsOpen(!notificationsOpen)}
+            className="relative p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 transition-colors"
+            title="Platform Notifications"
+          >
+            <Bell className="h-4 w-4" />
+            {unreadNotificationsCount > 0 && (
+              <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+              </span>
+            )}
+          </button>
+
+          {notificationsOpen && (
+            <>
+              <div
+                className="fixed inset-0 z-40"
+                onClick={() => setNotificationsOpen(false)}
+              />
+              <div className="absolute right-0 top-11 z-50 w-80 sm:w-96 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-3 space-y-2">
+                <div className="flex items-center justify-between px-2 pb-2 border-b border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-900 dark:text-white">
+                      Notifications
+                    </span>
+                    {unreadNotificationsCount > 0 && (
+                      <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                        {unreadNotificationsCount} new
+                      </span>
+                    )}
+                  </div>
+                  {unreadNotificationsCount > 0 && (
+                    <button
+                      onClick={() => markAllNotificationsRead()}
+                      className="text-[11px] font-medium text-rose-600 hover:text-rose-700 dark:text-rose-400"
+                    >
+                      Mark all read
+                    </button>
+                  )}
+                </div>
+
+                <div className="max-h-72 overflow-y-auto space-y-1.5 pr-1">
+                  {notifications.length === 0 ? (
+                    <div className="p-4 text-center text-xs text-slate-500">
+                      No notifications
+                    </div>
+                  ) : (
+                    notifications.map((notif) => (
+                      <div
+                        key={notif.id}
+                        onClick={() => {
+                          if (!notif.read) markNotificationRead(notif.id);
+                          if (notif.target) router.push(notif.target);
+                          setNotificationsOpen(false);
+                        }}
+                        className={`p-2.5 rounded-xl cursor-pointer transition-colors text-xs ${
+                          notif.read
+                            ? "bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 opacity-70"
+                            : "bg-rose-50/50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/40"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="font-semibold text-slate-900 dark:text-white">
+                            {notif.title}
+                          </span>
+                          {!notif.read && (
+                            <span className="h-1.5 w-1.5 rounded-full bg-rose-500 shrink-0 mt-1" />
+                          )}
+                        </div>
+                        <p className="mt-0.5 text-[11px] text-slate-600 dark:text-slate-400 line-clamp-2">
+                          {notif.message}
+                        </p>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
 
         <Link
           href="/dashboard"

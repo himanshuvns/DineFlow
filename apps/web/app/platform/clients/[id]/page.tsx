@@ -38,6 +38,8 @@ export default function ClientDetailsPage() {
   const { startImpersonation } = useAuthStore();
   const {
     clients,
+    fetchClient360,
+    selectedClient360,
     activateClient,
     suspendClient,
     changeClientPlan,
@@ -49,7 +51,16 @@ export default function ClientDetailsPage() {
   } = usePlatformStore();
 
   const clientId = params?.id as string;
-  const client = clients.find((c) => c.id === clientId) || clients[0];
+
+  React.useEffect(() => {
+    if (clientId) {
+      fetchClient360(clientId);
+    }
+  }, [clientId, fetchClient360]);
+
+  const client = (selectedClient360 && selectedClient360.id === clientId)
+    ? selectedClient360
+    : clients.find((c) => c.id === clientId) || clients[0];
 
   const [activeTab, setActiveTab] = React.useState<"profile" | "subscription" | "usage" | "integrations" | "flags" | "audit">("profile");
 

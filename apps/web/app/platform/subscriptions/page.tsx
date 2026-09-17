@@ -8,7 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { usePlatformStore, PlanTier } from "@/lib/stores/platform-store";
 
 export default function PlatformSubscriptionsPage() {
-  const { clients } = usePlatformStore();
+  const { clients, fetchClients } = usePlatformStore();
+
+  React.useEffect(() => {
+    fetchClients();
+  }, [fetchClients]);
 
   const planCounts = {
     trial: clients.filter((c) => c.plan === "trial").length,
