@@ -24,9 +24,15 @@ export default function PlatformLayout({
     return (
       <HospitalityLoader
         fullscreen
-        variant="cloche"
+        variant="platform"
+        colorTheme="rose"
         title="Securing Platform Console…"
         subtitle="Verifying cryptographic token and elevated platform permissions"
+        messages={[
+          "Verifying cryptographic token…",
+          "Mounting elevated platform security gates…",
+          "Connecting global telemetry cluster…",
+        ]}
       />
     );
   }

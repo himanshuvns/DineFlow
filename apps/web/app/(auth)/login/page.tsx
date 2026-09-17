@@ -29,6 +29,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [isRedirecting, setIsRedirecting] = React.useState(false);
   const [isFirstLoginUser, setIsFirstLoginUser] = React.useState(false);
+  const [isPlatformAdminUser, setIsPlatformAdminUser] = React.useState(false);
   const [welcomeName, setWelcomeName] = React.useState("");
   const [error, setError] = React.useState("");
 
@@ -52,6 +53,7 @@ export default function LoginPage() {
     setPassword("DineFlow@2026");
     setError("");
     setPhoneTouched(false);
+    setIsPlatformAdminUser(false);
   };
 
   const handleFillSuperAdmin = () => {
@@ -59,6 +61,7 @@ export default function LoginPage() {
     setPassword("SuperAdmin@2026");
     setError("");
     setPhoneTouched(false);
+    setIsPlatformAdminUser(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -90,17 +93,24 @@ export default function LoginPage() {
         const storageKey = user?.id ? `dineflow_has_logged_in_${user.id}` : "dineflow_has_logged_in";
         const hasLoggedInBefore = typeof window !== "undefined" ? localStorage.getItem(storageKey) : null;
         const isFirst = isFirstLogin === true || user?.isFirstLogin === true || !hasLoggedInBefore;
+        const isPlatform =
+          user?.role === "super_admin" ||
+          user?.role === "platform_admin" ||
+          phoneValidation.normalized === "+919888888888" ||
+          user?.email === "superadmin@dineflow.io";
+        setIsPlatformAdminUser(isPlatform);
         setIsFirstLoginUser(isFirst);
         setAuth(user, tenant, accessToken, isFirst);
-        const name = user.name || user.firstName || "Chef";
+        const name = user.name || user.firstName || (isPlatform ? "Platform Super Admin" : "Chef");
         setWelcomeName(name);
         setIsRedirecting(true);
-        addToast("success", isFirst ? `Welcome, ${name}!` : `Welcome back, ${name}!`, `Signed in to ${tenant?.name || "your restaurant"}`);
+        addToast(
+          "success",
+          isFirst ? `Welcome, ${name}!` : `Welcome back, ${name}!`,
+          isPlatform ? "Accessing Platform Control Plane" : `Signed in to ${tenant?.name || "your restaurant"}`
+        );
         const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
-        const defaultDestination =
-          user?.role === "super_admin" || user?.role === "platform_admin"
-            ? "/platform"
-            : "/dashboard";
+        const defaultDestination = isPlatform ? "/platform" : "/dashboard";
         const destination = params?.get("from") || defaultDestination;
         setTimeout(() => {
           router.push(destination);
@@ -124,15 +134,35 @@ export default function LoginPage() {
       {isRedirecting && (
         <HospitalityLoader
           fullscreen
-          variant="cloche"
-          title={isFirstLoginUser ? `Welcome, ${welcomeName || "Chef"}!` : `Welcome back, ${welcomeName || "Chef"}!`}
-          messages={[
-            "Verifying reservations & floor logins…",
-            "Polishing cutlery & tasting menus…",
-            "Warming up live kitchen displays…",
-            "Welcome to your dining room!",
-          ]}
-          subtitle="Connecting live POS, kitchen displays and table QR stands"
+          variant={isPlatformAdminUser ? "platform" : "cloche"}
+          colorTheme={isPlatformAdminUser ? "rose" : "emerald"}
+          title={
+            isPlatformAdminUser
+              ? `Welcome, ${welcomeName || "Platform Super Admin"}!`
+              : isFirstLoginUser
+              ? `Welcome, ${welcomeName || "Chef"}!`
+              : `Welcome back, ${welcomeName || "Chef"}!`
+          }
+          messages={
+            isPlatformAdminUser
+              ? [
+                  "Verifying cryptographic security token…",
+                  "Initializing multi-tenant control plane…",
+                  "Synchronizing cluster telemetry & health ledgers…",
+                  "Access granted — entering Super Admin Console…",
+                ]
+              : [
+                  "Verifying reservations & floor logins…",
+                  "Polishing cutlery & tasting menus…",
+                  "Warming up live kitchen displays…",
+                  "Welcome to your dining room!",
+                ]
+          }
+          subtitle={
+            isPlatformAdminUser
+              ? "Connecting multi-tenant control plane & infrastructure monitors"
+              : "Connecting live POS, kitchen displays and table QR stands"
+          }
         />
       )}
 
