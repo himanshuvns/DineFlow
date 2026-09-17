@@ -110,8 +110,11 @@ export default function LoginPage() {
           isPlatform ? "Accessing Platform Control Plane" : `Signed in to ${tenant?.name || "your restaurant"}`
         );
         const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
-        const defaultDestination = isPlatform ? "/platform" : "/dashboard";
-        const destination = params?.get("from") || defaultDestination;
+        const fromParam = params?.get("from");
+        // Platform admins must ALWAYS go to /platform — ignore ?from= if it points to a client route
+        const destination = isPlatform
+          ? "/platform"
+          : (fromParam && !fromParam.startsWith("/platform") ? fromParam : "/dashboard");
         setTimeout(() => {
           router.push(destination);
         }, 2200);

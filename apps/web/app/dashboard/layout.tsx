@@ -9,6 +9,7 @@ import { ImpersonationBanner } from "@/components/dashboard/impersonation-banner
 import { BroadcastBanner } from "@/components/dashboard/broadcast-banner";
 import { useUIStore } from "@/lib/stores/ui-store";
 import { useAuthStore } from "@/lib/stores/auth-store";
+import { isPlatformRole } from "@/lib/rbac/roles";
 import { X, UtensilsCrossed, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +23,7 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { mobileMenuOpen, setMobileMenuOpen } = useUIStore();
-  const { tenant, isAuthenticated, accessToken } = useAuthStore();
+  const { tenant, isAuthenticated, accessToken, user } = useAuthStore();
   const [isAuthorized, setIsAuthorized] = React.useState(false);
 
   React.useEffect(() => {
@@ -31,6 +32,7 @@ export default function DashboardLayout({
     let authed = Boolean(store.isAuthenticated && store.accessToken);
 
     // 2. Check persisted localStorage cache during initial client hydration
+    let roleFromStorage: string | undefined = store.user?.role;
     if (!authed && typeof window !== "undefined") {
       try {
         const raw = localStorage.getItem("dineflow_auth");
@@ -38,6 +40,7 @@ export default function DashboardLayout({
           const parsed = JSON.parse(raw);
           if (parsed?.state?.accessToken && parsed?.state?.isAuthenticated) {
             authed = true;
+            roleFromStorage = parsed?.state?.user?.role;
           }
         }
       } catch {}
@@ -45,10 +48,17 @@ export default function DashboardLayout({
 
     if (!authed) {
       router.replace(`/login?from=${encodeURIComponent(pathname)}`);
-    } else {
-      setIsAuthorized(true);
+      return;
     }
-  }, [pathname, router, isAuthenticated, accessToken]);
+
+    // 3. Platform admins must NEVER see the client dashboard — redirect to /platform
+    if (isPlatformRole(roleFromStorage)) {
+      router.replace("/platform");
+      return;
+    }
+
+    setIsAuthorized(true);
+  }, [pathname, router, isAuthenticated, accessToken, user]);
 
   if (!isAuthorized) {
     return (
