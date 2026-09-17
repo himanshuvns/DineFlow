@@ -69,20 +69,21 @@ export function TopBar() {
     : "Restaurant Owner";
 
   return (
-    <header className="h-16 border-b border-slate-200/80 dark:border-slate-800/80 bg-white/90 dark:bg-[#090D16]/90 backdrop-blur-md sticky top-0 z-40 flex items-center justify-between px-4 sm:px-8 transition-colors duration-200">
-      {/* Left: Mobile trigger & Breadcrumbs */}
-      <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1 mr-2">
+    <header className="h-14 border-b border-slate-200/80 dark:border-slate-800/80 bg-white/95 dark:bg-[#090D16]/95 backdrop-blur-md sticky top-0 z-40 flex items-center px-3 sm:px-5 gap-3 transition-colors duration-200">
+
+      {/* Left: Mobile menu trigger + Breadcrumbs */}
+      <div className="flex items-center gap-2 shrink-0">
         <button
           onClick={() => setMobileMenuOpen(true)}
-          className="md:hidden p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 transition-colors shrink-0 cursor-pointer"
+          className="md:hidden p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 transition-colors cursor-pointer"
           aria-label="Open navigation drawer"
         >
           <Menu className="h-5 w-5" />
         </button>
 
-        <div className="flex items-center gap-1.5 sm:gap-2 text-xs min-w-0">
+        <div className="hidden sm:flex items-center gap-1.5 text-xs">
           {(tenant?.logoUrl || tenant?.logo) && (
-            <div className="h-6 w-6 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0A0F1D] flex items-center justify-center p-0.5 shrink-0 shadow-xs md:hidden">
+            <div className="h-6 w-6 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0A0F1D] flex items-center justify-center p-0.5 shrink-0 shadow-xs">
               <img
                 src={tenant.logoUrl || tenant.logo}
                 alt={tenant?.name || "Logo"}
@@ -90,28 +91,32 @@ export function TopBar() {
               />
             </div>
           )}
-          <span className="text-slate-800 dark:text-slate-300 font-bold truncate max-w-[120px] sm:max-w-[200px]">
+          <span className="text-slate-700 dark:text-slate-300 font-semibold truncate max-w-[140px]">
             {tenant?.name || "Your Restaurant"}
           </span>
-          <span className="text-slate-400 dark:text-slate-600 hidden sm:inline">/</span>
-          <span className="text-emerald-700 dark:text-emerald-400 font-bold hidden sm:inline truncate">
+          <span className="text-slate-300 dark:text-slate-600">/</span>
+          <span className="text-emerald-600 dark:text-emerald-400 font-bold truncate max-w-[160px]">
             {currentTitle}
           </span>
         </div>
       </div>
 
-      {/* Middle: Global Search */}
-      <GlobalSearch />
+      {/* Center: Global Search — takes all remaining space and is truly centered */}
+      <div className="flex-1 flex justify-center px-2 sm:px-4">
+        <div className="w-full max-w-lg">
+          <GlobalSearch />
+        </div>
+      </div>
 
-      {/* Right Actions */}
-      <div className="flex items-center gap-2.5 sm:gap-3">
-        {/* Live KDS status indicator */}
-        <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
-          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
-          <span>KDS Connected</span>
+      {/* Right: Actions */}
+      <div className="flex items-center gap-2 shrink-0">
+        {/* Live KDS status */}
+        <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[11px] font-semibold whitespace-nowrap">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping shrink-0" />
+          KDS Connected
         </div>
 
-        {/* Theme Toggle (Light / Dark Mode Switcher) */}
+        {/* Theme Toggle */}
         <ThemeToggle />
 
         {/* Notifications */}
@@ -121,7 +126,7 @@ export function TopBar() {
         <Dropdown
           align="right"
           trigger={
-            <button className="flex items-center gap-2.5 p-1 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors cursor-pointer">
+            <button className="flex items-center gap-2 p-1 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors cursor-pointer">
               <Avatar
                 fallback={userDisplayName}
                 src={user?.avatarUrl}

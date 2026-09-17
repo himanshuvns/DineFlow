@@ -819,7 +819,7 @@ export function GlobalSearch() {
       </button>
 
       {/* Desktop Search Input Form */}
-      <div className="hidden lg:flex items-center w-72 xl:w-80">
+      <div className="hidden lg:flex items-center w-full">
         <div className="relative w-full">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
           <input
