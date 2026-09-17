@@ -58,6 +58,42 @@ export default function DashboardOverviewPage() {
   const userDisplayName =
     user?.firstName || user?.name || (isDemoTenant ? "Laurent" : "Restaurant Owner");
 
+  // Track first login vs returning login
+  const [isFirstLogin, setIsFirstLogin] = React.useState<boolean>(false);
+
+  React.useEffect(() => {
+    if (!mounted) return;
+    const userId = user?.id || (user as any)?._id || "";
+    const storageKey = userId ? `dineflow_has_logged_in_${userId}` : "dineflow_has_logged_in";
+
+    // 1. Explicit backend response flag takes precedence
+    if (user?.isFirstLogin === true) {
+      setIsFirstLogin(true);
+      return;
+    }
+
+    if (user?.isFirstLogin === false) {
+      setIsFirstLogin(false);
+      try {
+        localStorage.setItem(storageKey, "true");
+      } catch {}
+      return;
+    }
+
+    // 2. Client-side visit history fallback:
+    // If user hasn't logged out or this key is not yet set in localStorage, it's their first login
+    try {
+      const hasLoggedInBefore = typeof window !== "undefined" ? localStorage.getItem(storageKey) : null;
+      if (!hasLoggedInBefore) {
+        setIsFirstLogin(true);
+      } else {
+        setIsFirstLogin(false);
+      }
+    } catch {
+      setIsFirstLogin(false);
+    }
+  }, [mounted, user?.id, user?.isFirstLogin]);
+
   const [isNewOrderOpen, setIsNewOrderOpen] = React.useState(false);
 
   // Safe normalized arrays
@@ -158,7 +194,7 @@ export default function DashboardOverviewPage() {
             <span>{isDemoTenant ? "Live Demo Showcase" : `${tenantName} Workspace`}</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-            Welcome back, {userDisplayName} 👋
+            {isFirstLogin ? `Welcome, ${userDisplayName} 👋` : `Welcome back, ${userDisplayName} 👋`}
           </h1>
           <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
             Here is your live service overview for{" "}

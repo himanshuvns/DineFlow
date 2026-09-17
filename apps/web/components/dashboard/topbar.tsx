@@ -55,6 +55,11 @@ export function TopBar() {
   }, [pathname]);
 
   const handleSignOut = () => {
+    if (typeof window !== "undefined" && user?.id) {
+      try {
+        localStorage.setItem(`dineflow_has_logged_in_${user.id}`, "true");
+      } catch {}
+    }
     clearAuth();
     addToast("info", "Signed out", "You have been securely signed out.");
     router.push("/login");

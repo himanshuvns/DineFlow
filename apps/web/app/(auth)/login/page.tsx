@@ -27,6 +27,7 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = React.useState(true);
   const [isLoading, setIsLoading] = React.useState(false);
   const [isRedirecting, setIsRedirecting] = React.useState(false);
+  const [isFirstLoginUser, setIsFirstLoginUser] = React.useState(false);
   const [welcomeName, setWelcomeName] = React.useState("");
   const [error, setError] = React.useState("");
 
@@ -54,12 +55,14 @@ export default function LoginPage() {
     try {
       const res = await apiClient.post("/auth/login", { phone, password });
       if (res.data?.success) {
-        const { user, tenant, accessToken } = res.data.data;
-        setAuth(user, tenant, accessToken);
+        const { user, tenant, accessToken, isFirstLogin } = res.data.data;
+        const isFirst = Boolean(isFirstLogin ?? user?.isFirstLogin);
+        setIsFirstLoginUser(isFirst);
+        setAuth(user, tenant, accessToken, isFirst);
         const name = user.name || user.firstName || "Chef";
         setWelcomeName(name);
         setIsRedirecting(true);
-        addToast("success", "Welcome back!", `Signed in to ${tenant?.name || "your restaurant"}`);
+        addToast("success", isFirst ? `Welcome, ${name}!` : "Welcome back!", `Signed in to ${tenant?.name || "your restaurant"}`);
         const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
         const destination = params?.get("from") || "/dashboard";
         setTimeout(() => {
@@ -85,7 +88,7 @@ export default function LoginPage() {
         <HospitalityLoader
           fullscreen
           variant="cloche"
-          title={`Welcome back, ${welcomeName || "Chef"}!`}
+          title={isFirstLoginUser ? `Welcome, ${welcomeName || "Chef"}!` : `Welcome back, ${welcomeName || "Chef"}!`}
           messages={[
             "Verifying reservations & floor logins…",
             "Polishing cutlery & tasting menus…",

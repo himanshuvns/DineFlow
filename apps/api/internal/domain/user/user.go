@@ -190,6 +190,7 @@ type PublicProfile struct {
 	Salary         SalaryStructure `json:"salary,omitempty"`
 	JoiningDate    *time.Time      `json:"joiningDate,omitempty"`
 	CreatedAt      time.Time       `json:"createdAt"`
+	IsFirstLogin   bool            `json:"isFirstLogin"`
 }
 
 // ToPublic converts a User to a PublicProfile safe for API serialization.
@@ -211,6 +212,7 @@ func (u *User) ToPublic() PublicProfile {
 		Salary:         u.Salary,
 		JoiningDate:    u.JoiningDate,
 		CreatedAt:      u.CreatedAt,
+		IsFirstLogin:   u.Auth.LastLoginAt == nil,
 	}
 }
 

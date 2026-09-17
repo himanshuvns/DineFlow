@@ -79,6 +79,7 @@ type AuthResponse struct {
 	ExpiresIn    int                `json:"expiresIn"` // seconds
 	User         user.PublicProfile `json:"user"`
 	Tenant       *tenant.Tenant     `json:"tenant"`
+	IsFirstLogin bool               `json:"isFirstLogin"`
 }
 
 // ─── Service ──────────────────────────────────────────────────────────────────
@@ -370,7 +371,13 @@ func (s *Service) VerifyOTP(ctx context.Context, req VerifyOTPRequest) (*AuthRes
 	}
 
 	// Issue tokens
-	return s.issueTokenPair(ctx, &u, &t)
+	resp, err := s.issueTokenPair(ctx, &u, &t)
+	if err != nil {
+		return nil, err
+	}
+	resp.IsFirstLogin = true
+	resp.User.IsFirstLogin = true
+	return resp, nil
 }
 
 // Login authenticates with mobile number/email + password and returns tokens.
@@ -413,6 +420,9 @@ func (s *Service) Login(ctx context.Context, req LoginRequest) (*AuthResponse, e
 		return nil, ErrInvalidCredentials
 	}
 
+	// Check if this is the user's first login before updating lastLoginAt
+	isFirstLogin := u.Auth.LastLoginAt == nil
+
 	// Reset failed attempts on success
 	now := time.Now().UTC()
 	_, _ = usersColl.UpdateOne(ctx, bson.M{"_id": u.ID}, bson.M{
@@ -431,7 +441,13 @@ func (s *Service) Login(ctx context.Context, req LoginRequest) (*AuthResponse, e
 		return nil, fmt.Errorf("login: find tenant: %w", err)
 	}
 
-	return s.issueTokenPair(ctx, &u, &t)
+	resp, err := s.issueTokenPair(ctx, &u, &t)
+	if err != nil {
+		return nil, err
+	}
+	resp.IsFirstLogin = isFirstLogin
+	resp.User.IsFirstLogin = isFirstLogin
+	return resp, nil
 }
 
 // ResendOTP sends a fresh OTP to the given phone number.

@@ -117,7 +117,7 @@ function VerifyContent() {
 
       if (res.data?.success) {
         const { user, tenant, accessToken } = res.data.data;
-        setAuth(user, tenant, accessToken);
+        setAuth(user, tenant, accessToken, true);
         setTenantName(tenant?.name || "your restaurant");
         setIsRedirecting(true);
         addToast("success", "Mobile Verified!", `Welcome to ${tenant?.name || "your workspace"}!`);

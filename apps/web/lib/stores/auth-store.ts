@@ -12,6 +12,7 @@ export interface User {
   avatarUrl?: string;
   avatar?: string;
   phone?: string;
+  isFirstLogin?: boolean;
 }
 
 export interface Tenant {
@@ -32,7 +33,7 @@ interface AuthState {
   accessToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  setAuth: (user: any, tenant: any, token: string) => void;
+  setAuth: (user: any, tenant: any, token: string, isFirstLogin?: boolean) => void;
   setAccessToken: (token: string) => void;
   clearAuth: () => void;
   updateTenant: (tenant: Partial<Tenant>) => void;
@@ -48,7 +49,7 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isLoading: false,
 
-      setAuth: (rawUser: any, rawTenant: any, accessToken: string) => {
+      setAuth: (rawUser: any, rawTenant: any, accessToken: string, isFirstLogin?: boolean) => {
         const rawName = (rawUser.name || "").trim();
         const nameParts = rawName.split(" ");
         const firstName = rawUser.firstName || nameParts[0] || "User";
@@ -63,6 +64,12 @@ export const useAuthStore = create<AuthState>()(
           firstName,
           lastName,
           role: rawUser.role || "owner",
+          isFirstLogin:
+            typeof isFirstLogin === "boolean"
+              ? isFirstLogin
+              : typeof rawUser.isFirstLogin === "boolean"
+              ? rawUser.isFirstLogin
+              : undefined,
         };
 
         const resolvedLogo = rawTenant?.logoUrl || rawTenant?.logo || "";
