@@ -609,277 +609,268 @@ export default function MenuManagementPage() {
   ]);
 
   return (
-    <div className="space-y-6 pb-16">
+    <div className="flex flex-col h-full min-h-0 gap-2.5">
       {/* ======================================================== */}
-      {/* 1. HEADER & THREE CREATION METHODS                      */}
+      {/* 1. FIXED TOP CONTROL AREA (Header, KPIs, Toolbar)       */}
       {/* ======================================================== */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-[#14F1C7] text-xs font-semibold mb-2">
-            <Sparkles className="h-3.5 w-3.5" />
-            <span>{tenantName} AI Menu Operating System</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
-            Menu Management
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-2xl">
-            Scan physical menus, upload PDFs, or build signature dishes manually. Live QR menus and kitchen displays update instantaneously.
-          </p>
-        </div>
-
-        {/* Action Group: 3 Creation Options + Add Category */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Option 1: Mobile Camera Scan */}
-          <Button
-            variant="outline"
-            size="sm"
-            leftIcon={<Camera className="h-4 w-4 text-emerald-500" />}
-            onClick={() => setIsScannerOpen(true)}
-            className="border-emerald-500/40 hover:bg-emerald-500/10 text-slate-800 dark:text-white"
-          >
-            Scan Menu
-          </Button>
-
-          {/* Option 2: Upload Menu (PDF/Images) */}
-          <Button
-            variant="outline"
-            size="sm"
-            leftIcon={<UploadCloud className="h-4 w-4 text-teal-500" />}
-            onClick={() => setIsUploadOpen(true)}
-            className="border-teal-500/40 hover:bg-teal-500/10 text-slate-800 dark:text-white"
-          >
-            Upload Menu
-          </Button>
-
-          {/* Option 3: Manual Entry (Existing Flow) */}
-          <Button
-            variant="glow"
-            size="sm"
-            leftIcon={<Plus className="h-4 w-4" />}
-            onClick={() => setIsAddModalOpen(true)}
-          >
-            Add New Dish
-          </Button>
-
-          <Button
-            variant="outline"
-            size="sm"
-            leftIcon={<Layers className="h-4 w-4 text-indigo-500" />}
-            onClick={() => setIsCategoryManagerOpen(true)}
-            className="border-indigo-500/30 hover:bg-indigo-500/10 text-slate-800 dark:text-white"
-          >
-            Manage Categories
-          </Button>
-        </div>
-      </div>
-
-      {/* ======================================================== */}
-      {/* 1.5. MENU KPI METRICS BAR                               */}
-      {/* ======================================================== */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Total Dishes</span>
-            <div className="h-7 w-7 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-              <Utensils className="h-3.5 w-3.5" />
+      <div className="shrink-0 space-y-2">
+        {/* 1. Header & Creation Methods */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                Menu Management
+              </h1>
+              <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-[#14F1C7] text-[11px] font-semibold">
+                <Sparkles className="h-3 w-3" />
+                <span className="truncate max-w-[120px]">{tenantName}</span>
+              </div>
             </div>
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-              {kpiStats.total}
-            </span>
-            <span className="text-[11px] text-slate-500 font-medium">items</span>
-          </div>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
-            Across {kpiStats.categoriesCount} categories
-          </p>
-        </div>
-
-        <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Categories</span>
-            <div className="h-7 w-7 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
-              <Layers className="h-3.5 w-3.5" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-              {kpiStats.categoriesCount}
-            </span>
-            <span className="text-[11px] text-slate-500 font-medium">sections</span>
-          </div>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
-            Live menu taxonomy
-          </p>
-        </div>
-
-        <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Live Availability</span>
-            <div className="h-7 w-7 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center">
-              <CheckCircle2 className="h-3.5 w-3.5" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
-              {kpiStats.inStock}
-            </span>
-            <span className="text-[11px] text-slate-500 font-medium">In Stock</span>
-          </div>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
-            {kpiStats.outOfStock > 0 ? (
-              <span className="text-amber-600 dark:text-amber-400 font-semibold">{kpiStats.outOfStock} dishes 86&apos;d</span>
-            ) : (
-              <span className="text-emerald-600 dark:text-emerald-400 font-semibold">100% available</span>
-            )}
-          </p>
-        </div>
-
-        <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Dietary Ratio</span>
-            <div className="h-7 w-7 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
-              <Flame className="h-3.5 w-3.5" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-xl font-black text-emerald-600 dark:text-emerald-400">
-              {kpiStats.veg}
-            </span>
-            <span className="text-xs text-slate-500 font-medium">Veg</span>
-            <span className="text-xs text-slate-300 dark:text-slate-700">/</span>
-            <span className="text-xl font-black text-rose-600 dark:text-rose-400">
-              {kpiStats.nonVeg}
-            </span>
-            <span className="text-xs text-slate-500 font-medium">Non</span>
-          </div>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
-            {kpiStats.total > 0 ? `${Math.round((kpiStats.veg / kpiStats.total) * 100)}% Pure Veg` : "No dishes"}
-          </p>
-        </div>
-
-        <div className="col-span-2 sm:col-span-1 p-3.5 rounded-2xl bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Average Price</span>
-            <div className="h-7 w-7 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-              <IndianRupee className="h-3.5 w-3.5" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline gap-1">
-            <span className="text-2xl font-black text-slate-900 dark:text-white font-mono tracking-tight">
-              ₹{kpiStats.avg}
-            </span>
-          </div>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
-            Across entire catalog
-          </p>
-        </div>
-      </div>
-
-      {/* ======================================================== */}
-      {/* 2. STICKY TOOLBAR: TABS, SEARCH, FILTERS & VIEW TOGGLE    */}
-      {/* ======================================================== */}
-      <div className="sticky top-0 z-10 bg-slate-50/95 dark:bg-[#090D16]/95 backdrop-blur-md pt-2 pb-3 -mx-3 px-3 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 border-b border-slate-200/60 dark:border-slate-800/60 space-y-2.5 transition-all">
-        {/* Top Row: Category Tabs + Search Bar + View Toggle */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="min-w-0 flex-1 overflow-x-auto">
-            <Tabs tabs={categoriesTabs} activeTab={activeCategory} onChange={setActiveCategory} />
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate max-w-xl">
+              Scan menus, upload PDFs, or build signature dishes manually. Live QR menus update instantaneously.
+            </p>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            <div className="relative w-full sm:w-60">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search dishes or Hindi name..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 shadow-xs"
-              />
-            </div>
-
-            <ViewToggle view={viewMode} onViewChange={setViewMode} />
-          </div>
-        </div>
-
-        {/* Bottom Row: Multi-Filter Chips Bar + Price Sorter */}
-        <div className="flex flex-wrap items-center justify-between gap-2.5 p-2 rounded-2xl bg-white/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80 text-xs shadow-2xs">
-          {/* Left: Filter Buttons */}
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1 mr-1">
-              <Filter className="h-3 w-3" /> Filters:
-            </span>
-
-            {/* Dietary Filter */}
-            {(["all", "veg", "non_veg"] as const).map((mode) => (
-              <button
-                key={mode}
-                type="button"
-                onClick={() => setDietaryFilter(mode)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold cursor-pointer transition-all ${
-                  dietaryFilter === mode
-                    ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs border border-slate-300 dark:border-slate-700"
-                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                }`}
-              >
-                {mode === "all" ? "All Diets" : mode === "veg" ? "Pure Veg 🟢" : "Non-Veg 🔴"}
-              </button>
-            ))}
-
-            <span className="text-slate-300 dark:text-slate-700">|</span>
-
-            {/* Availability Filter */}
-            {(["all", "available", "unavailable"] as const).map((mode) => (
-              <button
-                key={mode}
-                type="button"
-                onClick={() => setAvailabilityFilter(mode)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold cursor-pointer transition-all ${
-                  availabilityFilter === mode
-                    ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs border border-slate-300 dark:border-slate-700"
-                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                }`}
-              >
-                {mode === "all" ? "All Stock" : mode === "available" ? "In Stock" : "86'd (Sold Out)"}
-              </button>
-            ))}
-
-            <span className="text-slate-300 dark:text-slate-700">|</span>
-
-            {/* Highlights Filter */}
-            {(["all", "bestseller", "recommended"] as const).map((mode) => (
-              <button
-                key={mode}
-                type="button"
-                onClick={() => setHighlightFilter(mode)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold cursor-pointer transition-all ${
-                  highlightFilter === mode
-                    ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs border border-slate-300 dark:border-slate-700"
-                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                }`}
-              >
-                {mode === "all" ? "All Items" : mode === "bestseller" ? "⭐ Bestsellers" : "✨ Recommended"}
-              </button>
-            ))}
-          </div>
-
-          {/* Right: Price Sorter */}
-          <div className="flex items-center gap-1.5">
-            <ArrowUpDown className="h-3 w-3 text-slate-400" />
-            <select
-              value={priceSort}
-              onChange={(e) => setPriceSort(e.target.value as any)}
-              className="px-2 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 shadow-xs"
+          {/* Action Group: 3 Creation Options + Add Category */}
+          <div className="flex items-center gap-1.5 flex-wrap shrink-0">
+            <Button
+              variant="outline"
+              size="sm"
+              leftIcon={<Camera className="h-3.5 w-3.5 text-emerald-500" />}
+              onClick={() => setIsScannerOpen(true)}
+              className="h-8 text-xs px-2.5 border-emerald-500/40 hover:bg-emerald-500/10 text-slate-800 dark:text-white"
             >
-              <option value="none">Sort by: Default</option>
-              <option value="low_to_high">Price: Low to High</option>
-              <option value="high_to_low">Price: High to Low</option>
-              <option value="name_asc">Name: A to Z</option>
-              <option value="name_desc">Name: Z to A</option>
-            </select>
+              Scan
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              leftIcon={<UploadCloud className="h-3.5 w-3.5 text-teal-500" />}
+              onClick={() => setIsUploadOpen(true)}
+              className="h-8 text-xs px-2.5 border-teal-500/40 hover:bg-teal-500/10 text-slate-800 dark:text-white"
+            >
+              Upload
+            </Button>
+
+            <Button
+              variant="glow"
+              size="sm"
+              leftIcon={<Plus className="h-3.5 w-3.5" />}
+              onClick={() => setIsAddModalOpen(true)}
+              className="h-8 text-xs px-3 font-bold"
+            >
+              Add Dish
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              leftIcon={<Layers className="h-3.5 w-3.5 text-indigo-500" />}
+              onClick={() => setIsCategoryManagerOpen(true)}
+              className="h-8 text-xs px-2.5 border-indigo-500/30 hover:bg-indigo-500/10 text-slate-800 dark:text-white"
+            >
+              Categories
+            </Button>
+          </div>
+        </div>
+
+        {/* 1.5. Sleek Compact KPI Metrics Strip (Horizontal swipe on mobile, 5-col on desktop) */}
+        <div className="flex overflow-x-auto gap-2 pb-0.5 scrollbar-none sm:grid sm:grid-cols-3 lg:grid-cols-5">
+          <div className="p-2 sm:p-2.5 rounded-xl bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 shadow-2xs min-w-[130px] sm:min-w-0">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total Dishes</span>
+              <div className="h-5 w-5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                <Utensils className="h-3 w-3" />
+              </div>
+            </div>
+            <div className="mt-1 flex items-baseline gap-1.5">
+              <span className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight">
+                {kpiStats.total}
+              </span>
+              <span className="text-[10px] text-slate-400 font-medium">in {kpiStats.categoriesCount} cats</span>
+            </div>
+          </div>
+
+          <div className="p-2 sm:p-2.5 rounded-xl bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 shadow-2xs min-w-[130px] sm:min-w-0">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Categories</span>
+              <div className="h-5 w-5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                <Layers className="h-3 w-3" />
+              </div>
+            </div>
+            <div className="mt-1 flex items-baseline gap-1.5">
+              <span className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight">
+                {kpiStats.categoriesCount}
+              </span>
+              <span className="text-[10px] text-slate-400 font-medium">sections</span>
+            </div>
+          </div>
+
+          <div className="p-2 sm:p-2.5 rounded-xl bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 shadow-2xs min-w-[130px] sm:min-w-0">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Availability</span>
+              <div className="h-5 w-5 rounded-md bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center">
+                <CheckCircle2 className="h-3 w-3" />
+              </div>
+            </div>
+            <div className="mt-1 flex items-baseline gap-1.5">
+              <span className="text-base sm:text-lg font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
+                {kpiStats.inStock}
+              </span>
+              <span className="text-[10px] text-slate-400 font-medium">
+                {kpiStats.outOfStock > 0 ? `${kpiStats.outOfStock} 86'd` : "100% In Stock"}
+              </span>
+            </div>
+          </div>
+
+          <div className="p-2 sm:p-2.5 rounded-xl bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 shadow-2xs min-w-[130px] sm:min-w-0">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Dietary</span>
+              <div className="h-5 w-5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                <Flame className="h-3 w-3" />
+              </div>
+            </div>
+            <div className="mt-1 flex items-baseline gap-1">
+              <span className="text-sm sm:text-base font-black text-emerald-600 dark:text-emerald-400">
+                {kpiStats.veg}V
+              </span>
+              <span className="text-xs text-slate-300 dark:text-slate-700">/</span>
+              <span className="text-sm sm:text-base font-black text-rose-600 dark:text-rose-400">
+                {kpiStats.nonVeg}NV
+              </span>
+              <span className="text-[10px] text-slate-400 font-medium ml-1">
+                ({kpiStats.total > 0 ? Math.round((kpiStats.veg / kpiStats.total) * 100) : 0}% Veg)
+              </span>
+            </div>
+          </div>
+
+          <div className="p-2 sm:p-2.5 rounded-xl bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 shadow-2xs min-w-[130px] sm:min-w-0">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Average Price</span>
+              <div className="h-5 w-5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                <IndianRupee className="h-3 w-3" />
+              </div>
+            </div>
+            <div className="mt-1 flex items-baseline gap-1">
+              <span className="text-base sm:text-lg font-black text-slate-900 dark:text-white font-mono tracking-tight">
+                ₹{kpiStats.avg}
+              </span>
+              <span className="text-[10px] text-slate-400 font-medium">avg</span>
+            </div>
+          </div>
+        </div>
+
+        {/* 2. Unified Toolbar: Category Tabs + Search + Multi-Filter Chips + ViewToggle */}
+        <div className="bg-white/80 dark:bg-slate-900/60 backdrop-blur-md rounded-2xl border border-slate-200/80 dark:border-slate-800/80 p-2 sm:p-2.5 space-y-2 shadow-2xs">
+          {/* Top Row: Category Tabs + Search Bar + View Toggle */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <div className="min-w-0 flex-1 overflow-x-auto scrollbar-none">
+              <Tabs tabs={categoriesTabs} activeTab={activeCategory} onChange={setActiveCategory} />
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="relative w-full sm:w-56">
+                <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search dishes or Hindi name..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-8 pr-2.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 shadow-xs"
+                />
+              </div>
+
+              {/* Linear / Notion style Grid & List view toggle */}
+              <ViewToggle view={viewMode} onViewChange={setViewMode} />
+            </div>
+          </div>
+
+          {/* Bottom Row: Dietary Chips + Stock Chips + Bestseller Chips + Sorter */}
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/80">
+            {/* Left: Filter Chips Group */}
+            <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-0.5 min-w-0 flex-1">
+              <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 shrink-0 mr-1 flex items-center gap-1">
+                <SlidersHorizontal className="h-3 w-3" />
+                <span className="hidden sm:inline">Filters:</span>
+              </span>
+
+              {/* Dietary Filter */}
+              {(["all", "veg", "non_veg"] as const).map((diet) => (
+                <button
+                  key={diet}
+                  type="button"
+                  onClick={() => setDietaryFilter(diet)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
+                    dietaryFilter === diet
+                      ? "bg-emerald-500 text-slate-950 shadow-xs font-bold"
+                      : "bg-slate-100 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700/60 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+                >
+                  {diet === "all" ? "All Diets" : diet === "veg" ? "Pure Veg 🟢" : "Non-Veg 🔴"}
+                </button>
+              ))}
+
+              <span className="h-3 w-px bg-slate-200 dark:bg-slate-800 shrink-0 mx-0.5" />
+
+              {/* Stock Filter */}
+              {(["all", "available", "unavailable"] as const).map((stock) => (
+                <button
+                  key={stock}
+                  type="button"
+                  onClick={() => setAvailabilityFilter(stock)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
+                    availabilityFilter === stock
+                      ? "bg-emerald-500 text-slate-950 shadow-xs font-bold"
+                      : "bg-slate-100 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700/60 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+                >
+                  {stock === "all" ? "All Stock" : stock === "available" ? "In Stock" : "86'd (Sold Out)"}
+                </button>
+              ))}
+
+              <span className="h-3 w-px bg-slate-200 dark:bg-slate-800 shrink-0 mx-0.5" />
+
+              {/* Bestseller Filter */}
+              {(["all", "bestseller", "recommended"] as const).map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => setHighlightFilter(mode)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
+                    highlightFilter === mode
+                      ? "bg-amber-500 text-slate-950 shadow-xs font-bold"
+                      : "bg-slate-100 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700/60 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+                >
+                  {mode === "all" ? "All Items" : mode === "bestseller" ? "⭐ Bestsellers" : "✨ Recommended"}
+                </button>
+              ))}
+            </div>
+
+            {/* Right: Price Sorter */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <ArrowUpDown className="h-3 w-3 text-slate-400" />
+              <select
+                value={priceSort}
+                onChange={(e) => setPriceSort(e.target.value as any)}
+                className="px-2 py-1 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 shadow-xs cursor-pointer font-medium"
+              >
+                <option value="none">Sort by: Default</option>
+                <option value="low_to_high">Price: Low to High</option>
+                <option value="high_to_low">Price: High to Low</option>
+                <option value="name_asc">Name: A to Z</option>
+                <option value="name_desc">Name: Z to A</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* ======================================================== */}
+      {/* 2. SCROLLABLE FOOD ITEMS CONTAINER (Only dishes scroll)  */}
+      {/* ======================================================== */}
+      <div className="flex-1 min-h-0 overflow-y-auto pr-1 pb-16 scrollbar-thin">
 
       {/* ======================================================== */}
       {/* 4. DISHES GRID OR STARTER TEMPLATE EMPTY STATE           */}
@@ -1131,7 +1122,7 @@ export default function MenuManagementPage() {
         /* ======================================================== */
         <div className="space-y-2">
           {/* Table Column Headers (Desktop) */}
-          <div className="hidden lg:grid grid-cols-12 gap-3 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-slate-200/80 dark:border-slate-800/80 select-none">
+          <div className="sticky top-0 z-10 bg-slate-50/95 dark:bg-[#090D16]/95 backdrop-blur-md hidden lg:grid grid-cols-12 gap-3 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-slate-200/80 dark:border-slate-800/80 select-none">
             <div className="col-span-5 flex items-center gap-2.5">
               <button
                 type="button"
@@ -1340,6 +1331,7 @@ export default function MenuManagementPage() {
           })}
         </div>
       )}
+      </div>
 
       {/* ======================================================== */}
       {/* 5. FLOATING BULK EDIT TOOLBAR                           */}

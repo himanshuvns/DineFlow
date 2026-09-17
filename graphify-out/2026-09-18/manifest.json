@@ -552,9 +552,9 @@
     "semantic_hash": "d29c43e8a5e05a6ca7c60f0a84efd176"
   },
   "apps/web/app/dashboard/layout.tsx": {
-    "mtime": 1789670820.1679657,
-    "seen": 1789671446.35319,
-    "ast_hash": "4bc21863d0813a519ea02090d2bb0c29",
+    "mtime": 1789659195.1163814,
+    "seen": 1789659337.225546,
+    "ast_hash": "179814c9784e4ce6e21b60806e430d12",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/loading.tsx": {
@@ -564,9 +564,9 @@
     "semantic_hash": "fb3d216d06d08716a65bcb486f6db956"
   },
   "apps/web/app/dashboard/menu/page.tsx": {
-    "mtime": 1789670992.8491054,
-    "seen": 1789671446.3531919,
-    "ast_hash": "5a33d9712cde56ad78391c2afe083a87",
+    "mtime": 1789670325.4766335,
+    "seen": 1789670466.005044,
+    "ast_hash": "04e6a78ef54f5a78dd41a633ef3789ce",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/notifications/page.tsx": {
@@ -594,9 +594,9 @@
     "semantic_hash": "e146b1ff3bcd96604ade2dd514bb9ef4"
   },
   "apps/web/app/dashboard/rooms/page.tsx": {
-    "mtime": 1789671325.601798,
-    "seen": 1789671446.353195,
-    "ast_hash": "1d397d8b753b61cc2c1854edd28cd9e3",
+    "mtime": 1789670333.6701221,
+    "seen": 1789670466.005047,
+    "ast_hash": "0e1db1eed604529447404f42d593ada4",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/settings/page.tsx": {
@@ -612,9 +612,9 @@
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/tables/page.tsx": {
-    "mtime": 1789671127.3860183,
-    "seen": 1789671446.353197,
-    "ast_hash": "2ace59c0bab0a1695bf15f58b16c0a17",
+    "mtime": 1789670312.3214068,
+    "seen": 1789670466.005049,
+    "ast_hash": "ca8efac480240c910a272c12bf61327d",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/whatsapp/page.tsx": {

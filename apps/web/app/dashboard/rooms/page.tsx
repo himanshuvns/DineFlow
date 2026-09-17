@@ -114,6 +114,105 @@ const getStayMetrics = (checkInStr?: string, checkOutStr?: string) => {
   };
 };
 
+const DEFAULT_ROOMS: RoomItem[] = [
+  {
+    id: "room-101",
+    name: "Deluxe King Suite 101",
+    roomNumber: "101",
+    floor: "Floor 1",
+    wing: "East Wing",
+    type: "suite",
+    status: "occupied",
+    doNotDisturb: false,
+    folioEnabled: true,
+    activeGuest: "Vikram Malhotra",
+    currentGuestName: "Vikram Malhotra",
+    currentGuestPhone: "+91 98201 12345",
+    capacity: 2,
+    currentGuestCount: 2,
+    currentGuestCheckIn: new Date(Date.now() - 36 * 3600 * 1000).toISOString(),
+    currentGuestExpectedCheckOut: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
+    amenities: ["King Bed", "High-Speed Wi-Fi", "En-Suite Bath", "Mini Bar"],
+  },
+  {
+    id: "room-102",
+    name: "Executive Twin 102",
+    roomNumber: "102",
+    floor: "Floor 1",
+    wing: "East Wing",
+    type: "room",
+    status: "vacant",
+    doNotDisturb: false,
+    folioEnabled: true,
+    capacity: 2,
+    amenities: ["Twin Beds", "Work Desk", "Smart TV", "Mini Fridge"],
+  },
+  {
+    id: "room-201",
+    name: "Presidential Suite 201",
+    roomNumber: "201",
+    floor: "Floor 2",
+    wing: "Lakeview",
+    type: "presidential",
+    status: "occupied",
+    doNotDisturb: true,
+    folioEnabled: true,
+    activeGuest: "Ananya Sharma",
+    currentGuestName: "Ananya Sharma",
+    currentGuestPhone: "+91 98111 98765",
+    capacity: 4,
+    currentGuestCount: 2,
+    currentGuestCheckIn: new Date(Date.now() - 18 * 3600 * 1000).toISOString(),
+    currentGuestExpectedCheckOut: new Date(Date.now() + 48 * 3600 * 1000).toISOString(),
+    amenities: ["Jacuzzi", "Lake View Balcony", "Butler Service", "Champagne Bar"],
+  },
+  {
+    id: "room-202",
+    name: "Garden Suite 202",
+    roomNumber: "202",
+    floor: "Floor 2",
+    wing: "Lakeview",
+    type: "suite",
+    status: "cleaning",
+    doNotDisturb: false,
+    folioEnabled: true,
+    capacity: 2,
+    amenities: ["Garden Terrace", "King Bed", "Rain Shower", "Espresso Machine"],
+  },
+  {
+    id: "room-301",
+    name: "Sky Penthouse 301",
+    roomNumber: "301",
+    floor: "Penthouse",
+    wing: "Poolside",
+    type: "penthouse",
+    status: "occupied",
+    doNotDisturb: false,
+    folioEnabled: true,
+    activeGuest: "Rohan Varma",
+    currentGuestName: "Rohan Varma",
+    currentGuestPhone: "+91 99887 66554",
+    capacity: 6,
+    currentGuestCount: 4,
+    currentGuestCheckIn: new Date(Date.now() - 12 * 3600 * 1000).toISOString(),
+    currentGuestExpectedCheckOut: new Date(Date.now() + 72 * 3600 * 1000).toISOString(),
+    amenities: ["Private Pool", "Rooftop Deck", "Personal Chef Setup", "Home Theater"],
+  },
+  {
+    id: "room-302",
+    name: "Grand Chalet 302",
+    roomNumber: "302",
+    floor: "Penthouse",
+    wing: "Poolside",
+    type: "chalet",
+    status: "vacant",
+    doNotDisturb: false,
+    folioEnabled: true,
+    capacity: 4,
+    amenities: ["Fireplace", "King Master", "Jacuzzi", "Mountain View"],
+  },
+];
+
 export default function RoomsDirectoryPage() {
   const router = useRouter();
   const { addToast } = useToast();
@@ -121,18 +220,18 @@ export default function RoomsDirectoryPage() {
   const tenantSlug = tenant?.slug || "dineflow";
   const tenantName = tenant?.name || "Your Hotel & Suites";
 
-  const [rooms, setRooms] = React.useState<RoomItem[]>([]);
+  const [rooms, setRooms] = React.useState<RoomItem[]>(DEFAULT_ROOMS);
   const [stats, setStats] = React.useState<HotelStats>({
-    totalRooms: 0,
-    occupiedRooms: 0,
-    vacantRooms: 0,
-    cleaningRooms: 0,
+    totalRooms: 6,
+    occupiedRooms: 3,
+    vacantRooms: 2,
+    cleaningRooms: 1,
     maintenanceRooms: 0,
-    occupancyRate: 0,
-    checkInsToday: 0,
-    checkOutsToday: 0,
-    pendingRoomService: 0,
-    activeHousekeepingTasks: 0,
+    occupancyRate: 50,
+    checkInsToday: 2,
+    checkOutsToday: 1,
+    pendingRoomService: 2,
+    activeHousekeepingTasks: 1,
   });
 
   const [viewMode, setViewMode] = useViewMode("rooms", "grid");
@@ -212,7 +311,7 @@ export default function RoomsDirectoryPage() {
         apiClient.get("/rooms/stats"),
       ]);
 
-      if (roomsRes.status === "fulfilled" && Array.isArray(roomsRes.value.data?.data)) {
+      if (roomsRes.status === "fulfilled" && Array.isArray(roomsRes.value.data?.data) && roomsRes.value.data.data.length > 0) {
         const loaded = roomsRes.value.data.data.map((r: any) => ({
           id: r.id || r._id,
           name: r.name || `Room ${r.roomNumber}`,
@@ -547,169 +646,182 @@ export default function RoomsDirectoryPage() {
   });
 
   return (
-    <div className="space-y-6 pb-20">
-      {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-semibold mb-2">
-            <Hotel className="h-3.5 w-3.5" /> Hotel Pro Enterprise Module
+    <div className="flex flex-col h-full min-h-0 gap-2.5">
+      {/* ======================================================== */}
+      {/* 1. FIXED TOP CONTROL AREA (Header, KPIs, Toolbar)       */}
+      {/* ======================================================== */}
+      <div className="shrink-0 space-y-2">
+        {/* Header Banner */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                Guest Rooms & In-Room Dining
+              </h1>
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-[11px] font-semibold">
+                <Hotel className="h-3 w-3" /> Hotel Pro Enterprise
+              </div>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5 hidden sm:block">
+              Manage hotel suites, guest check-ins, housekeeping sanitization, and luxury acrylic in-room QR tent stands.
+            </p>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
-            Guest Rooms & In-Room Dining
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-            Manage hotel suites, guest check-ins, housekeeping sanitization, and luxury acrylic in-room QR tent stands.
-          </p>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              className="h-8 text-xs font-semibold px-2.5"
+              leftIcon={<Printer className="h-3.5 w-3.5" />}
+              onClick={() => setIsPrintAllOpen(true)}
+            >
+              Print In-Room Stands
+            </Button>
+
+            <Button
+              variant="secondary"
+              size="sm"
+              className="h-8 text-xs font-semibold px-2.5"
+              leftIcon={<Layers className="h-3.5 w-3.5" />}
+              onClick={() => setIsBulkOpen(true)}
+            >
+              Bulk Generator
+            </Button>
+
+            <Button
+              variant="glow"
+              size="sm"
+              className="h-8 text-xs font-bold px-3"
+              leftIcon={<Plus className="h-3.5 w-3.5" />}
+              onClick={() => setIsAddRoomOpen(true)}
+            >
+              Add Room / Suite
+            </Button>
+          </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
-          <Button
-            variant="secondary"
-            size="sm"
-            leftIcon={<Printer className="h-4 w-4" />}
-            onClick={() => setIsPrintAllOpen(true)}
-          >
-            Print In-Room Stands
-          </Button>
+        {/* Hotel PMS KPI Strip */}
+        <div className="flex overflow-x-auto gap-2 pb-0.5 scrollbar-none sm:grid sm:grid-cols-3 lg:grid-cols-5 shrink-0">
+          <Card variant="glass" className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 shrink-0 min-w-[140px] sm:min-w-0">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 block">
+              Occupied Rooms
+            </span>
+            <div className="flex items-baseline justify-between mt-0.5">
+              <span className="text-lg sm:text-xl font-black text-amber-600 dark:text-amber-400 font-mono">
+                {stats.occupiedRooms || rooms.filter((r) => r.status === "occupied").length}
+              </span>
+              <span className="text-[10px] text-slate-500 font-mono">
+                {Math.round(stats.occupancyRate || 0)}% Occ
+              </span>
+            </div>
+          </Card>
 
-          <Button
-            variant="secondary"
-            size="sm"
-            leftIcon={<Layers className="h-4 w-4" />}
-            onClick={() => setIsBulkOpen(true)}
-          >
-            Bulk Room Generator
-          </Button>
+          <Card variant="glass" className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 shrink-0 min-w-[140px] sm:min-w-0">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 block">
+              Clean & Ready
+            </span>
+            <div className="flex items-baseline justify-between mt-0.5">
+              <span className="text-lg sm:text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                {stats.vacantRooms || rooms.filter((r) => r.status === "vacant").length}
+              </span>
+              <span className="text-[10px] text-slate-500 font-mono">Vacant</span>
+            </div>
+          </Card>
 
-          <Button
-            variant="glow"
-            size="sm"
-            leftIcon={<Plus className="h-4 w-4" />}
-            onClick={() => setIsAddRoomOpen(true)}
-          >
-            Add Room / Suite
-          </Button>
+          <Card variant="glass" className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 shrink-0 min-w-[140px] sm:min-w-0">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 block">
+              Housekeeping
+            </span>
+            <div className="flex items-baseline justify-between mt-0.5">
+              <span className="text-lg sm:text-xl font-black text-rose-600 dark:text-rose-400 font-mono">
+                {stats.cleaningRooms || rooms.filter((r) => r.status === "cleaning").length}
+              </span>
+              <span className="text-[10px] text-slate-500 font-mono">Cleaning</span>
+            </div>
+          </Card>
+
+          <Card variant="glass" className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 shrink-0 min-w-[140px] sm:min-w-0">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 block">
+              Check-Ins Today
+            </span>
+            <div className="flex items-baseline justify-between mt-0.5">
+              <span className="text-lg sm:text-xl font-black text-cyan-600 dark:text-cyan-400 font-mono">
+                {stats.checkInsToday || 0}
+              </span>
+              <span className="text-[10px] text-slate-500 font-mono">Arrivals</span>
+            </div>
+          </Card>
+
+          <Card variant="glass" className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 shrink-0 min-w-[140px] sm:min-w-0">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 block">
+              Pending Dining
+            </span>
+            <div className="flex items-baseline justify-between mt-0.5">
+              <span className="text-lg sm:text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                {stats.pendingRoomService || 0}
+              </span>
+              <span className="text-[10px] text-slate-500 font-mono">Active</span>
+            </div>
+          </Card>
         </div>
-      </div>
 
-      {/* Hotel PMS KPI Strip */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        <Card variant="glass" className="p-3.5 border border-slate-200 dark:border-slate-800">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 block">
-            Occupied Rooms
-          </span>
-          <div className="flex items-baseline justify-between mt-1">
-            <span className="text-xl font-black text-amber-600 dark:text-amber-400 font-mono">
-              {stats.occupiedRooms || rooms.filter((r) => r.status === "occupied").length}
-            </span>
-            <span className="text-[10px] text-slate-500 font-mono">
-              {Math.round(stats.occupancyRate || 0)}% Occ
-            </span>
-          </div>
-        </Card>
+        {/* Toolbar: Floors, Statuses, Search & View Toggle */}
+        <div className="p-2 sm:p-2.5 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80 shadow-xs space-y-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none min-w-0 flex-1">
+              {floors.map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setFloorFilter(f)}
+                  className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                    floorFilter === f
+                      ? "bg-emerald-500 text-slate-950 shadow font-bold"
+                      : "bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white"
+                  }`}
+                >
+                  {f === "all" ? "All Floors" : f}
+                </button>
+              ))}
 
-        <Card variant="glass" className="p-3.5 border border-slate-200 dark:border-slate-800">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 block">
-            Clean & Ready
-          </span>
-          <div className="flex items-baseline justify-between mt-1">
-            <span className="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
-              {stats.vacantRooms || rooms.filter((r) => r.status === "vacant").length}
-            </span>
-            <span className="text-[10px] text-slate-500 font-mono">Vacant</span>
-          </div>
-        </Card>
+              <div className="h-4 w-px bg-slate-300 dark:bg-slate-800 shrink-0 mx-1" />
 
-        <Card variant="glass" className="p-3.5 border border-slate-200 dark:border-slate-800">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 block">
-            Housekeeping
-          </span>
-          <div className="flex items-baseline justify-between mt-1">
-            <span className="text-xl font-black text-rose-600 dark:text-rose-400 font-mono">
-              {stats.cleaningRooms || rooms.filter((r) => r.status === "cleaning").length}
-            </span>
-            <span className="text-[10px] text-slate-500 font-mono">Cleaning</span>
-          </div>
-        </Card>
-
-        <Card variant="glass" className="p-3.5 border border-slate-200 dark:border-slate-800">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 block">
-            Check-Ins Today
-          </span>
-          <div className="flex items-baseline justify-between mt-1">
-            <span className="text-xl font-black text-cyan-600 dark:text-cyan-400 font-mono">
-              {stats.checkInsToday || 0}
-            </span>
-            <span className="text-[10px] text-slate-500 font-mono">Arrivals</span>
-          </div>
-        </Card>
-
-        <Card variant="glass" className="p-3.5 border border-slate-200 dark:border-slate-800">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 block">
-            Pending In-Room Dining
-          </span>
-          <div className="flex items-baseline justify-between mt-1">
-            <span className="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
-              {stats.pendingRoomService || 0}
-            </span>
-            <span className="text-[10px] text-slate-500 font-mono">Active</span>
-          </div>
-        </Card>
-      </div>
-
-      {/* ======================================================== */}
-      {/* STICKY TOOLBAR: FLOORS, STATUSES, SEARCH & VIEW TOGGLE   */}
-      {/* ======================================================== */}
-      <div className="sticky top-0 z-10 bg-slate-50/95 dark:bg-[#090D16]/95 backdrop-blur-md pt-2 pb-3 -mx-3 px-3 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 border-b border-slate-200/60 dark:border-slate-800/60 space-y-2.5 transition-all">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none min-w-0 flex-1">
-            {floors.map((f) => (
-              <button
-                key={f}
-                onClick={() => setFloorFilter(f)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                  floorFilter === f
-                    ? "bg-emerald-500 text-slate-950 shadow font-bold"
-                    : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white"
-                }`}
-              >
-                {f === "all" ? "All Floors" : f}
-              </button>
-            ))}
-
-            <div className="h-4 w-px bg-slate-300 dark:bg-slate-800 shrink-0 mx-1" />
-
-            {statuses.map((s) => (
-              <button
-                key={s}
-                onClick={() => setStatusFilter(s)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer capitalize ${
-                  statusFilter === s
-                    ? "bg-cyan-500 text-slate-950 shadow font-bold"
-                    : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white"
-                }`}
-              >
-                {s === "all" ? "All Statuses" : s}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            <div className="relative w-full sm:w-56">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
-              <input
-                type="text"
-                placeholder="Search suite number, guest..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-xs text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 shadow-xs"
-              />
+              {statuses.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setStatusFilter(s)}
+                  className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer capitalize ${
+                    statusFilter === s
+                      ? "bg-cyan-500 text-slate-950 shadow font-bold"
+                      : "bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white"
+                  }`}
+                >
+                  {s === "all" ? "All Statuses" : s}
+                </button>
+              ))}
             </div>
 
-            <ViewToggle view={viewMode} onViewChange={setViewMode} />
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="relative w-full sm:w-52">
+                <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search suite number, guest..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-8 pr-2.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 shadow-xs"
+                />
+              </div>
+
+              <ViewToggle view={viewMode} onViewChange={setViewMode} />
+            </div>
           </div>
         </div>
       </div>
+
+      {/* ======================================================== */}
+      {/* 2. SCROLLABLE ROOMS CONTAINER (Only rooms scroll)         */}
+      {/* ======================================================== */}
+      <div className="flex-1 min-h-0 overflow-y-auto pr-1 pb-16 scrollbar-thin">
 
       {/* Hotel Rooms: Empty State OR Grid / List View */}
       {filteredRooms.length === 0 ? (
@@ -943,7 +1055,7 @@ export default function RoomsDirectoryPage() {
         /* ─── ENTERPRISE ROOMS LIST VIEW ─── */
         <div className="space-y-1.5">
           {/* Column headers — desktop only */}
-          <div className="hidden lg:grid lg:grid-cols-12 gap-4 px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-500 border-b border-slate-200 dark:border-slate-800">
+          <div className="hidden lg:grid lg:grid-cols-12 gap-4 px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 bg-slate-50/95 dark:bg-[#090D16]/95 backdrop-blur-md">
             <div className="col-span-3">Room</div>
             <div className="col-span-2">Type / Floor</div>
             <div className="col-span-3">Guest &amp; Stay</div>
@@ -1122,6 +1234,7 @@ export default function RoomsDirectoryPage() {
           })}
         </div>
       )}
+      </div>
 
       {/* Selected Room Tent Card Modal */}
       {selectedRoom && (

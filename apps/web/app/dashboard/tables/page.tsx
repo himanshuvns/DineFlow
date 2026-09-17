@@ -164,96 +164,108 @@ export default function TablesManagementPage() {
   });
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold mb-2">
-            <Sparkles className="h-3.5 w-3.5" />
-            <span>{tenantName} Contactless QR Ordering</span>
+    <div className="flex flex-col h-full min-h-0 gap-2.5">
+      {/* ======================================================== */}
+      {/* 1. FIXED TOP CONTROL AREA (Header & Toolbar)            */}
+      {/* ======================================================== */}
+      <div className="shrink-0 space-y-2">
+        {/* Page Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                Tables & QR Codes
+              </h1>
+              <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[11px] font-semibold">
+                <Sparkles className="h-3 w-3" />
+                <span className="truncate max-w-[120px]">{tenantName}</span>
+              </div>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate max-w-xl">
+              Generate and manage instant digital menu QR codes for each table and zone in {tenantName}.
+            </p>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
-            Tables & QR Codes
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-            Generate and manage instant digital menu QR codes for each table and zone in {tenantName}.
-          </p>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {tables.length > 0 && (
+              <Button
+                variant="secondary"
+                size="sm"
+                leftIcon={<Download className="h-3.5 w-3.5" />}
+                onClick={handleDownloadAll}
+                className="h-8 text-xs px-2.5"
+              >
+                Download All QRs
+              </Button>
+            )}
+            <Button
+              variant="glow"
+              size="sm"
+              leftIcon={<Plus className="h-3.5 w-3.5" />}
+              onClick={() => setIsAddTableOpen(true)}
+              className="h-8 text-xs px-3 font-bold"
+            >
+              Add Table
+            </Button>
+          </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-          {tables.length > 0 && (
-            <Button
-              variant="secondary"
-              size="sm"
-              leftIcon={<Download className="h-4 w-4" />}
-              onClick={handleDownloadAll}
-            >
-              Download All QRs
-            </Button>
-          )}
-          <Button
-            variant="glow"
-            size="sm"
-            leftIcon={<Plus className="h-4 w-4" />}
-            onClick={() => setIsAddTableOpen(true)}
-          >
-            Add Table
-          </Button>
-        </div>
+        {/* STICKY TOOLBAR: ZONES, SEARCH, STATUS & VIEW TOGGLE */}
+        {tables.length > 0 && (
+          <div className="bg-white/80 dark:bg-slate-900/60 backdrop-blur-md rounded-2xl border border-slate-200/80 dark:border-slate-800/80 p-2 sm:p-2.5 shadow-2xs transition-all">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+              {/* Zone Filter Chips */}
+              <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none min-w-0 flex-1 pb-0.5 sm:pb-0">
+                {zones.map((zone) => (
+                  <button
+                    key={zone}
+                    onClick={() => setFilterZone(zone)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold capitalize transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                      filterZone === zone
+                        ? "bg-emerald-500 text-slate-950 shadow-xs font-bold"
+                        : "bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white"
+                    }`}
+                  >
+                    {zone === "all" ? "All Locations" : zone}
+                  </button>
+                ))}
+              </div>
+
+              {/* Right: Search + Status Filter + View Toggle */}
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="relative w-full sm:w-44">
+                  <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Search tables..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-8 pr-2.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 shadow-xs"
+                  />
+                </div>
+
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value as any)}
+                  className="px-2.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 shadow-xs cursor-pointer font-medium"
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="available">🟢 Available</option>
+                  <option value="occupied">🟠 Occupied</option>
+                  <option value="reserved">⚪ Reserved</option>
+                </select>
+
+                <ViewToggle view={viewMode} onViewChange={setViewMode} />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ======================================================== */}
-      {/* STICKY TOOLBAR: ZONES, SEARCH, STATUS & VIEW TOGGLE      */}
+      {/* 2. SCROLLABLE TABLES CONTAINER (Only tables scroll)      */}
       {/* ======================================================== */}
-      {tables.length > 0 && (
-        <div className="sticky top-0 z-10 bg-slate-50/95 dark:bg-[#090D16]/95 backdrop-blur-md pt-2 pb-3 -mx-3 px-3 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 border-b border-slate-200/60 dark:border-slate-800/60 space-y-2.5 transition-all">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            {/* Zone Filter Chips */}
-            <div className="flex items-center gap-1.5 overflow-x-auto min-w-0 flex-1 pb-1 sm:pb-0">
-              {zones.map((zone) => (
-                <button
-                  key={zone}
-                  onClick={() => setFilterZone(zone)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold capitalize transition-all cursor-pointer whitespace-nowrap shrink-0 ${
-                    filterZone === zone
-                      ? "bg-emerald-500 text-slate-950 shadow-md font-bold"
-                      : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white"
-                  }`}
-                >
-                  {zone === "all" ? "All Locations" : zone}
-                </button>
-              ))}
-            </div>
-
-            {/* Right: Search + Status Filter + View Toggle */}
-            <div className="flex items-center gap-2 shrink-0">
-              <div className="relative w-full sm:w-44">
-                <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Search tables..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-8 pr-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 shadow-xs"
-                />
-              </div>
-
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value as any)}
-                className="px-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 shadow-xs cursor-pointer font-medium"
-              >
-                <option value="all">All Statuses</option>
-                <option value="available">🟢 Available</option>
-                <option value="occupied">🟠 Occupied</option>
-                <option value="reserved">⚪ Reserved</option>
-              </select>
-
-              <ViewToggle view={viewMode} onViewChange={setViewMode} />
-            </div>
-          </div>
-        </div>
-      )}
+      <div className="flex-1 min-h-0 overflow-y-auto pr-1 pb-16 scrollbar-thin">
 
       {/* Empty State / Starter Preset Chooser */}
       {tables.length === 0 ? (
@@ -400,7 +412,7 @@ export default function TablesManagementPage() {
         /* ======================================================== */
         <div className="space-y-2">
           {/* Table Header (Desktop) */}
-          <div className="hidden lg:grid grid-cols-12 gap-3 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-slate-200/80 dark:border-slate-800/80 select-none">
+          <div className="sticky top-0 z-10 bg-slate-50/95 dark:bg-[#090D16]/95 backdrop-blur-md hidden lg:grid grid-cols-12 gap-3 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-slate-200/80 dark:border-slate-800/80 select-none">
             <div className="col-span-3">Table & Zone</div>
             <div className="col-span-2">Capacity</div>
             <div className="col-span-2">Status</div>
@@ -516,6 +528,7 @@ export default function TablesManagementPage() {
           })}
         </div>
       )}
+      </div>
 
       {/* Selected Table QR Modal */}
       {selectedTable && (
