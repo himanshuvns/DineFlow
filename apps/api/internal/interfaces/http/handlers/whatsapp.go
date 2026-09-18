@@ -2,11 +2,15 @@ package handlers
 
 import (
 	"bytes"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"strings"
 
 	appwa "github.com/dineflow/api/internal/application/whatsapp"
 	domainwa "github.com/dineflow/api/internal/domain/whatsapp"
@@ -24,6 +28,21 @@ func NewWhatsAppHandler(waService *appwa.Service) *WhatsAppHandler {
 	return &WhatsAppHandler{waService: waService}
 }
 
+// verifyMetaSignature verifies Meta Cloud API's X-Hub-Signature-256 header.
+func verifyMetaSignature(signatureHeader, appSecret string, body []byte) bool {
+	if appSecret == "" {
+		return true // local development without secret configured
+	}
+	if signatureHeader == "" || !strings.HasPrefix(signatureHeader, "sha256=") {
+		return false
+	}
+	expectedSig := strings.TrimPrefix(signatureHeader, "sha256=")
+	mac := hmac.New(sha256.New, []byte(appSecret))
+	mac.Write(body)
+	actualSig := hex.EncodeToString(mac.Sum(nil))
+	return hmac.Equal([]byte(expectedSig), []byte(actualSig))
+}
+
 // VerifyWebhook godoc
 // GET /api/v1/whatsapp/webhook
 // Handles Meta Cloud API Webhook subscription challenge.
@@ -37,7 +56,7 @@ func (h *WhatsAppHandler) VerifyWebhook(c *gin.Context) {
 		expectedToken = "dineflow_webhook_verify_secret"
 	}
 
-	if mode == "subscribe" && (token == expectedToken || token == "dineflow_webhook_verify_secret") {
+	if mode == "subscribe" && token == expectedToken {
 		c.String(http.StatusOK, challenge)
 		return
 	}
@@ -55,6 +74,16 @@ func (h *WhatsAppHandler) HandleWebhook(c *gin.Context) {
 		return
 	}
 	c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+
+	// Verify cryptographic signature if WHATSAPP_APP_SECRET is set
+	appSecret := os.Getenv("WHATSAPP_APP_SECRET")
+	sigHeader := c.GetHeader("X-Hub-Signature-256")
+	if appSecret != "" && !verifyMetaSignature(sigHeader, appSecret, bodyBytes) {
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+			"error": "Invalid webhook cryptographic signature",
+		})
+		return
+	}
 
 	// Try parsing official Meta Webhook Payload
 	var metaPayload domainwa.MetaWebhookPayload

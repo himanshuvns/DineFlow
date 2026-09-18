@@ -2,6 +2,8 @@ package auth
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"log"
@@ -31,6 +33,7 @@ var (
 	ErrAccountLocked        = errors.New("account is temporarily locked due to too many failed attempts")
 	ErrInvalidOTP           = errors.New("invalid or expired verification code")
 	ErrInvalidRefreshToken  = errors.New("invalid or expired refresh token")
+	ErrInvalidResetToken    = errors.New("invalid or expired password reset link")
 	ErrSlugAlreadyExists    = errors.New("business URL slug already taken")
 	ErrWeakPassword         = errors.New("password must be at least 8 characters and include uppercase, lowercase, number, and special character")
 )
@@ -550,9 +553,114 @@ func (s *Service) RefreshTokens(ctx context.Context, refreshTokenStr string) (*A
 	return s.issueTokenPair(ctx, &u, &t)
 }
 
-// Logout revokes the provided refresh token's JTI.
+// Logout invalidates both the refresh token and blacklists the access token JTI.
 func (s *Service) Logout(ctx context.Context, tokenID string) error {
+	_ = s.redis.BlacklistToken(ctx, tokenID, 24*time.Hour)
 	return s.redis.RevokeRefreshToken(ctx, tokenID)
+}
+
+// LogoutAllDevices invalidates all sessions for the given user.
+func (s *Service) LogoutAllDevices(ctx context.Context, userID string) error {
+	return s.redis.RevokeUserSessions(ctx, userID, 7*24*time.Hour)
+}
+
+// ForgotPassword generates a 32-byte cryptographically random one-time reset token,
+// stores it in Redis with a 15-minute TTL, and dispatches an email if user exists.
+func (s *Service) ForgotPassword(ctx context.Context, identifier string) error {
+	clean := strings.TrimSpace(strings.ToLower(identifier))
+	if clean == "" {
+		return nil // do not leak account existence
+	}
+
+	usersColl := s.mongo.Collection("users")
+	var u user.User
+	filter := bson.M{
+		"$or": []bson.M{
+			{"email": clean},
+			{"phone": otp.NormalizePhone(clean)},
+		},
+	}
+	err := usersColl.FindOne(ctx, filter).Decode(&u)
+	if err != nil {
+		// Return nil so attackers cannot enumerate valid accounts
+		return nil
+	}
+
+	// Generate secure token
+	tokenBytes := make([]byte, 32)
+	if _, err := rand.Read(tokenBytes); err != nil {
+		return fmt.Errorf("failed to generate secure token: %w", err)
+	}
+	resetToken := hex.EncodeToString(tokenBytes)
+
+	// Store in Redis with 15-minute expiry
+	if err := s.redis.Raw().Set(ctx, "pwd_reset:"+resetToken, u.ID.Hex(), 15*time.Minute).Err(); err != nil {
+		return fmt.Errorf("failed to store reset token: %w", err)
+	}
+
+	// Send reset email if user has email
+	if u.Email != "" && s.emailSvc != nil {
+		resetLink := fmt.Sprintf("https://dineflow-steel.vercel.app/reset-password?token=%s", resetToken)
+		_ = s.emailSvc.SendPasswordReset(ctx, u.Email, u.Name, resetLink)
+	}
+
+	return nil
+}
+
+// ResetPassword validates the reset token, enforces password complexity,
+// updates the user's password hash with bcrypt cost 12, revokes all active sessions,
+// and deletes the one-time reset token.
+func (s *Service) ResetPassword(ctx context.Context, resetToken, newPassword string) error {
+	cleanToken := strings.TrimSpace(resetToken)
+	if cleanToken == "" {
+		return ErrInvalidResetToken
+	}
+
+	// Fetch user ID from Redis
+	userIDStr, err := s.redis.Raw().Get(ctx, "pwd_reset:"+cleanToken).Result()
+	if err != nil || userIDStr == "" {
+		return ErrInvalidResetToken
+	}
+
+	// Validate complexity
+	if err := ValidatePasswordComplexity(newPassword); err != nil {
+		return err
+	}
+
+	// Hash new password
+	hash, err := bcrypt.GenerateFromPassword([]byte(newPassword), 12)
+	if err != nil {
+		return fmt.Errorf("hash password: %w", err)
+	}
+
+	userOID, err := bson.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		return ErrInvalidResetToken
+	}
+
+	usersColl := s.mongo.Collection("users")
+	now := time.Now().UTC()
+	update := bson.M{
+		"$set": bson.M{
+			"auth.passwordHash":        string(hash),
+			"auth.passwordChangedAt":   now,
+			"auth.failedLoginAttempts": 0,
+			"auth.lockedUntil":         nil,
+			"updatedAt":                now,
+		},
+	}
+	res, err := usersColl.UpdateOne(ctx, bson.M{"_id": userOID}, update)
+	if err != nil || res.MatchedCount == 0 {
+		return errors.New("user not found")
+	}
+
+	// Consume one-time token
+	_ = s.redis.Raw().Del(ctx, "pwd_reset:"+cleanToken)
+
+	// Revoke all existing sessions for user (logout from all devices)
+	_ = s.redis.RevokeUserSessions(ctx, userIDStr, 7*24*time.Hour)
+
+	return nil
 }
 
 // ─── Private Helpers ──────────────────────────────────────────────────────────

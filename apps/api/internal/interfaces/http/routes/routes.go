@@ -31,11 +31,12 @@ func Setup(
 	searchHandler *handlers.SearchHandler,
 	platformHandler *handlers.PlatformHandler,
 ) {
-	// Auth middleware (used on protected routes)
-	authMiddleware := middleware.Auth(tokenMaker)
+	// Auth middleware (used on protected routes, checks token signature and real-time Redis revocation)
+	authMiddleware := middleware.Auth(tokenMaker, redisClient)
 
 	// Rate limiters
 	authRateLimit := middleware.RateLimit(redisClient, middleware.ByIPAndRoute, 20, time.Minute)
+	publicRateLimit := middleware.RateLimit(redisClient, middleware.ByIPAndRoute, 60, time.Minute)
 	apiRateLimit := middleware.RateLimit(redisClient, middleware.ByTenant, 2000, time.Minute)
 
 	// ── Health ──────────────────────────────────────────────────────────────
@@ -47,8 +48,8 @@ func Setup(
 		v1.GET("/", handlers.Version)
 		v1.GET("/health", handlers.Health) // alias for Railway's stored healthcheckPath
 
-		// ── Public Customer QR Endpoints (No login required) ───────────────
-		publicGroup := v1.Group("/public")
+		// ── Public Customer QR Endpoints (Protected by sliding window rate limiter) ───
+		publicGroup := v1.Group("/public", publicRateLimit)
 		{
 			publicGroup.GET("/m/:slug", menuHandler.GetPublicMenu)
 			publicGroup.POST("/orders", orderHandler.CreateCustomerOrder)
@@ -90,6 +91,7 @@ func Setup(
 		{
 			// Auth (authenticated)
 			protected.POST("/auth/logout", authHandler.Logout)
+			protected.POST("/auth/logout-all", authHandler.LogoutAll)
 			protected.GET("/auth/me", authHandler.Me)
 
 			// Tenant management
@@ -290,6 +292,13 @@ func Setup(
 
 				// CSV Exports
 				platformGroup.GET("/export/:entity", middleware.FinanceAdminOrAbove(), platformHandler.ExportCSV)
+
+				// Security Center
+				platformGroup.GET("/security/metrics", platformHandler.GetSecurityMetrics)
+				platformGroup.GET("/security/events", platformHandler.GetSecurityEvents)
+				platformGroup.POST("/security/block-ip", middleware.PlatformAdminOrAbove(), platformHandler.BlockIP)
+				platformGroup.DELETE("/security/block-ip/:ip", middleware.PlatformAdminOrAbove(), platformHandler.UnblockIP)
+				platformGroup.POST("/security/revoke-user-sessions", middleware.PlatformAdminOrAbove(), platformHandler.RevokeUserSessions)
 
 				// Super Admin Logout
 				platformGroup.POST("/auth/logout", platformHandler.Logout)

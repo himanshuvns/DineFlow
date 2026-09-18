@@ -184,7 +184,7 @@ export function CustomerCartDrawer({
         if (res.ok) {
           const resJson = await res.json();
           const ord = resJson.data || resJson.order || resJson;
-          orderId = ord.orderNumber || ord.id || ord._id || "";
+          orderId = ord.id || ord._id || ord.orderToken || ord.orderNumber || "";
         } else {
           const errData = await res.json().catch(() => null);
           throw new Error(errData?.error || "Order rejected by server");

@@ -3,6 +3,7 @@ package middleware
 import (
 	"strings"
 
+	redisinfra "github.com/dineflow/api/internal/infrastructure/redis"
 	"github.com/dineflow/api/pkg/response"
 	"github.com/dineflow/api/pkg/token"
 	"github.com/gin-gonic/gin"
@@ -20,9 +21,9 @@ const (
 )
 
 // Auth is a Gin middleware that verifies the Bearer JWT on every protected route.
-// It extracts userID, tenantID, role, and tokenID from the token claims and
-// sets them on the Gin context for downstream handlers.
-func Auth(maker *token.Maker) gin.HandlerFunc {
+// It checks token signature, expiration, and real-time Redis revocation status
+// before attaching identity claims to the request context.
+func Auth(maker *token.Maker, rdb *redisinfra.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		var tokenStr string
@@ -48,6 +49,18 @@ func Auth(maker *token.Maker) gin.HandlerFunc {
 		if err != nil {
 			response.Unauthorized(c, "Invalid or expired token.")
 			return
+		}
+
+		// Real-time Revocation Check (Logout / Security Invalidation)
+		if rdb != nil {
+			if rdb.IsTokenBlacklisted(c.Request.Context(), claims.TokenID) {
+				response.Unauthorized(c, "Session has been invalidated. Please sign in again.")
+				return
+			}
+			if claims.IssuedAt != nil && rdb.IsUserSessionRevoked(c.Request.Context(), claims.UserID, claims.IssuedAt.Time) {
+				response.Unauthorized(c, "All active sessions have been terminated. Please sign in again.")
+				return
+			}
 		}
 
 		// Attach all identity information to the request context

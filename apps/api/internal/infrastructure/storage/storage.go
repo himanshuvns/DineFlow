@@ -114,14 +114,21 @@ func (s *Service) PresignUpload(ctx context.Context, tenantID, fileName, content
 		uploadURL = fmt.Sprintf("%s/api/v1/storage/upload/%s", strings.TrimRight(s.cfg.PublicBaseURL, "/"), key)
 	}
 
+	headers := map[string]string{
+		"Content-Type":           contentType,
+		"X-Content-Type-Options": "nosniff",
+	}
+	if ext == ".svg" {
+		headers["Content-Security-Policy"] = "default-src 'none'; sandbox"
+		headers["Content-Disposition"] = "attachment"
+	}
+
 	return &PresignedUploadResponse{
 		UploadURL: uploadURL,
 		PublicURL: publicURL,
 		Key:       key,
 		ExpiresAt: expiresAt,
-		Headers: map[string]string{
-			"Content-Type": contentType,
-		},
+		Headers:   headers,
 	}, nil
 }
 

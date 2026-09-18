@@ -135,3 +135,97 @@ func (c *Client) GetFeatureFlags(ctx context.Context, tenantID string) ([]byte, 
 func (c *Client) InvalidateFeatureFlags(ctx context.Context, tenantID string) error {
 	return c.rdb.Del(ctx, "ff:"+tenantID).Err()
 }
+
+// ─── Token Blacklist & Session Revocation ──────────────────────────────────────
+
+// BlacklistToken marks an access token JTI as revoked until its expiry.
+func (c *Client) BlacklistToken(ctx context.Context, jti string, ttl time.Duration) error {
+	if jti == "" {
+		return nil
+	}
+	if ttl <= 0 {
+		ttl = 24 * time.Hour
+	}
+	return c.rdb.Set(ctx, "bl:"+jti, "1", ttl).Err()
+}
+
+// IsTokenBlacklisted checks if an access token JTI has been revoked.
+func (c *Client) IsTokenBlacklisted(ctx context.Context, jti string) bool {
+	if jti == "" {
+		return false
+	}
+	val, err := c.rdb.Exists(ctx, "bl:"+jti).Result()
+	return err == nil && val > 0
+}
+
+// RevokeUserSessions invalidates all existing tokens issued for a user before now.
+func (c *Client) RevokeUserSessions(ctx context.Context, userID string, ttl time.Duration) error {
+	if userID == "" {
+		return nil
+	}
+	if ttl <= 0 {
+		ttl = 7 * 24 * time.Hour
+	}
+	nowStr := fmt.Sprintf("%d", time.Now().UTC().Unix())
+	return c.rdb.Set(ctx, "user:revoked_at:"+userID, nowStr, ttl).Err()
+}
+
+// IsUserSessionRevoked checks whether the token was issued before the user's revocation timestamp.
+func (c *Client) IsUserSessionRevoked(ctx context.Context, userID string, tokenIssuedAt time.Time) bool {
+	if userID == "" {
+		return false
+	}
+	val, err := c.rdb.Get(ctx, "user:revoked_at:"+userID).Result()
+	if err != nil || val == "" {
+		return false
+	}
+	var revokedAtUnix int64
+	_, parseErr := fmt.Sscanf(val, "%d", &revokedAtUnix)
+	if parseErr != nil {
+		return false
+	}
+	return tokenIssuedAt.Unix() <= revokedAtUnix
+}
+
+// ─── IP Blocklist ─────────────────────────────────────────────────────────────
+
+// BlockIP adds an IP address to the Redis blocklist set.
+func (c *Client) BlockIP(ctx context.Context, ip string, reason string) error {
+	if ip == "" {
+		return nil
+	}
+	pipe := c.rdb.Pipeline()
+	pipe.SAdd(ctx, "security:blocked_ips", ip)
+	if reason != "" {
+		pipe.Set(ctx, "security:ip_reason:"+ip, reason, 30*24*time.Hour)
+	}
+	_, err := pipe.Exec(ctx)
+	return err
+}
+
+// UnblockIP removes an IP from the blocklist set.
+func (c *Client) UnblockIP(ctx context.Context, ip string) error {
+	if ip == "" {
+		return nil
+	}
+	pipe := c.rdb.Pipeline()
+	pipe.SRem(ctx, "security:blocked_ips", ip)
+	pipe.Del(ctx, "security:ip_reason:"+ip)
+	_, err := pipe.Exec(ctx)
+	return err
+}
+
+// IsIPBlocked checks if an IP is currently blocked.
+func (c *Client) IsIPBlocked(ctx context.Context, ip string) bool {
+	if ip == "" {
+		return false
+	}
+	isMember, err := c.rdb.SIsMember(ctx, "security:blocked_ips", ip).Result()
+	return err == nil && isMember
+}
+
+// GetBlockedIPs returns the list of all blocked IPs.
+func (c *Client) GetBlockedIPs(ctx context.Context) ([]string, error) {
+	return c.rdb.SMembers(ctx, "security:blocked_ips").Result()
+}
+

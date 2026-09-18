@@ -8,6 +8,8 @@ import (
 	"syscall"
 	"time"
 
+	"strings"
+
 	aiapp "github.com/dineflow/api/internal/application/ai"
 	analyticsapp "github.com/dineflow/api/internal/application/analytics"
 	authapp "github.com/dineflow/api/internal/application/auth"
@@ -27,6 +29,7 @@ import (
 	redisinfra "github.com/dineflow/api/internal/infrastructure/redis"
 	storageinfra "github.com/dineflow/api/internal/infrastructure/storage"
 	"github.com/dineflow/api/internal/interfaces/http/handlers"
+	"github.com/dineflow/api/internal/interfaces/http/middleware"
 	"github.com/dineflow/api/internal/interfaces/http/routes"
 	"github.com/dineflow/api/pkg/config"
 	"github.com/dineflow/api/pkg/logger"
@@ -183,7 +186,11 @@ func main() {
 
 	// Global middleware
 	r.Use(gin.Recovery()) // recover from panics, return 500
+	r.Use(middleware.RequestID())
+	r.Use(middleware.SecurityHeaders())
 	r.Use(corsMiddleware())
+	r.Use(middleware.IPBlocklist(rdb))
+	r.Use(middleware.NoSQLSanitizer())
 	r.Use(requestLogger(log))
 
 	// Register all routes
@@ -243,22 +250,57 @@ func main() {
 
 // ─── Helper Middleware ─────────────────────────────────────────────────────────
 
-// corsMiddleware allows requests from the Next.js frontend during development.
+// corsMiddleware enforces strict origin validation and prevents wildcard reflection with credentials.
 func corsMiddleware() gin.HandlerFunc {
+	allowedOrigins := map[string]bool{
+		"https://dineflow-steel.vercel.app": true,
+		"http://localhost:3000":             true,
+		"http://localhost:3001":             true,
+		"http://127.0.0.1:3000":             true,
+		"http://127.0.0.1:3001":             true,
+	}
+
+	if envOrigins := os.Getenv("ALLOWED_ORIGINS"); envOrigins != "" {
+		for _, o := range strings.Split(envOrigins, ",") {
+			o = strings.TrimSpace(o)
+			if o != "" {
+				allowedOrigins[o] = true
+			}
+		}
+	}
+
+	isAllowedOrigin := func(origin string) bool {
+		if allowedOrigins[origin] {
+			return true
+		}
+		// Allow Vercel preview environments
+		if strings.HasPrefix(origin, "https://") && strings.HasSuffix(origin, ".vercel.app") {
+			return true
+		}
+		return false
+	}
+
 	return func(c *gin.Context) {
 		origin := c.Request.Header.Get("Origin")
-		if origin == "" {
-			origin = "*"
+
+		if origin != "" && isAllowedOrigin(origin) {
+			c.Header("Access-Control-Allow-Origin", origin)
+			c.Header("Access-Control-Allow-Credentials", "true")
+			c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Idempotency-Key, X-Request-ID, X-Hub-Signature-256")
+			c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+			c.Header("Access-Control-Max-Age", "86400")
+		} else if origin == "" {
+			c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Idempotency-Key, X-Request-ID")
 		}
 
-		c.Header("Access-Control-Allow-Origin", origin)
-		c.Header("Access-Control-Allow-Credentials", "true")
-		c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Idempotency-Key")
-		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
-		c.Header("Access-Control-Max-Age", "86400")
-
 		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(204)
+			if origin != "" && isAllowedOrigin(origin) {
+				c.AbortWithStatus(204)
+			} else if origin == "" {
+				c.AbortWithStatus(204)
+			} else {
+				c.AbortWithStatus(http.StatusForbidden)
+			}
 			return
 		}
 

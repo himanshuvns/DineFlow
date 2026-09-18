@@ -15,6 +15,7 @@ import (
 	"github.com/dineflow/api/internal/domain/tenant"
 	mongoinfra "github.com/dineflow/api/internal/infrastructure/mongodb"
 	"github.com/dineflow/api/internal/infrastructure/realtime"
+	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
@@ -305,6 +306,7 @@ func (s *Service) CreateCustomerOrder(ctx context.Context, input CreateOrderInpu
 		ID:                  bson.NewObjectID(),
 		TenantID:            t.ID,
 		OrderNumber:         orderNum,
+		OrderToken:          uuid.NewString(),
 		Destination:         orderDest,
 		TableID:             tableID,
 		TableName:           tableName,
@@ -563,6 +565,7 @@ func (s *Service) GetOrderByID(ctx context.Context, orderIDStr string) (*domaino
 
 	err = orderColl.FindOne(ctx, bson.M{
 		"$or": []bson.M{
+			{"orderToken": cleanID},
 			{"orderNumber": cleanID},
 			{"orderNumber": withHash},
 			{"orderNumber": withoutHash},

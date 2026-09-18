@@ -216,7 +216,7 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 
 // Logout godoc
 // POST /api/v1/auth/logout
-// Revokes the current refresh token.
+// Revokes the current refresh token and blacklists the access token.
 func (h *AuthHandler) Logout(c *gin.Context) {
 	tokenID := middleware.GetTokenID(c)
 	if tokenID != "" {
@@ -225,6 +225,23 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	clearRefreshTokenCookie(c)
 
 	response.OK(c, gin.H{"message": "Logged out successfully."})
+}
+
+// LogoutAll godoc
+// POST /api/v1/auth/logout-all
+// Revokes all active sessions for the user across all devices.
+func (h *AuthHandler) LogoutAll(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+	tokenID := middleware.GetTokenID(c)
+	if tokenID != "" {
+		_ = h.authService.Logout(c.Request.Context(), tokenID)
+	}
+	if userID != "" {
+		_ = h.authService.LogoutAllDevices(c.Request.Context(), userID)
+	}
+	clearRefreshTokenCookie(c)
+
+	response.OK(c, gin.H{"message": "Logged out from all devices successfully."})
 }
 
 // Me godoc

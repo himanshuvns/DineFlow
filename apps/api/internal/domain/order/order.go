@@ -80,6 +80,7 @@ type Order struct {
 	ID                  bson.ObjectID   `bson:"_id,omitempty" json:"id"`
 	TenantID            bson.ObjectID   `bson:"tenantId" json:"tenantId"`
 	OrderNumber         string          `bson:"orderNumber" json:"orderNumber"`
+	OrderToken          string          `bson:"orderToken,omitempty" json:"orderToken,omitempty"`
 	Destination         DestinationType `bson:"destination,omitempty" json:"destination,omitempty"`
 	TableID             *bson.ObjectID  `bson:"tableId,omitempty" json:"tableId,omitempty"`
 	TableName           string          `bson:"tableName" json:"tableName"`

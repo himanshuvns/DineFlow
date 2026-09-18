@@ -30,11 +30,22 @@ func NewScope(coll *mongo.Collection, tenantID bson.ObjectID) *Scope {
 	return &Scope{coll: coll, tenantID: tenantID}
 }
 
-// scopedFilter merges the given filter with the mandatory tenantId constraint.
+// scopedFilter merges the given filter with the non-negotiable mandatory tenantId constraint.
+// Zero Trust Guarantee: The scoped tenantId ALWAYS takes precedence and can never be overridden by input parameters.
 func (s *Scope) scopedFilter(filter bson.M) bson.M {
-	merged := bson.M{"tenantId": s.tenantID, "deletedAt": bson.M{"$exists": false}}
+	merged := bson.M{}
 	for k, v := range filter {
-		merged[k] = v
+		// Strip any caller attempt to tamper with tenantId
+		if k != "tenantId" {
+			merged[k] = v
+		}
+	}
+	// Non-negotiable tenant isolation
+	merged["tenantId"] = s.tenantID
+
+	// Default soft-delete filter unless caller explicitly requested deleted records
+	if _, hasDeletedAt := filter["deletedAt"]; !hasDeletedAt {
+		merged["deletedAt"] = bson.M{"$exists": false}
 	}
 	return merged
 }

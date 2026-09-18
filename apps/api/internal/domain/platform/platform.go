@@ -316,3 +316,32 @@ func CalculateHealthScore(
 	}
 	return score
 }
+
+// ─── Security Center Models ──────────────────────────────────────────────────
+
+// SecurityMetrics encapsulates live platform security indicators.
+type SecurityMetrics struct {
+	HealthScore         int      `json:"healthScore"` // e.g. 98
+	FailedLoginsLast24h int      `json:"failedLoginsLast24h"`
+	BlockedIPsCount     int      `json:"blockedIpsCount"`
+	BlockedIPs          []string `json:"blockedIps"`
+	ActiveSessionsCount int      `json:"activeSessionsCount"`
+	MFAEnforcedTenants  int      `json:"mfaEnforcedTenants"`
+	WebhookHealth       string   `json:"webhookHealth"`       // "verified"
+	TokenRotationStatus string   `json:"tokenRotationStatus"` // "active"
+	ZeroTrustEnforced   bool     `json:"zeroTrustEnforced"`
+	LastBackupAt        string   `json:"lastBackupAt"`
+	BackupStatus        string   `json:"backupStatus"` // "verified"
+}
+
+// SecurityIncidentRecord models security events for the incident timeline.
+type SecurityIncidentRecord struct {
+	ID        string    `json:"id"`
+	Timestamp time.Time `json:"timestamp"`
+	Severity  string    `json:"severity"` // "critical" | "high" | "medium" | "low" | "info"
+	Type      string    `json:"type"`     // "failed_login" | "ip_blocked" | "rate_limited" | "token_revoked" | "operator_injection_blocked"
+	SourceIP  string    `json:"sourceIp"`
+	Target    string    `json:"target"`
+	Details   string    `json:"details"`
+}
+

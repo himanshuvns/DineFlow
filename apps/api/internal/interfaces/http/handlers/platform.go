@@ -613,3 +613,75 @@ func (h *PlatformHandler) Logout(c *gin.Context) {
 
 	response.OK(c, gin.H{"message": "Super Admin signed out successfully."})
 }
+
+// ─── Platform Security Center Handlers ────────────────────────────────────────
+
+func (h *PlatformHandler) GetSecurityMetrics(c *gin.Context) {
+	metrics, err := h.svc.GetSecurityMetrics(c.Request.Context())
+	if err != nil {
+		response.InternalError(c)
+		return
+	}
+	response.OK(c, metrics)
+}
+
+func (h *PlatformHandler) GetSecurityEvents(c *gin.Context) {
+	events, err := h.svc.GetSecurityEvents(c.Request.Context())
+	if err != nil {
+		response.InternalError(c)
+		return
+	}
+	response.OK(c, events)
+}
+
+type BlockIPRequest struct {
+	IP     string `json:"ip" binding:"required"`
+	Reason string `json:"reason"`
+}
+
+func (h *PlatformHandler) BlockIP(c *gin.Context) {
+	var req BlockIPRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "INVALID_REQUEST", "Valid IP address is required.")
+		return
+	}
+	actor := h.extractActor(c)
+	if err := h.svc.BlockIP(c.Request.Context(), req.IP, req.Reason, actor); err != nil {
+		response.InternalError(c)
+		return
+	}
+	response.OK(c, gin.H{"message": fmt.Sprintf("IP address %s has been added to the security blocklist.", req.IP)})
+}
+
+func (h *PlatformHandler) UnblockIP(c *gin.Context) {
+	ip := c.Param("ip")
+	if ip == "" {
+		response.BadRequest(c, "INVALID_IP", "IP address is required.")
+		return
+	}
+	actor := h.extractActor(c)
+	if err := h.svc.UnblockIP(c.Request.Context(), ip, actor); err != nil {
+		response.InternalError(c)
+		return
+	}
+	response.OK(c, gin.H{"message": fmt.Sprintf("IP address %s has been removed from the blocklist.", ip)})
+}
+
+type RevokeUserSessionsRequest struct {
+	UserID string `json:"userId" binding:"required"`
+}
+
+func (h *PlatformHandler) RevokeUserSessions(c *gin.Context) {
+	var req RevokeUserSessionsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "INVALID_REQUEST", "User ID is required.")
+		return
+	}
+	actor := h.extractActor(c)
+	if err := h.svc.RevokeUserSessions(c.Request.Context(), req.UserID, actor); err != nil {
+		response.InternalError(c)
+		return
+	}
+	response.OK(c, gin.H{"message": fmt.Sprintf("All active sessions for user %s have been revoked.", req.UserID)})
+}
+

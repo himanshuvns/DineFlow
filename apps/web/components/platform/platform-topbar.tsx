@@ -21,6 +21,7 @@ const PLATFORM_TITLES: Record<string, string> = {
   "/platform": "Platform Executive Dashboard",
   "/platform/dashboard": "Platform Executive Dashboard",
   "/platform/clients": "Clients & Workspaces Directory",
+  "/platform/security": "Enterprise Security Center & Zero Trust",
   "/platform/subscriptions": "Subscription Tiers & Quotas",
   "/platform/revenue": "Revenue, ARR & Billing Health",
   "/platform/feature-flags": "Enterprise Feature Flag Engine",

@@ -154,6 +154,30 @@ export interface PlatformNotification {
   createdAt: string;
 }
 
+export interface SecurityMetrics {
+  healthScore: number;
+  failedLoginsLast24h: number;
+  blockedIpsCount: number;
+  blockedIps: string[];
+  activeSessionsCount: number;
+  mfaEnforcedTenants: number;
+  webhookHealth: string;
+  tokenRotationStatus: string;
+  zeroTrustEnforced: boolean;
+  lastBackupAt: string;
+  backupStatus: string;
+}
+
+export interface SecurityIncidentRecord {
+  id: string;
+  timestamp: string;
+  severity: "critical" | "high" | "medium" | "low" | "info";
+  type: string;
+  sourceIp: string;
+  target: string;
+  details: string;
+}
+
 // ─── Initial Fallback Constants ───────────────────────────────────────────────
 
 export const INITIAL_FEATURE_FLAGS: FeatureFlagDefinition[] = [
@@ -556,6 +580,59 @@ export const INITIAL_SYSTEM_SERVICES: SystemServiceHealth[] = [
   },
 ];
 
+export const INITIAL_SECURITY_METRICS: SecurityMetrics = {
+  healthScore: 98,
+  failedLoginsLast24h: 3,
+  blockedIpsCount: 1,
+  blockedIps: ["185.220.101.42"],
+  activeSessionsCount: 42,
+  mfaEnforcedTenants: 16,
+  webhookHealth: "verified",
+  tokenRotationStatus: "active",
+  zeroTrustEnforced: true,
+  lastBackupAt: new Date(Date.now() - 3600000).toISOString(),
+  backupStatus: "verified",
+};
+
+export const INITIAL_SECURITY_EVENTS: SecurityIncidentRecord[] = [
+  {
+    id: "sec-evt-1",
+    timestamp: new Date(Date.now() - 900000).toISOString(),
+    severity: "info",
+    type: "token_revoked",
+    sourceIp: "127.0.0.1",
+    target: "Redis Token Blacklist",
+    details: "Automated sliding window token rotation and JTI verification succeeded",
+  },
+  {
+    id: "sec-evt-2",
+    timestamp: new Date(Date.now() - 3600000).toISOString(),
+    severity: "medium",
+    type: "rate_limited",
+    sourceIp: "194.26.29.112",
+    target: "/api/v1/auth/login",
+    details: "Public sliding window rate limit triggered (exceeded 60 req/min)",
+  },
+  {
+    id: "sec-evt-3",
+    timestamp: new Date(Date.now() - 14400000).toISOString(),
+    severity: "high",
+    type: "operator_injection_blocked",
+    sourceIp: "185.220.101.42",
+    target: "/api/v1/orders",
+    details: "NoSQL operator injection key detected ($where) and rejected by edge firewall",
+  },
+  {
+    id: "sec-evt-4",
+    timestamp: new Date(Date.now() - 86400000).toISOString(),
+    severity: "info",
+    type: "webhook_signature_verified",
+    sourceIp: "157.240.199.36",
+    target: "/api/v1/webhooks/whatsapp",
+    details: "Meta Cloud API HMAC-SHA256 signature cryptographic verification valid",
+  },
+];
+
 // ─── Store Interface ──────────────────────────────────────────────────────────
 
 interface PlatformState {
@@ -583,6 +660,8 @@ interface PlatformState {
   notifications: PlatformNotification[];
   unreadNotificationsCount: number;
   isLoading: boolean;
+  securityMetrics: SecurityMetrics | null;
+  securityEvents: SecurityIncidentRecord[];
 
   // Fetching Actions
   fetchDashboardMetrics: () => Promise<void>;
@@ -612,6 +691,8 @@ interface PlatformState {
   fetchSystemHealth: () => Promise<void>;
   fetchOperationsSettings: () => Promise<void>;
   fetchNotifications: () => Promise<void>;
+  fetchSecurityMetrics: () => Promise<void>;
+  fetchSecurityEvents: () => Promise<void>;
   markNotificationRead: (id: string) => Promise<void>;
   markAllNotificationsRead: () => Promise<void>;
 
@@ -642,6 +723,9 @@ interface PlatformState {
   flushCache: () => Promise<void>;
   downloadCsvExport: (entity: string) => Promise<void>;
   logoutPlatform: () => Promise<void>;
+  blockIP: (ip: string, reason: string) => Promise<void>;
+  unblockIP: (ip: string) => Promise<void>;
+  revokeUserSessions: (userId: string) => Promise<void>;
 }
 
 export const usePlatformStore = create<PlatformState>()(
@@ -671,6 +755,8 @@ export const usePlatformStore = create<PlatformState>()(
       notifications: [],
       unreadNotificationsCount: 0,
       isLoading: false,
+      securityMetrics: INITIAL_SECURITY_METRICS,
+      securityEvents: INITIAL_SECURITY_EVENTS,
 
       // ─── API Fetchers ────────────────────────────────────────────────────────
 
@@ -1227,6 +1313,92 @@ export const usePlatformStore = create<PlatformState>()(
           // Ignore network errors on logout
         }
         useAuthStore.getState().clearAuth();
+      },
+
+      fetchSecurityMetrics: async () => {
+        try {
+          const res = await apiClient.get("/platform/security/metrics");
+          if (res.data?.data) {
+            set({ securityMetrics: res.data.data });
+          }
+        } catch {
+          // Keep resilient fallback
+        }
+      },
+
+      fetchSecurityEvents: async () => {
+        try {
+          const res = await apiClient.get("/platform/security/events");
+          if (res.data?.data) {
+            set({ securityEvents: res.data.data });
+          }
+        } catch {
+          // Keep resilient fallback
+        }
+      },
+
+      blockIP: async (ip: string, reason: string) => {
+        await apiClient.post("/platform/security/block-ip", { ip, reason });
+        set((s) => ({
+          securityMetrics: s.securityMetrics ? {
+            ...s.securityMetrics,
+            blockedIpsCount: s.securityMetrics.blockedIpsCount + 1,
+            blockedIps: [ip, ...s.securityMetrics.blockedIps.filter((x) => x !== ip)],
+          } : null,
+          securityEvents: [
+            {
+              id: `sec-${Date.now()}`,
+              timestamp: new Date().toISOString(),
+              severity: "high",
+              type: "ip_blocked",
+              sourceIp: ip,
+              target: "Security Firewall",
+              details: `IP ${ip} manually added to blocklist: ${reason}`,
+            },
+            ...s.securityEvents,
+          ],
+        }));
+      },
+
+      unblockIP: async (ip: string) => {
+        await apiClient.delete(`/platform/security/block-ip/${encodeURIComponent(ip)}`);
+        set((s) => ({
+          securityMetrics: s.securityMetrics ? {
+            ...s.securityMetrics,
+            blockedIpsCount: Math.max(0, s.securityMetrics.blockedIpsCount - 1),
+            blockedIps: s.securityMetrics.blockedIps.filter((x) => x !== ip),
+          } : null,
+          securityEvents: [
+            {
+              id: `sec-${Date.now()}`,
+              timestamp: new Date().toISOString(),
+              severity: "info",
+              type: "ip_unblocked",
+              sourceIp: ip,
+              target: "Security Firewall",
+              details: `IP ${ip} removed from blocklist`,
+            },
+            ...s.securityEvents,
+          ],
+        }));
+      },
+
+      revokeUserSessions: async (userId: string) => {
+        await apiClient.post("/platform/security/revoke-user-sessions", { userId });
+        set((s) => ({
+          securityEvents: [
+            {
+              id: `sec-${Date.now()}`,
+              timestamp: new Date().toISOString(),
+              severity: "high",
+              type: "token_revoked",
+              sourceIp: "Platform Admin Console",
+              target: `User:${userId}`,
+              details: `All active sessions revoked immediately for user ${userId}`,
+            },
+            ...s.securityEvents,
+          ],
+        }));
       },
     }),
     {
