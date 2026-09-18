@@ -51,9 +51,9 @@ export default function DashboardLayout({
       return;
     }
 
-    // 3. Platform admins must NEVER see the client dashboard — redirect to /platform
+    // 3. Platform admins must NEVER see the client dashboard — redirect to /platform/dashboard
     if (isPlatformRole(roleFromStorage)) {
-      router.replace("/platform");
+      router.replace("/platform/dashboard");
       return;
     }
 

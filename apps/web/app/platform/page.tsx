@@ -1,14 +1,6 @@
-"use client";
-
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { redirect } from "next/navigation";
 
 export default function PlatformRootPage() {
-  const router = useRouter();
-
-  useEffect(() => {
-    router.replace("/platform/dashboard");
-  }, [router]);
-
-  return null;
+  redirect("/platform/dashboard");
 }
+

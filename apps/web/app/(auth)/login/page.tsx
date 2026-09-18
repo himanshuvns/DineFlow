@@ -111,9 +111,10 @@ export default function LoginPage() {
         );
         const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
         const fromParam = params?.get("from");
-        // Platform admins must ALWAYS go to /platform — ignore ?from= if it points to a client route
+        // Platform admins must ALWAYS go to /platform/dashboard — ignore ?from= if it points to a client route
+        const platformDest = fromParam && fromParam.startsWith("/platform") ? fromParam : "/platform/dashboard";
         const destination = isPlatform
-          ? "/platform"
+          ? platformDest
           : (fromParam && !fromParam.startsWith("/platform") ? fromParam : "/dashboard");
         setTimeout(() => {
           router.push(destination);
