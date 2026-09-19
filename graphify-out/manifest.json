@@ -660,9 +660,9 @@
     "semantic_hash": "2f77ccf7ab8f88cca4623e9ecf501aca"
   },
   "apps/web/app/page.tsx": {
-    "mtime": 1789824769.4894216,
-    "seen": 1789824808.875794,
-    "ast_hash": "68f3b856a17db95c478909bdbe049662",
+    "mtime": 1789825947.2270505,
+    "seen": 1789825980.0352771,
+    "ast_hash": "4c159922873b2b939f27a3c4f6dd6a65",
     "semantic_hash": ""
   },
   "apps/web/app/pricing/page.tsx": {
@@ -900,10 +900,10 @@
     "semantic_hash": "9d93e8bf709b4f0e485184e64689e5af"
   },
   "apps/web/components/ui/pricing.tsx": {
-    "mtime": 1789293986.6240857,
-    "seen": 1789625093.701024,
-    "ast_hash": "77afdc990c786378e777d53257b2177a",
-    "semantic_hash": "77afdc990c786378e777d53257b2177a"
+    "mtime": 1789825898.3715754,
+    "seen": 1789825980.0353322,
+    "ast_hash": "6d73d86b3fd2591a531812ec6d37cffb",
+    "semantic_hash": ""
   },
   "apps/web/components/ui/qr-code-image.tsx": {
     "mtime": 1789213276.524418,
@@ -1896,9 +1896,9 @@
     "semantic_hash": ""
   },
   "apps/web/components/landing/landing-hero.tsx": {
-    "mtime": 1789824633.0038366,
-    "seen": 1789824808.8758268,
-    "ast_hash": "7e0bb300930d96db9bfbe5a6f275b32d",
+    "mtime": 1789825920.9092424,
+    "seen": 1789825980.035309,
+    "ast_hash": "ed4b56e5da6cda8533deef43e562db0b",
     "semantic_hash": ""
   },
   "apps/web/components/landing/landing-interactive-preview.tsx": {

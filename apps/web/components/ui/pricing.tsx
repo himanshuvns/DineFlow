@@ -57,18 +57,24 @@ export function Pricing({
 
   const handleToggle = (checked: boolean) => {
     setIsMonthly(!checked);
-    if (checked && switchRef.current) {
-      const rect = switchRef.current.getBoundingClientRect();
-      const x = rect.left + rect.width / 2;
-      const y = rect.top + rect.height / 2;
+    if (checked) {
+      let x = 0.5;
+      let y = 0.3;
+      if (switchRef.current) {
+        try {
+          const rect = switchRef.current.getBoundingClientRect();
+          if (rect.width > 0 && rect.height > 0) {
+            x = (rect.left + rect.width / 2) / window.innerWidth;
+            y = (rect.top + rect.height / 2) / window.innerHeight;
+          }
+        } catch {}
+      }
 
       confetti({
-        particleCount: 65,
-        spread: 70,
-        origin: {
-          x: x / window.innerWidth,
-          y: y / window.innerHeight,
-        },
+        particleCount: 80,
+        spread: 80,
+        origin: { x, y },
+        zIndex: 99999,
         colors: [
           "#10B981", // primary emerald
           "#14F1C7", // teal neon
@@ -76,10 +82,10 @@ export function Pricing({
           "#F59E0B", // amber/gold
           "#6366F1", // indigo
         ],
-        ticks: 220,
+        ticks: 240,
         gravity: 1.1,
         decay: 0.94,
-        startVelocity: 32,
+        startVelocity: 35,
         shapes: ["circle"],
       });
     }

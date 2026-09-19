@@ -2,86 +2,68 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowRight, Sparkles, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Sparkles, CheckCircle2, UtensilsCrossed, Hotel, ChefHat } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LandingNavbar } from "@/components/landing/landing-navbar";
 import { LandingHero } from "@/components/landing/landing-hero";
 import { LandingInteractivePreview } from "@/components/landing/landing-interactive-preview";
-import { LandingFeatures } from "@/components/landing/landing-features";
 import { LandingSolutions } from "@/components/landing/landing-solutions";
-import { LandingWorkflow } from "@/components/landing/landing-workflow";
 import { LandingCustomerJourney } from "@/components/landing/landing-customer-journey";
-import { LandingKdsPreview } from "@/components/landing/landing-kds-preview";
-import { LandingWhatsappPreview } from "@/components/landing/landing-whatsapp-preview";
-import { LandingStaffHotel } from "@/components/landing/landing-staff-hotel";
-import { LandingSecurity } from "@/components/landing/landing-security";
 import { LandingPricing } from "@/components/landing/landing-pricing";
 import { LandingFooter } from "@/components/landing/landing-footer";
+import { PeekingChef } from "@/components/ui/peeking-chef";
 
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-[#090D16] dark:text-slate-100 flex flex-col relative overflow-hidden transition-colors duration-200 selection:bg-emerald-500/20 selection:text-emerald-600">
-      {/* Background Ambient Glows */}
-      <div className="absolute -top-48 left-1/2 -translate-x-1/2 w-[900px] h-[550px] bg-gradient-to-b from-emerald-500/15 via-teal-500/10 to-transparent rounded-full blur-3xl pointer-events-none -z-10" />
-      <div className="absolute top-1/4 -right-48 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none -z-10" />
-      <div className="absolute top-2/3 -left-48 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none -z-10" />
+      {/* Background Ambient Glows - Warm Culinary Amber & Fresh Hospitality Emerald */}
+      <div className="absolute -top-48 left-1/2 -translate-x-1/2 w-[900px] h-[550px] bg-gradient-to-b from-emerald-500/15 via-amber-500/10 to-transparent rounded-full blur-3xl pointer-events-none -z-10" />
+      <div className="absolute top-1/3 -right-48 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none -z-10" />
+      <div className="absolute top-2/3 -left-48 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -z-10" />
 
       {/* Modern Sticky Navigation */}
       <LandingNavbar />
 
-      {/* Main Content Sections */}
+      {/* Main Content Flow */}
       <main className="flex-1 flex flex-col items-center w-full">
-        {/* Hero with Value Proposition & Layered Product Visual */}
+        {/* 1. Hero with Interactive AetherFlow Cursor Particles & Layered Hospitality Mockup */}
         <LandingHero />
 
-        {/* Interactive Multi-Surface Dashboard Preview */}
+        {/* 2. Interactive Multi-Surface Dashboard ("Everything you need to run your hospitality business") */}
         <LandingInteractivePreview />
 
-        {/* 18 Real Product Capabilities */}
-        <LandingFeatures />
-
-        {/* Tailored Hospitality Solutions */}
+        {/* 3. Tailored Hospitality Solutions (Fine Dining, Cafés, Hotels, Cloud Kitchens) */}
         <LandingSolutions />
 
-        {/* How DineFlow Works — 8-Step Pipeline */}
-        <LandingWorkflow />
-
-        {/* Customer Experience Journey (Restaurant Table vs. Hotel Suite) */}
+        {/* 4. The Modern Customer Journey (Dine-in Table QR vs. Hotel In-Room Dining) */}
         <LandingCustomerJourney />
 
-        {/* Kitchen Display System (KDS) Live Kanban Preview */}
-        <LandingKdsPreview />
-
-        {/* WhatsApp Automated Communication & Invoicing */}
-        <LandingWhatsappPreview />
-
-        {/* Staff Attendance Geofencing & Hotel Room Management */}
-        <LandingStaffHotel />
-
-        {/* Enterprise Security & Multi-Tenant Architecture */}
-        <LandingSecurity />
-
-        {/* Canonical Pricing Plans */}
+        {/* 5. Transparent Pricing with Animated NumberFlow & Confetti Poppers */}
         <LandingPricing />
 
-        {/* Bottom High-Converting Pre-Footer CTA Banner */}
-        <section className="py-16 sm:py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
-          <div className="relative rounded-3xl overflow-hidden border border-emerald-500/30 bg-gradient-to-tr from-emerald-950/80 via-slate-900 to-teal-950/80 p-8 sm:p-12 lg:p-16 text-center text-white shadow-2xl shadow-emerald-950/40">
+        {/* 6. Pre-Footer Hospitality Conversion Banner with Interactive Peeking Chef */}
+        <section className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full relative">
+          {/* Peeking Chef Mascot with Smooth Cursor-Tracking Physics */}
+          <div className="flex justify-center -mb-8 relative z-20 pointer-events-auto">
+            <PeekingChef />
+          </div>
+
+          <div className="relative rounded-3xl overflow-hidden border border-emerald-500/30 bg-gradient-to-tr from-emerald-950 via-slate-900 to-amber-950/70 p-8 sm:p-12 lg:p-16 text-center text-white shadow-2xl shadow-emerald-950/40">
             {/* Ambient inner glow */}
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-500/20 via-transparent to-transparent pointer-events-none" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-500/15 via-emerald-500/10 to-transparent pointer-events-none" />
 
             <div className="relative z-10 max-w-3xl mx-auto space-y-6">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-semibold shadow-xs">
-                <Sparkles className="h-3.5 w-3.5 text-emerald-400" />
-                <span>Modernize Your Hospitality Operations Today</span>
+                <ChefHat className="h-3.5 w-3.5 text-amber-400" />
+                <span>Crafted for Exceptional Dining & Hotel Hospitality</span>
               </div>
 
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight">
-                Ready to run your restaurant or hotel smarter?
+                Ready to elevate your dining room & hotel service?
               </h2>
 
               <p className="text-sm sm:text-base text-slate-300 max-w-xl mx-auto leading-relaxed">
-                Join modern dining rooms, cafés, and hotel properties streamlining guest orders, kitchen prep, and staff attendance on DineFlow.
+                Join forward-thinking restaurants, boutique cafés, and luxury hotels automating table orders, kitchen tickets, and guest billing with DineFlow.
               </p>
 
               <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">

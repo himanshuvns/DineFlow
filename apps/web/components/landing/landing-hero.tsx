@@ -18,34 +18,64 @@ import {
   Flame,
   MessageSquare,
   Clock,
+  Coffee,
+  Wine,
+  UtensilsCrossed,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import AetherFlowHero from "@/components/ui/aether-flow-hero";
 
 export function LandingHero() {
   return (
-    <section className="relative pt-8 pb-20 sm:pt-12 sm:pb-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full overflow-hidden">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+    <section className="relative pt-8 pb-20 sm:pt-12 sm:pb-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full overflow-hidden min-h-[85vh] flex items-center">
+      {/* Interactive Cursor Dynamic Particle Canvas */}
+      <div className="absolute inset-0 z-0 pointer-events-auto">
+        <AetherFlowHero
+          showOverlayContent={false}
+          className="h-full w-full"
+          particleColor="rgba(16, 185, 129, 0.85)"
+          lineColor="rgba(20, 184, 166, 0.5)"
+        />
+      </div>
+
+      <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center w-full">
         {/* Left Column: Value Proposition & Conversion CTAs */}
         <div className="lg:col-span-6 space-y-6 text-center lg:text-left">
-          {/* Product Badge */}
+          {/* Product Badge with Hospitality vibe */}
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-semibold backdrop-blur-md shadow-xs">
-            <Sparkles className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-            <span>Next-Gen Multi-Tenant Restaurant & Hotel OS</span>
+            <UtensilsCrossed className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span>The Operating System for Modern Dining & Stays</span>
           </div>
 
           {/* Headline */}
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 dark:text-white tracking-tight leading-[1.12]">
-            Run Your Hospitality Business{" "}
-            <span className="bg-gradient-to-r from-emerald-600 via-teal-500 to-cyan-500 dark:from-emerald-400 dark:via-teal-300 dark:to-cyan-400 bg-clip-text text-transparent">
+            Run Your Restaurant & Hotel{" "}
+            <span className="bg-gradient-to-r from-emerald-600 via-teal-500 to-amber-500 dark:from-emerald-400 dark:via-teal-300 dark:to-amber-300 bg-clip-text text-transparent">
               Smarter with DineFlow
             </span>
           </h1>
 
           {/* Supporting Subtitle */}
           <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-normal">
-            One unified operating system for restaurants, cafés, hotels, and cloud kitchens to manage QR digital ordering, real-time Kitchen Displays (KDS), table & in-room dining, staff attendance, WhatsApp billing, and automated analytics.
+            From bustling dining tables to luxury resort suites: Delight guests with app-less QR ordering, empower chefs with live Kitchen Displays (KDS), and automate WhatsApp billing and staff attendance in one unified platform.
           </p>
+
+          {/* Hospitality Vibe Tags */}
+          <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 pt-1">
+            <span className="px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 text-xs font-medium flex items-center gap-1.5">
+              🍕 Fine Dining & Bistros
+            </span>
+            <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-medium flex items-center gap-1.5">
+              ☕ Specialty Cafés
+            </span>
+            <span className="px-2.5 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-700 dark:text-indigo-300 text-xs font-medium flex items-center gap-1.5">
+              🛎️ Hotels & In-Room Dining
+            </span>
+            <span className="px-2.5 py-1 rounded-full bg-teal-500/10 border border-teal-500/20 text-teal-700 dark:text-teal-300 text-xs font-medium flex items-center gap-1.5">
+              🍸 Cocktail Lounges
+            </span>
+          </div>
 
           {/* CTAs */}
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3.5">
@@ -74,7 +104,7 @@ export function LandingHero() {
           </div>
 
           {/* Trust Indicators */}
-          <div className="pt-4 flex flex-wrap items-center justify-center lg:justify-start gap-y-2 gap-x-6 text-xs text-slate-500 dark:text-slate-400 font-medium">
+          <div className="pt-3 flex flex-wrap items-center justify-center lg:justify-start gap-y-2 gap-x-6 text-xs text-slate-500 dark:text-slate-400 font-medium">
             <div className="flex items-center gap-1.5">
               <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
               <span>14-day free trial</span>
@@ -85,7 +115,7 @@ export function LandingHero() {
             </div>
             <div className="flex items-center gap-1.5">
               <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-              <span>5-minute instant setup</span>
+              <span>Instant 5-minute setup</span>
             </div>
           </div>
         </div>
@@ -93,7 +123,7 @@ export function LandingHero() {
         {/* Right Column: Layered Dashboard & Mobile Customer Ordering Visual */}
         <div className="lg:col-span-6 relative w-full flex items-center justify-center">
           {/* Ambient Glows */}
-          <div className="absolute -inset-2 bg-gradient-to-tr from-emerald-500/20 via-teal-500/10 to-indigo-500/20 rounded-3xl blur-2xl pointer-events-none -z-10" />
+          <div className="absolute -inset-2 bg-gradient-to-tr from-emerald-500/20 via-amber-500/10 to-teal-500/20 rounded-3xl blur-2xl pointer-events-none -z-10" />
 
           {/* Main Desktop Dashboard Preview */}
           <div className="w-full max-w-xl rounded-2xl border border-slate-200/80 dark:border-slate-800/90 bg-white/90 dark:bg-[#0B0F19]/90 backdrop-blur-xl shadow-2xl shadow-slate-900/10 dark:shadow-black/60 overflow-hidden">
@@ -105,14 +135,15 @@ export function LandingHero() {
                   <div className="w-2.5 h-2.5 rounded-full bg-amber-400/80" />
                   <div className="w-2.5 h-2.5 rounded-full bg-emerald-400/80" />
                 </div>
-                <span className="font-semibold text-slate-700 dark:text-slate-300 ml-2">
-                  The Grand Mirage Bistro & Hotel
+                <span className="font-semibold text-slate-700 dark:text-slate-300 ml-2 flex items-center gap-1.5">
+                  <Utensils className="h-3.5 w-3.5 text-emerald-500" />
+                  The Grand Mirage Bistro & Resort
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  Live Sync
+                  Kitchen Sync Live
                 </span>
               </div>
             </div>
@@ -123,7 +154,7 @@ export function LandingHero() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/70 border border-slate-200/60 dark:border-slate-800/60">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400">Revenue</span>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400">Today Sales</span>
                     <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
                   </div>
                   <p className="text-base sm:text-lg font-black text-slate-900 dark:text-white mt-1">₹48,250</p>
@@ -132,29 +163,29 @@ export function LandingHero() {
 
                 <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/70 border border-slate-200/60 dark:border-slate-800/60">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400">Tables</span>
-                    <Utensils className="h-3.5 w-3.5 text-teal-500" />
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400">Active Tables</span>
+                    <Utensils className="h-3.5 w-3.5 text-amber-500" />
                   </div>
                   <p className="text-base sm:text-lg font-black text-slate-900 dark:text-white mt-1">14 / 18</p>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400">78% Occupied</span>
+                  <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">78% Seated</span>
                 </div>
 
                 <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/70 border border-slate-200/60 dark:border-slate-800/60">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400">Rooms</span>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400">Suites</span>
                     <Hotel className="h-3.5 w-3.5 text-indigo-500" />
                   </div>
                   <p className="text-base sm:text-lg font-black text-slate-900 dark:text-white mt-1">28 / 32</p>
-                  <span className="text-[10px] text-indigo-500 font-medium">88% Capacity</span>
+                  <span className="text-[10px] text-indigo-500 font-medium">88% Occupied</span>
                 </div>
 
                 <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/70 border border-slate-200/60 dark:border-slate-800/60">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400">Active KDS</span>
-                    <Flame className="h-3.5 w-3.5 text-amber-500" />
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400">Live KDS</span>
+                    <Flame className="h-3.5 w-3.5 text-rose-500" />
                   </div>
                   <p className="text-base sm:text-lg font-black text-slate-900 dark:text-white mt-1">7 Orders</p>
-                  <span className="text-[10px] text-amber-500 font-medium">Avg Prep 8m</span>
+                  <span className="text-[10px] text-rose-500 font-medium">Avg Prep 8m</span>
                 </div>
               </div>
 
@@ -162,10 +193,10 @@ export function LandingHero() {
               <div className="rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800/60 p-3 space-y-2">
                 <div className="flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-300">
                   <span className="flex items-center gap-1.5">
-                    <ChefHat className="h-3.5 w-3.5 text-emerald-500" />
-                    Live Kitchen Queue
+                    <ChefHat className="h-3.5 w-3.5 text-amber-500" />
+                    Kitchen Station Queue
                   </span>
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400">KDS Screen 1</span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400">Expo Screen 1</span>
                 </div>
 
                 {/* Mini Order Cards */}
@@ -174,19 +205,19 @@ export function LandingHero() {
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-bold text-slate-900 dark:text-white">#DF-802 • Table 04</span>
                       <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.2 rounded">
-                        Preparing 4m
+                        Cooking 4m
                       </span>
                     </div>
                     <p className="text-[11px] text-slate-600 dark:text-slate-300 line-clamp-1">
-                      1x Truffle Risotto, 1x Orange Spritz
+                      1x Truffle Risotto, 1x Valencia Spritz
                     </p>
                   </div>
 
                   <div className="p-2.5 rounded-lg bg-white dark:bg-slate-800/80 border border-teal-500/30 shadow-xs space-y-1">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold text-slate-900 dark:text-white">#DF-801 • Room 204</span>
+                      <span className="font-bold text-slate-900 dark:text-white">#DF-801 • Suite 204</span>
                       <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded">
-                        Ready for Delivery
+                        Plated for Room Service
                       </span>
                     </div>
                     <p className="text-[11px] text-slate-600 dark:text-slate-300 line-clamp-1">
@@ -206,18 +237,18 @@ export function LandingHero() {
               <div className="flex items-center justify-between px-1 text-[10px] font-medium text-slate-300">
                 <span className="flex items-center gap-1">
                   <QrCode className="h-3 w-3 text-emerald-400" />
-                  Table 04
+                  Table 04 • QR Menu
                 </span>
-                <span className="text-emerald-400 font-semibold">● Online Menu</span>
+                <span className="text-emerald-400 font-semibold">● Online</span>
               </div>
             </div>
 
             {/* Mobile Menu Preview */}
             <div className="p-3 space-y-2.5 bg-slate-50 dark:bg-slate-950">
               <div className="flex gap-1.5 overflow-hidden text-[9px] font-medium">
-                <span className="px-2 py-0.5 rounded-full bg-emerald-500 text-white">Popular</span>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500 text-white">Chef Special</span>
                 <span className="px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300">Pizzas</span>
-                <span className="px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300">Drinks</span>
+                <span className="px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300">Bar</span>
               </div>
 
               {/* Item Card */}
