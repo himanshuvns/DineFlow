@@ -121,3 +121,23 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+export interface ApiErrorResponse {
+  error?: { message?: string };
+  message?: string;
+}
+
+export function getErrorMessage(err: unknown, fallback: string): string {
+  if (axios.isAxiosError<ApiErrorResponse>(err)) {
+    return (
+      err.response?.data?.error?.message ||
+      err.response?.data?.message ||
+      err.message ||
+      fallback
+    );
+  }
+  if (err instanceof Error) {
+    return err.message || fallback;
+  }
+  return fallback;
+}

@@ -32,7 +32,8 @@ export const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(
     },
     ref
   ) => {
-    const inputId = id || React.useId();
+    const generatedId = React.useId();
+    const inputId = id || generatedId;
 
     return (
       <div className={cn("w-full space-y-1", containerClassName)}>
