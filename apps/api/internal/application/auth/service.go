@@ -607,6 +607,68 @@ func (s *Service) ForgotPassword(ctx context.Context, identifier string) error {
 	return nil
 }
 
+// SendPasswordResetOTP verifies that a user with the given phone number exists,
+// then dispatches an OTP via the configured OTP provider and returns the OTP code.
+func (s *Service) SendPasswordResetOTP(ctx context.Context, phone string) (string, error) {
+	normPhone := otp.NormalizePhone(phone)
+	if normPhone == "" {
+		return "", ErrInvalidPhone
+	}
+
+	usersColl := s.mongo.Collection("users")
+	var u user.User
+	if err := usersColl.FindOne(ctx, bson.M{"phone": normPhone}).Decode(&u); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return "", ErrInvalidCredentials
+		}
+		return "", fmt.Errorf("send-reset-otp: find user: %w", err)
+	}
+
+	return s.otpProvider.SendOTP(ctx, normPhone)
+}
+
+// VerifyResetOTP validates the OTP for the given phone number, verifies that the user exists,
+// and issues a 32-byte cryptographically secure reset token stored in Redis with 15-minute TTL.
+func (s *Service) VerifyResetOTP(ctx context.Context, phone, code string) (string, error) {
+	normPhone := otp.NormalizePhone(phone)
+	if normPhone == "" {
+		return "", ErrInvalidPhone
+	}
+
+	// Verify OTP via Provider
+	valid, err := s.otpProvider.VerifyOTP(ctx, normPhone, code)
+	if err != nil {
+		return "", fmt.Errorf("verify reset otp: %w", err)
+	}
+	if !valid {
+		return "", ErrInvalidOTP
+	}
+
+	// Find user by phone
+	usersColl := s.mongo.Collection("users")
+	var u user.User
+	if err := usersColl.FindOne(ctx, bson.M{"phone": normPhone}).Decode(&u); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return "", ErrInvalidCredentials
+		}
+		return "", fmt.Errorf("verify reset otp: find user: %w", err)
+	}
+
+	// Generate secure token
+	tokenBytes := make([]byte, 32)
+	if _, err := rand.Read(tokenBytes); err != nil {
+		return "", fmt.Errorf("generate secure token: %w", err)
+	}
+	resetToken := hex.EncodeToString(tokenBytes)
+
+	// Store in Redis with 15-minute expiry
+	if err := s.redis.Raw().Set(ctx, "pwd_reset:"+resetToken, u.ID.Hex(), 15*time.Minute).Err(); err != nil {
+		return "", fmt.Errorf("store reset token: %w", err)
+	}
+
+	return resetToken, nil
+}
+
 // ResetPassword validates the reset token, enforces password complexity,
 // updates the user's password hash with bcrypt cost 12, revokes all active sessions,
 // and deletes the one-time reset token.
@@ -659,6 +721,61 @@ func (s *Service) ResetPassword(ctx context.Context, resetToken, newPassword str
 
 	// Revoke all existing sessions for user (logout from all devices)
 	_ = s.redis.RevokeUserSessions(ctx, userIDStr, 7*24*time.Hour)
+
+	return nil
+}
+
+// ResetPasswordWithOTP verifies the OTP directly and updates the user's password,
+// bypassing the intermediate reset token step.
+func (s *Service) ResetPasswordWithOTP(ctx context.Context, phone, code, newPassword string) error {
+	normPhone := otp.NormalizePhone(phone)
+	if normPhone == "" {
+		return ErrInvalidPhone
+	}
+
+	// Verify OTP via Provider
+	valid, err := s.otpProvider.VerifyOTP(ctx, normPhone, code)
+	if err != nil {
+		return fmt.Errorf("verify reset otp: %w", err)
+	}
+	if !valid {
+		return ErrInvalidOTP
+	}
+
+	// Validate complexity
+	if err := ValidatePasswordComplexity(newPassword); err != nil {
+		return err
+	}
+
+	// Hash new password
+	hash, err := bcrypt.GenerateFromPassword([]byte(newPassword), 12)
+	if err != nil {
+		return fmt.Errorf("hash password: %w", err)
+	}
+
+	usersColl := s.mongo.Collection("users")
+	now := time.Now().UTC()
+	update := bson.M{
+		"$set": bson.M{
+			"auth.passwordHash":        string(hash),
+			"auth.passwordChangedAt":   now,
+			"auth.failedLoginAttempts": 0,
+			"auth.lockedUntil":         nil,
+			"updatedAt":                now,
+		},
+	}
+
+	var u user.User
+	err = usersColl.FindOneAndUpdate(ctx, bson.M{"phone": normPhone}, update).Decode(&u)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return ErrInvalidCredentials
+		}
+		return fmt.Errorf("reset password: update user: %w", err)
+	}
+
+	// Revoke all existing sessions for user (logout from all devices)
+	_ = s.redis.RevokeUserSessions(ctx, u.ID.Hex(), 7*24*time.Hour)
 
 	return nil
 }

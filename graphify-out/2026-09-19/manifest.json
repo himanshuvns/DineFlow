@@ -42,9 +42,9 @@
     "semantic_hash": "25057b0cc8664c31bd863ee5b10f194f"
   },
   "apps/api/internal/application/auth/service.go": {
-    "mtime": 1789820115.891842,
-    "seen": 1789820339.535109,
-    "ast_hash": "b506fc87e641bdcc8d6555d0420b1fae",
+    "mtime": 1789720807.311668,
+    "seen": 1789721881.1399229,
+    "ast_hash": "648dc15e12f24d7d07cafd0eb63b6fc4",
     "semantic_hash": ""
   },
   "apps/api/internal/application/menu/service.go": {
@@ -258,9 +258,9 @@
     "semantic_hash": ""
   },
   "apps/api/internal/interfaces/http/handlers/auth_extra.go": {
-    "mtime": 1789820130.2636395,
-    "seen": 1789820339.5351412,
-    "ast_hash": "fc45bbc72d3107e7c48b2115b1b428c9",
+    "mtime": 1789720302.1045969,
+    "seen": 1789721881.139957,
+    "ast_hash": "8d1f16e4f4eacd818a53ecc95c8aaa12",
     "semantic_hash": ""
   },
   "apps/api/internal/interfaces/http/handlers/health.go": {
@@ -348,9 +348,9 @@
     "semantic_hash": ""
   },
   "apps/api/internal/interfaces/http/routes/routes.go": {
-    "mtime": 1789820138.3253317,
-    "seen": 1789820339.5351539,
-    "ast_hash": "0d3213698b8ece80ed61684e4918c3cd",
+    "mtime": 1789720666.3668518,
+    "seen": 1789721881.13997,
+    "ast_hash": "4638cda15389099250ab50777d0e2194",
     "semantic_hash": ""
   },
   "apps/api/package.json": {
@@ -426,10 +426,10 @@
     "semantic_hash": "479dff9f503fbca05f0fa00106717743"
   },
   "apps/web/app/(auth)/forgot-password/page.tsx": {
-    "mtime": 1789820176.5582368,
-    "seen": 1789820339.535163,
-    "ast_hash": "52818a24b44caa12e1c06086a63330fe",
-    "semantic_hash": ""
+    "mtime": 1789190133.4509308,
+    "seen": 1789625093.7009768,
+    "ast_hash": "abce5b2934536aeb17ff7ef657f11971",
+    "semantic_hash": "abce5b2934536aeb17ff7ef657f11971"
   },
   "apps/web/app/(auth)/layout.tsx": {
     "mtime": 1789309665.0259137,
@@ -450,9 +450,9 @@
     "semantic_hash": ""
   },
   "apps/web/app/(auth)/reset-password/page.tsx": {
-    "mtime": 1789820185.3434918,
-    "seen": 1789820339.5351648,
-    "ast_hash": "8c01623b8314e08066b311c7db27d124",
+    "mtime": 1789665132.3933053,
+    "seen": 1789665767.1938078,
+    "ast_hash": "04db60512994bc3b525553511d1bcd6f",
     "semantic_hash": ""
   },
   "apps/web/app/(auth)/verify/page.tsx": {
