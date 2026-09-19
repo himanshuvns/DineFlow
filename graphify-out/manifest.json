@@ -828,10 +828,10 @@
     "semantic_hash": "f242e914421f86763208f39c8d3d2d91"
   },
   "apps/web/components/ui/aether-flow-hero.tsx": {
-    "mtime": 1789191061.7423992,
-    "seen": 1789625093.7010171,
-    "ast_hash": "b4ea7f43989566c600d862e12ebede37",
-    "semantic_hash": "b4ea7f43989566c600d862e12ebede37"
+    "mtime": 1789828970.7495916,
+    "seen": 1789829010.2812412,
+    "ast_hash": "da134e9c178c4b536ff04bc45ca84961",
+    "semantic_hash": ""
   },
   "apps/web/components/ui/avatar.tsx": {
     "mtime": 1789282209.8549132,
@@ -1896,9 +1896,9 @@
     "semantic_hash": ""
   },
   "apps/web/components/landing/landing-hero.tsx": {
-    "mtime": 1789825920.9092424,
-    "seen": 1789825980.035309,
-    "ast_hash": "ed4b56e5da6cda8533deef43e562db0b",
+    "mtime": 1789828949.288164,
+    "seen": 1789829010.281226,
+    "ast_hash": "65c425705694ffcc70cc5c62da6dc28c",
     "semantic_hash": ""
   },
   "apps/web/components/landing/landing-interactive-preview.tsx": {

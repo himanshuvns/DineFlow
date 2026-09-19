@@ -152,12 +152,19 @@ const AetherFlowHero = ({
     const resizeCanvas = () => {
       if (!canvas) return;
       const rect = canvas.parentElement?.getBoundingClientRect();
-      canvas.width = rect?.width || window.innerWidth;
-      canvas.height = rect?.height || window.innerHeight;
+      canvas.width = rect && rect.width > 0 ? Math.floor(rect.width) : window.innerWidth;
+      canvas.height = rect && rect.height > 0 ? Math.floor(rect.height) : window.innerHeight;
       init();
     };
 
     window.addEventListener("resize", resizeCanvas);
+    let resizeObserver: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined" && canvas.parentElement) {
+      resizeObserver = new ResizeObserver(() => {
+        resizeCanvas();
+      });
+      resizeObserver.observe(canvas.parentElement);
+    }
     resizeCanvas();
 
     const connect = () => {
@@ -276,6 +283,7 @@ const AetherFlowHero = ({
     animate();
 
     return () => {
+      if (resizeObserver) resizeObserver.disconnect();
       window.removeEventListener("resize", resizeCanvas);
       window.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseleave", handleMouseLeave);
@@ -306,7 +314,7 @@ const AetherFlowHero = ({
       {/* Interactive Responsive Canvas */}
       <canvas
         ref={canvasRef}
-        className={cn("absolute inset-0 w-full h-full pointer-events-auto", canvasClassName)}
+        className={cn("absolute inset-0 w-full h-full pointer-events-none", canvasClassName)}
       />
 
       {/* Overlay Ambient Glows */}

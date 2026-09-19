@@ -1,7 +1,7 @@
 # Graph Report - DineFlow  (2026-09-19)
 
 ## Corpus Check
-- 289 files · ~361,567 words
+- 289 files · ~361,617 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 8 file(s) not represented in the graph (top: (none) 3, .example 2, .toml 1)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `57bba9be`
+- Built from commit: `79699963`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -562,7 +562,7 @@ _Questions this graph is uniquely positioned to answer:_
 - **Why does `Service` connect `whatsapp/whatsapp.go` to `main`, `github.com/gin-gonic/gin.Context`, `go_pkg_time`, `go.mongodb.org/mongo-driver/v2/bson.ObjectID`, `security-audit/main.go`, `MSG91Provider`, `Hub`?**
   _High betweenness centrality (0.013) - this node is a cross-community bridge._
 - **Why does `WhatsAppHandler` connect `github.com/gin-gonic/gin.Context` to `whatsapp/whatsapp.go`, `Setup`, `security-audit/main.go`?**
-  _High betweenness centrality (0.012) - this node is a cross-community bridge._
+  _High betweenness centrality (0.013) - this node is a cross-community bridge._
 - **What connects `TestResult`, `github.com/dineflow/api`, `geminiRequest` to the rest of the system?**
   _695 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `OK` be split into smaller, more focused modules?**

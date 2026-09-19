@@ -28,9 +28,9 @@ import AetherFlowHero from "@/components/ui/aether-flow-hero";
 
 export function LandingHero() {
   return (
-    <section className="relative pt-8 pb-20 sm:pt-12 sm:pb-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full overflow-hidden min-h-[85vh] flex items-center">
-      {/* Interactive Cursor Dynamic Particle Canvas */}
-      <div className="absolute inset-0 z-0 pointer-events-auto">
+    <section className="relative w-full overflow-hidden min-h-[85vh] sm:min-h-[90vh] flex items-center justify-center">
+      {/* Interactive Cursor Dynamic Particle Canvas - Full Hero Section Coverage */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
         <AetherFlowHero
           showOverlayContent={false}
           className="h-full w-full"
@@ -39,7 +39,8 @@ export function LandingHero() {
         />
       </div>
 
-      <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center w-full">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full pt-8 pb-20 sm:pt-12 sm:pb-28">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center w-full">
         {/* Left Column: Value Proposition & Conversion CTAs */}
         <div className="lg:col-span-6 space-y-6 text-center lg:text-left">
           {/* Product Badge with Hospitality vibe */}
@@ -285,6 +286,7 @@ export function LandingHero() {
             <span>📲 Instant WhatsApp Receipt</span>
           </div>
         </div>
+      </div>
       </div>
     </section>
   );
