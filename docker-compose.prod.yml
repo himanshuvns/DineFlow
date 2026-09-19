@@ -19,7 +19,7 @@ services:
       JWT_ACCESS_TTL_MINUTES: ${JWT_ACCESS_TTL_MINUTES:-15}
       JWT_REFRESH_TTL_DAYS: ${JWT_REFRESH_TTL_DAYS:-7}
       SUPER_ADMIN_SECRET: ${SUPER_ADMIN_SECRET}
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-https://dine.rovixatech.com,http://localhost:3000}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-https://dine.rovixatech.com,http://127.0.0.1:3000}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       EMAIL_FROM: ${EMAIL_FROM:-noreply@dine.rovixatech.com}
       EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-DineFlow}
@@ -28,7 +28,7 @@ services:
       - mongo
       - redis
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8080/health"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -59,7 +59,7 @@ services:
     depends_on:
       - api
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3000"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000"]
       interval: 10s
       timeout: 5s
       retries: 3
