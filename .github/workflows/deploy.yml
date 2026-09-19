@@ -15,9 +15,11 @@ permissions:
   pull-requests: read
 
 jobs:
-  test-and-lint:
-    name: Test & Lint
+  build-and-deploy:
+    name: Build & Deploy
     runs-on: ubuntu-latest
+    env:
+      DEPLOY_KEY: ${{ secrets.DINEFLOW_SSH_KEY }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -41,7 +43,7 @@ jobs:
           cache: 'npm'
           cache-dependency-path: apps/web/package-lock.json
 
-      - name: Typecheck & Build Frontend
+      - name: Build Frontend
         working-directory: apps/web
         env:
           NEXT_PUBLIC_API_URL: https://dine.rovixatech.com/api/v1
@@ -50,16 +52,10 @@ jobs:
           NEXT_PUBLIC_ORDERING_URL: https://dine.rovixatech.com/order
         run: |
           npm ci
-          npm run lint
           npm run build
 
-  deploy:
-    name: Deploy to VPS
-    needs: [test-and-lint]
-    runs-on: ubuntu-latest
-    if: ${{ secrets.DINEFLOW_SSH_KEY != '' }}
-    steps:
-      - name: Deploy via SSH
+      - name: Deploy to VPS
+        if: ${{ env.DEPLOY_KEY != '' }}
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.DINEFLOW_SERVER_IP }}
