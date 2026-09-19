@@ -12,10 +12,14 @@ import { LandingCustomerJourney } from "@/components/landing/landing-customer-jo
 import { LandingPricing } from "@/components/landing/landing-pricing";
 import { LandingFooter } from "@/components/landing/landing-footer";
 import { PeekingChef } from "@/components/ui/peeking-chef";
+import { SpotlightCursor } from "@/components/ui/spotlight-cursor";
 
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-[#090D16] dark:text-slate-100 flex flex-col relative overflow-hidden transition-colors duration-200 selection:bg-emerald-500/20 selection:text-emerald-600">
+      {/* Interactive DineFlow Brand Spotlight Cursor throughout the home page */}
+      <SpotlightCursor />
+
       {/* Background Ambient Glows - Warm Culinary Amber & Fresh Hospitality Emerald */}
       <div className="absolute -top-48 left-1/2 -translate-x-1/2 w-[900px] h-[550px] bg-gradient-to-b from-emerald-500/15 via-amber-500/10 to-transparent rounded-full blur-3xl pointer-events-none -z-10" />
       <div className="absolute top-1/3 -right-48 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none -z-10" />

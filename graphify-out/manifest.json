@@ -660,9 +660,9 @@
     "semantic_hash": "2f77ccf7ab8f88cca4623e9ecf501aca"
   },
   "apps/web/app/page.tsx": {
-    "mtime": 1789825947.2270505,
-    "seen": 1789825980.0352771,
-    "ast_hash": "4c159922873b2b939f27a3c4f6dd6a65",
+    "mtime": 1789829363.5551853,
+    "seen": 1789829398.391967,
+    "ast_hash": "d481acb5d9b7d4d30956534c34aa9eb8",
     "semantic_hash": ""
   },
   "apps/web/app/pricing/page.tsx": {
@@ -1953,6 +1953,18 @@
     "mtime": 1789824685.2694016,
     "seen": 1789824808.875832,
     "ast_hash": "4584d346a9794017090e82a0cf5357ff",
+    "semantic_hash": ""
+  },
+  "apps/web/components/ui/spotlight-cursor-demo.tsx": {
+    "mtime": 1789829328.0202312,
+    "seen": 1789829398.3920262,
+    "ast_hash": "8664cdf9bc66a127aa3457fdc94af46f",
+    "semantic_hash": ""
+  },
+  "apps/web/components/ui/spotlight-cursor.tsx": {
+    "mtime": 1789829354.425776,
+    "seen": 1789829398.392027,
+    "ast_hash": "ee07b947ad29f0d637554a0fd4ebdf99",
     "semantic_hash": ""
   }
 }
