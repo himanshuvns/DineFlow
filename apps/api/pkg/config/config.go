@@ -111,8 +111,8 @@ func Load() (*Config, error) {
 	// ── JWT ───────────────────────────────────────────────────────────────────
 	cfg.JWT.AccessSecret = requireEnv("JWT_ACCESS_SECRET")
 	cfg.JWT.RefreshSecret = requireEnv("JWT_REFRESH_SECRET")
-	accessTTL := getEnvInt("JWT_ACCESS_TTL_MINUTES", 15)
-	refreshTTL := getEnvInt("JWT_REFRESH_TTL_DAYS", 7)
+	accessTTL := getEnvInt("JWT_ACCESS_TTL_MINUTES", 1440) // 24 hours (prevents session dropouts)
+	refreshTTL := getEnvInt("JWT_REFRESH_TTL_DAYS", 30)    // 30 days
 	cfg.JWT.AccessTTL = time.Duration(accessTTL) * time.Minute
 	cfg.JWT.RefreshTTL = time.Duration(refreshTTL) * 24 * time.Hour
 

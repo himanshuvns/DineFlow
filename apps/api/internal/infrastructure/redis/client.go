@@ -184,7 +184,7 @@ func (c *Client) IsUserSessionRevoked(ctx context.Context, userID string, tokenI
 	if parseErr != nil {
 		return false
 	}
-	return tokenIssuedAt.Unix() <= revokedAtUnix
+	return tokenIssuedAt.Unix() < revokedAtUnix
 }
 
 // ─── IP Blocklist ─────────────────────────────────────────────────────────────

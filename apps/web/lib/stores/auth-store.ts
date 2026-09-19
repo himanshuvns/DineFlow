@@ -31,13 +31,21 @@ interface AuthState {
   user: User | null;
   tenant: Tenant | null;
   accessToken: string | null;
+  refreshToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   isImpersonating?: boolean;
   impersonatedTenant?: Tenant | null;
   originalUser?: User | null;
   originalTenant?: Tenant | null;
-  setAuth: (user: any, tenant: any, token: string, isFirstLogin?: boolean) => void;
+  setAuth: (
+    user: any,
+    tenant: any,
+    token: string,
+    refreshTokenOrFirstLogin?: string | boolean,
+    isFirstLogin?: boolean
+  ) => void;
+  setTokens: (accessToken: string, refreshToken?: string) => void;
   setAccessToken: (token: string) => void;
   clearAuth: () => void;
   updateTenant: (tenant: Partial<Tenant>) => void;
@@ -52,6 +60,7 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       tenant: null,
       accessToken: null,
+      refreshToken: null,
       isAuthenticated: false,
       isLoading: false,
       isImpersonating: false,
@@ -59,7 +68,27 @@ export const useAuthStore = create<AuthState>()(
       originalUser: null,
       originalTenant: null,
 
-      setAuth: (rawUser: any, rawTenant: any, accessToken: string, isFirstLogin?: boolean) => {
+      setAuth: (
+        rawUser: any,
+        rawTenant: any,
+        accessToken: string,
+        refreshTokenOrFirstLogin?: string | boolean,
+        isFirstLogin?: boolean
+      ) => {
+        let refreshToken: string | null = null;
+        let finalIsFirstLogin: boolean | undefined = undefined;
+
+        if (typeof refreshTokenOrFirstLogin === "string") {
+          refreshToken = refreshTokenOrFirstLogin;
+          finalIsFirstLogin = isFirstLogin;
+        } else if (typeof refreshTokenOrFirstLogin === "boolean") {
+          finalIsFirstLogin = refreshTokenOrFirstLogin;
+        }
+
+        if (!refreshToken && rawUser?.refreshToken) {
+          refreshToken = rawUser.refreshToken;
+        }
+
         const rawName = (rawUser.name || "").trim();
         const nameParts = rawName.split(" ");
         const firstName = rawUser.firstName || nameParts[0] || "User";
@@ -75,8 +104,8 @@ export const useAuthStore = create<AuthState>()(
           lastName,
           role: rawUser.role || "owner",
           isFirstLogin:
-            typeof isFirstLogin === "boolean"
-              ? isFirstLogin
+            typeof finalIsFirstLogin === "boolean"
+              ? finalIsFirstLogin
               : typeof rawUser.isFirstLogin === "boolean"
               ? rawUser.isFirstLogin
               : undefined,
@@ -99,18 +128,26 @@ export const useAuthStore = create<AuthState>()(
             }
           : null!;
 
-        set({
+        set((state) => ({
           user,
           tenant,
           accessToken,
+          refreshToken: refreshToken || state.refreshToken,
           isAuthenticated: true,
           isLoading: false,
           isImpersonating: false,
           impersonatedTenant: null,
           originalUser: null,
           originalTenant: null,
-        });
+        }));
       },
+
+      setTokens: (accessToken, refreshToken) =>
+        set((state) => ({
+          accessToken,
+          refreshToken: refreshToken || state.refreshToken,
+          isAuthenticated: !!accessToken,
+        })),
 
       setAccessToken: (accessToken) =>
         set({
@@ -123,6 +160,7 @@ export const useAuthStore = create<AuthState>()(
           user: null,
           tenant: null,
           accessToken: null,
+          refreshToken: null,
           isAuthenticated: false,
           isLoading: false,
           isImpersonating: false,

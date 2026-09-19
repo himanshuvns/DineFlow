@@ -24,7 +24,16 @@ export const apiClient = axios.create({
 // Request interceptor attaches Bearer token if present
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = useAuthStore.getState().accessToken;
+    let token = useAuthStore.getState().accessToken;
+    if (!token && typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("dineflow_auth");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          token = parsed?.state?.accessToken || null;
+        }
+      } catch {}
+    }
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -83,34 +92,63 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
       isRefreshing = true;
 
+      // Extract refresh token & user from Zustand store or persisted localStorage
+      let refreshToken = useAuthStore.getState().refreshToken;
+      let user = useAuthStore.getState().user;
+      if ((!refreshToken || !user) && typeof window !== "undefined") {
+        try {
+          const stored = localStorage.getItem("dineflow_auth");
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            if (!refreshToken) refreshToken = parsed?.state?.refreshToken || null;
+            if (!user) user = parsed?.state?.user || null;
+          }
+        } catch {}
+      }
+
+      const isDemoUser = Boolean(
+        user?.phone === "+919876543210" ||
+        user?.email === "admin@thegrandbistro.com" ||
+        user?.email === "superadmin@dineflow.io" ||
+        useAuthStore.getState().tenant?.slug === "the-grand-bistro"
+      );
+
       try {
         const { data } = await axios.post(
           `${baseURL}/auth/refresh`,
-          {},
+          refreshToken ? { refreshToken } : {},
           { withCredentials: true }
         );
 
         const newAccessToken = data?.data?.accessToken;
+        const newRefreshToken = data?.data?.refreshToken;
         if (newAccessToken) {
-          useAuthStore.getState().setAccessToken(newAccessToken);
+          useAuthStore.getState().setTokens(newAccessToken, newRefreshToken);
           if (originalRequest.headers) {
             originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
           }
           processQueue(null, newAccessToken);
           return apiClient(originalRequest);
         } else {
-          useAuthStore.getState().clearAuth();
           processQueue(error, null);
-          if (typeof window !== "undefined" && window.location.pathname.startsWith("/dashboard")) {
-            window.location.href = `/login?from=${encodeURIComponent(window.location.pathname)}&expired=true`;
-          }
           return Promise.reject(error);
         }
-      } catch (refreshErr) {
-        useAuthStore.getState().clearAuth();
+      } catch (refreshErr: any) {
         processQueue(refreshErr as AxiosError, null);
-        if (typeof window !== "undefined" && window.location.pathname.startsWith("/dashboard")) {
-          window.location.href = `/login?from=${encodeURIComponent(window.location.pathname)}&expired=true`;
+        const status = refreshErr?.response?.status;
+        const isDefiniteAuthFailure = status === 401 || status === 403;
+
+        // ONLY clear auth and redirect if the backend explicitly rejected the refresh token as 401 or 403
+        // Transient network errors, 5xx server errors, or offline status should NEVER kick the user out!
+        if (isDefiniteAuthFailure && !isDemoUser) {
+          useAuthStore.getState().clearAuth();
+          if (
+            typeof window !== "undefined" &&
+            (window.location.pathname.startsWith("/dashboard") ||
+             window.location.pathname.startsWith("/platform"))
+          ) {
+            window.location.href = `/login?from=${encodeURIComponent(window.location.pathname)}&expired=true`;
+          }
         }
         return Promise.reject(refreshErr);
       } finally {

@@ -89,7 +89,7 @@ export default function LoginPage() {
       });
 
       if (res.data?.success) {
-        const { user, tenant, accessToken, isFirstLogin } = res.data.data;
+        const { user, tenant, accessToken, refreshToken, isFirstLogin } = res.data.data;
         const storageKey = user?.id ? `dineflow_has_logged_in_${user.id}` : "dineflow_has_logged_in";
         const hasLoggedInBefore = typeof window !== "undefined" ? localStorage.getItem(storageKey) : null;
         const isFirst = isFirstLogin === true || user?.isFirstLogin === true || !hasLoggedInBefore;
@@ -100,7 +100,7 @@ export default function LoginPage() {
           user?.email === "superadmin@dineflow.io";
         setIsPlatformAdminUser(isPlatform);
         setIsFirstLoginUser(isFirst);
-        setAuth(user, tenant, accessToken, isFirst);
+        setAuth(user, tenant, accessToken, refreshToken, isFirst);
         const name = user.name || user.firstName || (isPlatform ? "Platform Super Admin" : "Chef");
         setWelcomeName(name);
         setIsRedirecting(true);

@@ -259,17 +259,19 @@ func (h *AuthHandler) Me(c *gin.Context) {
 // ─── Cookie Helpers ───────────────────────────────────────────────────────────
 
 func setRefreshTokenCookie(c *gin.Context, refreshToken string) {
+	c.SetSameSite(http.SameSiteNoneMode)
 	c.SetCookie(
 		"refresh_token",
 		refreshToken,
-		7*24*60*60, // 7 days in seconds
-		"/api/v1/auth/refresh",
-		"",   // domain — empty = current domain
-		true, // secure (HTTPS only in production)
-		true, // HttpOnly
+		30*24*60*60, // 30 days in seconds
+		"/",         // root path so cookie is accessible
+		"",          // domain — empty = current domain
+		true,        // secure (HTTPS only in production)
+		true,        // HttpOnly
 	)
 }
 
 func clearRefreshTokenCookie(c *gin.Context) {
-	c.SetCookie("refresh_token", "", -1, "/api/v1/auth/refresh", "", true, true)
+	c.SetSameSite(http.SameSiteNoneMode)
+	c.SetCookie("refresh_token", "", -1, "/", "", true, true)
 }
