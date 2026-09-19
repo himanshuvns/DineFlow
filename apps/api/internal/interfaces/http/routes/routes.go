@@ -52,6 +52,7 @@ func Setup(
 		publicGroup := v1.Group("/public", publicRateLimit)
 		{
 			publicGroup.GET("/m/:slug", menuHandler.GetPublicMenu)
+			publicGroup.GET("/tables/:tenantSlug/:tableId", tableHandler.GetPublicTable)
 			publicGroup.POST("/orders", orderHandler.CreateCustomerOrder)
 			publicGroup.GET("/orders/:orderId", orderHandler.GetCustomerOrder)
 			publicGroup.GET("/rooms/:tenantSlug/:roomNumber", roomHandler.GetPublicRoom)

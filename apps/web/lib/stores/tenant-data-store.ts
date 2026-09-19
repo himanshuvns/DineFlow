@@ -29,6 +29,8 @@ export interface TableItem {
   zone: string;
   status: "occupied" | "available" | "reserved";
   orderId?: string;
+  qrCode?: string;
+  qrSlug?: string;
 }
 
 export interface KdsOrderItem {
@@ -340,6 +342,7 @@ interface TenantDataState {
   addTable: (table: Omit<TableItem, "id">) => Promise<TableItem>;
   updateTableStatus: (id: string, status: TableItem["status"]) => Promise<void>;
   deleteTable: (id: string) => Promise<void>;
+  fetchTables: () => Promise<void>;
   addOrder: (order: Partial<KdsOrder>) => Promise<KdsOrder>;
   updateOrderStatus: (id: string, status: KdsOrder["status"], note?: string) => Promise<void>;
   refreshOrders: () => Promise<void>;
@@ -1284,7 +1287,42 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
 
     persistTenantState(state.tenantId, { tables: updatedTables });
 
+    try {
+      if (typeof window !== "undefined") {
+        const ch = new BroadcastChannel("dineflow_table_sync");
+        ch.postMessage({
+          type: "TABLE_STATUS_UPDATED",
+          tableId: id,
+          status,
+          tenantSlug: state.tenantSlug,
+          timestamp: Date.now(),
+        });
+        ch.close();
+      }
+    } catch {}
+
     set({ tables: updatedTables });
+  },
+
+  fetchTables: async () => {
+    if (!useAuthStore.getState().accessToken) return;
+    try {
+      const res = await apiClient.get("/tables");
+      if (res.data?.data && Array.isArray(res.data.data)) {
+        const remoteTables: TableItem[] = res.data.data.map((t: any) => ({
+          id: t.id || t._id,
+          name: t.name || `Table ${t.number}`,
+          seats: t.capacity || t.seats || 4,
+          zone: t.zone || t.section || "Main Dining",
+          status: t.status || "available",
+        }));
+        const state = get();
+        persistTenantState(state.tenantId, { tables: remoteTables });
+        set({ tables: remoteTables });
+      }
+    } catch (e) {
+      console.warn("Failed to fetch tables:", e);
+    }
   },
 
   deleteTable: async (id) => {
@@ -1350,7 +1388,40 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
 
     const updatedOrders = [newOrder, ...state.orders];
 
-    persistTenantState(state.tenantId, { orders: updatedOrders });
+    // Automatically transition ordered table to occupied
+    const targetTableClean = (orderData.table || "").toLowerCase().trim();
+    const updatedTables = state.tables.map((tbl) => {
+      const tName = tbl.name.toLowerCase().trim();
+      const tId = tbl.id.toLowerCase().trim();
+      if (
+        tId === targetTableClean ||
+        tName === targetTableClean ||
+        (targetTableClean.replace(/\D/g, "") !== "" &&
+          tName === `table ${targetTableClean.replace(/\D/g, "")}`) ||
+        (targetTableClean.replace(/\D/g, "") !== "" &&
+          tId === `t-${targetTableClean.replace(/\D/g, "")}`)
+      ) {
+        return { ...tbl, status: "occupied" as const, orderId };
+      }
+      return tbl;
+    });
+
+    try {
+      if (typeof window !== "undefined") {
+        const ch = new BroadcastChannel("dineflow_table_sync");
+        ch.postMessage({
+          type: "TABLE_STATUS_UPDATED",
+          tableId: orderData.table,
+          status: "occupied",
+          orderId,
+          tenantSlug: state.tenantSlug,
+          timestamp: Date.now(),
+        });
+        ch.close();
+      }
+    } catch {}
+
+    persistTenantState(state.tenantId, { orders: updatedOrders, tables: updatedTables });
 
     // Ensure notification center is updated in real-time
     const isRoom = orderData.destination === "room_service" || (orderData.table || "").toLowerCase().includes("suite") || (orderData.table || "").toLowerCase().includes("room");
@@ -1363,7 +1434,7 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
       metadata: { orderId, table: orderData.table, total: orderData.total },
     }).catch(() => {});
 
-    set({ orders: updatedOrders });
+    set({ orders: updatedOrders, tables: updatedTables });
     return newOrder;
   },
 

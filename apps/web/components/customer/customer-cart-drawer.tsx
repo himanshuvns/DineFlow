@@ -15,11 +15,13 @@ import {
   User,
   MessageSquare,
   MessageCircle,
+  Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/utils";
 import { useCartStore } from "@/lib/stores/cart-store";
+import { useTenantDataStore } from "@/lib/stores/tenant-data-store";
 import { useToast } from "@/components/ui/toast";
 import { validateIndianPhone, formatIndianPhoneInput } from "@/lib/validation";
 
@@ -31,6 +33,7 @@ interface CustomerCartDrawerProps {
   destination?: "dine_in" | "room_service" | "takeaway";
   guestName?: string;
   guestPhone?: string;
+  isTableReserved?: boolean;
 }
 
 export function CustomerCartDrawer({
@@ -41,6 +44,7 @@ export function CustomerCartDrawer({
   destination,
   guestName,
   guestPhone,
+  isTableReserved = false,
 }: CustomerCartDrawerProps) {
   const router = useRouter();
   const { addToast } = useToast();
@@ -81,6 +85,15 @@ export function CustomerCartDrawer({
       e.stopPropagation();
     }
     if (items.length === 0 || isSubmitting) return;
+
+    if (isTableReserved) {
+      addToast(
+        "error",
+        "Table Reserved",
+        `${tableName} is currently reserved and cannot accept new orders. Please alert the host or steward.`
+      );
+      return;
+    }
 
     const isRoomService =
       destination === "room_service" ||
@@ -195,6 +208,33 @@ export function CustomerCartDrawer({
         throw new Error("Failed to obtain order reference from kitchen");
       }
 
+      // 3. Multi-channel table status synchronization: broadcast TABLE_STATUS_UPDATED -> "occupied"
+      try {
+        if (typeof window !== "undefined") {
+          const syncChannel = new BroadcastChannel("dineflow_table_sync");
+          syncChannel.postMessage({
+            type: "TABLE_STATUS_UPDATED",
+            tableId: tableSlug,
+            status: "occupied",
+            tenantSlug,
+            timestamp: Date.now(),
+          });
+          syncChannel.close();
+        }
+      } catch {}
+
+      try {
+        const tenantStore = useTenantDataStore.getState();
+        const currentTable = tenantStore.tables.find(
+          (t) =>
+            t.id.toLowerCase() === tableSlug.toLowerCase() ||
+            t.name.toLowerCase() === tableName.toLowerCase()
+        );
+        if (currentTable) {
+          tenantStore.updateTableStatus(currentTable.id, "occupied");
+        }
+      } catch {}
+
       // Clear cart
       clearCart();
       setIsOpen(false);
@@ -224,6 +264,14 @@ export function CustomerCartDrawer({
 
   const handleOrderViaWhatsApp = () => {
     if (items.length === 0) return;
+    if (isTableReserved) {
+      addToast(
+        "warning",
+        "Table Reserved",
+        `${tableName} is currently reserved. Please alert a steward or host.`
+      );
+      return;
+    }
     const itemList = items
       .map(
         (i) =>
@@ -255,7 +303,7 @@ export function CustomerCartDrawer({
   return (
     <>
       {/* Sticky Bottom Bar */}
-      {itemCount > 0 && !isOpen && (
+      {itemCount > 0 && !isOpen && !isTableReserved && (
         <div className="fixed bottom-4 inset-x-0 z-40 px-3 xs:px-4 max-w-lg mx-auto pb-safe">
           <button
             onClick={() => setIsOpen(true)}
@@ -315,6 +363,14 @@ export function CustomerCartDrawer({
                 <X className="h-4 w-4" />
               </button>
             </div>
+
+            {/* Reserved Table Notice */}
+            {isTableReserved && (
+              <div className="mx-4 mt-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 flex items-center gap-2.5 text-xs font-semibold">
+                <Lock className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                <span>This table is marked as reserved. Ordering is disabled. Please contact your host.</span>
+              </div>
+            )}
 
             {/* Scrollable Content */}
             <div className="p-5 overflow-y-auto space-y-5 flex-1">
@@ -467,11 +523,18 @@ export function CustomerCartDrawer({
               <Button
                 type="submit"
                 form="order-form"
-                variant="glow"
-                disabled={items.length === 0 || isSubmitting}
-                className="w-full h-12 text-sm font-bold flex items-center justify-center gap-2"
+                variant={isTableReserved ? "outline" : "glow"}
+                disabled={items.length === 0 || isSubmitting || isTableReserved}
+                className={`w-full h-12 text-sm font-bold flex items-center justify-center gap-2 ${
+                  isTableReserved ? "opacity-75 cursor-not-allowed bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200" : ""
+                }`}
               >
-                {isSubmitting ? (
+                {isTableReserved ? (
+                  <>
+                    <Lock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                    <span>Table Reserved — Cannot Place Order</span>
+                  </>
+                ) : isSubmitting ? (
                   <span>Transmitting to Kitchen...</span>
                 ) : (
                   <>
@@ -484,11 +547,11 @@ export function CustomerCartDrawer({
               <button
                 type="button"
                 onClick={handleOrderViaWhatsApp}
-                disabled={items.length === 0}
-                className="w-full h-11 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 transition-all cursor-pointer active:scale-[0.99]"
+                disabled={items.length === 0 || isTableReserved}
+                className="w-full h-11 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 transition-all cursor-pointer active:scale-[0.99]"
               >
                 <MessageCircle className="h-4 w-4" />
-                <span>Or Order Directly via WhatsApp</span>
+                <span>{isTableReserved ? "Table Reserved (Orders Disabled)" : "Or Order Directly via WhatsApp"}</span>
               </button>
             </div>
           </div>

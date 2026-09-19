@@ -118,25 +118,50 @@ func (s *Service) CreateCustomerOrder(ctx context.Context, input CreateOrderInpu
 	tableName := "Dine-in"
 	if targetTableSlug != "" {
 		tableColl := s.db.Collection("tables")
-		var tbl domaintable.Table
+		cleanLower := strings.ToLower(targetTableSlug)
+		orFilters := []bson.M{
+			{"qrSlug": targetTableSlug},
+			{"qrSlug": cleanLower},
+			{"name": bson.M{"$regex": "^" + regexp.QuoteMeta(targetTableSlug) + "$", "$options": "i"}},
+		}
+		if tblOID, oErr := bson.ObjectIDFromHex(targetTableSlug); oErr == nil {
+			orFilters = append(orFilters, bson.M{"_id": tblOID})
+		}
+
+		// Numeric extraction for flexible matching ("t-01", "table-1", "t4" -> "1", "4")
+		reDigits := regexp.MustCompile(`\d+`)
+		digitMatch := reDigits.FindString(targetTableSlug)
+		if digitMatch != "" {
+			numNoZero := strings.TrimLeft(digitMatch, "0")
+			if numNoZero == "" {
+				numNoZero = "0"
+			}
+			orFilters = append(orFilters,
+				bson.M{"name": bson.M{"$regex": "(?i)^(Table|Room|Suite|Barista Counter|T|C)[ -]*0*" + numNoZero + "$", "$options": "i"}},
+				bson.M{"qrSlug": bson.M{"$regex": "(?i)(t|table|room)-0*" + numNoZero + "$", "$options": "i"}},
+				bson.M{"qrSlug": bson.M{"$regex": "(?i)-t0*" + numNoZero + "$", "$options": "i"}},
+			)
+		}
 
 		filter := bson.M{
 			"tenantId": t.ID,
-			"$or": []bson.M{
-				{"qrSlug": targetTableSlug},
-				{"qrSlug": strings.ToLower(targetTableSlug)},
-				{"name": bson.M{"$regex": "^" + regexp.QuoteMeta(targetTableSlug) + "$", "$options": "i"}},
-			},
-		}
-		if tblOID, oErr := bson.ObjectIDFromHex(targetTableSlug); oErr == nil {
-			filter["$or"] = append(filter["$or"].([]bson.M), bson.M{"_id": tblOID})
+			"$or":      orFilters,
 		}
 
+		var tbl domaintable.Table
 		if err := tableColl.FindOne(ctx, filter).Decode(&tbl); err == nil {
+			// CRITICAL CHECK: If table is marked as Reserved, block ordering!
+			if tbl.Status == domaintable.StatusReserved {
+				return nil, fmt.Errorf("table '%s' is currently reserved and cannot accept new orders. Please speak with the host or steward", tbl.Name)
+			}
 			tableID = &tbl.ID
 			tableName = tbl.Name
 		} else {
-			tableName = targetTableSlug
+			cleanName := targetTableSlug
+			if strings.HasPrefix(cleanLower, "t-") {
+				cleanName = "Table " + strings.TrimPrefix(cleanLower, "t-")
+			}
+			tableName = cleanName
 		}
 	}
 
@@ -354,6 +379,25 @@ func (s *Service) CreateCustomerOrder(ctx context.Context, input CreateOrderInpu
 				"updatedAt":     now,
 			}},
 		)
+	} else if targetTableSlug != "" && orderDest == domainorder.DestinationDineIn {
+		tableColl := s.db.Collection("tables")
+		newTbl := domaintable.Table{
+			ID:            bson.NewObjectID(),
+			TenantID:      t.ID,
+			Name:          tableName,
+			Type:          domaintable.TypeTable,
+			Seats:         4,
+			Zone:          "Main Dining",
+			QRSlug:        strings.ToLower(targetTableSlug),
+			Status:        domaintable.StatusOccupied,
+			ActiveOrderID: &ord.ID,
+			CreatedAt:     now,
+			UpdatedAt:     now,
+		}
+		if _, insErr := tableColl.InsertOne(ctx, newTbl); insErr == nil {
+			tableID = &newTbl.ID
+			_, _ = s.db.Collection("orders").UpdateOne(ctx, bson.M{"_id": ord.ID}, bson.M{"$set": bson.M{"tableId": tableID}})
+		}
 	}
 	if roomNum != "" {
 		roomsColl := s.db.Collection("rooms")

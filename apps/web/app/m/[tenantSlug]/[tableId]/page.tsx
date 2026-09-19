@@ -14,6 +14,8 @@ import {
   Plus,
   MessageCircle,
   X,
+  Lock,
+  Users,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,6 +31,24 @@ import { useCartStore } from "@/lib/stores/cart-store";
 import { useTenantDataStore } from "@/lib/stores/tenant-data-store";
 import { isCategoryMatch } from "@/lib/utils/category-utils";
 
+function matchesTable(candidateIdOrName: string, targetTableId: string): boolean {
+  if (!candidateIdOrName || !targetTableId) return false;
+  const c = candidateIdOrName.trim().toLowerCase();
+  const t = targetTableId.trim().toLowerCase();
+  if (c === t) return true;
+
+  const cleanC = c.replace(/^(table|t|room|suite)[ -]*/i, "");
+  const cleanT = t.replace(/^(table|t|room|suite)[ -]*/i, "");
+  if (cleanC === cleanT) return true;
+
+  const numC = cleanC.match(/\d+/)?.[0];
+  const numT = cleanT.match(/\d+/)?.[0];
+  if (numC && numT && parseInt(numC, 10) === parseInt(numT, 10)) {
+    return true;
+  }
+  return false;
+}
+
 export default function CustomerMenuPage() {
   const params = useParams();
   const searchParams = useSearchParams();
@@ -38,11 +58,23 @@ export default function CustomerMenuPage() {
   const tenantSlug = (params?.tenantSlug as string) || "the-grand-bistro";
   const tableId = (params?.tableId as string) || "t-04";
 
-  const { menuItems, categories, tenantName: storeTenantName, tenantSlug: storeTenantSlug, isDemoTenant } = useTenantDataStore();
+  const {
+    menuItems,
+    categories,
+    tenantName: storeTenantName,
+    tenantSlug: storeTenantSlug,
+    isDemoTenant,
+    tables: storeTables,
+  } = useTenantDataStore();
 
   const [remoteMenuData, setRemoteMenuData] = React.useState<{ category: string; items: CustomizerDish[] }[] | null>(null);
   const [remoteTenant, setRemoteTenant] = React.useState<{ name?: string; slug?: string } | null>(null);
   const [isLiveSyncing, setIsLiveSyncing] = React.useState(false);
+  const [tableInfo, setTableInfo] = React.useState<{
+    id?: string;
+    name?: string;
+    status?: string;
+  } | null>(null);
 
   const fetchPublicMenu = React.useCallback(async (rawSlug: string) => {
     if (!rawSlug) return;
@@ -208,6 +240,141 @@ export default function CustomerMenuPage() {
     };
   }, [tenantSlug, fetchPublicMenu]);
 
+  const fetchTableStatus = React.useCallback(
+    async (rawSlug: string, rawTableId: string) => {
+      if (!rawSlug || !rawTableId) return;
+      const slug =
+        rawSlug.toLowerCase() === "dineflow" || rawSlug.toLowerCase() === "restaurant"
+          ? "the-grand-bistro"
+          : rawSlug;
+
+      // 1. Check local tenant store first if matching current restaurant
+      const isSameTenant =
+        storeTenantSlug?.toLowerCase() === slug.toLowerCase() ||
+        (slug.toLowerCase() === "the-grand-bistro" && isDemoTenant) ||
+        (slug.toLowerCase() === "dineflow" && isDemoTenant) ||
+        (slug.toLowerCase() === "restaurant" && isDemoTenant);
+
+      if (isSameTenant && storeTables && storeTables.length > 0) {
+        const matched = storeTables.find(
+          (tbl) =>
+            matchesTable(tbl.id, rawTableId) ||
+            matchesTable(tbl.name, rawTableId) ||
+            (tbl.qrCode && tbl.qrCode.toLowerCase().includes(rawTableId.toLowerCase()))
+        );
+        if (matched) {
+          setTableInfo({
+            id: matched.id,
+            name: matched.name,
+            status: matched.status,
+          });
+        }
+      }
+
+      // 2. Fetch fresh status from Next.js proxy route or direct Go backend
+      try {
+        let json: any = null;
+        try {
+          const res = await fetch(
+            `/api/menu/table?slug=${encodeURIComponent(slug)}&table=${encodeURIComponent(rawTableId)}&_t=${Date.now()}`,
+            { cache: "no-store" }
+          );
+          if (res.ok) {
+            json = await res.json();
+          }
+        } catch {}
+
+        if (!json || !json.data) {
+          const apiBase =
+            process.env.NEXT_PUBLIC_API_URL ||
+            (typeof window !== "undefined" &&
+            window.location.hostname !== "localhost" &&
+            window.location.hostname !== "127.0.0.1"
+              ? "https://api-production-f170.up.railway.app/api/v1"
+              : "http://localhost:8080/api/v1");
+
+          const directRes = await fetch(
+            `${apiBase}/public/tables/${encodeURIComponent(slug)}/${encodeURIComponent(rawTableId)}?_t=${Date.now()}`,
+            { cache: "no-store" }
+          );
+          if (directRes.ok) {
+            json = await directRes.json();
+          }
+        }
+
+        if (json?.data?.table) {
+          const t = json.data.table;
+          setTableInfo({
+            id: t.id || t._id,
+            name: t.name,
+            status: t.status || "available",
+          });
+        }
+      } catch (e) {
+        console.warn("[CustomerMenu] Live fetch table status error:", e);
+      }
+    },
+    [storeTenantSlug, isDemoTenant, storeTables]
+  );
+
+  // Multi-channel real-time table status synchronization
+  React.useEffect(() => {
+    fetchTableStatus(tenantSlug, tableId);
+
+    let channel: BroadcastChannel | null = null;
+    try {
+      channel = new BroadcastChannel("dineflow_table_sync");
+      channel.onmessage = (event) => {
+        if (event.data?.type === "TABLE_STATUS_UPDATED") {
+          const { tableId: updatedId, status, tenantSlug: updatedTenantSlug } = event.data;
+          const isMatchingSlug =
+            !updatedTenantSlug ||
+            updatedTenantSlug.toLowerCase() === tenantSlug.toLowerCase() ||
+            ((tenantSlug.toLowerCase() === "the-grand-bistro" || tenantSlug.toLowerCase() === "dineflow") &&
+              (updatedTenantSlug.toLowerCase() === "the-grand-bistro" || updatedTenantSlug.toLowerCase() === "dineflow"));
+
+          if (isMatchingSlug) {
+            if (
+              matchesTable(updatedId, tableId) ||
+              (tableInfo?.id && matchesTable(updatedId, tableInfo.id))
+            ) {
+              setTableInfo((prev) => ({
+                id: prev?.id || updatedId,
+                name: prev?.name,
+                status,
+              }));
+            }
+          }
+        }
+      };
+    } catch {}
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key?.startsWith("dineflow_data_v2_")) {
+        fetchTableStatus(tenantSlug, tableId);
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        fetchTableStatus(tenantSlug, tableId);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    const interval = setInterval(() => {
+      fetchTableStatus(tenantSlug, tableId);
+    }, 10000);
+
+    return () => {
+      channel?.close();
+      window.removeEventListener("storage", handleStorage);
+      document.removeEventListener("visibilitychange", handleVisibility);
+      clearInterval(interval);
+    };
+  }, [tenantSlug, tableId, fetchTableStatus, tableInfo?.id]);
+
   const dynamicMenuData = React.useMemo(() => {
     // 1. Highest priority: Live remote menu from database
     if (remoteMenuData && remoteMenuData.length > 0) {
@@ -308,13 +475,19 @@ export default function CustomerMenuPage() {
           .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
           .join(" "));
 
+  // Table status and reservation locking
+  const tableStatus = (tableInfo?.status || "available").toLowerCase();
+  const isTableReserved = tableStatus === "reserved";
+
   // Table display name
-  const tableName =
+  const fallbackTableName =
     tableId.toUpperCase().startsWith("T-")
       ? `Table ${tableId.slice(2)}`
       : tableId.toUpperCase().startsWith("R-")
       ? `Room ${tableId.slice(2)}`
       : `Table ${tableId}`;
+
+  const tableName = tableInfo?.name || fallbackTableName;
 
   // Initialize context in cart store
   React.useEffect(() => {
@@ -439,17 +612,42 @@ export default function CustomerMenuPage() {
 
               {/* Table Pill */}
               <div className="flex flex-col items-end shrink-0 ml-2">
-                <Badge variant="glow" size="sm" className="font-mono font-bold text-xs">
-                  {tableName}
-                </Badge>
-                <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-medium">Direct to KDS</span>
+                <div className="flex items-center gap-1.5">
+                  {isTableReserved ? (
+                    <Badge variant="outline" className="bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30 font-bold text-xs flex items-center gap-1">
+                      <Lock className="h-3 w-3" />
+                      {tableName} • Reserved
+                    </Badge>
+                  ) : tableStatus === "occupied" ? (
+                    <Badge variant="outline" className="bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30 font-bold text-xs flex items-center gap-1">
+                      <Users className="h-3 w-3" />
+                      {tableName} • Occupied
+                    </Badge>
+                  ) : (
+                    <Badge variant="glow" size="sm" className="font-mono font-bold text-xs">
+                      {tableName}
+                    </Badge>
+                  )}
+                </div>
+                <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-medium">
+                  {isTableReserved ? "Ordering Disabled" : "Direct to KDS"}
+                </span>
               </div>
             </div>
 
             <div className="mt-3 pt-3 border-t border-slate-200/80 dark:border-slate-800/80 flex items-center justify-between text-xs">
               <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
-                <span className="h-2 w-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse" />
-                <span className="font-medium text-slate-600 dark:text-slate-300">Live Kitchen Active</span>
+                {isTableReserved ? (
+                  <>
+                    <span className="h-2 w-2 rounded-full bg-amber-500 inline-block animate-pulse" />
+                    <span className="font-semibold text-amber-700 dark:text-amber-400">Table Reserved</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="h-2 w-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse" />
+                    <span className="font-medium text-slate-600 dark:text-slate-300">Live Kitchen Active</span>
+                  </>
+                )}
               </div>
               <button
                 onClick={handleOpenWhatsApp}
@@ -523,6 +721,54 @@ export default function CustomerMenuPage() {
         </div>
       </div>
 
+      {/* Reserved Table Warning Banner */}
+      {isTableReserved && (
+        <div className="max-w-xl mx-auto px-4 mt-4">
+          <div className="p-4 sm:p-5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-300 dark:border-amber-800/80 shadow-md flex flex-col gap-3">
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 rounded-xl bg-amber-500/20 dark:bg-amber-500/30 border border-amber-500/40 flex items-center justify-center text-amber-700 dark:text-amber-400 shrink-0 mt-0.5">
+                <Lock className="h-5 w-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-base font-black text-amber-900 dark:text-amber-200">
+                    {tableName} is Reserved
+                  </h2>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide bg-amber-200/80 dark:bg-amber-900/60 text-amber-900 dark:text-amber-300 border border-amber-400/50">
+                    Orders Locked
+                  </span>
+                </div>
+                <p className="text-xs text-amber-800 dark:text-amber-300/90 mt-1 leading-relaxed">
+                  This table is currently reserved by restaurant management and cannot accept digital QR orders at this time. Please speak with the host or alert a steward if you are seated here.
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-amber-200/80 dark:border-amber-800/60 flex items-center justify-between flex-wrap gap-2">
+              <span className="text-[11px] font-medium text-amber-800 dark:text-amber-400">
+                Need steward assistance?
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleCallWaiter}
+                  className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+                >
+                  <BellRing className="h-3.5 w-3.5" />
+                  <span>Call Steward</span>
+                </button>
+                <button
+                  onClick={handleOpenWhatsApp}
+                  className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+                >
+                  <MessageCircle className="h-3.5 w-3.5" />
+                  <span>Contact Host</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Menu Feed */}
       <div className="max-w-xl mx-auto px-4 mt-6 space-y-8">
         {filteredCategories.length === 0 ? (
@@ -572,8 +818,22 @@ export default function CustomerMenuPage() {
                 {cat.items.map((dish) => (
                   <div
                     key={dish.id}
-                    onClick={() => setCustomizingDish(dish)}
-                    className="p-3 sm:p-3.5 rounded-2xl bg-white dark:bg-slate-900/70 border border-slate-200/80 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700/80 transition-all flex gap-3 sm:gap-3.5 cursor-pointer group shadow-sm hover:shadow-md dark:shadow-none"
+                    onClick={() => {
+                      if (isTableReserved) {
+                        addToast(
+                          "warning",
+                          "Table Reserved",
+                          `${tableName} is currently reserved and cannot accept new orders. Please alert a steward.`
+                        );
+                        return;
+                      }
+                      setCustomizingDish(dish);
+                    }}
+                    className={`p-3 sm:p-3.5 rounded-2xl bg-white dark:bg-slate-900/70 border border-slate-200/80 dark:border-slate-800/80 transition-all flex gap-3 sm:gap-3.5 shadow-sm ${
+                      isTableReserved
+                        ? "opacity-85 cursor-not-allowed"
+                        : "hover:border-slate-300 dark:hover:border-slate-700/80 hover:shadow-md dark:shadow-none cursor-pointer group"
+                    }`}
                   >
                     {/* Left: Info */}
                     <div className="flex-1 min-w-0 flex flex-col justify-between">
@@ -592,7 +852,11 @@ export default function CustomerMenuPage() {
                               }`}
                             />
                           </span>
-                          <h3 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors truncate">
+                          <h3 className={`text-sm font-bold truncate transition-colors ${
+                            isTableReserved
+                              ? "text-slate-700 dark:text-slate-300"
+                              : "text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400"
+                          }`}>
                             {dish.name}
                           </h3>
                         </div>
@@ -607,18 +871,30 @@ export default function CustomerMenuPage() {
                           {formatCurrency(dish.basePrice, "INR")}
                         </span>
 
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          className="h-8 px-3 text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30 dark:hover:bg-emerald-500/20 shrink-0"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setCustomizingDish(dish);
-                          }}
-                        >
-                          <Plus className="h-3.5 w-3.5 mr-1" />
-                          <span>Add</span>
-                        </Button>
+                        {isTableReserved ? (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            disabled
+                            className="h-8 px-3 text-xs font-bold bg-amber-50 text-amber-800 border border-amber-300 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-700/50 shrink-0 cursor-not-allowed opacity-80"
+                          >
+                            <Lock className="h-3.5 w-3.5 mr-1" />
+                            <span>Reserved</span>
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="h-8 px-3 text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30 dark:hover:bg-emerald-500/20 shrink-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setCustomizingDish(dish);
+                            }}
+                          >
+                            <Plus className="h-3.5 w-3.5 mr-1" />
+                            <span>Add</span>
+                          </Button>
+                        )}
                       </div>
                     </div>
 
@@ -650,11 +926,40 @@ export default function CustomerMenuPage() {
         onClose={() => setCustomizingDish(null)}
       />
 
+      {/* Sticky Table Reserved Floating Banner */}
+      {isTableReserved && (
+        <div className="fixed bottom-4 inset-x-0 z-40 px-3 xs:px-4 max-w-lg mx-auto pb-safe">
+          <div className="w-full h-14 bg-amber-600/95 dark:bg-amber-900/95 backdrop-blur text-white font-bold px-4 rounded-2xl shadow-xl border border-amber-400/40 flex items-center justify-between">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="h-8 w-8 rounded-xl bg-amber-700/60 dark:bg-amber-800/60 flex items-center justify-center shrink-0">
+                <Lock className="h-4 w-4 text-amber-200" />
+              </div>
+              <div className="text-left min-w-0">
+                <span className="block text-[11px] uppercase tracking-wider text-amber-200 font-extrabold">
+                  {tableName} is Reserved
+                </span>
+                <span className="text-xs font-semibold text-white truncate block">
+                  Ordering is disabled for this table
+                </span>
+              </div>
+            </div>
+
+            <button
+              onClick={handleCallWaiter}
+              className="px-3 py-1.5 rounded-xl bg-white text-amber-950 hover:bg-amber-50 text-xs font-bold shrink-0 transition-colors shadow-sm cursor-pointer"
+            >
+              Call Steward
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Customer Sticky Cart / Checkout Drawer */}
       <CustomerCartDrawer
         tenantSlug={tenantSlug}
         tableSlug={tableId}
         tableName={tableName}
+        isTableReserved={isTableReserved}
       />
     </div>
   );

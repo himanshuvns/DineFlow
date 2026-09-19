@@ -226,3 +226,25 @@ func (h *TableHandler) Delete(c *gin.Context) {
 
 	response.OK(c, gin.H{"deleted": true})
 }
+
+// GetPublicTable returns public table info for QR scanning.
+func (h *TableHandler) GetPublicTable(c *gin.Context) {
+	tenantSlug := c.Param("tenantSlug")
+	tableId := c.Param("tableId")
+	if tenantSlug == "" || tableId == "" {
+		response.BadRequest(c, "INVALID_PARAMS", "tenantSlug and tableId are required")
+		return
+	}
+
+	tbl, restaurantName, err := h.tableService.GetPublicTable(c.Request.Context(), tenantSlug, tableId)
+	if err != nil {
+		response.NotFound(c, "Table")
+		return
+	}
+
+	response.OK(c, gin.H{
+		"table":          tbl,
+		"restaurantName": restaurantName,
+	})
+}
+

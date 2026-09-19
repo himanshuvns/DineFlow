@@ -42,6 +42,7 @@ export default function TablesManagementPage() {
     updateTableStatus,
     deleteTable,
     applyStarterTemplate,
+    fetchTables,
   } = useTenantData();
 
   const [viewMode, setViewMode] = useViewMode("tables", "grid");
@@ -53,6 +54,38 @@ export default function TablesManagementPage() {
   // QR Mode: "web" for Digital Menu, "whatsapp" for Direct WhatsApp ordering
   const [qrTarget, setQrTarget] = React.useState<"web" | "whatsapp">("web");
   const [baseUrl, setBaseUrl] = React.useState("https://dineflow-steel.vercel.app");
+
+  // Real-time table status synchronization (BroadcastChannel, storage event, background polling)
+  React.useEffect(() => {
+    fetchTables?.();
+
+    let channel: BroadcastChannel | null = null;
+    try {
+      channel = new BroadcastChannel("dineflow_table_sync");
+      channel.onmessage = (event) => {
+        if (event.data?.type === "TABLE_STATUS_UPDATED") {
+          fetchTables?.();
+        }
+      };
+    } catch {}
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key?.startsWith("dineflow_data_v2_")) {
+        fetchTables?.();
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+
+    const interval = setInterval(() => {
+      fetchTables?.();
+    }, 8000);
+
+    return () => {
+      channel?.close();
+      window.removeEventListener("storage", handleStorage);
+      clearInterval(interval);
+    };
+  }, [fetchTables]);
 
   React.useEffect(() => {
     if (typeof window !== "undefined") {
