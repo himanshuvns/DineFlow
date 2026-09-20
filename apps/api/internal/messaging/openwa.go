@@ -22,10 +22,11 @@ type OpenWAConfig struct {
 
 // OpenWAProvider implements both WhatsAppProvider and SessionManager for the OpenWA container.
 type OpenWAProvider struct {
-	cfg        OpenWAConfig
-	httpClient *http.Client
-	mu         sync.RWMutex
-	lastStatus *SessionStatus
+	cfg            OpenWAConfig
+	httpClient     *http.Client
+	mu             sync.RWMutex
+	lastStatus     *SessionStatus
+	sessionUUIDMap map[string]string
 }
 
 // NewOpenWAProvider creates a new OpenWA provider instance.
@@ -49,6 +50,7 @@ func NewOpenWAProvider(cfg OpenWAConfig) *OpenWAProvider {
 		httpClient: &http.Client{
 			Timeout: 15 * time.Second,
 		},
+		sessionUUIDMap: make(map[string]string),
 		lastStatus: &SessionStatus{
 			SessionID: sessionID,
 			Status:    "disconnected",
@@ -56,6 +58,85 @@ func NewOpenWAProvider(cfg OpenWAConfig) *OpenWAProvider {
 			UpdatedAt: time.Now().UTC(),
 		},
 	}
+}
+
+// resolveSessionUUID resolves a human-readable session name into OpenWA's internal UUID.
+func (p *OpenWAProvider) resolveSessionUUID(ctx context.Context, sessionIDOrName string) (string, error) {
+	if sessionIDOrName == "" {
+		sessionIDOrName = p.cfg.SessionID
+	}
+	// Check if already a UUID
+	if len(sessionIDOrName) == 36 && strings.Count(sessionIDOrName, "-") == 4 {
+		return sessionIDOrName, nil
+	}
+
+	p.mu.RLock()
+	cached, ok := p.sessionUUIDMap[sessionIDOrName]
+	p.mu.RUnlock()
+	if ok && cached != "" {
+		return cached, nil
+	}
+
+	// 1. Check existing sessions
+	listURL := fmt.Sprintf("%s/api/sessions", p.cfg.BaseURL)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, listURL, nil)
+	if err == nil {
+		if p.cfg.APIKey != "" {
+			req.Header.Set("X-API-Key", p.cfg.APIKey)
+		}
+		if resp, err := p.httpClient.Do(req); err == nil {
+			defer resp.Body.Close()
+			if resp.StatusCode == http.StatusOK {
+				var sessions []struct {
+					ID   string `json:"id"`
+					Name string `json:"name"`
+				}
+				if json.NewDecoder(resp.Body).Decode(&sessions) == nil {
+					for _, s := range sessions {
+						if strings.EqualFold(s.Name, sessionIDOrName) || s.ID == sessionIDOrName {
+							p.mu.Lock()
+							p.sessionUUIDMap[sessionIDOrName] = s.ID
+							p.mu.Unlock()
+							return s.ID, nil
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// 2. Not found, create new session
+	createPayload := map[string]interface{}{
+		"name":   sessionIDOrName,
+		"engine": "whatsapp-web.js",
+	}
+	bodyBytes, _ := json.Marshal(createPayload)
+	req, err = http.NewRequestWithContext(ctx, http.MethodPost, listURL, bytes.NewBuffer(bodyBytes))
+	if err != nil {
+		return sessionIDOrName, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	if p.cfg.APIKey != "" {
+		req.Header.Set("X-API-Key", p.cfg.APIKey)
+	}
+
+	resp, err := p.httpClient.Do(req)
+	if err != nil {
+		return sessionIDOrName, err
+	}
+	defer resp.Body.Close()
+
+	var created struct {
+		ID string `json:"id"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&created); err == nil && created.ID != "" {
+		p.mu.Lock()
+		p.sessionUUIDMap[sessionIDOrName] = created.ID
+		p.mu.Unlock()
+		return created.ID, nil
+	}
+
+	return sessionIDOrName, nil
 }
 
 func (p *OpenWAProvider) Name() string {
@@ -66,8 +147,13 @@ func (p *OpenWAProvider) Name() string {
 
 // SendText dispatches a plain text WhatsApp message via OpenWA.
 func (p *OpenWAProvider) SendText(ctx context.Context, to string, text string) (string, error) {
+	sessionUUID, err := p.resolveSessionUUID(ctx, p.cfg.SessionID)
+	if err != nil {
+		return "", fmt.Errorf("openwa session resolve error: %w", err)
+	}
+
 	chatId := FormatChatID(to)
-	url := fmt.Sprintf("%s/api/sessions/%s/messages/send-text", p.cfg.BaseURL, p.cfg.SessionID)
+	url := fmt.Sprintf("%s/api/sessions/%s/messages/send-text", p.cfg.BaseURL, sessionUUID)
 
 	payload := map[string]interface{}{
 		"chatId":  chatId,
@@ -123,8 +209,13 @@ func (p *OpenWAProvider) SendText(ctx context.Context, to string, text string) (
 
 // SendImage sends an image with optional caption via OpenWA.
 func (p *OpenWAProvider) SendImage(ctx context.Context, to string, imageURL string, caption string) (string, error) {
+	sessionUUID, err := p.resolveSessionUUID(ctx, p.cfg.SessionID)
+	if err != nil {
+		return "", fmt.Errorf("openwa session resolve error: %w", err)
+	}
+
 	chatId := FormatChatID(to)
-	url := fmt.Sprintf("%s/api/sessions/%s/messages/send-image", p.cfg.BaseURL, p.cfg.SessionID)
+	url := fmt.Sprintf("%s/api/sessions/%s/messages/send-image", p.cfg.BaseURL, sessionUUID)
 
 	payload := map[string]interface{}{
 		"chatId":  chatId,
@@ -163,8 +254,13 @@ func (p *OpenWAProvider) SendImage(ctx context.Context, to string, imageURL stri
 
 // SendDocument sends a PDF or invoice document via OpenWA.
 func (p *OpenWAProvider) SendDocument(ctx context.Context, to string, docURL string, filename string, caption string) (string, error) {
+	sessionUUID, err := p.resolveSessionUUID(ctx, p.cfg.SessionID)
+	if err != nil {
+		return "", fmt.Errorf("openwa session resolve error: %w", err)
+	}
+
 	chatId := FormatChatID(to)
-	url := fmt.Sprintf("%s/api/sessions/%s/messages/send-file", p.cfg.BaseURL, p.cfg.SessionID)
+	url := fmt.Sprintf("%s/api/sessions/%s/messages/send-document", p.cfg.BaseURL, sessionUUID)
 
 	payload := map[string]interface{}{
 		"chatId":   chatId,
@@ -209,8 +305,12 @@ func (p *OpenWAProvider) StartSession(ctx context.Context, sessionID string) err
 	if sessionID == "" {
 		sessionID = p.cfg.SessionID
 	}
+	sessionUUID, err := p.resolveSessionUUID(ctx, sessionID)
+	if err != nil {
+		return fmt.Errorf("openwa resolve session error: %w", err)
+	}
 
-	url := fmt.Sprintf("%s/api/sessions/%s/start", p.cfg.BaseURL, sessionID)
+	url := fmt.Sprintf("%s/api/sessions/%s/start", p.cfg.BaseURL, sessionUUID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, nil)
 	if err != nil {
 		return err
@@ -221,14 +321,12 @@ func (p *OpenWAProvider) StartSession(ctx context.Context, sessionID string) err
 
 	resp, err := p.httpClient.Do(req)
 	if err != nil {
-		// If direct start fails because session does not exist yet, attempt creation
-		return p.createSession(ctx, sessionID)
+		return fmt.Errorf("openwa start session error: %w", err)
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode == http.StatusNotFound {
-		return p.createSession(ctx, sessionID)
-	}
+	// Register webhook for this session if not already registered
+	p.ensureSessionWebhook(ctx, sessionUUID)
 
 	p.mu.Lock()
 	p.lastStatus = &SessionStatus{
@@ -242,30 +340,27 @@ func (p *OpenWAProvider) StartSession(ctx context.Context, sessionID string) err
 	return nil
 }
 
-func (p *OpenWAProvider) createSession(ctx context.Context, sessionID string) error {
-	url := fmt.Sprintf("%s/api/sessions", p.cfg.BaseURL)
+func (p *OpenWAProvider) ensureSessionWebhook(ctx context.Context, sessionUUID string) {
+	webhookURL := "http://host.docker.internal:8080/api/v1/whatsapp/webhook"
 	payload := map[string]interface{}{
-		"name":   sessionID,
-		"engine": "whatsapp-web.js",
+		"url":    webhookURL,
+		"events": []string{"*"},
+		"secret": p.cfg.WebhookSecret,
 	}
 	bodyBytes, _ := json.Marshal(payload)
-
+	url := fmt.Sprintf("%s/api/sessions/%s/webhooks", p.cfg.BaseURL, sessionUUID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(bodyBytes))
 	if err != nil {
-		return err
+		return
 	}
 	req.Header.Set("Content-Type", "application/json")
 	if p.cfg.APIKey != "" {
 		req.Header.Set("X-API-Key", p.cfg.APIKey)
 	}
-
 	resp, err := p.httpClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("openwa session create error: %w", err)
+	if err == nil {
+		defer resp.Body.Close()
 	}
-	defer resp.Body.Close()
-
-	return nil
 }
 
 // GetQRCode fetches the live base64 QR code or ASCII string to link WhatsApp on phone.
@@ -273,8 +368,12 @@ func (p *OpenWAProvider) GetQRCode(ctx context.Context, sessionID string) (strin
 	if sessionID == "" {
 		sessionID = p.cfg.SessionID
 	}
+	sessionUUID, err := p.resolveSessionUUID(ctx, sessionID)
+	if err != nil {
+		return "", "error", err
+	}
 
-	url := fmt.Sprintf("%s/api/sessions/%s/qr", p.cfg.BaseURL, sessionID)
+	url := fmt.Sprintf("%s/api/sessions/%s/qr", p.cfg.BaseURL, sessionUUID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return "", "error", err
@@ -299,10 +398,12 @@ func (p *OpenWAProvider) GetQRCode(ctx context.Context, sessionID string) (strin
 	}
 
 	var parsed struct {
+		QRCode string `json:"qrCode"`
 		QR     string `json:"qr"`
 		Code   string `json:"code"`
 		Status string `json:"status"`
 		Data   struct {
+			QRCode string `json:"qrCode"`
 			QR     string `json:"qr"`
 			Code   string `json:"code"`
 			Status string `json:"status"`
@@ -310,9 +411,15 @@ func (p *OpenWAProvider) GetQRCode(ctx context.Context, sessionID string) (strin
 	}
 	_ = json.Unmarshal(respBytes, &parsed)
 
-	qr := parsed.QR
+	qr := parsed.QRCode
+	if qr == "" {
+		qr = parsed.QR
+	}
 	if qr == "" {
 		qr = parsed.Code
+	}
+	if qr == "" {
+		qr = parsed.Data.QRCode
 	}
 	if qr == "" {
 		qr = parsed.Data.QR
@@ -325,7 +432,7 @@ func (p *OpenWAProvider) GetQRCode(ctx context.Context, sessionID string) (strin
 	if status == "" {
 		status = parsed.Data.Status
 	}
-	if status == "" {
+	if status == "" || status == "qr_ready" {
 		if qr != "" {
 			status = "qr"
 		} else {
@@ -341,8 +448,19 @@ func (p *OpenWAProvider) GetSessionStatus(ctx context.Context, sessionID string)
 	if sessionID == "" {
 		sessionID = p.cfg.SessionID
 	}
+	sessionUUID, err := p.resolveSessionUUID(ctx, sessionID)
+	if err != nil {
+		return &SessionStatus{
+			SessionID:    sessionID,
+			Status:       "disconnected",
+			Engine:       "whatsapp-web.js",
+			UpdatedAt:    time.Now().UTC(),
+			ErrorMessage: err.Error(),
+		}, nil
+	}
 
-	url := fmt.Sprintf("%s/api/sessions/%s/status", p.cfg.BaseURL, sessionID)
+	// In OpenWA, session state route is GET /api/sessions/{uuid}
+	url := fmt.Sprintf("%s/api/sessions/%s", p.cfg.BaseURL, sessionUUID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
@@ -366,12 +484,15 @@ func (p *OpenWAProvider) GetSessionStatus(ctx context.Context, sessionID string)
 	respBytes, _ := io.ReadAll(resp.Body)
 
 	var parsed struct {
-		Status string `json:"status"`
-		Data   struct {
-			Status string `json:"status"`
-			Phone  string `json:"phone"`
+		Status      string      `json:"status"`
+		Phone       interface{} `json:"phone"`
+		PushName    string      `json:"pushName"`
+		ConnectedAt string      `json:"connectedAt"`
+		LastError   interface{} `json:"lastError"`
+		Data        struct {
+			Status string      `json:"status"`
+			Phone  interface{} `json:"phone"`
 		} `json:"data"`
-		Phone string `json:"phone"`
 	}
 	_ = json.Unmarshal(respBytes, &parsed)
 
@@ -386,26 +507,28 @@ func (p *OpenWAProvider) GetSessionStatus(ctx context.Context, sessionID string)
 		status = "connected"
 	case "qr", "qr_ready", "scan_qr":
 		status = "qr"
-	case "starting", "initializing", "authenticating":
+	case "starting", "initializing", "authenticating", "created":
 		status = "starting"
 	case "reconnecting":
 		status = "reconnecting"
 	default:
-		if resp.StatusCode == http.StatusOK {
-			status = "connected"
+		if resp.StatusCode == http.StatusOK && rawStatus != "disconnected" && rawStatus != "stopped" && rawStatus != "" {
+			status = rawStatus
 		}
 	}
 
-	phone := parsed.Phone
-	if phone == "" {
-		phone = parsed.Data.Phone
+	phoneStr := ""
+	if parsed.Phone != nil {
+		phoneStr = fmt.Sprintf("%v", parsed.Phone)
+	} else if parsed.Data.Phone != nil {
+		phoneStr = fmt.Sprintf("%v", parsed.Data.Phone)
 	}
 
 	res := &SessionStatus{
 		SessionID:   sessionID,
 		Status:      status,
 		Engine:      "whatsapp-web.js",
-		PhoneNumber: phone,
+		PhoneNumber: phoneStr,
 		UpdatedAt:   time.Now().UTC(),
 	}
 	if status == "connected" {
@@ -424,8 +547,12 @@ func (p *OpenWAProvider) StopSession(ctx context.Context, sessionID string) erro
 	if sessionID == "" {
 		sessionID = p.cfg.SessionID
 	}
+	sessionUUID, err := p.resolveSessionUUID(ctx, sessionID)
+	if err != nil {
+		return err
+	}
 
-	url := fmt.Sprintf("%s/api/sessions/%s/stop", p.cfg.BaseURL, sessionID)
+	url := fmt.Sprintf("%s/api/sessions/%s/stop", p.cfg.BaseURL, sessionUUID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, nil)
 	if err != nil {
 		return err
