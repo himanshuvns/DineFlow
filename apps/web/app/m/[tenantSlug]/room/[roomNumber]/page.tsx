@@ -311,9 +311,24 @@ export default function RoomServiceMenuPage() {
     loadMenu();
   }, [tenantSlug]);
 
-  // Fetch DND Status
+  // Fetch and sync DND Status
   React.useEffect(() => {
     let isMounted = true;
+    let channel: BroadcastChannel | null = null;
+
+    // 1. Initial cached state for instant render
+    try {
+      if (typeof window !== "undefined") {
+        const cached =
+          localStorage.getItem(`dineflow_dnd_${tenantSlug}_${cleanRoomNum}`) ||
+          localStorage.getItem(`dineflow_dnd_${cleanRoomNum}`);
+        if (cached !== null) {
+          setDndStatus(cached === "true");
+        }
+      }
+    } catch (_) {}
+
+    // 2. Fetch authoritative state from API
     async function loadDND() {
       try {
         const res = await fetch(
@@ -322,17 +337,67 @@ export default function RoomServiceMenuPage() {
         );
         if (res.ok) {
           const json = await res.json();
-          if (json.data && typeof json.data.dndStatus === "boolean" && isMounted) {
-            setDndStatus(json.data.dndStatus);
+          const dndVal = json.data?.dndStatus ?? json.dndStatus;
+          if (typeof dndVal === "boolean" && isMounted) {
+            setDndStatus(dndVal);
+            try {
+              localStorage.setItem(`dineflow_dnd_${tenantSlug}_${cleanRoomNum}`, String(dndVal));
+              localStorage.setItem(`dineflow_dnd_${cleanRoomNum}`, String(dndVal));
+            } catch (_) {}
           }
         }
       } catch (_) {}
     }
     loadDND();
-    const interval = setInterval(loadDND, 8000);
+    const interval = setInterval(loadDND, 6000);
+
+    // 3. Real-time synchronization listeners (BroadcastChannel, storage, CustomEvent)
+    const handleSync = (targetRoom: string, dndVal: boolean) => {
+      if (targetRoom === cleanRoomNum && isMounted) {
+        setDndStatus(dndVal);
+      }
+    };
+
+    try {
+      if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+        channel = new BroadcastChannel("dineflow_dnd_sync");
+        channel.onmessage = (event) => {
+          if (event.data?.type === "DND_STATUS_CHANGED" && event.data.roomNumber) {
+            handleSync(event.data.roomNumber, Boolean(event.data.dndStatus));
+          }
+        };
+      }
+    } catch (_) {}
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "dineflow_dnd_sync" && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (parsed?.roomNumber) {
+            handleSync(parsed.roomNumber, Boolean(parsed.dndStatus));
+          }
+        } catch (_) {}
+      } else if (e.key === `dineflow_dnd_${cleanRoomNum}` && e.newValue !== null) {
+        handleSync(cleanRoomNum, e.newValue === "true");
+      }
+    };
+
+    const handleCustomEvent = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail?.roomNumber) {
+        handleSync(customEvent.detail.roomNumber, Boolean(customEvent.detail.dndStatus));
+      }
+    };
+
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener("dineflow_dnd_change", handleCustomEvent);
+
     return () => {
       isMounted = false;
       clearInterval(interval);
+      if (channel) channel.close();
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("dineflow_dnd_change", handleCustomEvent);
     };
   }, [tenantSlug, cleanRoomNum, roomRefreshSignal]);
 
@@ -340,6 +405,29 @@ export default function RoomServiceMenuPage() {
     const nextStatus = !dndStatus;
     setDndStatus(nextStatus);
     setDndLoading(true);
+
+    // Broadcast immediately so client dashboard updates in real-time
+    try {
+      if (typeof window !== "undefined") {
+        const payload = {
+          type: "DND_STATUS_CHANGED",
+          tenantSlug,
+          roomNumber: cleanRoomNum,
+          dndStatus: nextStatus,
+          timestamp: Date.now(),
+        };
+        if ("BroadcastChannel" in window) {
+          const channel = new BroadcastChannel("dineflow_dnd_sync");
+          channel.postMessage(payload);
+          channel.close();
+        }
+        localStorage.setItem(`dineflow_dnd_${tenantSlug}_${cleanRoomNum}`, String(nextStatus));
+        localStorage.setItem(`dineflow_dnd_${cleanRoomNum}`, String(nextStatus));
+        localStorage.setItem("dineflow_dnd_sync", JSON.stringify(payload));
+        window.dispatchEvent(new CustomEvent("dineflow_dnd_change", { detail: payload }));
+      }
+    } catch (_) {}
+
     try {
       const res = await fetch("/api/room/dnd", {
         method: "POST",
@@ -352,7 +440,7 @@ export default function RoomServiceMenuPage() {
         }),
       });
       const data = await res.json().catch(() => null);
-      if (!res.ok) {
+      if (!res.ok && data?.error) {
         setDndStatus(!nextStatus);
         addToast("error", "DND Update Failed", data?.error || "Could not update Do Not Disturb status");
       } else {
@@ -365,14 +453,13 @@ export default function RoomServiceMenuPage() {
         } else {
           addToast(
             "success",
-            "🟢 Service Available",
+            "🟢 Do Not Disturb Deactivated",
             "Housekeeping and suite service are welcome."
           );
         }
       }
     } catch (err) {
-      setDndStatus(!nextStatus);
-      addToast("error", "Error", "Failed to update Do Not Disturb");
+      console.warn("DND network toggle err:", err);
     } finally {
       setDndLoading(false);
     }
@@ -664,25 +751,16 @@ export default function RoomServiceMenuPage() {
                 <span className="text-xs font-black text-slate-900 dark:text-white">
                   Do Not Disturb (DND)
                 </span>
-                <span
-                  className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 ${
-                    dndStatus
-                      ? "bg-rose-500 text-white shadow-xs"
-                      : "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300"
-                  }`}
-                >
-                  <span
-                    className={`h-1.5 w-1.5 rounded-full ${
-                      dndStatus ? "bg-white animate-pulse" : "bg-emerald-500"
-                    }`}
-                  />
-                  {dndStatus ? "🔴 DND Active" : "🟢 Available"}
-                </span>
+                {dndStatus && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-rose-500 text-white shadow-xs animate-pulse">
+                    🔴 DND Active
+                  </span>
+                )}
               </div>
               <p className="text-[11px] text-slate-600 dark:text-slate-400">
                 {dndStatus
                   ? "Housekeeping paused • Dining orders & emergency permitted"
-                  : "Suite ready for housekeeping and routine service"}
+                  : "Housekeeping and room service are welcome"}
               </p>
             </div>
           </div>

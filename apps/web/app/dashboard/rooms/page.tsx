@@ -380,19 +380,105 @@ export default function RoomsDirectoryPage() {
   const wings = ["all", "East Wing", "West Wing", "Lakeview", "Poolside"];
   const statuses = ["all", "vacant", "occupied", "cleaning", "maintenance"];
 
-  const handleToggleDND = async (id: string, current: boolean) => {
+  // Listen for real-time DND sync from customer portal or other tabs
+  React.useEffect(() => {
+    let channel: BroadcastChannel | null = null;
+    const handleSync = (cleanRoom: string, dndVal: boolean, roomId?: string) => {
+      setRooms((prev) =>
+        prev.map((r) => {
+          const rNum = (r.roomNumber || "").toUpperCase().replace(/^(ROOM-|SUITE-)/, "").trim();
+          if (rNum === cleanRoom || (roomId && r.id === roomId)) {
+            return { ...r, doNotDisturb: dndVal };
+          }
+          return r;
+        })
+      );
+    };
+
     try {
-      await apiClient.patch(`/rooms/${encodeURIComponent(id)}/dnd`, { doNotDisturb: !current });
+      if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+        channel = new BroadcastChannel("dineflow_dnd_sync");
+        channel.onmessage = (event) => {
+          if (event.data?.type === "DND_STATUS_CHANGED" && event.data.roomNumber) {
+            handleSync(event.data.roomNumber, Boolean(event.data.dndStatus), event.data.roomId);
+          }
+        };
+      }
+    } catch (_) {}
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "dineflow_dnd_sync" && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (parsed?.roomNumber) {
+            handleSync(parsed.roomNumber, Boolean(parsed.dndStatus), parsed.roomId);
+          }
+        } catch (_) {}
+      }
+    };
+
+    const handleCustomEvent = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail?.roomNumber) {
+        handleSync(customEvent.detail.roomNumber, Boolean(customEvent.detail.dndStatus), customEvent.detail.roomId);
+      }
+    };
+
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener("dineflow_dnd_change", handleCustomEvent);
+
+    return () => {
+      if (channel) channel.close();
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("dineflow_dnd_change", handleCustomEvent);
+    };
+  }, []);
+
+  const broadcastDNDUpdate = React.useCallback((roomNum: string, dndVal: boolean, roomId?: string) => {
+    try {
+      if (typeof window !== "undefined") {
+        const cleanRoom = roomNum.toUpperCase().replace(/^(ROOM-|SUITE-)/, "").trim();
+        const payload = {
+          type: "DND_STATUS_CHANGED",
+          tenantSlug,
+          roomNumber: cleanRoom,
+          roomId,
+          dndStatus: dndVal,
+          timestamp: Date.now(),
+        };
+        if ("BroadcastChannel" in window) {
+          const channel = new BroadcastChannel("dineflow_dnd_sync");
+          channel.postMessage(payload);
+          channel.close();
+        }
+        localStorage.setItem(`dineflow_dnd_${tenantSlug}_${cleanRoom}`, String(dndVal));
+        localStorage.setItem(`dineflow_dnd_${cleanRoom}`, String(dndVal));
+        localStorage.setItem("dineflow_dnd_sync", JSON.stringify(payload));
+        window.dispatchEvent(new CustomEvent("dineflow_dnd_change", { detail: payload }));
+      }
+    } catch (_) {}
+  }, [tenantSlug]);
+
+  const handleToggleDND = async (id: string, current: boolean) => {
+    const targetRoom = rooms.find((r) => r.id === id);
+    const roomNum = targetRoom?.roomNumber || "";
+    const nextStatus = !current;
+
+    setRooms((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, doNotDisturb: nextStatus } : r))
+    );
+
+    broadcastDNDUpdate(roomNum, nextStatus, id);
+
+    try {
+      await apiClient.patch(`/rooms/${encodeURIComponent(id)}/dnd`, { doNotDisturb: nextStatus });
     } catch (e) {
       console.warn("DND toggle api error:", e);
     }
-    setRooms((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, doNotDisturb: !current } : r))
-    );
     addToast(
       "info",
       "Do Not Disturb Updated",
-      !current ? "Room marked DND (stewards alerted not to knock)." : "DND flag cleared for this room."
+      nextStatus ? "Room marked DND (stewards alerted not to knock)." : "DND flag cleared for this room."
     );
   };
 
@@ -927,20 +1013,11 @@ export default function RoomsDirectoryPage() {
                       {isOccupied ? "Guest In-House" : isCleaning ? "Cleaning" : "Clean & Ready"}
                     </Badge>
 
-                    <span
-                      className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 ${
-                        room.doNotDisturb
-                          ? "bg-rose-500 text-white shadow-xs"
-                          : "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-                      }`}
-                    >
-                      <span
-                        className={`h-1.5 w-1.5 rounded-full ${
-                          room.doNotDisturb ? "bg-white animate-pulse" : "bg-emerald-500"
-                        }`}
-                      />
-                      {room.doNotDisturb ? "🔴 DND Active" : "🟢 Available"}
-                    </span>
+                    {room.doNotDisturb && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-rose-500 text-white shadow-xs animate-pulse">
+                        🔴 DND Active
+                      </span>
+                    )}
 
                     {(pendingExtensionRooms.has(room.id) || pendingExtensionRooms.has(room.roomNumber)) && (
                       <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-500 text-white shadow-xs animate-pulse flex items-center gap-1">
@@ -1010,7 +1087,7 @@ export default function RoomsDirectoryPage() {
                   </div>
                 ) : (
                   <div className="mt-3 p-2 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs flex items-center justify-between text-slate-500">
-                    <span className="text-[11px]">Suite vacant & available</span>
+                    <span className="text-[11px]">Suite vacant & ready</span>
                     <button
                       onClick={() => handleStartCheckIn(room)}
                       className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
@@ -1203,20 +1280,11 @@ export default function RoomsDirectoryPage() {
                   >
                     {isOccupied ? "Guest In-House" : isCleaning ? "Cleaning" : isMaintenance ? "Maintenance" : "Clean & Ready"}
                   </Badge>
-                  <span
-                    className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 ${
-                      room.doNotDisturb
-                        ? "bg-rose-500 text-white shadow-xs"
-                        : "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-                    }`}
-                  >
-                    <span
-                      className={`h-1.5 w-1.5 rounded-full ${
-                        room.doNotDisturb ? "bg-white animate-pulse" : "bg-emerald-500"
-                      }`}
-                    />
-                    {room.doNotDisturb ? "🔴 DND" : "🟢 Available"}
-                  </span>
+                  {room.doNotDisturb && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-rose-500 text-white shadow-xs animate-pulse">
+                      🔴 DND
+                    </span>
+                  )}
 
                   {(pendingExtensionRooms.has(room.id) || pendingExtensionRooms.has(room.roomNumber)) && (
                     <Badge variant="warning" size="sm" className="text-[10px] font-bold animate-pulse">

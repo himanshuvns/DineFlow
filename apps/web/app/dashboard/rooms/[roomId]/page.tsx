@@ -436,12 +436,90 @@ export default function RoomDetailPage() {
     return () => clearInterval(interval);
   }, [fetchRoomData]);
 
+  // Listen for real-time DND sync from customer portal or other tabs
+  React.useEffect(() => {
+    let channel: BroadcastChannel | null = null;
+    const handleSync = (cleanRoom: string, dndVal: boolean, roomIdTarget?: string) => {
+      setRoom((prev) => {
+        if (!prev) return prev;
+        const currentRoomNum = (prev.roomNumber || "").toUpperCase().replace(/^(ROOM-|SUITE-)/, "").trim();
+        if (currentRoomNum === cleanRoom || (roomIdTarget && prev.id === roomIdTarget)) {
+          return { ...prev, doNotDisturb: dndVal };
+        }
+        return prev;
+      });
+    };
+
+    try {
+      if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+        channel = new BroadcastChannel("dineflow_dnd_sync");
+        channel.onmessage = (event) => {
+          if (event.data?.type === "DND_STATUS_CHANGED" && event.data.roomNumber) {
+            handleSync(event.data.roomNumber, Boolean(event.data.dndStatus), event.data.roomId);
+          }
+        };
+      }
+    } catch (_) {}
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "dineflow_dnd_sync" && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (parsed?.roomNumber) {
+            handleSync(parsed.roomNumber, Boolean(parsed.dndStatus), parsed.roomId);
+          }
+        } catch (_) {}
+      }
+    };
+
+    const handleCustomEvent = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail?.roomNumber) {
+        handleSync(customEvent.detail.roomNumber, Boolean(customEvent.detail.dndStatus), customEvent.detail.roomId);
+      }
+    };
+
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener("dineflow_dnd_change", handleCustomEvent);
+
+    return () => {
+      if (channel) channel.close();
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("dineflow_dnd_change", handleCustomEvent);
+    };
+  }, []);
+
   const handleToggleDND = async () => {
     if (!room) return;
     const nextDND = !room.doNotDisturb;
+    const cleanRoom = (room.roomNumber || "").toUpperCase().replace(/^(ROOM-|SUITE-)/, "").trim();
+
+    setRoom({ ...room, doNotDisturb: nextDND });
+
+    try {
+      if (typeof window !== "undefined") {
+        const payload = {
+          type: "DND_STATUS_CHANGED",
+          tenantSlug,
+          roomNumber: cleanRoom,
+          roomId: room.id,
+          dndStatus: nextDND,
+          timestamp: Date.now(),
+        };
+        if ("BroadcastChannel" in window) {
+          const channel = new BroadcastChannel("dineflow_dnd_sync");
+          channel.postMessage(payload);
+          channel.close();
+        }
+        localStorage.setItem(`dineflow_dnd_${tenantSlug}_${cleanRoom}`, String(nextDND));
+        localStorage.setItem(`dineflow_dnd_${cleanRoom}`, String(nextDND));
+        localStorage.setItem("dineflow_dnd_sync", JSON.stringify(payload));
+        window.dispatchEvent(new CustomEvent("dineflow_dnd_change", { detail: payload }));
+      }
+    } catch (_) {}
+
     try {
       await apiClient.patch(`/rooms/${encodeURIComponent(room.id)}/dnd`, { doNotDisturb: nextDND });
-      setRoom({ ...room, doNotDisturb: nextDND });
       addToast(
         "info",
         "Do Not Disturb Updated",
@@ -996,8 +1074,8 @@ export default function RoomDetailPage() {
                 {isOccupied ? "Guest In-House" : isCleaning ? "Cleaning Required" : "Clean & Ready"}
               </Badge>
               {room.doNotDisturb && (
-                <Badge variant="danger" size="sm" className="text-[10px]">
-                  DND Active
+                <Badge variant="danger" size="sm" className="text-[10px] animate-pulse">
+                  🔴 DND Active
                 </Badge>
               )}
             </div>

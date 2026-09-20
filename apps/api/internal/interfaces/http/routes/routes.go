@@ -58,6 +58,8 @@ func Setup(
 			publicGroup.GET("/rooms/:tenantSlug/:roomNumber", roomHandler.GetPublicRoom)
 			publicGroup.GET("/rooms/:tenantSlug/:roomNumber/dnd", roomHandler.GetPublicDND)
 			publicGroup.POST("/rooms/:tenantSlug/:roomNumber/dnd", roomHandler.UpdatePublicDND)
+			publicGroup.GET("/room-dnd/:tenantSlug/:roomNumber", roomHandler.GetPublicDND)
+			publicGroup.POST("/room-dnd/:tenantSlug/:roomNumber", roomHandler.UpdatePublicDND)
 			publicGroup.GET("/rooms/:tenantSlug/:roomNumber/tasks", roomHandler.GetPublicRoomTasks)
 			publicGroup.GET("/rooms/:tenantSlug/:roomNumber/orders", roomHandler.GetPublicRoomOrders)
 			publicGroup.POST("/rooms/:tenantSlug/:roomNumber/amenity", roomHandler.RequestPublicAmenity)
@@ -65,6 +67,8 @@ func Setup(
 			publicGroup.POST("/room-tasks/:tenantSlug/:roomNumber", roomHandler.RequestPublicAmenity)
 			publicGroup.GET("/rooms/:tenantSlug/:roomNumber/extend-stay", roomHandler.GetPublicStayExtension)
 			publicGroup.POST("/rooms/:tenantSlug/:roomNumber/extend-stay", roomHandler.PublicExtendStay)
+			publicGroup.GET("/room-extend-stay/:tenantSlug/:roomNumber", roomHandler.GetPublicStayExtension)
+			publicGroup.POST("/room-extend-stay/:tenantSlug/:roomNumber", roomHandler.PublicExtendStay)
 			publicGroup.GET("/workforce/verify-token", waHandler.VerifyCheckInToken)
 			publicGroup.POST("/workforce/check-in", waHandler.PublicWorkforceCheckIn)
 		}
