@@ -60,11 +60,14 @@ func CleanPhoneNumber(phone string) string {
 }
 
 // FormatChatID converts a clean phone number into OpenWA/WhatsApp Web chatId format.
-// Example: "919800012345" -> "919800012345@c.us"
+// Examples:
+//   "919800012345" -> "919800012345@c.us"
+//   "131361675440249@lid" -> "131361675440249@lid"
 func FormatChatID(phone string) string {
-	cleaned := CleanPhoneNumber(phone)
-	if strings.HasSuffix(cleaned, "@c.us") || strings.HasSuffix(cleaned, "@g.us") {
-		return cleaned
+	trimmed := strings.TrimSpace(phone)
+	if strings.HasSuffix(trimmed, "@c.us") || strings.HasSuffix(trimmed, "@g.us") || strings.HasSuffix(trimmed, "@lid") {
+		return trimmed
 	}
+	cleaned := CleanPhoneNumber(trimmed)
 	return cleaned + "@c.us"
 }

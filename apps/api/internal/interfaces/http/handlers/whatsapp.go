@@ -147,11 +147,17 @@ func (h *WhatsAppHandler) HandleWebhook(c *gin.Context) {
 			return
 		}
 
-		if openwaPayload.Event == "message.received" || openwaPayload.Event == "message:received" {
+		if openwaPayload.Event == "message.received" || openwaPayload.Event == "message:received" || openwaPayload.Event == "message" {
 			// Ignore messages sent by ourselves (prevent echo reply loop)
 			if openwaPayload.Data.FromMe {
 				c.Status(http.StatusOK)
 				return
+			}
+
+			// Destination to reply to: prefer exact chatId (preserves @lid, @c.us, @g.us)
+			replyTarget := openwaPayload.Data.ChatID
+			if replyTarget == "" {
+				replyTarget = openwaPayload.Data.From
 			}
 
 			from := openwaPayload.Data.SenderPhone
@@ -164,12 +170,16 @@ func (h *WhatsAppHandler) HandleWebhook(c *gin.Context) {
 			text := strings.TrimSpace(openwaPayload.Data.Body)
 			cleanFrom := messaging.CleanPhoneNumber(from)
 
+			if replyTarget == "" {
+				replyTarget = cleanFrom
+			}
+
 			// 1a. Check if sender is staff
 			staff, err := h.waService.FindStaffByPhone(c.Request.Context(), cleanFrom)
 			if err == nil && staff != nil {
 				reply, _ := h.waService.ProcessWorkforceMessage(c.Request.Context(), staff, text, "")
 				if h.waService.GetProvider() != nil && reply != "" {
-					_, _ = h.waService.GetProvider().SendText(c.Request.Context(), cleanFrom, reply)
+					_, _ = h.waService.GetProvider().SendText(c.Request.Context(), replyTarget, reply)
 				}
 				c.JSON(http.StatusOK, gin.H{"handled": "workforce", "reply": reply})
 				return
@@ -178,7 +188,7 @@ func (h *WhatsAppHandler) HandleWebhook(c *gin.Context) {
 			// 1b. Process rule-based customer commands (Hi, Menu, Order Status)
 			if botReply, handled := h.waService.ProcessRuleBasedCommand(c.Request.Context(), bson.NilObjectID, cleanFrom, text); handled {
 				if h.waService.GetProvider() != nil && botReply != "" {
-					_, _ = h.waService.GetProvider().SendText(c.Request.Context(), cleanFrom, botReply)
+					_, _ = h.waService.GetProvider().SendText(c.Request.Context(), replyTarget, botReply)
 				}
 				c.JSON(http.StatusOK, gin.H{"handled": "command", "reply": botReply})
 				return
@@ -187,7 +197,7 @@ func (h *WhatsAppHandler) HandleWebhook(c *gin.Context) {
 			// 1c. Fallback to conversational chatbot or acknowledge
 			reply, _ := h.waService.ProcessChatbotMessage(c.Request.Context(), bson.NilObjectID, cleanFrom, "Guest", text)
 			if h.waService.GetProvider() != nil && reply != "" {
-				_, _ = h.waService.GetProvider().SendText(c.Request.Context(), cleanFrom, reply)
+				_, _ = h.waService.GetProvider().SendText(c.Request.Context(), replyTarget, reply)
 			}
 			c.JSON(http.StatusOK, gin.H{"handled": "chatbot", "reply": reply})
 			return
