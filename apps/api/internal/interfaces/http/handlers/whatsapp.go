@@ -118,13 +118,15 @@ func (h *WhatsAppHandler) HandleWebhook(c *gin.Context) {
 		Timestamp      string `json:"timestamp"`
 		IdempotencyKey string `json:"idempotencyKey"`
 		Data           struct {
-			ID        string `json:"id"`
-			ChatID    string `json:"chatId"`
-			From      string `json:"from"`
-			Body      string `json:"body"`
-			Type      string `json:"type"`
-			Status    string `json:"status"`
-			Timestamp int64  `json:"timestamp"`
+			ID          string `json:"id"`
+			ChatID      string `json:"chatId"`
+			From        string `json:"from"`
+			SenderPhone string `json:"senderPhone"`
+			Body        string `json:"body"`
+			Type        string `json:"type"`
+			FromMe      bool   `json:"fromMe"`
+			Status      string `json:"status"`
+			Timestamp   int64  `json:"timestamp"`
 		} `json:"data"`
 	}
 	if err := json.Unmarshal(bodyBytes, &openwaPayload); err == nil && openwaPayload.Event != "" {
@@ -146,7 +148,16 @@ func (h *WhatsAppHandler) HandleWebhook(c *gin.Context) {
 		}
 
 		if openwaPayload.Event == "message.received" || openwaPayload.Event == "message:received" {
-			from := openwaPayload.Data.From
+			// Ignore messages sent by ourselves (prevent echo reply loop)
+			if openwaPayload.Data.FromMe {
+				c.Status(http.StatusOK)
+				return
+			}
+
+			from := openwaPayload.Data.SenderPhone
+			if from == "" {
+				from = openwaPayload.Data.From
+			}
 			if from == "" {
 				from = openwaPayload.Data.ChatID
 			}
