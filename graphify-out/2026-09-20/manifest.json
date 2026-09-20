@@ -324,9 +324,9 @@
     "semantic_hash": "fd99a2ca2cdc86a8ee0bff30bf8b16d1"
   },
   "apps/api/internal/interfaces/http/handlers/whatsapp.go": {
-    "mtime": 1789873525.1652153,
-    "seen": 1789873805.4852831,
-    "ast_hash": "2335badd073ca7adf5ff8c7439294bf8",
+    "mtime": 1789884035.4708586,
+    "seen": 1789884109.901933,
+    "ast_hash": "a67d18b0ec1c09e588f341d2d9b1130e",
     "semantic_hash": ""
   },
   "apps/api/internal/interfaces/http/middleware/auth.go": {
@@ -2040,9 +2040,9 @@
     "semantic_hash": ""
   },
   "apps/api/internal/messaging/provider.go": {
-    "mtime": 1789873407.4210355,
-    "seen": 1789873805.485288,
-    "ast_hash": "0069fe7953c1dddbe615e26c56d41a58",
+    "mtime": 1789883757.7721636,
+    "seen": 1789884109.901941,
+    "ast_hash": "491c903f03ae06ebe2e8c6258d57d51f",
     "semantic_hash": ""
   },
   "apps/api/internal/messaging/provider_test.go": {
@@ -2052,9 +2052,9 @@
     "semantic_hash": ""
   },
   "docker-compose.openwa.yml": {
-    "mtime": 1789873346.4465165,
-    "seen": 1789873805.485437,
-    "ast_hash": "5c7e01337f37db33d37e36bfee28891f",
+    "mtime": 1789877281.4450524,
+    "seen": 1789884109.90208,
+    "ast_hash": "a151c2b0e096606d8e05ddc7ad82c195",
     "semantic_hash": ""
   },
   "docs/OPENWA_LOCAL_DEVELOPMENT.md": {

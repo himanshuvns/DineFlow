@@ -295,17 +295,31 @@ export default function WhatsAppPage() {
     phoneNumber?: string;
     lastConnected?: string;
     errorMessage?: string;
+    gatewayUrl?: string;
   }>({
     sessionId: "dineflow-dev",
     status: "disconnected",
     engine: "whatsapp-web.js",
   });
   const [openwaQR, setOpenwaQR] = React.useState<string>("");
+  const [openwaGatewayUrl, setOpenwaGatewayUrl] = React.useState<string>("");
+  const [isEditingGatewayUrl, setIsEditingGatewayUrl] = React.useState(false);
+  const [customGatewayInput, setCustomGatewayInput] = React.useState("");
   const [isOpenwaLoading, setIsOpenwaLoading] = React.useState(false);
   const [openwaTestPhone, setOpenwaTestPhone] = React.useState("+91 98000 12345");
   const [openwaTestName, setOpenwaTestName] = React.useState("Alex Rivera");
   const [isSendingOpenwaTest, setIsSendingOpenwaTest] = React.useState(false);
   const [openwaCopied, setOpenwaCopied] = React.useState(false);
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("dineflow_openwa_gateway_url");
+      if (saved) {
+        setOpenwaGatewayUrl(saved);
+        setCustomGatewayInput(saved);
+      }
+    }
+  }, []);
 
   // Config & Status State
   const [config, setConfig] = React.useState<WABAConfig>({
@@ -509,7 +523,8 @@ export default function WhatsAppPage() {
 
   const fetchOpenWAStatus = React.useCallback(async () => {
     try {
-      const res = await apiClient.get("/whatsapp/openwa/session/status");
+      const query = openwaGatewayUrl ? `?gatewayUrl=${encodeURIComponent(openwaGatewayUrl)}` : "";
+      const res = await apiClient.get(`/whatsapp/openwa/session/status${query}`);
       const data = res.data?.data || res.data;
       if (data) {
         setOpenwaStatus({
@@ -519,27 +534,37 @@ export default function WhatsAppPage() {
           phoneNumber: data.phoneNumber,
           lastConnected: data.lastConnected,
           errorMessage: data.errorMessage,
+          gatewayUrl: data.gatewayUrl,
         });
+        if (data.gatewayUrl && !openwaGatewayUrl) {
+          setOpenwaGatewayUrl(data.gatewayUrl);
+          setCustomGatewayInput(data.gatewayUrl);
+        }
       }
     } catch {
       // Container offline or network error
     }
-  }, []);
+  }, [openwaGatewayUrl]);
 
   const fetchOpenWAQR = React.useCallback(async () => {
     try {
-      const res = await apiClient.get("/whatsapp/openwa/session/qr");
+      const query = openwaGatewayUrl ? `?gatewayUrl=${encodeURIComponent(openwaGatewayUrl)}` : "";
+      const res = await apiClient.get(`/whatsapp/openwa/session/qr${query}`);
       const data = res.data?.data || res.data;
       if (data && data.qr) {
         setOpenwaQR(data.qr);
         if (data.status) {
-          setOpenwaStatus((prev) => ({ ...prev, status: data.status }));
+          setOpenwaStatus((prev) => ({ ...prev, status: data.status, gatewayUrl: data.gatewayUrl || prev.gatewayUrl }));
+        }
+        if (data.gatewayUrl && !openwaGatewayUrl) {
+          setOpenwaGatewayUrl(data.gatewayUrl);
+          setCustomGatewayInput(data.gatewayUrl);
         }
       }
     } catch {
       // ignore
     }
-  }, []);
+  }, [openwaGatewayUrl]);
 
   // Polling loop for OpenWA status and QR code
   React.useEffect(() => {
@@ -558,7 +583,8 @@ export default function WhatsAppPage() {
   const handleStartOpenWASession = async () => {
     setIsOpenwaLoading(true);
     try {
-      await apiClient.post("/whatsapp/openwa/session/start");
+      const query = openwaGatewayUrl ? `?gatewayUrl=${encodeURIComponent(openwaGatewayUrl)}` : "";
+      await apiClient.post(`/whatsapp/openwa/session/start${query}`);
       setOpenwaStatus((prev) => ({ ...prev, status: "starting" }));
       addToast("info", "OpenWA Launching", "Session initializing. Loading headless Chromium & QR code...");
       setTimeout(() => {
@@ -567,7 +593,7 @@ export default function WhatsAppPage() {
       }, 1500);
     } catch (err: unknown) {
       const error = err as { response?: { data?: { error?: { message?: string } } }; message?: string };
-      addToast("error", "Failed to start session", error.response?.data?.error?.message || "Ensure docker-compose.openwa.yml is running on :2785");
+      addToast("error", "Failed to start session", error.response?.data?.error?.message || "Ensure OpenWA gateway or tunnel is active");
     } finally {
       setIsOpenwaLoading(false);
     }
@@ -576,7 +602,8 @@ export default function WhatsAppPage() {
   const handleStopOpenWASession = async () => {
     setIsOpenwaLoading(true);
     try {
-      await apiClient.post("/whatsapp/openwa/session/disconnect");
+      const query = openwaGatewayUrl ? `?gatewayUrl=${encodeURIComponent(openwaGatewayUrl)}` : "";
+      await apiClient.post(`/whatsapp/openwa/session/disconnect${query}`);
       setOpenwaStatus((prev) => ({ ...prev, status: "disconnected" }));
       setOpenwaQR("");
       addToast("success", "Session Disconnected", "OpenWA session disconnected and Chromium stopped.");
@@ -590,7 +617,8 @@ export default function WhatsAppPage() {
   const handleRestartOpenWASession = async () => {
     setIsOpenwaLoading(true);
     try {
-      await apiClient.post("/whatsapp/openwa/session/restart");
+      const query = openwaGatewayUrl ? `?gatewayUrl=${encodeURIComponent(openwaGatewayUrl)}` : "";
+      await apiClient.post(`/whatsapp/openwa/session/restart${query}`);
       setOpenwaStatus((prev) => ({ ...prev, status: "starting" }));
       addToast("info", "Session Restarting", "Restarting session engine and requesting fresh QR code...");
       setTimeout(() => {
@@ -1150,6 +1178,76 @@ export default function WhatsAppPage() {
                     Session: <code className="text-slate-800 dark:text-slate-200 font-mono font-medium">{openwaStatus.sessionId || "dineflow-dev"}</code> • Engine: <strong className="text-cyan-700 dark:text-cyan-300">whatsapp-web.js (Headless Chromium)</strong>
                     {openwaStatus.phoneNumber && ` • Number: ${openwaStatus.phoneNumber}`}
                   </p>
+                  <div className="flex flex-wrap items-center gap-2 mt-1.5 text-xs">
+                    <span className="text-slate-500 dark:text-slate-400">Gateway URL:</span>
+                    <code className="text-cyan-600 dark:text-cyan-400 font-mono text-[11px] bg-cyan-50 dark:bg-cyan-950/40 px-1.5 py-0.5 rounded border border-cyan-200/50 dark:border-cyan-800/50">
+                      {openwaGatewayUrl || openwaStatus.gatewayUrl || "https://violet-pianos-marry.loca.lt"}
+                    </code>
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingGatewayUrl(!isEditingGatewayUrl)}
+                      className="text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer font-medium"
+                    >
+                      {isEditingGatewayUrl ? "Cancel" : "Change URL / Tunnel"}
+                    </button>
+                  </div>
+                  {isEditingGatewayUrl && (
+                    <div className="mt-2.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={customGatewayInput}
+                          onChange={(e) => setCustomGatewayInput(e.target.value)}
+                          placeholder="e.g. https://xxxx.loca.lt or http://localhost:2785"
+                          className="h-8 text-xs font-mono"
+                        />
+                        <Button
+                          size="sm"
+                          variant="glow"
+                          onClick={() => {
+                            const trimmed = customGatewayInput.trim();
+                            setOpenwaGatewayUrl(trimmed);
+                            if (typeof window !== "undefined") {
+                              if (trimmed) {
+                                localStorage.setItem("dineflow_openwa_gateway_url", trimmed);
+                              } else {
+                                localStorage.removeItem("dineflow_openwa_gateway_url");
+                              }
+                            }
+                            setIsEditingGatewayUrl(false);
+                            addToast("success", "Gateway URL Updated", `Connecting to ${trimmed || "default gateway"}`);
+                            setTimeout(() => {
+                              fetchOpenWAStatus();
+                              fetchOpenWAQR();
+                            }, 500);
+                          }}
+                        >
+                          Save & Connect
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setOpenwaGatewayUrl("");
+                            setCustomGatewayInput("");
+                            if (typeof window !== "undefined") {
+                              localStorage.removeItem("dineflow_openwa_gateway_url");
+                            }
+                            setIsEditingGatewayUrl(false);
+                            addToast("info", "Reset", "Reverted to default gateway endpoint.");
+                            setTimeout(() => {
+                              fetchOpenWAStatus();
+                              fetchOpenWAQR();
+                            }, 500);
+                          }}
+                        >
+                          Reset
+                        </Button>
+                      </div>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                        When using cloud deployment (<code className="font-mono text-[10px]">dineflow-steel.vercel.app</code>), connect via a public tunnel URL (e.g. from <code className="font-mono text-[10px]">npx localtunnel --port 2785</code>) or your hosted OpenWA service.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-2">

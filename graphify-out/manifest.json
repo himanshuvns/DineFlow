@@ -324,9 +324,9 @@
     "semantic_hash": "fd99a2ca2cdc86a8ee0bff30bf8b16d1"
   },
   "apps/api/internal/interfaces/http/handlers/whatsapp.go": {
-    "mtime": 1789884035.4708586,
-    "seen": 1789884109.901933,
-    "ast_hash": "a67d18b0ec1c09e588f341d2d9b1130e",
+    "mtime": 1789905315.303067,
+    "seen": 1789905420.0102699,
+    "ast_hash": "d629e189ac76026a26e1fc8ff852f0f0",
     "semantic_hash": ""
   },
   "apps/api/internal/interfaces/http/middleware/auth.go": {
@@ -618,9 +618,9 @@
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/whatsapp/page.tsx": {
-    "mtime": 1789873745.6368752,
-    "seen": 1789873805.485326,
-    "ast_hash": "dde53e0c01d33e822cb4e3bb8bf31ca2",
+    "mtime": 1789905378.4884174,
+    "seen": 1789905420.01031,
+    "ast_hash": "cb7d235cb582290bb6f827c15b1324e4",
     "semantic_hash": ""
   },
   "apps/web/app/demo/page.tsx": {
@@ -2034,9 +2034,9 @@
     "semantic_hash": ""
   },
   "apps/api/internal/messaging/openwa.go": {
-    "mtime": 1789876070.2255805,
-    "seen": 1789876168.711343,
-    "ast_hash": "1d94def49b3b0e0174dfff340c96a286",
+    "mtime": 1789905330.5624287,
+    "seen": 1789905420.010277,
+    "ast_hash": "068adef2f7212480b5907c60f42bcce7",
     "semantic_hash": ""
   },
   "apps/api/internal/messaging/provider.go": {

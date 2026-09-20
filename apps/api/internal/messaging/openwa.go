@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -60,6 +61,35 @@ func NewOpenWAProvider(cfg OpenWAConfig) *OpenWAProvider {
 	}
 }
 
+// SetBaseURL dynamically updates the OpenWA gateway URL (e.g. from UI or tunnel).
+func (p *OpenWAProvider) SetBaseURL(baseURL string) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	cleaned := strings.TrimRight(strings.TrimSpace(baseURL), "/")
+	if cleaned != "" && cleaned != p.cfg.BaseURL {
+		p.cfg.BaseURL = cleaned
+		p.sessionUUIDMap = make(map[string]string) // reset session cache for new URL
+	}
+}
+
+// GetBaseURL returns the active OpenWA gateway base URL.
+func (p *OpenWAProvider) GetBaseURL() string {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	return p.cfg.BaseURL
+}
+
+func (p *OpenWAProvider) applyHeaders(req *http.Request) {
+	if p.cfg.APIKey != "" {
+		req.Header.Set("X-API-Key", p.cfg.APIKey)
+		req.Header.Set("Authorization", "Bearer "+p.cfg.APIKey)
+	}
+	req.Header.Set("Bypass-Tunnel-Reminder", "true")
+	req.Header.Set("bypass-tunnel-reminder", "true")
+	req.Header.Set("ngrok-skip-browser-warning", "true")
+	req.Header.Set("User-Agent", "DineFlow-OpenWA-Client/1.0")
+}
+
 // resolveSessionUUID resolves a human-readable session name into OpenWA's internal UUID.
 func (p *OpenWAProvider) resolveSessionUUID(ctx context.Context, sessionIDOrName string) (string, error) {
 	if sessionIDOrName == "" {
@@ -81,9 +111,7 @@ func (p *OpenWAProvider) resolveSessionUUID(ctx context.Context, sessionIDOrName
 	listURL := fmt.Sprintf("%s/api/sessions", p.cfg.BaseURL)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, listURL, nil)
 	if err == nil {
-		if p.cfg.APIKey != "" {
-			req.Header.Set("X-API-Key", p.cfg.APIKey)
-		}
+		p.applyHeaders(req)
 		if resp, err := p.httpClient.Do(req); err == nil {
 			defer resp.Body.Close()
 			if resp.StatusCode == http.StatusOK {
@@ -116,9 +144,7 @@ func (p *OpenWAProvider) resolveSessionUUID(ctx context.Context, sessionIDOrName
 		return sessionIDOrName, err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	if p.cfg.APIKey != "" {
-		req.Header.Set("X-API-Key", p.cfg.APIKey)
-	}
+	p.applyHeaders(req)
 
 	resp, err := p.httpClient.Do(req)
 	if err != nil {
@@ -171,10 +197,7 @@ func (p *OpenWAProvider) SendText(ctx context.Context, to string, text string) (
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	if p.cfg.APIKey != "" {
-		req.Header.Set("X-API-Key", p.cfg.APIKey)
-		req.Header.Set("Authorization", "Bearer "+p.cfg.APIKey)
-	}
+	p.applyHeaders(req)
 
 	resp, err := p.httpClient.Do(req)
 	if err != nil {
@@ -200,7 +223,7 @@ func (p *OpenWAProvider) SendText(ctx context.Context, to string, text string) (
 		msgID = parsed.Data.ID
 	}
 	if msgID == "" {
-		msgID = fmt.Sprintf("openwa_%d_%s", time.Now().UnixNano(), CleanPhoneNumber(to))
+		msgID = fmt.Sprintf("openwa_msg_%d", time.Now().UnixNano())
 	}
 
 	return msgID, nil
@@ -218,7 +241,7 @@ func (p *OpenWAProvider) SendImage(ctx context.Context, to string, imageURL stri
 
 	payload := map[string]interface{}{
 		"chatId":  chatId,
-		"url":     imageURL,
+		"file":    imageURL,
 		"caption": caption,
 	}
 
@@ -233,9 +256,7 @@ func (p *OpenWAProvider) SendImage(ctx context.Context, to string, imageURL stri
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	if p.cfg.APIKey != "" {
-		req.Header.Set("X-API-Key", p.cfg.APIKey)
-	}
+	p.applyHeaders(req)
 
 	resp, err := p.httpClient.Do(req)
 	if err != nil {
@@ -279,9 +300,7 @@ func (p *OpenWAProvider) SendDocument(ctx context.Context, to string, docURL str
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	if p.cfg.APIKey != "" {
-		req.Header.Set("X-API-Key", p.cfg.APIKey)
-	}
+	p.applyHeaders(req)
 
 	resp, err := p.httpClient.Do(req)
 	if err != nil {
@@ -314,9 +333,7 @@ func (p *OpenWAProvider) StartSession(ctx context.Context, sessionID string) err
 	if err != nil {
 		return err
 	}
-	if p.cfg.APIKey != "" {
-		req.Header.Set("X-API-Key", p.cfg.APIKey)
-	}
+	p.applyHeaders(req)
 
 	resp, err := p.httpClient.Do(req)
 	if err != nil {
@@ -341,6 +358,12 @@ func (p *OpenWAProvider) StartSession(ctx context.Context, sessionID string) err
 
 func (p *OpenWAProvider) ensureSessionWebhook(ctx context.Context, sessionUUID string) {
 	webhookURL := "http://host.docker.internal:8080/api/v1/whatsapp/webhook"
+	if publicDomain := os.Getenv("RAILWAY_PUBLIC_DOMAIN"); publicDomain != "" {
+		webhookURL = fmt.Sprintf("https://%s/api/v1/whatsapp/webhook", publicDomain)
+	} else if customWebhook := os.Getenv("WEBHOOK_PUBLIC_URL"); customWebhook != "" {
+		webhookURL = customWebhook
+	}
+
 	payload := map[string]interface{}{
 		"url":    webhookURL,
 		"events": []string{"*"},
@@ -353,9 +376,7 @@ func (p *OpenWAProvider) ensureSessionWebhook(ctx context.Context, sessionUUID s
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
-	if p.cfg.APIKey != "" {
-		req.Header.Set("X-API-Key", p.cfg.APIKey)
-	}
+	p.applyHeaders(req)
 	resp, err := p.httpClient.Do(req)
 	if err == nil {
 		defer resp.Body.Close()
@@ -377,9 +398,7 @@ func (p *OpenWAProvider) GetQRCode(ctx context.Context, sessionID string) (strin
 	if err != nil {
 		return "", "error", err
 	}
-	if p.cfg.APIKey != "" {
-		req.Header.Set("X-API-Key", p.cfg.APIKey)
-	}
+	p.applyHeaders(req)
 
 	resp, err := p.httpClient.Do(req)
 	if err != nil {
@@ -464,9 +483,7 @@ func (p *OpenWAProvider) GetSessionStatus(ctx context.Context, sessionID string)
 	if err != nil {
 		return nil, err
 	}
-	if p.cfg.APIKey != "" {
-		req.Header.Set("X-API-Key", p.cfg.APIKey)
-	}
+	p.applyHeaders(req)
 
 	resp, err := p.httpClient.Do(req)
 	if err != nil {
@@ -556,9 +573,7 @@ func (p *OpenWAProvider) StopSession(ctx context.Context, sessionID string) erro
 	if err != nil {
 		return err
 	}
-	if p.cfg.APIKey != "" {
-		req.Header.Set("X-API-Key", p.cfg.APIKey)
-	}
+	p.applyHeaders(req)
 
 	resp, err := p.httpClient.Do(req)
 	if err != nil {

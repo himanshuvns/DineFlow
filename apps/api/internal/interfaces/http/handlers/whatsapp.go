@@ -622,9 +622,25 @@ func (h *WhatsAppHandler) PublicWorkforceCheckIn(c *gin.Context) {
 
 // ── OpenWA Session Management Endpoints ─────────────────────────────────────
 
+func (h *WhatsAppHandler) updateGatewayURL(c *gin.Context) {
+	if gatewayURL := strings.TrimSpace(c.Query("gatewayUrl")); gatewayURL != "" {
+		if p, ok := h.waService.GetProvider().(*messaging.OpenWAProvider); ok {
+			p.SetBaseURL(gatewayURL)
+		}
+	}
+}
+
+func (h *WhatsAppHandler) getGatewayURL() string {
+	if p, ok := h.waService.GetProvider().(*messaging.OpenWAProvider); ok {
+		return p.GetBaseURL()
+	}
+	return os.Getenv("OPENWA_URL")
+}
+
 // StartOpenWASession godoc
 // POST /api/v1/whatsapp/openwa/session/start
 func (h *WhatsAppHandler) StartOpenWASession(c *gin.Context) {
+	h.updateGatewayURL(c)
 	sessionID := c.DefaultQuery("sessionId", os.Getenv("OPENWA_SESSION_ID"))
 	if sessionID == "" {
 		sessionID = "dineflow-dev"
@@ -633,12 +649,13 @@ func (h *WhatsAppHandler) StartOpenWASession(c *gin.Context) {
 		response.BadRequest(c, "SESSION_START_FAILED", err.Error())
 		return
 	}
-	response.OK(c, gin.H{"status": "starting", "sessionId": sessionID})
+	response.OK(c, gin.H{"status": "starting", "sessionId": sessionID, "gatewayUrl": h.getGatewayURL()})
 }
 
 // GetOpenWAQR godoc
 // GET /api/v1/whatsapp/openwa/session/qr
 func (h *WhatsAppHandler) GetOpenWAQR(c *gin.Context) {
+	h.updateGatewayURL(c)
 	sessionID := c.DefaultQuery("sessionId", os.Getenv("OPENWA_SESSION_ID"))
 	if sessionID == "" {
 		sessionID = "dineflow-dev"
@@ -649,15 +666,17 @@ func (h *WhatsAppHandler) GetOpenWAQR(c *gin.Context) {
 		return
 	}
 	response.OK(c, gin.H{
-		"qr":        qr,
-		"status":    status,
-		"sessionId": sessionID,
+		"qr":         qr,
+		"status":     status,
+		"sessionId":  sessionID,
+		"gatewayUrl": h.getGatewayURL(),
 	})
 }
 
 // GetOpenWASessionStatus godoc
 // GET /api/v1/whatsapp/openwa/session/status
 func (h *WhatsAppHandler) GetOpenWASessionStatus(c *gin.Context) {
+	h.updateGatewayURL(c)
 	sessionID := c.DefaultQuery("sessionId", os.Getenv("OPENWA_SESSION_ID"))
 	if sessionID == "" {
 		sessionID = "dineflow-dev"
@@ -667,12 +686,22 @@ func (h *WhatsAppHandler) GetOpenWASessionStatus(c *gin.Context) {
 		response.BadRequest(c, "STATUS_FETCH_FAILED", err.Error())
 		return
 	}
-	response.OK(c, status)
+	response.OK(c, gin.H{
+		"sessionId":     status.SessionID,
+		"status":        status.Status,
+		"engine":        status.Engine,
+		"phoneNumber":   status.PhoneNumber,
+		"lastConnected": status.LastConnected,
+		"updatedAt":     status.UpdatedAt,
+		"errorMessage":  status.ErrorMessage,
+		"gatewayUrl":    h.getGatewayURL(),
+	})
 }
 
 // StopOpenWASession godoc
 // POST /api/v1/whatsapp/openwa/session/disconnect
 func (h *WhatsAppHandler) StopOpenWASession(c *gin.Context) {
+	h.updateGatewayURL(c)
 	sessionID := c.DefaultQuery("sessionId", os.Getenv("OPENWA_SESSION_ID"))
 	if sessionID == "" {
 		sessionID = "dineflow-dev"
@@ -681,12 +710,13 @@ func (h *WhatsAppHandler) StopOpenWASession(c *gin.Context) {
 		response.BadRequest(c, "SESSION_STOP_FAILED", err.Error())
 		return
 	}
-	response.OK(c, gin.H{"status": "disconnected", "sessionId": sessionID})
+	response.OK(c, gin.H{"status": "disconnected", "sessionId": sessionID, "gatewayUrl": h.getGatewayURL()})
 }
 
 // RestartOpenWASession godoc
 // POST /api/v1/whatsapp/openwa/session/restart
 func (h *WhatsAppHandler) RestartOpenWASession(c *gin.Context) {
+	h.updateGatewayURL(c)
 	sessionID := c.DefaultQuery("sessionId", os.Getenv("OPENWA_SESSION_ID"))
 	if sessionID == "" {
 		sessionID = "dineflow-dev"
@@ -695,7 +725,7 @@ func (h *WhatsAppHandler) RestartOpenWASession(c *gin.Context) {
 		response.BadRequest(c, "SESSION_RESTART_FAILED", err.Error())
 		return
 	}
-	response.OK(c, gin.H{"status": "restarted", "sessionId": sessionID})
+	response.OK(c, gin.H{"status": "restarted", "sessionId": sessionID, "gatewayUrl": h.getGatewayURL()})
 }
 
 

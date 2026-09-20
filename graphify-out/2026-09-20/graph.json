@@ -15797,7 +15797,7 @@
       "file_type": "code",
       "norm_label": ".createcampaign()",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L385"
+      "source_location": "L406"
     },
     {
       "id": "handlers_whatsapphandler_createinvoice",
@@ -15808,7 +15808,7 @@
       "file_type": "code",
       "norm_label": ".createinvoice()",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L500"
+      "source_location": "L521"
     },
     {
       "id": "handlers_whatsapphandler_getconfig",
@@ -15819,7 +15819,7 @@
       "file_type": "code",
       "norm_label": ".getconfig()",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L305"
+      "source_location": "L326"
     },
     {
       "id": "handlers_whatsapphandler_getinvoicereceipthtml",
@@ -15830,7 +15830,7 @@
       "file_type": "code",
       "norm_label": ".getinvoicereceipthtml()",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L547"
+      "source_location": "L568"
     },
     {
       "id": "handlers_whatsapphandler_getopenwaqr",
@@ -15841,7 +15841,7 @@
       "file_type": "code",
       "norm_label": ".getopenwaqr()",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L620"
+      "source_location": "L641"
     },
     {
       "id": "handlers_whatsapphandler_getopenwasessionstatus",
@@ -15852,7 +15852,7 @@
       "file_type": "code",
       "norm_label": ".getopenwasessionstatus()",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L639"
+      "source_location": "L660"
     },
     {
       "id": "handlers_whatsapphandler_getsegments",
@@ -15863,7 +15863,7 @@
       "file_type": "code",
       "norm_label": ".getsegments()",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L347"
+      "source_location": "L368"
     },
     {
       "id": "handlers_whatsapphandler_getstatus",
@@ -15874,7 +15874,7 @@
       "file_type": "code",
       "norm_label": ".getstatus()",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L296"
+      "source_location": "L317"
     },
     {
       "id": "handlers_whatsapphandler_handlewebhook",
@@ -15896,7 +15896,7 @@
       "file_type": "code",
       "norm_label": ".listcampaigns()",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L366"
+      "source_location": "L387"
     },
     {
       "id": "handlers_whatsapphandler_listinvoices",
@@ -15907,7 +15907,7 @@
       "file_type": "code",
       "norm_label": ".listinvoices()",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L481"
+      "source_location": "L502"
     },
     {
       "id": "handlers_whatsapphandler_listlogs",
@@ -15918,7 +15918,7 @@
       "file_type": "code",
       "norm_label": ".listlogs()",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L273"
+      "source_location": "L294"
     },
     {
       "id": "handlers_whatsapphandler_listtemplates",
@@ -15929,7 +15929,7 @@
       "file_type": "code",
       "norm_label": ".listtemplates()",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L434"
+      "source_location": "L455"
     },
     {
       "id": "handlers_whatsapphandler_publicworkforcecheckin",
@@ -15940,7 +15940,7 @@
       "file_type": "code",
       "norm_label": ".publicworkforcecheckin()",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L582"
+      "source_location": "L603"
     },
     {
       "id": "handlers_whatsapphandler_restartopenwasession",
@@ -15951,7 +15951,7 @@
       "file_type": "code",
       "norm_label": ".restartopenwasession()",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L668"
+      "source_location": "L689"
     },
     {
       "id": "handlers_whatsapphandler_sendcampaign",
@@ -15962,7 +15962,7 @@
       "file_type": "code",
       "norm_label": ".sendcampaign()",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L414"
+      "source_location": "L435"
     },
     {
       "id": "handlers_whatsapphandler_sendinvoicewhatsapp",
@@ -15973,7 +15973,7 @@
       "file_type": "code",
       "norm_label": ".sendinvoicewhatsapp()",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L527"
+      "source_location": "L548"
     },
     {
       "id": "handlers_whatsapphandler_sendtestmessage",
@@ -15984,7 +15984,7 @@
       "file_type": "code",
       "norm_label": ".sendtestmessage()",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L225"
+      "source_location": "L246"
     },
     {
       "id": "handlers_whatsapphandler_simulatechatbot",
@@ -15995,7 +15995,7 @@
       "file_type": "code",
       "norm_label": ".simulatechatbot()",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L441"
+      "source_location": "L462"
     },
     {
       "id": "handlers_whatsapphandler_startopenwasession",
@@ -16006,7 +16006,7 @@
       "file_type": "code",
       "norm_label": ".startopenwasession()",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L606"
+      "source_location": "L627"
     },
     {
       "id": "handlers_whatsapphandler_stopopenwasession",
@@ -16017,7 +16017,7 @@
       "file_type": "code",
       "norm_label": ".stopopenwasession()",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L654"
+      "source_location": "L675"
     },
     {
       "id": "handlers_whatsapphandler_updateconfig",
@@ -16028,7 +16028,7 @@
       "file_type": "code",
       "norm_label": ".updateconfig()",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L318"
+      "source_location": "L339"
     },
     {
       "id": "handlers_whatsapphandler_verifycheckintoken",
@@ -16039,7 +16039,7 @@
       "file_type": "code",
       "norm_label": ".verifycheckintoken()",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L560"
+      "source_location": "L581"
     },
     {
       "id": "handlers_whatsapphandler_verifywebhook",
@@ -19871,7 +19871,7 @@
       "file_type": "code",
       "norm_label": "formatchatid()",
       "source_file": "apps/api/internal/messaging/provider.go",
-      "source_location": "L64"
+      "source_location": "L66"
     },
     {
       "id": "apps_api_internal_messaging_provider_go_messaging_sessionstatus",
@@ -30329,7 +30329,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/messaging/provider.go",
-      "source_location": "L65",
+      "source_location": "L71",
       "weight": 1.0
     },
     {
@@ -40793,36 +40793,12 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L386",
+      "source_location": "L407",
       "weight": 1.0
     },
     {
       "source": "handlers_whatsapphandler_createcampaign",
       "target": "apps_api_pkg_response_response_unauthorized",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L388",
-      "weight": 1.0
-    },
-    {
-      "source": "handlers_whatsapphandler_createcampaign",
-      "target": "apps_api_pkg_response_response_badrequest",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L393",
-      "weight": 1.0
-    },
-    {
-      "source": "handlers_whatsapphandler_createcampaign",
-      "target": "apps_api_pkg_response_response_ok",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -40833,31 +40809,7 @@
       "weight": 1.0
     },
     {
-      "source": "handlers_whatsapphandler_createinvoice",
-      "target": "apps_api_internal_interfaces_http_middleware_auth_gettenantid",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L501",
-      "weight": 1.0
-    },
-    {
-      "source": "handlers_whatsapphandler_createinvoice",
-      "target": "apps_api_pkg_response_response_unauthorized",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L503",
-      "weight": 1.0
-    },
-    {
-      "source": "handlers_whatsapphandler_createinvoice",
+      "source": "handlers_whatsapphandler_createcampaign",
       "target": "apps_api_pkg_response_response_badrequest",
       "relation": "calls",
       "_origin": "ast",
@@ -40865,12 +40817,24 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L512",
+      "source_location": "L414",
+      "weight": 1.0
+    },
+    {
+      "source": "handlers_whatsapphandler_createcampaign",
+      "target": "apps_api_pkg_response_response_ok",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
+      "source_location": "L430",
       "weight": 1.0
     },
     {
       "source": "handlers_whatsapphandler_createinvoice",
-      "target": "apps_api_pkg_response_response_ok",
+      "target": "apps_api_internal_interfaces_http_middleware_auth_gettenantid",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -40881,6 +40845,42 @@
       "weight": 1.0
     },
     {
+      "source": "handlers_whatsapphandler_createinvoice",
+      "target": "apps_api_pkg_response_response_unauthorized",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
+      "source_location": "L524",
+      "weight": 1.0
+    },
+    {
+      "source": "handlers_whatsapphandler_createinvoice",
+      "target": "apps_api_pkg_response_response_badrequest",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
+      "source_location": "L533",
+      "weight": 1.0
+    },
+    {
+      "source": "handlers_whatsapphandler_createinvoice",
+      "target": "apps_api_pkg_response_response_ok",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
+      "source_location": "L543",
+      "weight": 1.0
+    },
+    {
       "source": "handlers_whatsapphandler_getconfig",
       "target": "apps_api_internal_interfaces_http_middleware_auth_gettenantid",
       "relation": "calls",
@@ -40889,7 +40889,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L306",
+      "source_location": "L327",
       "weight": 1.0
     },
     {
@@ -40901,7 +40901,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L308",
+      "source_location": "L329",
       "weight": 1.0
     },
     {
@@ -40913,7 +40913,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L313",
+      "source_location": "L334",
       "weight": 1.0
     },
     {
@@ -40925,7 +40925,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L627",
+      "source_location": "L648",
       "weight": 1.0
     },
     {
@@ -40937,7 +40937,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L630",
+      "source_location": "L651",
       "weight": 1.0
     },
     {
@@ -40949,7 +40949,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L646",
+      "source_location": "L667",
       "weight": 1.0
     },
     {
@@ -40961,7 +40961,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L649",
+      "source_location": "L670",
       "weight": 1.0
     },
     {
@@ -40973,7 +40973,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L348",
+      "source_location": "L369",
       "weight": 1.0
     },
     {
@@ -40985,7 +40985,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L350",
+      "source_location": "L371",
       "weight": 1.0
     },
     {
@@ -40997,7 +40997,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L357",
+      "source_location": "L378",
       "weight": 1.0
     },
     {
@@ -41009,7 +41009,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L361",
+      "source_location": "L382",
       "weight": 1.0
     },
     {
@@ -41021,7 +41021,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L297",
+      "source_location": "L318",
       "weight": 1.0
     },
     {
@@ -41033,7 +41033,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L300",
+      "source_location": "L321",
       "weight": 1.0
     },
     {
@@ -41057,7 +41057,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L154",
+      "source_location": "L171",
       "weight": 1.0
     },
     {
@@ -41069,7 +41069,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L207",
+      "source_location": "L228",
       "weight": 1.0
     },
     {
@@ -41105,7 +41105,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L367",
+      "source_location": "L388",
       "weight": 1.0
     },
     {
@@ -41117,7 +41117,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L369",
+      "source_location": "L390",
       "weight": 1.0
     },
     {
@@ -41129,7 +41129,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L376",
+      "source_location": "L397",
       "weight": 1.0
     },
     {
@@ -41141,7 +41141,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L380",
+      "source_location": "L401",
       "weight": 1.0
     },
     {
@@ -41153,7 +41153,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L482",
+      "source_location": "L503",
       "weight": 1.0
     },
     {
@@ -41165,7 +41165,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L484",
+      "source_location": "L505",
       "weight": 1.0
     },
     {
@@ -41177,7 +41177,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L491",
+      "source_location": "L512",
       "weight": 1.0
     },
     {
@@ -41189,7 +41189,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L495",
+      "source_location": "L516",
       "weight": 1.0
     },
     {
@@ -41201,7 +41201,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L274",
+      "source_location": "L295",
       "weight": 1.0
     },
     {
@@ -41213,7 +41213,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L276",
+      "source_location": "L297",
       "weight": 1.0
     },
     {
@@ -41225,7 +41225,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L281",
+      "source_location": "L302",
       "weight": 1.0
     },
     {
@@ -41237,7 +41237,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L287",
+      "source_location": "L308",
       "weight": 1.0
     },
     {
@@ -41249,7 +41249,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L291",
+      "source_location": "L312",
       "weight": 1.0
     },
     {
@@ -41261,7 +41261,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L435",
+      "source_location": "L456",
       "weight": 1.0
     },
     {
@@ -41273,70 +41273,70 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
+      "source_location": "L457",
+      "weight": 1.0
+    },
+    {
+      "source": "handlers_whatsapphandler_publicworkforcecheckin",
+      "target": "apps_api_pkg_response_response_badrequest",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
+      "source_location": "L606",
+      "weight": 1.0
+    },
+    {
+      "source": "handlers_whatsapphandler_publicworkforcecheckin",
+      "target": "apps_api_pkg_response_response_ok",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
+      "source_location": "L620",
+      "weight": 1.0
+    },
+    {
+      "source": "handlers_whatsapphandler_restartopenwasession",
+      "target": "apps_api_pkg_response_response_badrequest",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
+      "source_location": "L695",
+      "weight": 1.0
+    },
+    {
+      "source": "handlers_whatsapphandler_restartopenwasession",
+      "target": "apps_api_pkg_response_response_ok",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
+      "source_location": "L698",
+      "weight": 1.0
+    },
+    {
+      "source": "handlers_whatsapphandler_sendcampaign",
+      "target": "apps_api_internal_interfaces_http_middleware_auth_gettenantid",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
       "source_location": "L436",
       "weight": 1.0
     },
     {
-      "source": "handlers_whatsapphandler_publicworkforcecheckin",
-      "target": "apps_api_pkg_response_response_badrequest",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L585",
-      "weight": 1.0
-    },
-    {
-      "source": "handlers_whatsapphandler_publicworkforcecheckin",
-      "target": "apps_api_pkg_response_response_ok",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L599",
-      "weight": 1.0
-    },
-    {
-      "source": "handlers_whatsapphandler_restartopenwasession",
-      "target": "apps_api_pkg_response_response_badrequest",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L674",
-      "weight": 1.0
-    },
-    {
-      "source": "handlers_whatsapphandler_restartopenwasession",
-      "target": "apps_api_pkg_response_response_ok",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L677",
-      "weight": 1.0
-    },
-    {
-      "source": "handlers_whatsapphandler_sendcampaign",
-      "target": "apps_api_internal_interfaces_http_middleware_auth_gettenantid",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L415",
-      "weight": 1.0
-    },
-    {
       "source": "handlers_whatsapphandler_sendcampaign",
       "target": "apps_api_pkg_response_response_unauthorized",
       "relation": "calls",
@@ -41345,7 +41345,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L417",
+      "source_location": "L438",
       "weight": 1.0
     },
     {
@@ -41357,7 +41357,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L425",
+      "source_location": "L446",
       "weight": 1.0
     },
     {
@@ -41369,7 +41369,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L429",
+      "source_location": "L450",
       "weight": 1.0
     },
     {
@@ -41381,7 +41381,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L528",
+      "source_location": "L549",
       "weight": 1.0
     },
     {
@@ -41393,7 +41393,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L530",
+      "source_location": "L551",
       "weight": 1.0
     },
     {
@@ -41405,240 +41405,12 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L538",
+      "source_location": "L559",
       "weight": 1.0
     },
     {
       "source": "handlers_whatsapphandler_sendinvoicewhatsapp",
       "target": "apps_api_pkg_response_response_ok",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L542",
-      "weight": 1.0
-    },
-    {
-      "source": "handlers_whatsapphandler_sendtestmessage",
-      "target": "apps_api_internal_interfaces_http_middleware_auth_gettenantid",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L226",
-      "weight": 1.0
-    },
-    {
-      "source": "handlers_whatsapphandler_sendtestmessage",
-      "target": "apps_api_pkg_response_response_unauthorized",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L228",
-      "weight": 1.0
-    },
-    {
-      "source": "handlers_whatsapphandler_sendtestmessage",
-      "target": "apps_api_pkg_response_response_badrequest",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L233",
-      "weight": 1.0
-    },
-    {
-      "source": "handlers_whatsapphandler_sendtestmessage",
-      "target": "apps_api_pkg_response_response_ok",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L268",
-      "weight": 1.0
-    },
-    {
-      "source": "handlers_whatsapphandler_simulatechatbot",
-      "target": "apps_api_internal_interfaces_http_middleware_auth_gettenantid",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L442",
-      "weight": 1.0
-    },
-    {
-      "source": "handlers_whatsapphandler_simulatechatbot",
-      "target": "apps_api_pkg_response_response_unauthorized",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L444",
-      "weight": 1.0
-    },
-    {
-      "source": "handlers_whatsapphandler_simulatechatbot",
-      "target": "apps_api_pkg_response_response_badrequest",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L455",
-      "weight": 1.0
-    },
-    {
-      "source": "handlers_whatsapphandler_simulatechatbot",
-      "target": "apps_api_pkg_response_response_internalerror",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L468",
-      "weight": 1.0
-    },
-    {
-      "source": "handlers_whatsapphandler_simulatechatbot",
-      "target": "apps_api_pkg_response_response_ok",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L472",
-      "weight": 1.0
-    },
-    {
-      "source": "handlers_whatsapphandler_startopenwasession",
-      "target": "apps_api_pkg_response_response_badrequest",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L612",
-      "weight": 1.0
-    },
-    {
-      "source": "handlers_whatsapphandler_startopenwasession",
-      "target": "apps_api_pkg_response_response_ok",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L615",
-      "weight": 1.0
-    },
-    {
-      "source": "handlers_whatsapphandler_stopopenwasession",
-      "target": "apps_api_pkg_response_response_badrequest",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L660",
-      "weight": 1.0
-    },
-    {
-      "source": "handlers_whatsapphandler_stopopenwasession",
-      "target": "apps_api_pkg_response_response_ok",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L663",
-      "weight": 1.0
-    },
-    {
-      "source": "handlers_whatsapphandler_updateconfig",
-      "target": "apps_api_internal_interfaces_http_middleware_auth_gettenantid",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L319",
-      "weight": 1.0
-    },
-    {
-      "source": "handlers_whatsapphandler_updateconfig",
-      "target": "apps_api_pkg_response_response_unauthorized",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L321",
-      "weight": 1.0
-    },
-    {
-      "source": "handlers_whatsapphandler_updateconfig",
-      "target": "apps_api_pkg_response_response_badrequest",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L326",
-      "weight": 1.0
-    },
-    {
-      "source": "handlers_whatsapphandler_updateconfig",
-      "target": "apps_api_pkg_response_response_internalerror",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L338",
-      "weight": 1.0
-    },
-    {
-      "source": "handlers_whatsapphandler_updateconfig",
-      "target": "apps_api_pkg_response_response_ok",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L342",
-      "weight": 1.0
-    },
-    {
-      "source": "handlers_whatsapphandler_verifycheckintoken",
-      "target": "apps_api_pkg_response_response_badrequest",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -41649,6 +41421,234 @@
       "weight": 1.0
     },
     {
+      "source": "handlers_whatsapphandler_sendtestmessage",
+      "target": "apps_api_internal_interfaces_http_middleware_auth_gettenantid",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
+      "source_location": "L247",
+      "weight": 1.0
+    },
+    {
+      "source": "handlers_whatsapphandler_sendtestmessage",
+      "target": "apps_api_pkg_response_response_unauthorized",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
+      "source_location": "L249",
+      "weight": 1.0
+    },
+    {
+      "source": "handlers_whatsapphandler_sendtestmessage",
+      "target": "apps_api_pkg_response_response_badrequest",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
+      "source_location": "L254",
+      "weight": 1.0
+    },
+    {
+      "source": "handlers_whatsapphandler_sendtestmessage",
+      "target": "apps_api_pkg_response_response_ok",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
+      "source_location": "L289",
+      "weight": 1.0
+    },
+    {
+      "source": "handlers_whatsapphandler_simulatechatbot",
+      "target": "apps_api_internal_interfaces_http_middleware_auth_gettenantid",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
+      "source_location": "L463",
+      "weight": 1.0
+    },
+    {
+      "source": "handlers_whatsapphandler_simulatechatbot",
+      "target": "apps_api_pkg_response_response_unauthorized",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
+      "source_location": "L465",
+      "weight": 1.0
+    },
+    {
+      "source": "handlers_whatsapphandler_simulatechatbot",
+      "target": "apps_api_pkg_response_response_badrequest",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
+      "source_location": "L476",
+      "weight": 1.0
+    },
+    {
+      "source": "handlers_whatsapphandler_simulatechatbot",
+      "target": "apps_api_pkg_response_response_internalerror",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
+      "source_location": "L489",
+      "weight": 1.0
+    },
+    {
+      "source": "handlers_whatsapphandler_simulatechatbot",
+      "target": "apps_api_pkg_response_response_ok",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
+      "source_location": "L493",
+      "weight": 1.0
+    },
+    {
+      "source": "handlers_whatsapphandler_startopenwasession",
+      "target": "apps_api_pkg_response_response_badrequest",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
+      "source_location": "L633",
+      "weight": 1.0
+    },
+    {
+      "source": "handlers_whatsapphandler_startopenwasession",
+      "target": "apps_api_pkg_response_response_ok",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
+      "source_location": "L636",
+      "weight": 1.0
+    },
+    {
+      "source": "handlers_whatsapphandler_stopopenwasession",
+      "target": "apps_api_pkg_response_response_badrequest",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
+      "source_location": "L681",
+      "weight": 1.0
+    },
+    {
+      "source": "handlers_whatsapphandler_stopopenwasession",
+      "target": "apps_api_pkg_response_response_ok",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
+      "source_location": "L684",
+      "weight": 1.0
+    },
+    {
+      "source": "handlers_whatsapphandler_updateconfig",
+      "target": "apps_api_internal_interfaces_http_middleware_auth_gettenantid",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
+      "source_location": "L340",
+      "weight": 1.0
+    },
+    {
+      "source": "handlers_whatsapphandler_updateconfig",
+      "target": "apps_api_pkg_response_response_unauthorized",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
+      "source_location": "L342",
+      "weight": 1.0
+    },
+    {
+      "source": "handlers_whatsapphandler_updateconfig",
+      "target": "apps_api_pkg_response_response_badrequest",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
+      "source_location": "L347",
+      "weight": 1.0
+    },
+    {
+      "source": "handlers_whatsapphandler_updateconfig",
+      "target": "apps_api_pkg_response_response_internalerror",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
+      "source_location": "L359",
+      "weight": 1.0
+    },
+    {
+      "source": "handlers_whatsapphandler_updateconfig",
+      "target": "apps_api_pkg_response_response_ok",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
+      "source_location": "L363",
+      "weight": 1.0
+    },
+    {
+      "source": "handlers_whatsapphandler_verifycheckintoken",
+      "target": "apps_api_pkg_response_response_badrequest",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
+      "source_location": "L584",
+      "weight": 1.0
+    },
+    {
       "source": "handlers_whatsapphandler_verifycheckintoken",
       "target": "apps_api_pkg_response_response_ok",
       "relation": "calls",
@@ -41657,7 +41657,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L577",
+      "source_location": "L598",
       "weight": 1.0
     },
     {
@@ -78747,7 +78747,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L385",
+      "source_location": "L406",
       "weight": 1.0
     },
     {
@@ -78759,7 +78759,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L500",
+      "source_location": "L521",
       "weight": 1.0
     },
     {
@@ -78771,7 +78771,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L305",
+      "source_location": "L326",
       "weight": 1.0
     },
     {
@@ -78783,7 +78783,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L547",
+      "source_location": "L568",
       "weight": 1.0
     },
     {
@@ -78795,7 +78795,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L620",
+      "source_location": "L641",
       "weight": 1.0
     },
     {
@@ -78807,7 +78807,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L639",
+      "source_location": "L660",
       "weight": 1.0
     },
     {
@@ -78819,7 +78819,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L347",
+      "source_location": "L368",
       "weight": 1.0
     },
     {
@@ -78831,7 +78831,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L296",
+      "source_location": "L317",
       "weight": 1.0
     },
     {
@@ -78855,7 +78855,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L366",
+      "source_location": "L387",
       "weight": 1.0
     },
     {
@@ -78867,7 +78867,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L481",
+      "source_location": "L502",
       "weight": 1.0
     },
     {
@@ -78879,7 +78879,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L273",
+      "source_location": "L294",
       "weight": 1.0
     },
     {
@@ -78891,7 +78891,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L434",
+      "source_location": "L455",
       "weight": 1.0
     },
     {
@@ -78903,7 +78903,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L582",
+      "source_location": "L603",
       "weight": 1.0
     },
     {
@@ -78915,7 +78915,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L668",
+      "source_location": "L689",
       "weight": 1.0
     },
     {
@@ -78927,7 +78927,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L414",
+      "source_location": "L435",
       "weight": 1.0
     },
     {
@@ -78939,7 +78939,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L527",
+      "source_location": "L548",
       "weight": 1.0
     },
     {
@@ -78951,7 +78951,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L225",
+      "source_location": "L246",
       "weight": 1.0
     },
     {
@@ -78963,7 +78963,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L441",
+      "source_location": "L462",
       "weight": 1.0
     },
     {
@@ -78975,7 +78975,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L606",
+      "source_location": "L627",
       "weight": 1.0
     },
     {
@@ -78987,7 +78987,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L654",
+      "source_location": "L675",
       "weight": 1.0
     },
     {
@@ -78999,7 +78999,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L318",
+      "source_location": "L339",
       "weight": 1.0
     },
     {
@@ -79011,7 +79011,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L560",
+      "source_location": "L581",
       "weight": 1.0
     },
     {
@@ -92837,7 +92837,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/messaging/provider.go",
-      "source_location": "L64",
+      "source_location": "L66",
       "weight": 1.0
     },
     {
@@ -106708,7 +106708,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L225",
+      "source_location": "L246",
       "weight": 1.0
     },
     {
@@ -106719,7 +106719,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L273",
+      "source_location": "L294",
       "weight": 1.0
     },
     {
@@ -106730,7 +106730,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L296",
+      "source_location": "L317",
       "weight": 1.0
     },
     {
@@ -106741,7 +106741,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L305",
+      "source_location": "L326",
       "weight": 1.0
     },
     {
@@ -106752,7 +106752,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L318",
+      "source_location": "L339",
       "weight": 1.0
     },
     {
@@ -106763,7 +106763,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L347",
+      "source_location": "L368",
       "weight": 1.0
     },
     {
@@ -106774,7 +106774,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L366",
+      "source_location": "L387",
       "weight": 1.0
     },
     {
@@ -106785,7 +106785,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L385",
+      "source_location": "L406",
       "weight": 1.0
     },
     {
@@ -106796,7 +106796,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L414",
+      "source_location": "L435",
       "weight": 1.0
     },
     {
@@ -106807,7 +106807,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L434",
+      "source_location": "L455",
       "weight": 1.0
     },
     {
@@ -106818,7 +106818,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L441",
+      "source_location": "L462",
       "weight": 1.0
     },
     {
@@ -106829,7 +106829,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L481",
+      "source_location": "L502",
       "weight": 1.0
     },
     {
@@ -106840,7 +106840,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L500",
+      "source_location": "L521",
       "weight": 1.0
     },
     {
@@ -106851,7 +106851,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L527",
+      "source_location": "L548",
       "weight": 1.0
     },
     {
@@ -106862,7 +106862,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L547",
+      "source_location": "L568",
       "weight": 1.0
     },
     {
@@ -106873,7 +106873,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L560",
+      "source_location": "L581",
       "weight": 1.0
     },
     {
@@ -106884,7 +106884,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L582",
+      "source_location": "L603",
       "weight": 1.0
     },
     {
@@ -106895,7 +106895,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L606",
+      "source_location": "L627",
       "weight": 1.0
     },
     {
@@ -106906,18 +106906,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L620",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_api_internal_interfaces_http_handlers_whatsapp_go_handlers_whatsapphandler",
-      "target": "handlers_whatsapphandler_getopenwasessionstatus",
-      "relation": "method",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L639",
+      "source_location": "L641",
       "weight": 1.0
     },
     {
@@ -106933,13 +106922,24 @@
     },
     {
       "source": "apps_api_internal_interfaces_http_handlers_whatsapp_go_handlers_whatsapphandler",
+      "target": "handlers_whatsapphandler_getopenwasessionstatus",
+      "relation": "method",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
+      "source_location": "L660",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_api_internal_interfaces_http_handlers_whatsapp_go_handlers_whatsapphandler",
       "target": "handlers_whatsapphandler_stopopenwasession",
       "relation": "method",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L654",
+      "source_location": "L675",
       "weight": 1.0
     },
     {
@@ -106950,7 +106950,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
-      "source_location": "L668",
+      "source_location": "L689",
       "weight": 1.0
     },
     {
@@ -110387,5 +110387,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "93950c68cb9a016799f8486c79817422e3ce849d"
+  "built_at_commit": "7b1d3674bac83984e48d247e8090789175560e69"
 }
