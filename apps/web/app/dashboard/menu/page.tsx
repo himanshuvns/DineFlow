@@ -960,7 +960,7 @@ export default function MenuManagementPage() {
 
                 {/* Thumbnail banner if available */}
                 {item.imageUrl ? (
-                  <div className="h-36 -mx-6 -mt-6 mb-4 relative overflow-hidden bg-slate-100 dark:bg-slate-950">
+                  <div className="h-36 -mx-4 -mt-4 sm:-mx-6 sm:-mt-6 mb-4 relative overflow-hidden bg-slate-100 dark:bg-slate-950">
                     <img
                       src={item.imageUrl}
                       alt={item.name}

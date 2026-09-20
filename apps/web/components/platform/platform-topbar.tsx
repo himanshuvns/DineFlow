@@ -11,6 +11,7 @@ import {
   ExternalLink,
   ChevronRight,
   Building2,
+  Menu,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useAuthStore } from "@/lib/stores/auth-store";
@@ -32,7 +33,11 @@ const PLATFORM_TITLES: Record<string, string> = {
   "/platform/operations": "Platform Operations & Announcements",
 };
 
-export function PlatformTopbar() {
+export interface PlatformTopbarProps {
+  onMenuClick?: () => void;
+}
+
+export function PlatformTopbar({ onMenuClick }: PlatformTopbarProps = {}) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, clearAuth } = useAuthStore();
@@ -74,6 +79,15 @@ export function PlatformTopbar() {
     <header className="h-16 px-4 sm:px-6 border-b border-slate-200/80 dark:border-slate-800/80 bg-white/80 dark:bg-[#070B14]/80 backdrop-blur-md sticky top-0 z-40 flex items-center justify-between gap-4">
       {/* Page Title & Breadcrumbs */}
       <div className="flex items-center gap-2 min-w-0">
+        {onMenuClick && (
+          <button
+            onClick={onMenuClick}
+            className="md:hidden p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 transition-colors cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center shrink-0"
+            aria-label="Open navigation drawer"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+        )}
         <span className="text-xs font-bold text-slate-500 dark:text-slate-400 hidden sm:inline">
           Platform
         </span>

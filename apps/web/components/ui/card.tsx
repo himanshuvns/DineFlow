@@ -3,28 +3,37 @@ import { cn } from "@/lib/utils";
 
 export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   variant?: "glass" | "bordered" | "glow" | "solid";
+  padding?: "none" | "default" | "compact";
   hoverEffect?: boolean;
 }
 
 export function Card({
   className,
   variant = "glass",
+  padding = "default",
   hoverEffect = false,
   ...props
 }: CardProps) {
   const variantStyles = {
-    glass: "glass-panel rounded-2xl p-4 sm:p-6",
-    glow: "glass-panel-glow rounded-2xl p-4 sm:p-6",
+    glass: "glass-panel rounded-2xl",
+    glow: "glass-panel-glow rounded-2xl",
     bordered:
-      "bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-6 shadow-sm dark:shadow-none",
+      "bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm dark:shadow-none",
     solid:
-      "bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-6 border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-none",
+      "bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-none",
+  };
+
+  const paddingStyles = {
+    none: "p-0",
+    compact: "p-3 sm:p-4",
+    default: "p-4 sm:p-6",
   };
 
   return (
     <div
       className={cn(
         variantStyles[variant],
+        paddingStyles[padding],
         hoverEffect &&
           "transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-lg hover:shadow-emerald-500/5 dark:hover:shadow-emerald-500/5",
         className

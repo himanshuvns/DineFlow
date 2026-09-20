@@ -219,6 +219,19 @@ export default function KDSOrdersPage() {
     return "text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20";
   };
 
+  const formatKdsTableName = (tableStr?: string) => {
+    if (!tableStr) return "Dine-In";
+    const str = tableStr.trim();
+    // Normalize raw database IDs like "table-6aaedcce249b6bd28e020f81"
+    if (/^table-[a-f0-9]{20,}/i.test(str)) {
+      return `Table #${str.replace(/^table-/i, "").slice(0, 6)}`;
+    }
+    if (/^[a-f0-9]{24}$/i.test(str)) {
+      return `Table #${str.slice(0, 6)}`;
+    }
+    return str;
+  };
+
   // Bump bar transitions: pending -> preparing -> ready -> served
   const handleBump = async (orderId: string, currentStatus: KdsOrder["status"]) => {
     let nextStatus: KdsOrder["status"] = "preparing";
@@ -501,7 +514,8 @@ export default function KDSOrdersPage() {
               <Card
                 key={order.id}
                 variant="glass"
-                className={`flex flex-col justify-between border-2 transition-all ${
+                padding="none"
+                className={`flex flex-col justify-between border-2 rounded-2xl overflow-hidden transition-all ${
                   isRed
                     ? "border-rose-500/70 shadow-lg shadow-rose-500/10"
                     : isRoomService
@@ -514,24 +528,27 @@ export default function KDSOrdersPage() {
                 }`}
               >
                 {/* Ticket Header */}
-                <CardHeader className="p-4 pb-3 border-b border-slate-200/80 dark:border-slate-800/80 flex flex-row items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-lg font-black text-slate-900 dark:text-white tracking-tight">
-                        {order.table}
+                <CardHeader className="p-3.5 sm:p-4 pb-3 border-b border-slate-200/80 dark:border-slate-800/80 flex flex-row items-center justify-between gap-2.5">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                      <span
+                        className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight truncate max-w-[140px] sm:max-w-[180px]"
+                        title={order.table}
+                      >
+                        {formatKdsTableName(order.table)}
                       </span>
                       {isRoomService && (
-                        <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 dark:bg-amber-500/20 border border-amber-500/30 px-1.5 py-0.5 rounded flex items-center gap-1">
+                        <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 dark:bg-amber-500/20 border border-amber-500/30 px-1.5 py-0.5 rounded flex items-center gap-1 shrink-0">
                           <Hotel className="h-2.5 w-2.5" /> Room Service
                         </span>
                       )}
                       {order.orderSource === "front_desk" && (
-                        <span className="text-[10px] font-bold text-purple-700 dark:text-purple-300 bg-purple-500/15 border border-purple-500/30 px-1.5 py-0.5 rounded flex items-center gap-1">
+                        <span className="text-[10px] font-bold text-purple-700 dark:text-purple-300 bg-purple-500/15 border border-purple-500/30 px-1.5 py-0.5 rounded flex items-center gap-1 shrink-0">
                           Front Desk {order.placedBy ? `• ${order.placedBy}` : ""}
                         </span>
                       )}
                       {order.billingMethod && (
-                        <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-1.5 py-0.5 rounded">
+                        <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-1.5 py-0.5 rounded shrink-0">
                           {order.billingMethod === "room_folio"
                             ? "Room Bill"
                             : order.billingMethod === "complimentary"
@@ -540,11 +557,11 @@ export default function KDSOrdersPage() {
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono font-semibold">
+                    <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono font-semibold shrink-0">
                         {order.id}
                       </span>
-                      <span className="text-slate-400 dark:text-slate-600">•</span>
+                      <span className="text-slate-400 dark:text-slate-600 shrink-0">•</span>
                       <span className="text-[11px] text-slate-600 dark:text-slate-400 truncate max-w-[120px]">
                         {order.customerName}
                       </span>
@@ -553,19 +570,19 @@ export default function KDSOrdersPage() {
 
                   {/* Urgency Time Elapsed Pill */}
                   <div
-                    className={`flex items-center gap-1 text-xs font-mono font-bold px-2 py-1 rounded-lg border ${urgencyBadge}`}
+                    className={`flex items-center gap-1.5 text-xs font-mono font-bold px-2 py-1 rounded-lg border shrink-0 whitespace-nowrap ${urgencyBadge}`}
                   >
                     {order.status === "served" ? (
-                      <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />
+                      <CheckCircle className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
                     ) : (
-                      <Clock className="h-3.5 w-3.5" />
+                      <Clock className="h-3.5 w-3.5 shrink-0" />
                     )}
                     <span>{order.status === "served" ? `Delivered: ${formatTimer(order.secondsElapsed)}` : formatTimer(order.secondsElapsed)}</span>
                   </div>
                 </CardHeader>
 
                 {/* Ticket Items List */}
-                <CardContent className="p-4 space-y-3 flex-1">
+                <CardContent className="p-3.5 sm:p-4 space-y-3 flex-1 overflow-y-auto min-h-0">
                   {order.items.map((item, idx) => (
                     <div
                       key={idx}
@@ -636,8 +653,9 @@ export default function KDSOrdersPage() {
                       <button
                         type="button"
                         onClick={() => handleRejectOrder(order.id)}
-                        className="p-1.5 rounded-lg text-rose-500 dark:text-rose-400 hover:text-rose-600 dark:hover:text-rose-300 hover:bg-rose-500/10 transition-colors"
+                        className="h-8 w-8 min-h-[36px] min-w-[36px] sm:min-h-0 sm:min-w-0 rounded-lg text-rose-500 dark:text-rose-400 hover:text-rose-600 dark:hover:text-rose-300 hover:bg-rose-500/10 flex items-center justify-center transition-colors cursor-pointer"
                         title="Reject / Cancel Order"
+                        aria-label="Reject / Cancel Order"
                       >
                         <XCircle className="h-4 w-4" />
                       </button>
@@ -646,8 +664,9 @@ export default function KDSOrdersPage() {
                     <button
                       type="button"
                       onClick={() => handleOpenThermal(order, order.status === "served" ? "bill" : "kot")}
-                      className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                      className="h-8 w-8 min-h-[36px] min-w-[36px] sm:min-h-0 sm:min-w-0 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-colors cursor-pointer"
                       title={order.status === "served" ? "Print Guest Tax Bill" : "Print Kitchen KOT"}
+                      aria-label={order.status === "served" ? "Print Guest Tax Bill" : "Print Kitchen KOT"}
                     >
                       <Printer className="h-4 w-4" />
                     </button>

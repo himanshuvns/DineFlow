@@ -389,10 +389,14 @@ export default function TablesManagementPage() {
                 className={`border cursor-pointer ${statusColors[table.status]}`}
                 onClick={() => setSelectedTable(table)}
               >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="text-base font-bold text-slate-900 dark:text-white">{table.name}</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{table.zone}</p>
+                <div className="flex items-start justify-between gap-2 min-w-0">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white truncate" title={table.name}>
+                      {table.name}
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium truncate">
+                      {table.zone}
+                    </p>
                   </div>
                   <Badge
                     variant={
@@ -404,6 +408,7 @@ export default function TablesManagementPage() {
                     }
                     size="sm"
                     dot
+                    className="shrink-0"
                   >
                     {table.status}
                   </Badge>
@@ -414,7 +419,9 @@ export default function TablesManagementPage() {
                     <Users className="h-3.5 w-3.5" />
                     <span>{table.seats} Seats</span>
                   </div>
-                  <span className="font-mono text-[11px] font-bold text-emerald-700 dark:text-emerald-400">{table.id}</span>
+                  <span className="font-mono text-[11px] font-bold text-emerald-700 dark:text-emerald-400 truncate max-w-[100px]">
+                    {table.id}
+                  </span>
                 </div>
 
                 {/* Mini Preview Box */}
@@ -426,7 +433,8 @@ export default function TablesManagementPage() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                    className="h-8 w-8 min-h-[36px] min-w-[36px] sm:min-h-0 sm:min-w-0 text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                    aria-label={`Delete ${table.name}`}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleDeleteTable(table.id, table.name);

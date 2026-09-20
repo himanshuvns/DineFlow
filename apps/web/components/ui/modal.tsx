@@ -95,14 +95,14 @@ export function Modal({
               </div>
               <button
                 onClick={onClose}
-                className="rounded-xl p-1.5 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0 cursor-pointer"
+                className="h-10 w-10 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 transition-colors shrink-0 cursor-pointer"
                 aria-label="Close modal"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="py-3 flex-1 overflow-y-auto min-h-0 [scrollbar-width:thin]">
+            <div className="py-3 flex-1 overflow-y-auto min-h-0 overscroll-contain [scrollbar-width:thin]">
               {children}
             </div>
 

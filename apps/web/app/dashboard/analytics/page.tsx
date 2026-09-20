@@ -188,7 +188,7 @@ export default function AnalyticsPage() {
 
       {/* Primary Financial KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card variant="glass" className="border-emerald-500/30 bg-emerald-500/5">
+        <Card variant="glass" padding="none" className="border-emerald-500/30 bg-emerald-500/5">
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Gross Sales Revenue</span>
@@ -205,7 +205,7 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
 
-        <Card variant="glass">
+        <Card variant="glass" padding="none">
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Average Order Value (AOV)</span>
@@ -222,7 +222,7 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
 
-        <Card variant="glass">
+        <Card variant="glass" padding="none">
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Total Covers & Turnaround</span>
@@ -239,7 +239,7 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
 
-        <Card variant="glass">
+        <Card variant="glass" padding="none">
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Guest Satisfaction (NPS)</span>
