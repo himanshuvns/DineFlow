@@ -65,9 +65,11 @@ func Setup(
 			publicGroup.POST("/workforce/check-in", waHandler.PublicWorkforceCheckIn)
 		}
 
-		// ── Public WhatsApp Webhook (Meta Cloud API) ──────────────────────
+		// ── Public WhatsApp Webhook (Meta Cloud API & OpenWA Gateway) ─────
 		v1.GET("/whatsapp/webhook", waHandler.VerifyWebhook)
 		v1.POST("/whatsapp/webhook", waHandler.HandleWebhook)
+		v1.GET("/webhooks/whatsapp", waHandler.VerifyWebhook)
+		v1.POST("/webhooks/whatsapp", waHandler.HandleWebhook)
 		v1.GET("/whatsapp/invoices/:id/receipt", waHandler.GetInvoiceReceiptHTML)
 		v1.GET("/staff/payslips/:id/view", staffHandler.GetPayslipHTML)
 		v1.GET("/workforce/verify-token", waHandler.VerifyCheckInToken)
@@ -323,6 +325,13 @@ func Setup(
 				waGroup.GET("/invoices", waHandler.ListInvoices)
 				waGroup.POST("/invoices", waHandler.CreateInvoice)
 				waGroup.POST("/invoices/:id/send", waHandler.SendInvoiceWhatsApp)
+
+				// OpenWA Local Development Gateway
+				waGroup.POST("/openwa/session/start", waHandler.StartOpenWASession)
+				waGroup.GET("/openwa/session/qr", waHandler.GetOpenWAQR)
+				waGroup.GET("/openwa/session/status", waHandler.GetOpenWASessionStatus)
+				waGroup.POST("/openwa/session/disconnect", waHandler.StopOpenWASession)
+				waGroup.POST("/openwa/session/restart", waHandler.RestartOpenWASession)
 			}
 
 			// ── Sales & Operational Analytics (Phase 5) ────────────────────

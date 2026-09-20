@@ -1,0 +1,46 @@
+# DineFlow — OpenWA Development Gateway Docker Compose
+# Runs OpenWA as an isolated development WhatsApp gateway without interfering with primary services.
+#
+# Usage:
+#   docker compose -f docker-compose.openwa.yml up -d
+#
+# Dashboard & REST API:
+#   http://localhost:2785
+
+services:
+  openwa:
+    image: rmyndharis/openwa:latest
+    container_name: dineflow-openwa
+    restart: unless-stopped
+    ports:
+      - "2785:2785"
+    environment:
+      - NODE_ENV=development
+      - PORT=2785
+      - TZ=UTC
+      - LOG_LEVEL=info
+      # Engine configuration: whatsapp-web.js (headless Chromium)
+      - ENGINE_TYPE=whatsapp-web.js
+      - SESSION_DATA_PATH=/app/data/sessions
+      - AUTO_START_SESSIONS=true
+      - PUPPETEER_HEADLESS=true
+      - PUPPETEER_ARGS=--no-sandbox,--disable-setuid-sandbox,--disable-dev-shm-usage,--disable-gpu
+      # Local Zero-Config Database
+      - DATABASE_TYPE=sqlite
+      - DATABASE_SYNCHRONIZE=true
+      # Security & API Authentication
+      - API_MASTER_KEY=${OPENWA_API_KEY:-dineflow_openwa_secret_key}
+      # Webhook Configuration (delivers incoming messages & status to DineFlow backend)
+      - WEBHOOK_URL=${OPENWA_WEBHOOK_URL:-http://host.docker.internal:8080/api/v1/whatsapp/webhook}
+      - WEBHOOK_SECRET=${OPENWA_WEBHOOK_SECRET:-dineflow_openwa_webhook_secret}
+      - WEBHOOK_TIMEOUT=10000
+      - WEBHOOK_RETRY_DELAY=5000
+    volumes:
+      - openwa_data:/app/data
+    # Resource safety ceilings suitable for MacBook Apple Silicon & local environments
+    pids_limit: 2048
+    mem_limit: 2g
+
+volumes:
+  openwa_data:
+    name: dineflow_openwa_data

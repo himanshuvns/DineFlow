@@ -31,6 +31,7 @@ import (
 	"github.com/dineflow/api/internal/interfaces/http/handlers"
 	"github.com/dineflow/api/internal/interfaces/http/middleware"
 	"github.com/dineflow/api/internal/interfaces/http/routes"
+	"github.com/dineflow/api/internal/messaging"
 	"github.com/dineflow/api/pkg/config"
 	"github.com/dineflow/api/pkg/logger"
 	"github.com/dineflow/api/pkg/otp"
@@ -169,8 +170,38 @@ func main() {
 	searchHandler := handlers.NewSearchHandler(searchService)
 	platformHandler := handlers.NewPlatformHandler(platformService)
 
+	// ── WhatsApp Gateway Provider (OpenWA / Meta Cloud API / Mock) ───────────
+	var waProvider messaging.WhatsAppProvider
+	switch strings.ToLower(cfg.WhatsApp.Provider) {
+	case "openwa":
+		waProvider = messaging.NewOpenWAProvider(messaging.OpenWAConfig{
+			BaseURL:       cfg.WhatsApp.OpenWA.URL,
+			APIKey:        cfg.WhatsApp.OpenWA.APIKey,
+			SessionID:     cfg.WhatsApp.OpenWA.SessionID,
+			WebhookSecret: cfg.WhatsApp.OpenWA.WebhookSecret,
+		})
+		log.Info("Initialized OpenWA WhatsApp Provider (Local Dev Gateway)",
+			zap.String("url", cfg.WhatsApp.OpenWA.URL),
+			zap.String("session", cfg.WhatsApp.OpenWA.SessionID),
+		)
+	case "meta":
+		waProvider = messaging.NewMetaCloudProvider(messaging.MetaCloudConfig{
+			PhoneNumberID:   cfg.WhatsApp.PhoneNumberID,
+			AccessToken:     cfg.WhatsApp.AccessToken,
+			BusinessAccount: cfg.WhatsApp.BusinessAccount,
+		})
+		log.Info("Initialized Meta Cloud WhatsApp Provider")
+	default:
+		waProvider = messaging.NewMockProvider()
+		log.Info("Initialized Mock WhatsApp Provider (Offline Sandbox)")
+	}
+
+	waService.SetProvider(waProvider)
+	waService.SetAdminAlertConfig(cfg.WhatsApp.AdminNumbers, cfg.WhatsApp.LargeOrderThreshold)
+
 	// Inject notifService into order, whatsapp & staff services for real-time event emission
 	orderService.SetNotificationService(notifService)
+	orderService.SetWhatsAppNotifier(waService)
 	waService.SetNotificationService(notifService)
 	waService.SetStaffService(staffService)
 	staffService.SetNotificationService(notifService)

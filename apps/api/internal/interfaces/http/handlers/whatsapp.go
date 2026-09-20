@@ -15,6 +15,7 @@ import (
 	appwa "github.com/dineflow/api/internal/application/whatsapp"
 	domainwa "github.com/dineflow/api/internal/domain/whatsapp"
 	"github.com/dineflow/api/internal/interfaces/http/middleware"
+	"github.com/dineflow/api/internal/messaging"
 	"github.com/dineflow/api/pkg/response"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -43,6 +44,21 @@ func verifyMetaSignature(signatureHeader, appSecret string, body []byte) bool {
 	return hmac.Equal([]byte(expectedSig), []byte(actualSig))
 }
 
+// verifyOpenWASignature verifies OpenWA's X-OpenWA-Signature header.
+func verifyOpenWASignature(sigHeader, secret string, body []byte) bool {
+	if secret == "" {
+		return true // local development without secret configured
+	}
+	if sigHeader == "" {
+		return false
+	}
+	expectedSig := strings.TrimPrefix(sigHeader, "sha256=")
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write(body)
+	actualSig := hex.EncodeToString(mac.Sum(nil))
+	return hmac.Equal([]byte(expectedSig), []byte(actualSig))
+}
+
 // VerifyWebhook godoc
 // GET /api/v1/whatsapp/webhook
 // Handles Meta Cloud API Webhook subscription challenge.
@@ -66,7 +82,7 @@ func (h *WhatsAppHandler) VerifyWebhook(c *gin.Context) {
 
 // HandleWebhook godoc
 // POST /api/v1/whatsapp/webhook
-// Handles incoming Meta Cloud API webhook events (messages and delivery statuses).
+// Handles incoming OpenWA and Meta Cloud API webhook events (messages and delivery statuses).
 func (h *WhatsAppHandler) HandleWebhook(c *gin.Context) {
 	bodyBytes, err := io.ReadAll(c.Request.Body)
 	if err != nil {
@@ -78,14 +94,99 @@ func (h *WhatsAppHandler) HandleWebhook(c *gin.Context) {
 	// Verify cryptographic signature if WHATSAPP_APP_SECRET is set
 	appSecret := os.Getenv("WHATSAPP_APP_SECRET")
 	sigHeader := c.GetHeader("X-Hub-Signature-256")
-	if appSecret != "" && !verifyMetaSignature(sigHeader, appSecret, bodyBytes) {
+	if appSecret != "" && sigHeader != "" && !verifyMetaSignature(sigHeader, appSecret, bodyBytes) {
 		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-			"error": "Invalid webhook cryptographic signature",
+			"error": "Invalid Meta webhook cryptographic signature",
 		})
 		return
 	}
 
-	// Try parsing official Meta Webhook Payload
+	// Verify OpenWA signature if X-OpenWA-Signature is set
+	openwaSecret := os.Getenv("OPENWA_WEBHOOK_SECRET")
+	openwaSig := c.GetHeader("X-OpenWA-Signature")
+	if openwaSecret != "" && openwaSig != "" && !verifyOpenWASignature(openwaSig, openwaSecret, bodyBytes) {
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+			"error": "Invalid OpenWA webhook cryptographic signature",
+		})
+		return
+	}
+
+	// 1. Try parsing OpenWA Webhook Payload
+	var openwaPayload struct {
+		Event          string `json:"event"`
+		SessionID      string `json:"sessionId"`
+		Timestamp      string `json:"timestamp"`
+		IdempotencyKey string `json:"idempotencyKey"`
+		Data           struct {
+			ID        string `json:"id"`
+			ChatID    string `json:"chatId"`
+			From      string `json:"from"`
+			Body      string `json:"body"`
+			Type      string `json:"type"`
+			Status    string `json:"status"`
+			Timestamp int64  `json:"timestamp"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(bodyBytes, &openwaPayload); err == nil && openwaPayload.Event != "" {
+		// Log every webhook during development (Phase 4 requirement)
+		var rawMap map[string]interface{}
+		_ = json.Unmarshal(bodyBytes, &rawMap)
+		h.waService.LogWebhookEvent(c.Request.Context(), bson.NilObjectID, openwaPayload.Event, rawMap)
+
+		if openwaPayload.Event == "session.status" {
+			status := openwaPayload.Data.Status
+			if status == "" {
+				status = openwaPayload.Event
+			}
+			if p, ok := h.waService.GetProvider().(*messaging.OpenWAProvider); ok {
+				p.UpdateFromWebhook(status)
+			}
+			c.JSON(http.StatusOK, gin.H{"status": "session status recorded", "event": status})
+			return
+		}
+
+		if openwaPayload.Event == "message.received" || openwaPayload.Event == "message:received" {
+			from := openwaPayload.Data.From
+			if from == "" {
+				from = openwaPayload.Data.ChatID
+			}
+			text := strings.TrimSpace(openwaPayload.Data.Body)
+			cleanFrom := messaging.CleanPhoneNumber(from)
+
+			// 1a. Check if sender is staff
+			staff, err := h.waService.FindStaffByPhone(c.Request.Context(), cleanFrom)
+			if err == nil && staff != nil {
+				reply, _ := h.waService.ProcessWorkforceMessage(c.Request.Context(), staff, text, "")
+				if h.waService.GetProvider() != nil && reply != "" {
+					_, _ = h.waService.GetProvider().SendText(c.Request.Context(), cleanFrom, reply)
+				}
+				c.JSON(http.StatusOK, gin.H{"handled": "workforce", "reply": reply})
+				return
+			}
+
+			// 1b. Process rule-based customer commands (Hi, Menu, Order Status)
+			if botReply, handled := h.waService.ProcessRuleBasedCommand(c.Request.Context(), bson.NilObjectID, cleanFrom, text); handled {
+				if h.waService.GetProvider() != nil && botReply != "" {
+					_, _ = h.waService.GetProvider().SendText(c.Request.Context(), cleanFrom, botReply)
+				}
+				c.JSON(http.StatusOK, gin.H{"handled": "command", "reply": botReply})
+				return
+			}
+
+			// 1c. Fallback to conversational chatbot or acknowledge
+			reply, _ := h.waService.ProcessChatbotMessage(c.Request.Context(), bson.NilObjectID, cleanFrom, "Guest", text)
+			if h.waService.GetProvider() != nil && reply != "" {
+				_, _ = h.waService.GetProvider().SendText(c.Request.Context(), cleanFrom, reply)
+			}
+			c.JSON(http.StatusOK, gin.H{"handled": "chatbot", "reply": reply})
+			return
+		}
+
+		c.Status(http.StatusOK)
+		return
+	}
+
+	// 2. Try parsing official Meta Webhook Payload
 	var metaPayload domainwa.MetaWebhookPayload
 	if err := json.Unmarshal(bodyBytes, &metaPayload); err == nil && metaPayload.Object != "" {
 		_ = h.waService.HandleMetaWebhook(c.Request.Context(), metaPayload)
@@ -93,7 +194,7 @@ func (h *WhatsAppHandler) HandleWebhook(c *gin.Context) {
 		return
 	}
 
-	// Fallback to legacy flat payload
+	// 3. Fallback to legacy flat payload
 	var legacyPayload struct {
 		FromNumber  string `json:"fromNumber"`
 		MessageText string `json:"messageText"`
@@ -497,4 +598,83 @@ func (h *WhatsAppHandler) PublicWorkforceCheckIn(c *gin.Context) {
 
 	response.OK(c, res)
 }
+
+// ── OpenWA Session Management Endpoints ─────────────────────────────────────
+
+// StartOpenWASession godoc
+// POST /api/v1/whatsapp/openwa/session/start
+func (h *WhatsAppHandler) StartOpenWASession(c *gin.Context) {
+	sessionID := c.DefaultQuery("sessionId", os.Getenv("OPENWA_SESSION_ID"))
+	if sessionID == "" {
+		sessionID = "dineflow-dev"
+	}
+	if err := h.waService.StartOpenWASession(c.Request.Context(), sessionID); err != nil {
+		response.BadRequest(c, "SESSION_START_FAILED", err.Error())
+		return
+	}
+	response.OK(c, gin.H{"status": "starting", "sessionId": sessionID})
+}
+
+// GetOpenWAQR godoc
+// GET /api/v1/whatsapp/openwa/session/qr
+func (h *WhatsAppHandler) GetOpenWAQR(c *gin.Context) {
+	sessionID := c.DefaultQuery("sessionId", os.Getenv("OPENWA_SESSION_ID"))
+	if sessionID == "" {
+		sessionID = "dineflow-dev"
+	}
+	qr, status, err := h.waService.GetOpenWAQR(c.Request.Context(), sessionID)
+	if err != nil && status == "error" {
+		response.BadRequest(c, "QR_FETCH_FAILED", err.Error())
+		return
+	}
+	response.OK(c, gin.H{
+		"qr":        qr,
+		"status":    status,
+		"sessionId": sessionID,
+	})
+}
+
+// GetOpenWASessionStatus godoc
+// GET /api/v1/whatsapp/openwa/session/status
+func (h *WhatsAppHandler) GetOpenWASessionStatus(c *gin.Context) {
+	sessionID := c.DefaultQuery("sessionId", os.Getenv("OPENWA_SESSION_ID"))
+	if sessionID == "" {
+		sessionID = "dineflow-dev"
+	}
+	status, err := h.waService.GetOpenWASessionStatus(c.Request.Context(), sessionID)
+	if err != nil {
+		response.BadRequest(c, "STATUS_FETCH_FAILED", err.Error())
+		return
+	}
+	response.OK(c, status)
+}
+
+// StopOpenWASession godoc
+// POST /api/v1/whatsapp/openwa/session/disconnect
+func (h *WhatsAppHandler) StopOpenWASession(c *gin.Context) {
+	sessionID := c.DefaultQuery("sessionId", os.Getenv("OPENWA_SESSION_ID"))
+	if sessionID == "" {
+		sessionID = "dineflow-dev"
+	}
+	if err := h.waService.StopOpenWASession(c.Request.Context(), sessionID); err != nil {
+		response.BadRequest(c, "SESSION_STOP_FAILED", err.Error())
+		return
+	}
+	response.OK(c, gin.H{"status": "disconnected", "sessionId": sessionID})
+}
+
+// RestartOpenWASession godoc
+// POST /api/v1/whatsapp/openwa/session/restart
+func (h *WhatsAppHandler) RestartOpenWASession(c *gin.Context) {
+	sessionID := c.DefaultQuery("sessionId", os.Getenv("OPENWA_SESSION_ID"))
+	if sessionID == "" {
+		sessionID = "dineflow-dev"
+	}
+	if err := h.waService.RestartOpenWASession(c.Request.Context(), sessionID); err != nil {
+		response.BadRequest(c, "SESSION_RESTART_FAILED", err.Error())
+		return
+	}
+	response.OK(c, gin.H{"status": "restarted", "sessionId": sessionID})
+}
+
 

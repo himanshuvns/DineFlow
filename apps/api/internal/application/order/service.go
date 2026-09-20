@@ -27,10 +27,21 @@ type notifServiceIface interface {
 	EmitOrderUpdated(ctx context.Context, tenantID bson.ObjectID, order *domainorder.Order) error
 }
 
+// WhatsAppOrderNotifier defines the order notification contract for WhatsApp.
+type WhatsAppOrderNotifier interface {
+	NotifyOrderConfirmed(ctx context.Context, tenantID bson.ObjectID, ord *domainorder.Order)
+	NotifyOrderReady(ctx context.Context, tenantID bson.ObjectID, ord *domainorder.Order)
+	NotifyOrderCancelled(ctx context.Context, tenantID bson.ObjectID, ord *domainorder.Order)
+	NotifyAdminNewOrder(ctx context.Context, tenantID bson.ObjectID, ord *domainorder.Order)
+	NotifyAdminLargeOrder(ctx context.Context, tenantID bson.ObjectID, ord *domainorder.Order)
+	NotifyAdminOrderCancelled(ctx context.Context, tenantID bson.ObjectID, ord *domainorder.Order)
+}
+
 type Service struct {
 	db           *mongoinfra.Client
 	hub          *realtime.Hub
 	notifService notifServiceIface
+	waNotifier   WhatsAppOrderNotifier
 }
 
 func NewService(db *mongoinfra.Client, hub *realtime.Hub) *Service {
@@ -40,6 +51,11 @@ func NewService(db *mongoinfra.Client, hub *realtime.Hub) *Service {
 // SetNotificationService injects the notification service for event emission.
 func (s *Service) SetNotificationService(ns notifServiceIface) {
 	s.notifService = ns
+}
+
+// SetWhatsAppNotifier injects the WhatsApp order notification service.
+func (s *Service) SetWhatsAppNotifier(wn WhatsAppOrderNotifier) {
+	s.waNotifier = wn
 }
 
 // emitOrderNotif is a fire-and-forget notification helper.
@@ -464,6 +480,16 @@ func (s *Service) CreateCustomerOrder(ctx context.Context, input CreateOrderInpu
 	// 9. Emit notification for the restaurant's notification center
 	s.emitOrderNotif(ctx, t.ID, ord, true)
 
+	// 10. Trigger automated WhatsApp notifications (Customer confirmation & Admin alerts)
+	if s.waNotifier != nil {
+		go func(o *domainorder.Order, tid bson.ObjectID) {
+			bgCtx := context.Background()
+			s.waNotifier.NotifyOrderConfirmed(bgCtx, tid, o)
+			s.waNotifier.NotifyAdminNewOrder(bgCtx, tid, o)
+			s.waNotifier.NotifyAdminLargeOrder(bgCtx, tid, o)
+		}(ord, t.ID)
+	}
+
 	return ord, nil
 }
 
@@ -583,6 +609,22 @@ func (s *Service) UpdateOrderStatus(ctx context.Context, tenantID bson.ObjectID,
 
 	// Emit notification for restaurant notification center (served/delivered, paid, cancelled)
 	s.emitOrderNotif(ctx, tenantID, &ord, false)
+
+	// Trigger automated WhatsApp notifications based on status transition
+	if s.waNotifier != nil {
+		go func(o *domainorder.Order, tid bson.ObjectID, status domainorder.OrderStatus) {
+			bgCtx := context.Background()
+			switch status {
+			case domainorder.StatusPreparing:
+				s.waNotifier.NotifyOrderConfirmed(bgCtx, tid, o)
+			case domainorder.StatusReady, domainorder.StatusServed:
+				s.waNotifier.NotifyOrderReady(bgCtx, tid, o)
+			case domainorder.StatusCancelled:
+				s.waNotifier.NotifyOrderCancelled(bgCtx, tid, o)
+				s.waNotifier.NotifyAdminOrderCancelled(bgCtx, tid, o)
+			}
+		}(&ord, tenantID, nextStatus)
+	}
 
 	return &ord, nil
 }

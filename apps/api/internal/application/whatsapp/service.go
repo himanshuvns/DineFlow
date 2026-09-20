@@ -27,6 +27,7 @@ import (
 	domainuser "github.com/dineflow/api/internal/domain/user"
 	domainwa "github.com/dineflow/api/internal/domain/whatsapp"
 	mongoinfra "github.com/dineflow/api/internal/infrastructure/mongodb"
+	"github.com/dineflow/api/internal/messaging"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
@@ -36,12 +37,16 @@ type NotificationEmitter interface {
 }
 
 type Service struct {
-	db           *mongoinfra.Client
-	notifService NotificationEmitter
-	staffService *staffapp.Service
-	optOuts      map[string]bool
-	optOutsLock  sync.RWMutex
-	httpClient   *http.Client
+	db                  *mongoinfra.Client
+	notifService        NotificationEmitter
+	staffService        *staffapp.Service
+	provider            messaging.WhatsAppProvider
+	sessionMgr          messaging.SessionManager
+	adminNumbers        []string
+	largeOrderThreshold float64
+	optOuts             map[string]bool
+	optOutsLock         sync.RWMutex
+	httpClient          *http.Client
 }
 
 func NewService(db *mongoinfra.Client) *Service {
@@ -50,6 +55,25 @@ func NewService(db *mongoinfra.Client) *Service {
 		optOuts:    make(map[string]bool),
 		httpClient: &http.Client{Timeout: 10 * time.Second},
 	}
+}
+
+func (s *Service) SetProvider(p messaging.WhatsAppProvider) {
+	s.provider = p
+	if sm, ok := p.(messaging.SessionManager); ok {
+		s.sessionMgr = sm
+	}
+}
+
+func (s *Service) SetSessionManager(sm messaging.SessionManager) {
+	s.sessionMgr = sm
+}
+
+func (s *Service) GetProvider() messaging.WhatsAppProvider {
+	return s.provider
+}
+
+func (s *Service) GetSessionManager() messaging.SessionManager {
+	return s.sessionMgr
 }
 
 func (s *Service) SetNotificationService(ne NotificationEmitter) {
@@ -77,6 +101,11 @@ func (s *Service) RecordOptOut(phone string) {
 // ── Meta WhatsApp Cloud API Dispatcher ───────────────────────────────────────
 
 func (s *Service) dispatchMetaMessage(ctx context.Context, tenantID bson.ObjectID, recipientPhone, messageText string) (string, error) {
+	// If modular provider is configured (OpenWA, Meta, Mock), dispatch via provider interface
+	if s.provider != nil {
+		return s.provider.SendText(ctx, recipientPhone, messageText)
+	}
+
 	cleanPhone := strings.TrimPrefix(strings.ReplaceAll(strings.ReplaceAll(recipientPhone, " ", ""), "-", ""), "+")
 	
 	// 1. Check if tenant has custom Meta credentials or fallback to system environment variables
@@ -1870,4 +1899,46 @@ func (s *Service) ProcessWorkforceMessage(ctx context.Context, staff *domainuser
 
 	return reply, nil
 }
+
+// ── OpenWA Session Orchestration ─────────────────────────────────────────────
+
+func (s *Service) StartOpenWASession(ctx context.Context, sessionID string) error {
+	if s.sessionMgr != nil {
+		return s.sessionMgr.StartSession(ctx, sessionID)
+	}
+	return errors.New("no session manager configured")
+}
+
+func (s *Service) GetOpenWAQR(ctx context.Context, sessionID string) (string, string, error) {
+	if s.sessionMgr != nil {
+		return s.sessionMgr.GetQRCode(ctx, sessionID)
+	}
+	return "", "disconnected", errors.New("no session manager configured")
+}
+
+func (s *Service) GetOpenWASessionStatus(ctx context.Context, sessionID string) (*messaging.SessionStatus, error) {
+	if s.sessionMgr != nil {
+		return s.sessionMgr.GetSessionStatus(ctx, sessionID)
+	}
+	return &messaging.SessionStatus{
+		SessionID: sessionID,
+		Status:    "disconnected",
+		Engine:    "none",
+	}, nil
+}
+
+func (s *Service) StopOpenWASession(ctx context.Context, sessionID string) error {
+	if s.sessionMgr != nil {
+		return s.sessionMgr.StopSession(ctx, sessionID)
+	}
+	return errors.New("no session manager configured")
+}
+
+func (s *Service) RestartOpenWASession(ctx context.Context, sessionID string) error {
+	if s.sessionMgr != nil {
+		return s.sessionMgr.RestartSession(ctx, sessionID)
+	}
+	return errors.New("no session manager configured")
+}
+
 

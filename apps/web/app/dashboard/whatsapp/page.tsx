@@ -40,6 +40,10 @@ import {
   Building2,
   Smartphone,
   Navigation,
+  QrCode,
+  Power,
+  Copy,
+  Check,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -280,8 +284,28 @@ const INITIAL_CAMPAIGNS: CampaignItem[] = [
 export default function WhatsAppPage() {
   const { addToast } = useToast();
 
-  // Active Tab: overview | chatbot | workforce | campaigns | invoices | logs
-  const [activeTab, setActiveTab] = React.useState<"overview" | "chatbot" | "workforce" | "campaigns" | "invoices" | "logs">("overview");
+  // Active Tab: overview | gateway | chatbot | workforce | campaigns | invoices | logs
+  const [activeTab, setActiveTab] = React.useState<"overview" | "gateway" | "chatbot" | "workforce" | "campaigns" | "invoices" | "logs">("overview");
+
+  // OpenWA Gateway State
+  const [openwaStatus, setOpenwaStatus] = React.useState<{
+    sessionId: string;
+    status: "connected" | "qr" | "starting" | "disconnected" | "reconnecting";
+    engine: string;
+    phoneNumber?: string;
+    lastConnected?: string;
+    errorMessage?: string;
+  }>({
+    sessionId: "dineflow-dev",
+    status: "disconnected",
+    engine: "whatsapp-web.js",
+  });
+  const [openwaQR, setOpenwaQR] = React.useState<string>("");
+  const [isOpenwaLoading, setIsOpenwaLoading] = React.useState(false);
+  const [openwaTestPhone, setOpenwaTestPhone] = React.useState("+91 98000 12345");
+  const [openwaTestName, setOpenwaTestName] = React.useState("Alex Rivera");
+  const [isSendingOpenwaTest, setIsSendingOpenwaTest] = React.useState(false);
+  const [openwaCopied, setOpenwaCopied] = React.useState(false);
 
   // Config & Status State
   const [config, setConfig] = React.useState<WABAConfig>({
@@ -480,6 +504,124 @@ export default function WhatsAppPage() {
   React.useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // ── OpenWA Gateway Data Fetchers & Polling ──────────────────────────────────
+
+  const fetchOpenWAStatus = React.useCallback(async () => {
+    try {
+      const res = await apiClient.get("/whatsapp/openwa/session/status");
+      const data = res.data?.data || res.data;
+      if (data) {
+        setOpenwaStatus({
+          sessionId: data.sessionId || "dineflow-dev",
+          status: data.status || "disconnected",
+          engine: data.engine || "whatsapp-web.js",
+          phoneNumber: data.phoneNumber,
+          lastConnected: data.lastConnected,
+          errorMessage: data.errorMessage,
+        });
+      }
+    } catch {
+      // Container offline or network error
+    }
+  }, []);
+
+  const fetchOpenWAQR = React.useCallback(async () => {
+    try {
+      const res = await apiClient.get("/whatsapp/openwa/session/qr");
+      const data = res.data?.data || res.data;
+      if (data && data.qr) {
+        setOpenwaQR(data.qr);
+        if (data.status) {
+          setOpenwaStatus((prev) => ({ ...prev, status: data.status }));
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  // Polling loop for OpenWA status and QR code
+  React.useEffect(() => {
+    fetchOpenWAStatus();
+
+    const interval = setInterval(() => {
+      fetchOpenWAStatus();
+      if (activeTab === "gateway" || openwaStatus.status === "qr" || openwaStatus.status === "starting") {
+        fetchOpenWAQR();
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [fetchOpenWAStatus, fetchOpenWAQR, activeTab, openwaStatus.status]);
+
+  const handleStartOpenWASession = async () => {
+    setIsOpenwaLoading(true);
+    try {
+      await apiClient.post("/whatsapp/openwa/session/start");
+      setOpenwaStatus((prev) => ({ ...prev, status: "starting" }));
+      addToast("info", "OpenWA Launching", "Session initializing. Loading headless Chromium & QR code...");
+      setTimeout(() => {
+        fetchOpenWAQR();
+        fetchOpenWAStatus();
+      }, 1500);
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { error?: { message?: string } } }; message?: string };
+      addToast("error", "Failed to start session", error.response?.data?.error?.message || "Ensure docker-compose.openwa.yml is running on :2785");
+    } finally {
+      setIsOpenwaLoading(false);
+    }
+  };
+
+  const handleStopOpenWASession = async () => {
+    setIsOpenwaLoading(true);
+    try {
+      await apiClient.post("/whatsapp/openwa/session/disconnect");
+      setOpenwaStatus((prev) => ({ ...prev, status: "disconnected" }));
+      setOpenwaQR("");
+      addToast("success", "Session Disconnected", "OpenWA session disconnected and Chromium stopped.");
+    } catch {
+      addToast("error", "Error", "Failed to disconnect session.");
+    } finally {
+      setIsOpenwaLoading(false);
+    }
+  };
+
+  const handleRestartOpenWASession = async () => {
+    setIsOpenwaLoading(true);
+    try {
+      await apiClient.post("/whatsapp/openwa/session/restart");
+      setOpenwaStatus((prev) => ({ ...prev, status: "starting" }));
+      addToast("info", "Session Restarting", "Restarting session engine and requesting fresh QR code...");
+      setTimeout(() => {
+        fetchOpenWAQR();
+        fetchOpenWAStatus();
+      }, 2000);
+    } catch {
+      addToast("error", "Error", "Failed to restart OpenWA session.");
+    } finally {
+      setIsOpenwaLoading(false);
+    }
+  };
+
+  const handleSendOpenWATestMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!openwaTestPhone) return;
+    setIsSendingOpenwaTest(true);
+    try {
+      await apiClient.post("/whatsapp/send-test", {
+        recipientPhone: openwaTestPhone,
+        customerName: openwaTestName,
+      });
+      addToast("success", "Message Dispatched", `Sent test message to ${openwaTestPhone}`);
+      fetchData();
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { error?: { message?: string } } } };
+      addToast("error", "Dispatch Failed", error.response?.data?.error?.message || "Failed to deliver WhatsApp message.");
+    } finally {
+      setIsSendingOpenwaTest(false);
+    }
+  };
 
   // ── Handlers ────────────────────────────────────────────────────────────────
 
@@ -795,6 +937,7 @@ export default function WhatsAppPage() {
       <div className="flex overflow-x-auto gap-2 p-1.5 bg-slate-100 dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-800 scrollbar-none">
         {[
           { id: "overview", label: "Overview & WABA", icon: PhoneCall },
+          { id: "gateway", label: "OpenWA Gateway", icon: Smartphone, badge: openwaStatus.status === "connected" ? "Live" : "Dev" },
           { id: "chatbot", label: "AI Chatbot Studio", icon: BrainCircuit, badge: "Real-Time" },
           { id: "workforce", label: "Workforce Assistant", icon: Users, badge: "GPS & HR" },
           { id: "campaigns", label: "Marketing Campaigns", icon: Layers, badge: `${campaigns.length}` },
@@ -959,6 +1102,409 @@ export default function WhatsAppPage() {
                       {isSendingTest ? "Dispatching..." : "Dispatch Live WhatsApp Message"}
                     </Button>
                   </form>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB 1.5: OPENWA LOCAL DEVELOPMENT GATEWAY ───────────────────────── */}
+      {activeTab === "gateway" && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          {/* Top Status Card */}
+          <Card variant="glass" className="border-cyan-500/30 bg-cyan-500/5">
+            <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
+              <div className="flex items-center gap-3.5">
+                <div className="p-3 rounded-2xl bg-cyan-500/20 text-cyan-600 dark:text-cyan-400">
+                  <Smartphone className="h-6 w-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-extrabold text-slate-900 dark:text-white text-base">
+                      OpenWA Local Gateway
+                    </span>
+                    <Badge
+                      variant={
+                        openwaStatus.status === "connected"
+                          ? "success"
+                          : openwaStatus.status === "qr"
+                          ? "warning"
+                          : openwaStatus.status === "starting"
+                          ? "neutral"
+                          : "destructive"
+                      }
+                      size="sm"
+                      dot
+                    >
+                      {openwaStatus.status === "connected"
+                        ? "Connected & Live"
+                        : openwaStatus.status === "qr"
+                        ? "Scan QR Code"
+                        : openwaStatus.status === "starting"
+                        ? "Initializing..."
+                        : "Disconnected"}
+                    </Badge>
+                  </div>
+                  <p className="text-slate-600 dark:text-slate-400 text-xs mt-0.5">
+                    Session: <code className="text-slate-800 dark:text-slate-200 font-mono font-medium">{openwaStatus.sessionId || "dineflow-dev"}</code> • Engine: <strong className="text-cyan-700 dark:text-cyan-300">whatsapp-web.js (Headless Chromium)</strong>
+                    {openwaStatus.phoneNumber && ` • Number: ${openwaStatus.phoneNumber}`}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    fetchOpenWAStatus();
+                    fetchOpenWAQR();
+                    addToast("info", "Status Refreshed", "Polled OpenWA gateway on port 2785.");
+                  }}
+                  leftIcon={<RefreshCw className={`h-3.5 w-3.5 ${isOpenwaLoading ? "animate-spin" : ""}`} />}
+                >
+                  Refresh
+                </Button>
+                {openwaStatus.status === "connected" ? (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleRestartOpenWASession}
+                      disabled={isOpenwaLoading}
+                      leftIcon={<RefreshCw className="h-3.5 w-3.5" />}
+                    >
+                      Restart Engine
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleStopOpenWASession}
+                      disabled={isOpenwaLoading}
+                      leftIcon={<Power className="h-3.5 w-3.5" />}
+                    >
+                      Disconnect
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    variant="glow"
+                    size="sm"
+                    onClick={handleStartOpenWASession}
+                    disabled={isOpenwaLoading}
+                    leftIcon={<Zap className="h-3.5 w-3.5" />}
+                  >
+                    {isOpenwaLoading ? "Starting Engine..." : "Start Session"}
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Main 2-Column Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Left 7 cols: QR Code & Connection Status */}
+            <div className="lg:col-span-7 space-y-6">
+              <Card variant="glass">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-base font-bold text-slate-900 dark:text-white">
+                        WhatsApp Authentication
+                      </CardTitle>
+                      <CardDescription className="text-xs text-slate-600 dark:text-slate-400">
+                        Link your local development device via WhatsApp Web multi-device session.
+                      </CardDescription>
+                    </div>
+                    <Badge variant={openwaStatus.status === "connected" ? "success" : "neutral"} size="sm">
+                      {openwaStatus.status === "connected" ? "Authenticated" : "Awaiting Pairing"}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {openwaStatus.status === "connected" ? (
+                    <div className="p-6 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-center space-y-3">
+                      <div className="inline-flex p-3.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                        <ShieldCheck className="h-8 w-8" />
+                      </div>
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                        WhatsApp Session Active & Connected
+                      </h3>
+                      <p className="text-xs text-slate-600 dark:text-slate-400 max-w-md mx-auto">
+                        Your WhatsApp account is successfully paired. Outbound customer notifications, kitchen updates, and inbound command responses are active.
+                      </p>
+                      <div className="pt-2 flex items-center justify-center gap-3">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleRestartOpenWASession}
+                          leftIcon={<RefreshCw className="h-3.5 w-3.5" />}
+                        >
+                          Restart Session
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={handleStopOpenWASession}
+                          leftIcon={<Power className="h-3.5 w-3.5" />}
+                        >
+                          Log Out Device
+                        </Button>
+                      </div>
+                    </div>
+                  ) : openwaStatus.status === "qr" || openwaQR ? (
+                    <div className="flex flex-col sm:flex-row items-center gap-6 p-6 rounded-2xl bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+                      {/* QR Display */}
+                      <div className="relative group p-3 bg-white rounded-2xl border border-slate-200 shadow-sm flex-shrink-0">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={
+                            openwaQR.startsWith("data:")
+                              ? openwaQR
+                              : openwaQR.startsWith("http")
+                              ? openwaQR
+                              : `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(openwaQR)}`
+                          }
+                          alt="Scan WhatsApp QR"
+                          className="w-52 h-52 object-contain rounded-lg"
+                        />
+                        <div className="absolute inset-x-0 bottom-1 text-center">
+                          <span className="text-[10px] bg-slate-900/80 text-white px-2 py-0.5 rounded-full font-mono">
+                            Auto-refreshes every 3s
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Instructions */}
+                      <div className="space-y-3.5 text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="flex items-center justify-center w-5 h-5 rounded-full bg-cyan-500 text-white font-bold text-[11px]">
+                            1
+                          </span>
+                          <span className="font-semibold text-slate-800 dark:text-slate-200">
+                            Open WhatsApp on your mobile phone
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="flex items-center justify-center w-5 h-5 rounded-full bg-cyan-500 text-white font-bold text-[11px]">
+                            2
+                          </span>
+                          <span className="font-semibold text-slate-800 dark:text-slate-200">
+                            Tap <strong>Menu (⋮)</strong> or <strong>Settings (⚙️)</strong> &gt; <strong>Linked Devices</strong>
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="flex items-center justify-center w-5 h-5 rounded-full bg-cyan-500 text-white font-bold text-[11px]">
+                            3
+                          </span>
+                          <span className="font-semibold text-slate-800 dark:text-slate-200">
+                            Tap <strong>Link a Device</strong> and point your phone at this QR code
+                          </span>
+                        </div>
+
+                        <div className="pt-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              fetchOpenWAQR();
+                              addToast("info", "QR Refreshed", "Requested updated QR code token from OpenWA.");
+                            }}
+                            leftIcon={<RefreshCw className="h-3.5 w-3.5" />}
+                          >
+                            Refresh QR Code
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : openwaStatus.status === "starting" ? (
+                    <div className="p-8 rounded-2xl bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 text-center space-y-3">
+                      <div className="inline-flex p-3 rounded-full bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 animate-spin">
+                        <RefreshCw className="h-7 w-7" />
+                      </div>
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                        Initializing Headless Chromium Browser...
+                      </h3>
+                      <p className="text-xs text-slate-600 dark:text-slate-400 max-w-sm mx-auto">
+                        OpenWA is launching a containerized Chromium instance to establish the WhatsApp Web connection. The QR code will load automatically.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="p-8 rounded-2xl bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 text-center space-y-3">
+                      <div className="inline-flex p-3.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                        <QrCode className="h-7 w-7" />
+                      </div>
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                        Gateway Is Ready to Connect
+                      </h3>
+                      <p className="text-xs text-slate-600 dark:text-slate-400 max-w-sm mx-auto">
+                        Click the button below to initialize the session and render your QR code.
+                      </p>
+                      <div className="pt-2">
+                        <Button
+                          variant="glow"
+                          size="sm"
+                          onClick={handleStartOpenWASession}
+                          disabled={isOpenwaLoading}
+                          leftIcon={<Zap className="h-3.5 w-3.5" />}
+                        >
+                          {isOpenwaLoading ? "Starting Session..." : "Generate Pairing QR Code"}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Docker Container Guidance */}
+                  <div className="p-3.5 rounded-xl bg-slate-100 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
+                    <div className="space-y-0.5">
+                      <span className="font-semibold text-slate-900 dark:text-white">Docker Local Service:</span>
+                      <p className="font-mono text-[11px] text-slate-600 dark:text-slate-400">
+                        docker compose -f docker-compose.openwa.yml up -d
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        navigator.clipboard.writeText("docker compose -f docker-compose.openwa.yml up -d");
+                        setOpenwaCopied(true);
+                        setTimeout(() => setOpenwaCopied(false), 2000);
+                        addToast("info", "Copied", "Command copied to clipboard.");
+                      }}
+                      leftIcon={openwaCopied ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+                    >
+                      {openwaCopied ? "Copied" : "Copy"}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Inbound Commands Cheat Sheet */}
+              <Card variant="glass">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base font-bold text-slate-900 dark:text-white">
+                    Interactive Inbound Commands
+                  </CardTitle>
+                  <CardDescription className="text-xs text-slate-600 dark:text-slate-400">
+                    Send these keywords from any WhatsApp number to trigger automated bot replies:
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2.5 text-xs">
+                  {[
+                    { command: "Hi / Hello", reply: "Returns welcome greeting and action directory with quick options." },
+                    { command: "Menu", reply: "Returns direct link to the restaurant contactless digital menu." },
+                    { command: "Order Status", reply: "Queries the customer's active live order in MongoDB and sends status & tracking URL." },
+                    { command: "Help / Steward", reply: "Alerts restaurant attendants for in-person table or room service." },
+                  ].map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="p-3 rounded-xl bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 flex items-start justify-between gap-4"
+                    >
+                      <div>
+                        <code className="font-bold text-cyan-600 dark:text-cyan-400 font-mono text-xs">
+                          {item.command}
+                        </code>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                          {item.reply}
+                        </p>
+                      </div>
+                      <Badge variant="neutral" size="sm">Deterministic</Badge>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Right 5 cols: Test Dispatcher & Endpoints Info */}
+            <div className="lg:col-span-5 space-y-6">
+              {/* Test Message Dispatcher */}
+              <Card variant="glass">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base font-bold text-slate-900 dark:text-white">
+                    Send Live Gateway Test
+                  </CardTitle>
+                  <CardDescription className="text-xs text-slate-600 dark:text-slate-400">
+                    Send an immediate message through OpenWA to verify delivery.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleSendOpenWATestMessage} className="space-y-4">
+                    <Input
+                      label="Recipient Phone Number"
+                      value={openwaTestPhone}
+                      onChange={(e) => setOpenwaTestPhone(formatIndianPhoneInput(e.target.value))}
+                      placeholder="+91 98000 00000"
+                      required
+                    />
+                    <Input
+                      label="Customer / Guest Name"
+                      value={openwaTestName}
+                      onChange={(e) => setOpenwaTestName(e.target.value)}
+                      placeholder="Alex Rivera"
+                      required
+                    />
+                    <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-[11px] text-cyan-800 dark:text-cyan-300">
+                      Dispatched directly via OpenWA REST API (Port 2785) with automatic fallback to mock sandbox.
+                    </div>
+                    <Button
+                      variant="glow"
+                      size="sm"
+                      type="submit"
+                      disabled={isSendingOpenwaTest}
+                      className="w-full justify-center"
+                      rightIcon={<Send className="h-3.5 w-3.5" />}
+                    >
+                      {isSendingOpenwaTest ? "Dispatching..." : "Send Test via OpenWA"}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+
+              {/* Gateway Endpoints Info Card */}
+              <Card variant="glass">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base font-bold text-slate-900 dark:text-white">
+                    Gateway Endpoints & Ports
+                  </CardTitle>
+                  <CardDescription className="text-xs text-slate-600 dark:text-slate-400">
+                    Local development connectivity references.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3 text-xs">
+                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+                    <span className="text-slate-500 dark:text-slate-400">OpenWA Dashboard:</span>
+                    <a
+                      href="http://localhost:2785"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-cyan-600 dark:text-cyan-400 font-mono font-medium hover:underline inline-flex items-center gap-1"
+                    >
+                      :2785 <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </div>
+
+                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+                    <span className="text-slate-500 dark:text-slate-400">OpenWA Swagger Docs:</span>
+                    <a
+                      href="http://localhost:2785/api/docs"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-cyan-600 dark:text-cyan-400 font-mono font-medium hover:underline inline-flex items-center gap-1"
+                    >
+                      :2785/api/docs <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </div>
+
+                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+                    <span className="text-slate-500 dark:text-slate-400">Backend Webhook:</span>
+                    <span className="text-slate-800 dark:text-slate-200 font-mono text-[11px]">
+                      /api/v1/whatsapp/webhook
+                    </span>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-800 dark:text-amber-300">
+                    <strong>Zero-Code Meta Migration:</strong> Business logic only talks to the <code>WhatsAppProvider</code> Go interface. Setting <code>WHATSAPP_PROVIDER=meta</code> in production redirects all triggers to Meta Cloud API without changing any application code.
+                  </div>
                 </CardContent>
               </Card>
             </div>

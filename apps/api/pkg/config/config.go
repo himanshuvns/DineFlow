@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -78,11 +79,22 @@ type StorageConfig struct {
 	Endpoint        string
 }
 
+type OpenWAConfig struct {
+	URL           string
+	APIKey        string
+	SessionID     string
+	WebhookSecret string
+}
+
 type WhatsAppConfig struct {
-	PhoneNumberID   string
-	AccessToken     string
-	WebhookVerify   string
-	BusinessAccount string
+	Provider            string // "openwa", "meta", "mock"
+	OpenWA              OpenWAConfig
+	PhoneNumberID       string
+	AccessToken         string
+	WebhookVerify       string
+	BusinessAccount     string
+	AdminNumbers        []string
+	LargeOrderThreshold float64
 }
 
 // Load reads environment variables and returns a fully populated Config.
@@ -133,10 +145,26 @@ func Load() (*Config, error) {
 	)
 
 	// ── WhatsApp ──────────────────────────────────────────────────────────────
+	cfg.WhatsApp.Provider = getEnv("WHATSAPP_PROVIDER", "openwa")
+	cfg.WhatsApp.OpenWA.URL = getEnv("OPENWA_URL", "http://localhost:2785")
+	cfg.WhatsApp.OpenWA.APIKey = getEnv("OPENWA_API_KEY", "dineflow_openwa_secret_key")
+	cfg.WhatsApp.OpenWA.SessionID = getEnv("OPENWA_SESSION_ID", "dineflow-dev")
+	cfg.WhatsApp.OpenWA.WebhookSecret = getEnv("OPENWA_WEBHOOK_SECRET", "dineflow_openwa_webhook_secret")
 	cfg.WhatsApp.PhoneNumberID = getEnv("WHATSAPP_PHONE_NUMBER_ID", "")
 	cfg.WhatsApp.AccessToken = getEnv("WHATSAPP_ACCESS_TOKEN", "")
 	cfg.WhatsApp.WebhookVerify = getEnv("WHATSAPP_WEBHOOK_VERIFY_TOKEN", "")
 	cfg.WhatsApp.BusinessAccount = getEnv("WHATSAPP_BUSINESS_ACCOUNT_ID", "")
+
+	adminNumsStr := getEnv("WHATSAPP_ADMIN_NUMBERS", "")
+	if adminNumsStr != "" {
+		for _, num := range strings.Split(adminNumsStr, ",") {
+			num = strings.TrimSpace(num)
+			if num != "" {
+				cfg.WhatsApp.AdminNumbers = append(cfg.WhatsApp.AdminNumbers, num)
+			}
+		}
+	}
+	cfg.WhatsApp.LargeOrderThreshold = float64(getEnvInt("WHATSAPP_LARGE_ORDER_THRESHOLD", 1500))
 
 	// ── AI / Gemini (Phase 6) ─────────────────────────────────────────────────
 	cfg.AI.GeminiAPIKey = getEnv("GEMINI_API_KEY", "") // Optional: empty = mock mode
