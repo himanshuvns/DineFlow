@@ -54,13 +54,17 @@ export function LandingNavbar() {
 
   return (
     <header
-      className={`sticky top-0 z-50 w-full transition-all duration-300 ${
+      className={`sticky top-0 z-50 w-full transition-all duration-200 ease-in-out ${
         isScrolled
-          ? "bg-white/85 dark:bg-[#090D16]/85 backdrop-blur-xl border-b border-slate-200/80 dark:border-slate-800/80 shadow-xs"
+          ? "bg-white/90 dark:bg-[#090D16]/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 shadow-xs"
           : "bg-transparent border-b border-transparent"
       }`}
     >
-      <div className="max-w-7xl mx-auto h-16 sm:h-20 px-4 sm:px-6 flex items-center justify-between">
+      <div
+        className={`max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between transition-all duration-200 ease-in-out ${
+          isScrolled ? "h-14 sm:h-16" : "h-16 sm:h-20"
+        }`}
+      >
         {/* Brand Logo */}
         <Link
           href="/"
@@ -108,7 +112,7 @@ export function LandingNavbar() {
             variant="ghost"
             size="sm"
             asChild
-            className="hidden sm:inline-flex text-slate-700 dark:text-slate-200 hover:text-emerald-600 dark:hover:text-emerald-400"
+            className="hidden sm:inline-flex min-h-[44px] px-3 text-slate-700 dark:text-slate-200 hover:text-emerald-600 dark:hover:text-emerald-400"
           >
             <Link href="/login">Sign In</Link>
           </Button>
@@ -117,7 +121,7 @@ export function LandingNavbar() {
             variant="glow"
             size="sm"
             asChild
-            className="text-xs sm:text-sm font-semibold px-3 sm:px-4 h-9 sm:h-10 cursor-pointer shadow-sm shadow-emerald-500/25"
+            className="text-xs sm:text-sm font-semibold px-3 sm:px-4 min-h-[44px] cursor-pointer shadow-sm shadow-emerald-500/25"
           >
             <Link href="/register" className="flex items-center gap-1.5">
               <span>Start Free Trial</span>
@@ -125,11 +129,11 @@ export function LandingNavbar() {
             </Link>
           </Button>
 
-          {/* Mobile Hamburger Button */}
+          {/* Mobile Hamburger Button - Minimum 44x44px touch target */}
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden flex items-center justify-center h-9 w-9 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500"
+            className="md:hidden flex items-center justify-center min-h-[44px] min-w-[44px] rounded-lg border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500"
             aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
             aria-expanded={mobileMenuOpen}
           >
@@ -141,7 +145,7 @@ export function LandingNavbar() {
       {/* Mobile Menu Backdrop & Drawer */}
       {mobileMenuOpen && (
         <div
-          className="fixed inset-0 top-16 sm:top-20 z-40 bg-slate-950/60 backdrop-blur-md md:hidden animate-in fade-in duration-200"
+          className="fixed inset-0 top-14 sm:top-16 z-40 bg-slate-950/60 backdrop-blur-md md:hidden animate-in fade-in duration-200"
           onClick={() => setMobileMenuOpen(false)}
         >
           <div
@@ -154,7 +158,7 @@ export function LandingNavbar() {
                   key={link.label}
                   href={link.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="px-3 py-2 text-base font-medium text-slate-700 dark:text-slate-200 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 rounded-lg transition-colors"
+                  className="px-3 py-2 min-h-[44px] flex items-center text-base font-medium text-slate-700 dark:text-slate-200 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 rounded-lg transition-colors"
                 >
                   {link.label}
                 </a>
@@ -162,7 +166,7 @@ export function LandingNavbar() {
               <Link
                 href="/dashboard"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2 px-3 py-2 text-base font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors"
+                className="flex items-center gap-2 px-3 py-2 min-h-[44px] text-base font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors"
               >
                 <Sparkles className="h-4 w-4" />
                 <span>Explore Live Demo Dashboard</span>

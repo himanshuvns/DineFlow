@@ -165,8 +165,8 @@ export function CustomerExtendStayModal({
 
       addToast(
         "success",
-        "Stay Extended Successfully!",
-        `Your reservation in ${roomDisplay} has been extended by +${additionalNights} night(s) until ${formatDateDisplay(selectedDate)} at 11:00 AM.`
+        "Stay Extension Requested!",
+        `Your request to extend stay in ${roomDisplay} by +${additionalNights} night(s) until ${formatDateDisplay(selectedDate)} at 11:00 AM has been sent to Front Desk for approval.`
       );
 
       if (onStayExtended) {
@@ -190,8 +190,8 @@ export function CustomerExtendStayModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Extend Your Stay"
-      description={`Conveniently prolong your luxury experience in ${roomDisplay}`}
+      title="Request Stay Extension"
+      description={`Submit an extension request for ${roomDisplay} (subject to Front Desk approval)`}
       size="md"
     >
       <form onSubmit={handleSubmit} className="space-y-5">
@@ -314,7 +314,7 @@ export function CustomerExtendStayModal({
         <div className="flex items-start gap-2.5 p-2.5 rounded-xl border border-amber-500/20 bg-amber-500/5 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 text-[11px] leading-relaxed">
           <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
           <span>
-            <strong>Policy Notice:</strong> Stay durations can only be extended from the guest portal. To arrange an early departure, kindly consult the Front Desk directly.
+            <strong>Approval Workflow:</strong> Stay extension requests are promptly reviewed by the Front Desk based on suite availability. You can track your approval status in your guest portal.
           </span>
         </div>
 
@@ -332,17 +332,17 @@ export function CustomerExtendStayModal({
           <Button
             type="submit"
             disabled={submitting || !isExtensionValid}
-            className="rounded-xl font-bold text-xs gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-md shadow-primary/20"
+            className="rounded-xl font-bold text-xs gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-md shadow-primary/20 min-h-[44px]"
           >
             {submitting ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Confirming Extension...
+                Submitting Request...
               </>
             ) : (
               <>
                 <Sparkles className="h-4 w-4" />
-                Confirm +{additionalNights} {additionalNights === 1 ? "Night" : "Nights"} Extension
+                Submit Request for +{additionalNights} {additionalNights === 1 ? "Night" : "Nights"}
               </>
             )}
           </Button>

@@ -106,6 +106,16 @@ export default function RoomServiceMenuPage() {
   const [activeTasksCount, setActiveTasksCount] = React.useState(0);
   const [latestActiveTask, setLatestActiveTask] = React.useState<{ title: string; status: string } | null>(null);
   const [copiedWifi, setCopiedWifi] = React.useState(false);
+  const [dndStatus, setDndStatus] = React.useState(false);
+  const [dndLoading, setDndLoading] = React.useState(false);
+  const [extensionRequest, setExtensionRequest] = React.useState<{
+    id?: string;
+    status: "pending" | "approved" | "rejected";
+    currentCheckout?: string;
+    requestedCheckout: string;
+    reason?: string;
+  } | null>(null);
+  const [roomOrders, setRoomOrders] = React.useState<any[]>([]);
 
   React.useEffect(() => {
     setContext(tenantSlug, `room-${cleanRoomNum.toLowerCase()}`);
@@ -301,6 +311,126 @@ export default function RoomServiceMenuPage() {
     loadMenu();
   }, [tenantSlug]);
 
+  // Fetch DND Status
+  React.useEffect(() => {
+    let isMounted = true;
+    async function loadDND() {
+      try {
+        const res = await fetch(
+          `/api/room/dnd?tenantSlug=${encodeURIComponent(tenantSlug)}&roomNumber=${encodeURIComponent(cleanRoomNum)}`,
+          { cache: "no-store" }
+        );
+        if (res.ok) {
+          const json = await res.json();
+          if (json.data && typeof json.data.dndStatus === "boolean" && isMounted) {
+            setDndStatus(json.data.dndStatus);
+          }
+        }
+      } catch (_) {}
+    }
+    loadDND();
+    const interval = setInterval(loadDND, 8000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [tenantSlug, cleanRoomNum, roomRefreshSignal]);
+
+  const handleToggleDND = async () => {
+    const nextStatus = !dndStatus;
+    setDndStatus(nextStatus);
+    setDndLoading(true);
+    try {
+      const res = await fetch("/api/room/dnd", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tenantSlug,
+          roomNumber: cleanRoomNum,
+          dndStatus: nextStatus,
+          updatedBy: "guest",
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setDndStatus(!nextStatus);
+        addToast("error", "DND Update Failed", data?.error || "Could not update Do Not Disturb status");
+      } else {
+        if (nextStatus) {
+          addToast(
+            "success",
+            "🔴 Do Not Disturb Activated",
+            "Housekeeping and room visits are paused. Dining orders and emergency alerts remain active."
+          );
+        } else {
+          addToast(
+            "success",
+            "🟢 Service Available",
+            "Housekeeping and suite service are welcome."
+          );
+        }
+      }
+    } catch (err) {
+      setDndStatus(!nextStatus);
+      addToast("error", "Error", "Failed to update Do Not Disturb");
+    } finally {
+      setDndLoading(false);
+    }
+  };
+
+  // Fetch Stay Extension Request Status
+  React.useEffect(() => {
+    let isMounted = true;
+    async function loadExtension() {
+      try {
+        const res = await fetch(
+          `/api/room/extend-stay?tenantSlug=${encodeURIComponent(tenantSlug)}&roomNumber=${encodeURIComponent(cleanRoomNum)}`,
+          { cache: "no-store" }
+        );
+        if (res.ok) {
+          const json = await res.json();
+          if (json.data?.request && isMounted) {
+            setExtensionRequest(json.data.request);
+          } else if (isMounted) {
+            setExtensionRequest(null);
+          }
+        }
+      } catch (_) {}
+    }
+    loadExtension();
+    const interval = setInterval(loadExtension, 10000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [tenantSlug, cleanRoomNum, roomRefreshSignal]);
+
+  // Fetch Live Room In-Room Dining Orders
+  React.useEffect(() => {
+    let isMounted = true;
+    async function loadOrders() {
+      try {
+        const res = await fetch(
+          `/api/room/orders?tenantSlug=${encodeURIComponent(tenantSlug)}&roomNumber=${encodeURIComponent(cleanRoomNum)}`,
+          { cache: "no-store" }
+        );
+        if (res.ok) {
+          const json = await res.json();
+          const orders = json.data?.orders || json.orders || [];
+          if (Array.isArray(orders) && isMounted) {
+            setRoomOrders(orders);
+          }
+        }
+      } catch (_) {}
+    }
+    loadOrders();
+    const interval = setInterval(loadOrders, 8000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [tenantSlug, cleanRoomNum]);
+
   const handleReception = () => {
     addToast(
       "info",
@@ -479,7 +609,7 @@ export default function RoomServiceMenuPage() {
       </div>
 
       {/* ── Persistent Stay Status & Extend Bar (Always Visible Across All Tabs) ── */}
-      <div className="max-w-xl mx-auto px-4 mt-3">
+      <div className="max-w-xl mx-auto px-4 mt-3 space-y-2.5">
         <div className="p-3 sm:p-3.5 rounded-2xl border border-emerald-500/30 bg-white/95 dark:bg-slate-900/95 shadow-md backdrop-blur-md flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="h-9 w-9 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/30">
@@ -510,6 +640,140 @@ export default function RoomServiceMenuPage() {
             <span>Extend Stay</span>
           </Button>
         </div>
+
+        {/* ── Customer DND (Do Not Disturb) Control Card ── */}
+        <div
+          className={`p-3 sm:p-3.5 rounded-2xl border transition-all shadow-sm ${
+            dndStatus
+              ? "bg-rose-50/90 dark:bg-rose-950/40 border-rose-400/50 dark:border-rose-800"
+              : "bg-emerald-50/70 dark:bg-emerald-950/20 border-emerald-300/60 dark:border-emerald-900/50"
+          } flex items-center justify-between gap-3`}
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div
+              className={`h-9 w-9 rounded-xl flex items-center justify-center shrink-0 border ${
+                dndStatus
+                  ? "bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-500/30"
+                  : "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
+              }`}
+            >
+              {dndStatus ? <ShieldAlert className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-black text-slate-900 dark:text-white">
+                  Do Not Disturb (DND)
+                </span>
+                <span
+                  className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 ${
+                    dndStatus
+                      ? "bg-rose-500 text-white shadow-xs"
+                      : "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300"
+                  }`}
+                >
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${
+                      dndStatus ? "bg-white animate-pulse" : "bg-emerald-500"
+                    }`}
+                  />
+                  {dndStatus ? "🔴 DND Active" : "🟢 Available"}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-400">
+                {dndStatus
+                  ? "Housekeeping paused • Dining orders & emergency permitted"
+                  : "Suite ready for housekeeping and routine service"}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            disabled={dndLoading}
+            onClick={handleToggleDND}
+            aria-label="Toggle Do Not Disturb"
+            className={`min-h-[44px] min-w-[76px] px-3 py-1.5 rounded-xl font-bold text-xs transition-all shadow-sm flex items-center justify-center cursor-pointer ${
+              dndStatus
+                ? "bg-rose-600 hover:bg-rose-700 text-white"
+                : "bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200"
+            }`}
+          >
+            {dndLoading ? (
+              <span className="animate-spin h-3.5 w-3.5 border-2 border-current border-t-transparent rounded-full" />
+            ) : dndStatus ? (
+              "Turn OFF"
+            ) : (
+              "Set DND"
+            )}
+          </button>
+        </div>
+
+        {/* ── Stay Extension Pending / Confirmed Alert Banner ── */}
+        {extensionRequest && (
+          <div
+            className={`p-3 rounded-2xl border transition-all text-xs flex items-start gap-2.5 ${
+              extensionRequest.status === "pending"
+                ? "bg-amber-50 dark:bg-amber-950/40 border-amber-400/60 dark:border-amber-800 text-amber-900 dark:text-amber-200"
+                : extensionRequest.status === "approved"
+                ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-400/60 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200"
+                : "bg-slate-100 dark:bg-slate-900 border-slate-300 dark:border-slate-800 text-slate-700 dark:text-slate-300"
+            }`}
+          >
+            <div className="mt-0.5 shrink-0">
+              {extensionRequest.status === "pending" ? (
+                <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400 animate-spin" />
+              ) : extensionRequest.status === "approved" ? (
+                <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              ) : (
+                <ShieldAlert className="h-4 w-4 text-slate-500" />
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="font-bold">
+                  {extensionRequest.status === "pending"
+                    ? "Stay Extension Pending Review"
+                    : extensionRequest.status === "approved"
+                    ? "Stay Extension Approved"
+                    : "Stay Extension Request"}
+                </span>
+                <Badge
+                  variant={
+                    extensionRequest.status === "pending"
+                      ? "warning"
+                      : extensionRequest.status === "approved"
+                      ? "success"
+                      : "secondary"
+                  }
+                  size="sm"
+                  className="text-[9px] uppercase tracking-wider font-extrabold"
+                >
+                  {extensionRequest.status}
+                </Badge>
+              </div>
+              <p className="text-[11px] opacity-90 mt-0.5">
+                {extensionRequest.status === "pending"
+                  ? `Requested checkout: ${new Date(
+                      extensionRequest.requestedCheckout
+                    ).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}. Front desk has been notified.`
+                  : extensionRequest.status === "approved"
+                  ? `Your checkout date has been extended to ${new Date(
+                      extensionRequest.requestedCheckout
+                    ).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}.`
+                  : extensionRequest.reason ||
+                    "Unable to extend dates due to full occupancy. Please contact front desk."}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── Segmented Navigation Control ── */}
@@ -683,6 +947,67 @@ export default function RoomServiceMenuPage() {
           ══════════════════════════════════════════════════════════════════ */}
       {activeTab === "dining" && (
         <div className="animate-in fade-in duration-300">
+          {/* ── Active In-Room Dining Orders Tracker ── */}
+          {roomOrders.length > 0 && (
+            <div className="max-w-xl mx-auto px-4 mt-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                  <UtensilsCrossed className="h-3.5 w-3.5 text-emerald-500" />
+                  Live Suite Orders ({roomOrders.length})
+                </span>
+              </div>
+              {roomOrders.slice(0, 3).map((ord) => (
+                <div
+                  key={ord.id || ord._id}
+                  className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between gap-3 text-xs"
+                >
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="font-mono font-bold text-slate-900 dark:text-white">
+                        #{ord.orderNumber || (ord.id || ord._id).slice(-4)}
+                      </span>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide ${
+                          ord.status === "delivered" || ord.status === "completed"
+                            ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+                            : ord.status === "preparing" || ord.status === "in_progress"
+                            ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 animate-pulse"
+                            : "bg-blue-500/15 text-blue-700 dark:text-blue-300"
+                        }`}
+                      >
+                        {ord.status}
+                      </span>
+                      {ord.orderSource === "front_desk" && (
+                        <span className="px-1.5 py-0.2 rounded bg-purple-500/15 text-purple-700 dark:text-purple-300 text-[9px] font-bold">
+                          Front Desk Placed
+                        </span>
+                      )}
+                      {ord.billingMethod && (
+                        <span className="px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-[9px] font-medium">
+                          {ord.billingMethod === "room_folio"
+                            ? "Room Bill"
+                            : ord.billingMethod === "complimentary"
+                            ? "Complimentary"
+                            : "Paid"}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                      {Array.isArray(ord.items)
+                        ? ord.items.map((i: any) => `${i.quantity}x ${i.name}`).join(", ")
+                        : "Suite Dining Delivery"}
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <span className="font-bold text-slate-900 dark:text-white">
+                      {formatCurrency(ord.totalAmount || ord.total || 0)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Search Bar */}
           <div className="max-w-xl mx-auto px-4 mt-4">
             <div className="relative flex items-center">

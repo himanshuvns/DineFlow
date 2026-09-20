@@ -54,6 +54,10 @@ interface KdsOrder {
   status: "pending" | "preparing" | "ready" | "served" | "cancelled" | "paid";
   items: KdsItem[];
   total: number;
+  orderSource?: string;
+  placedBy?: string;
+  billingMethod?: string;
+  roomNumber?: string;
 }
 
 const INITIAL_KDS_ORDERS: KdsOrder[] = [];
@@ -512,7 +516,7 @@ export default function KDSOrdersPage() {
                 {/* Ticket Header */}
                 <CardHeader className="p-4 pb-3 border-b border-slate-200/80 dark:border-slate-800/80 flex flex-row items-center justify-between">
                   <div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-lg font-black text-slate-900 dark:text-white tracking-tight">
                         {order.table}
                       </span>
@@ -521,13 +525,27 @@ export default function KDSOrdersPage() {
                           <Hotel className="h-2.5 w-2.5" /> Room Service
                         </span>
                       )}
+                      {order.orderSource === "front_desk" && (
+                        <span className="text-[10px] font-bold text-purple-700 dark:text-purple-300 bg-purple-500/15 border border-purple-500/30 px-1.5 py-0.5 rounded flex items-center gap-1">
+                          Front Desk {order.placedBy ? `• ${order.placedBy}` : ""}
+                        </span>
+                      )}
+                      {order.billingMethod && (
+                        <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-1.5 py-0.5 rounded">
+                          {order.billingMethod === "room_folio"
+                            ? "Room Bill"
+                            : order.billingMethod === "complimentary"
+                            ? "Complimentary"
+                            : "Paid"}
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-1.5 mt-0.5">
                       <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono font-semibold">
                         {order.id}
                       </span>
                       <span className="text-slate-400 dark:text-slate-600">•</span>
-                      <span className="text-[11px] text-slate-600 dark:text-slate-400 truncate max-w-[90px]">
+                      <span className="text-[11px] text-slate-600 dark:text-slate-400 truncate max-w-[120px]">
                         {order.customerName}
                       </span>
                     </div>

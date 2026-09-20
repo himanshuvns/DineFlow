@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
         ? "https://api-production-f170.up.railway.app/api/v1"
         : "http://localhost:8080/api/v1");
 
-    const targetUrl = `${apiBase}/public/rooms/${encodeURIComponent(tenantSlug)}/${encodeURIComponent(cleanRoom)}/extend-stay`;
+    const targetUrl = `${apiBase}/public/rooms/${encodeURIComponent(tenantSlug)}/${encodeURIComponent(cleanRoom)}/dnd`;
 
     const res = await fetch(targetUrl, {
       method: "GET",
@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
 
     if (!res.ok) {
       return NextResponse.json(
-        { success: false, error: data?.error?.message || data?.message || "Failed to fetch extension status" },
+        { success: false, error: data?.error?.message || data?.message || "Failed to fetch DND status" },
         { status: res.status >= 400 && res.status < 500 ? res.status : 400 }
       );
     }
@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
       headers: { "Cache-Control": "no-store, max-age=0, must-revalidate" },
     });
   } catch (err: any) {
-    console.error("[proxy-extend-stay] GET error:", err);
+    console.error("[proxy-dnd] GET error:", err);
     return NextResponse.json(
       { success: false, error: err?.message || "Internal server error" },
       { status: 500 }
@@ -49,14 +49,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { tenantSlug, roomNumber, newCheckOut, notes, additionalNights } = body;
-
-    if (!newCheckOut) {
-      return NextResponse.json(
-        { success: false, error: "New check-out date is required" },
-        { status: 400 }
-      );
-    }
+    const { tenantSlug, roomNumber, dndStatus } = body;
 
     const slug = (tenantSlug || "the-grand-bistro").trim();
     const rawRoom = roomNumber || "102";
@@ -68,18 +61,16 @@ export async function POST(req: NextRequest) {
         ? "https://api-production-f170.up.railway.app/api/v1"
         : "http://localhost:8080/api/v1");
 
-    const targetUrl = `${apiBase}/public/rooms/${encodeURIComponent(slug)}/${encodeURIComponent(cleanRoom)}/extend-stay`;
+    const targetUrl = `${apiBase}/public/rooms/${encodeURIComponent(slug)}/${encodeURIComponent(cleanRoom)}/dnd`;
 
-    let res = await fetch(targetUrl, {
+    const res = await fetch(targetUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
       },
       body: JSON.stringify({
-        newCheckOut,
-        notes: notes || "",
-        additionalNights: additionalNights || 0,
+        dndStatus: Boolean(dndStatus),
       }),
       cache: "no-store",
     });
@@ -87,33 +78,20 @@ export async function POST(req: NextRequest) {
     const data = await res.json().catch(() => null);
 
     if (!res.ok) {
-      const errorMsg =
-        data?.error?.message ||
-        data?.message ||
-        "Failed to extend stay. Please contact front desk.";
       return NextResponse.json(
-        { success: false, error: errorMsg },
+        { success: false, error: data?.error?.message || data?.message || "Failed to update DND status" },
         { status: res.status >= 400 && res.status < 500 ? res.status : 400 }
       );
     }
 
-    return NextResponse.json(
-      {
-        success: true,
-        ...data,
-      },
-      {
-        status: 200,
-        headers: { "Cache-Control": "no-store, max-age=0, must-revalidate" },
-      }
-    );
+    return NextResponse.json(data, {
+      status: 200,
+      headers: { "Cache-Control": "no-store, max-age=0, must-revalidate" },
+    });
   } catch (err: any) {
-    console.error("[proxy-extend-stay] POST error:", err);
+    console.error("[proxy-dnd] POST error:", err);
     return NextResponse.json(
-      {
-        success: false,
-        error: err?.message || "Internal server error while extending stay",
-      },
+      { success: false, error: err?.message || "Internal server error" },
       { status: 500 }
     );
   }

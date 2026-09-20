@@ -44,6 +44,7 @@ import { useAuthStore } from "@/lib/stores/auth-store";
 import { apiClient } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
 import { validateIndianPhone, formatIndianPhoneInput } from "@/lib/validation";
+import { StaffOrderFoodModal } from "@/components/room/staff-order-food-modal";
 
 interface RoomDetail {
   id: string;
@@ -95,6 +96,9 @@ interface RoomOrder {
   totalAmount?: number;
   total?: number;
   createdAt: string;
+  orderSource?: string;
+  placedBy?: string;
+  billingMethod?: string;
 }
 
 const getStayMetrics = (checkInStr?: string, checkOutStr?: string) => {
@@ -156,6 +160,13 @@ export default function RoomDetailPage() {
   const [extendStayNotes, setExtendStayNotes] = React.useState("");
   const [extendingStay, setExtendingStay] = React.useState(false);
 
+  // Staff Order Food & Stay Extension Approval states
+  const [isStaffOrderFoodOpen, setIsStaffOrderFoodOpen] = React.useState(false);
+  const [pendingExtension, setPendingExtension] = React.useState<any | null>(null);
+  const [isRejectModalOpen, setIsRejectModalOpen] = React.useState(false);
+  const [rejectionReason, setRejectionReason] = React.useState("");
+  const [processingExtension, setProcessingExtension] = React.useState(false);
+
   // CheckIn form
   const [guestName, setGuestName] = React.useState("");
   const [guestPhone, setGuestPhone] = React.useState("");
@@ -216,11 +227,12 @@ export default function RoomDetailPage() {
     if (!roomId) return;
     try {
       setLoading(true);
-      const [roomRes, ordersRes, tasksRes, allOrdersRes] = await Promise.allSettled([
+      const [roomRes, ordersRes, tasksRes, allOrdersRes, extensionsRes] = await Promise.allSettled([
         apiClient.get(`/rooms/${encodeURIComponent(roomId)}`),
         apiClient.get(`/rooms/${encodeURIComponent(roomId)}/orders`),
         apiClient.get(`/rooms/${encodeURIComponent(roomId)}/tasks`),
         apiClient.get("/orders"),
+        apiClient.get("/rooms/extension-requests"),
       ]);
 
       let loadedRoom: RoomDetail | null = null;
@@ -283,6 +295,9 @@ export default function RoomDetailPage() {
               orderNumber: o.orderNumber,
               status: (o.status || "pending").toLowerCase(),
               customerName: o.customerName,
+              orderSource: o.orderSource,
+              placedBy: o.placedBy,
+              billingMethod: o.billingMethod,
               items: Array.isArray(o.items)
                 ? o.items.map((it: any) => ({
                     name: it.name,
@@ -331,6 +346,9 @@ export default function RoomDetailPage() {
                 orderNumber: o.orderNumber,
                 status: (o.status || "pending").toLowerCase(),
                 customerName: o.customerName,
+                orderSource: o.orderSource,
+                placedBy: o.placedBy,
+                billingMethod: o.billingMethod,
                 items: Array.isArray(o.items)
                   ? o.items.map((it: any) => ({
                       name: it.name,
@@ -345,6 +363,21 @@ export default function RoomDetailPage() {
             }
           }
         }
+      }
+
+      // 3. Process stay extension requests
+      if (extensionsRes.status === "fulfilled") {
+        const data = extensionsRes.value.data?.data || extensionsRes.value.data;
+        const list = Array.isArray(data?.requests) ? data.requests : Array.isArray(data) ? data : [];
+        const roomNum = (loadedRoom?.roomNumber || room?.roomNumber || "").toUpperCase().trim();
+        const currentRoomId = (loadedRoom?.id || roomId || "").trim();
+        const pending = list.find((req: any) =>
+          req.status === "pending" && (
+            (currentRoomId && String(req.roomId).trim() === currentRoomId) ||
+            (roomNum && String(req.roomNumber || "").toUpperCase().trim() === roomNum)
+          )
+        );
+        setPendingExtension(pending || null);
       }
 
       const mergedOrders = Array.from(orderMap.values()).sort(
@@ -696,6 +729,53 @@ export default function RoomDetailPage() {
     }
   };
 
+  const handleApproveExtension = async () => {
+    if (!pendingExtension) return;
+    try {
+      setProcessingExtension(true);
+      await apiClient.post(`/rooms/extension-requests/${encodeURIComponent(pendingExtension.id)}/approve`, {
+        notes: "Approved by Front Desk",
+      });
+      addToast(
+        "success",
+        "Stay Extension Approved",
+        `Guest stay in ${room?.name} extended to ${new Date(pendingExtension.requestedCheckout).toLocaleDateString()}. Checkout updated.`
+      );
+      setPendingExtension(null);
+      fetchRoomData();
+    } catch (err: any) {
+      console.error("Failed to approve stay extension:", err);
+      addToast("error", "Approval Failed", err?.response?.data?.message || err?.message || "Could not approve extension.");
+    } finally {
+      setProcessingExtension(false);
+    }
+  };
+
+  const handleRejectExtension = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pendingExtension) return;
+    try {
+      setProcessingExtension(true);
+      await apiClient.post(`/rooms/extension-requests/${encodeURIComponent(pendingExtension.id)}/reject`, {
+        reason: rejectionReason.trim() || "Room is committed to an incoming reservation.",
+      });
+      addToast(
+        "info",
+        "Extension Request Declined",
+        "The guest stay extension request has been declined and updated."
+      );
+      setIsRejectModalOpen(false);
+      setPendingExtension(null);
+      setRejectionReason("");
+      fetchRoomData();
+    } catch (err: any) {
+      console.error("Failed to reject stay extension:", err);
+      addToast("error", "Rejection Failed", err?.response?.data?.message || err?.message || "Could not decline extension.");
+    } finally {
+      setProcessingExtension(false);
+    }
+  };
+
   const handleInitiateCheckOut = async () => {
     if (!room) return;
     setIsCheckOutOpen(true);
@@ -950,6 +1030,15 @@ export default function RoomDetailPage() {
                 Extend Stay
               </Button>
               <Button
+                variant="default"
+                size="sm"
+                className="bg-amber-600 hover:bg-amber-500 text-white font-bold"
+                leftIcon={<UtensilsCrossed className="h-4 w-4" />}
+                onClick={() => setIsStaffOrderFoodOpen(true)}
+              >
+                Order Food for Guest
+              </Button>
+              <Button
                 variant="secondary"
                 size="sm"
                 leftIcon={<Edit3 className="h-4 w-4 text-emerald-500" />}
@@ -996,6 +1085,65 @@ export default function RoomDetailPage() {
           </Button>
         </div>
       </div>
+
+      {/* ── Pending Stay Extension Request Approval Banner ── */}
+      {pendingExtension && pendingExtension.status === "pending" && (
+        <div className="p-4 rounded-2xl border-2 border-amber-500/60 bg-amber-500/10 backdrop-blur flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="flex items-start gap-3 min-w-0">
+            <div className="h-10 w-10 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/40">
+              <Clock className="h-5 w-5 animate-spin" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-bold text-sm text-slate-900 dark:text-white">
+                  Guest Stay Extension Request Pending Approval
+                </span>
+                <Badge variant="warning" size="sm" className="text-[10px] font-extrabold uppercase">
+                  Pending Review
+                </Badge>
+              </div>
+              <p className="text-xs text-slate-700 dark:text-slate-300 mt-1">
+                Guest <span className="font-bold">{pendingExtension.guestName || room.currentGuestName || "Resident"}</span> requested to extend checkout from{" "}
+                <span className="font-semibold line-through opacity-70">
+                  {new Date(pendingExtension.currentCheckout || room.currentGuestExpectedCheckOut || "").toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })}
+                </span>{" "}
+                to{" "}
+                <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                  {new Date(pendingExtension.requestedCheckout).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })}
+                </span>{" "}
+                (+{pendingExtension.additionalNights || 1} Night{pendingExtension.additionalNights > 1 ? "s" : ""}).
+              </p>
+              {pendingExtension.notes && (
+                <p className="text-[11px] text-amber-800 dark:text-amber-300/90 italic mt-0.5">
+                  Guest Note: "{pendingExtension.notes}"
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={processingExtension}
+              onClick={() => setIsRejectModalOpen(true)}
+              className="border-rose-300 text-rose-600 hover:bg-rose-50 dark:border-rose-800 dark:hover:bg-rose-950/50 text-xs font-semibold"
+            >
+              Decline
+            </Button>
+            <Button
+              variant="default"
+              size="sm"
+              disabled={processingExtension}
+              onClick={handleApproveExtension}
+              className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold gap-1.5 shadow-sm"
+            >
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              <span>{processingExtension ? "Updating..." : "Approve Extension"}</span>
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* 3-Column Highlights Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1282,6 +1430,15 @@ export default function RoomDetailPage() {
                 </p>
               </div>
               <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  leftIcon={<Plus className="h-3.5 w-3.5" />}
+                  onClick={() => setIsStaffOrderFoodOpen(true)}
+                  className="h-7 text-xs font-semibold"
+                >
+                  Order Food
+                </Button>
                 {orders.length > 0 && (
                   <button
                     onClick={handleClearStayHistory}
@@ -1307,7 +1464,7 @@ export default function RoomDetailPage() {
                     className="p-3.5 rounded-2xl bg-slate-100/70 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 flex items-start justify-between text-xs"
                   >
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-black font-mono text-slate-900 dark:text-white">
                           {ord.orderNumber}
                         </span>
@@ -1325,6 +1482,20 @@ export default function RoomDetailPage() {
                         >
                           {ord.status.toUpperCase()}
                         </Badge>
+                        {ord.orderSource === "front_desk" && (
+                          <span className="px-1.5 py-0.2 rounded bg-purple-500/15 text-purple-700 dark:text-purple-300 text-[10px] font-bold">
+                            Front Desk {ord.placedBy ? `• ${ord.placedBy}` : ""}
+                          </span>
+                        )}
+                        {ord.billingMethod && (
+                          <span className="px-1.5 py-0.2 rounded bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[10px] font-medium">
+                            {ord.billingMethod === "room_folio"
+                              ? "Room Bill"
+                              : ord.billingMethod === "complimentary"
+                              ? "Complimentary"
+                              : "Immediate"}
+                          </span>
+                        )}
                       </div>
 
                       <div className="mt-2 space-y-0.5 text-slate-600 dark:text-slate-400">
@@ -2559,6 +2730,69 @@ export default function RoomDetailPage() {
           </div>
         </form>
       </Modal>
+
+      {/* ── Front Desk Staff Order Food on Behalf of Guest Modal ── */}
+      {isStaffOrderFoodOpen && room && (
+        <StaffOrderFoodModal
+          isOpen={isStaffOrderFoodOpen}
+          onClose={() => setIsStaffOrderFoodOpen(false)}
+          roomId={room.id}
+          roomNumber={room.roomNumber}
+          roomName={room.name}
+          guestName={room.currentGuestName}
+          guestPhone={room.currentGuestPhone}
+          bookingId={room.currentGuestId}
+          tenantSlug={tenantSlug}
+          onOrderPlaced={fetchRoomData}
+        />
+      )}
+
+      {/* ── Decline Stay Extension Modal ── */}
+      {isRejectModalOpen && pendingExtension && (
+        <Modal
+          isOpen={isRejectModalOpen}
+          onClose={() => setIsRejectModalOpen(false)}
+          title="Decline Stay Extension Request"
+          description={`Explain to guest why stay in ${room?.name || "the room"} cannot be extended.`}
+          size="sm"
+        >
+          <form onSubmit={handleRejectExtension} className="space-y-4 pt-1">
+            <div>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                Reason for Declining
+              </label>
+              <textarea
+                rows={3}
+                required
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                placeholder="e.g. Room is fully booked for subsequent dates by an incoming VIP reservation."
+                className="w-full text-xs p-3 rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-rose-500"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsRejectModalOpen(false)}
+                disabled={processingExtension}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                variant="destructive"
+                size="sm"
+                disabled={processingExtension || !rejectionReason.trim()}
+              >
+                {processingExtension ? "Declining..." : "Decline Extension"}
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </div>
   );
 }

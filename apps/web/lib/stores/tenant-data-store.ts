@@ -54,6 +54,12 @@ export interface KdsOrder {
   total: number;
   time?: string;
   createdAt?: string;
+  orderSource?: string;
+  placedBy?: string;
+  billingMethod?: string;
+  roomNumber?: string;
+  roomId?: string;
+  bookingId?: string;
 }
 
 export interface OnboardingStep {
@@ -621,6 +627,12 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
             time: o.createdAt
               ? new Date(o.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
               : "Just now",
+            orderSource: o.orderSource,
+            placedBy: o.placedBy,
+            billingMethod: o.billingMethod,
+            roomNumber: o.roomNumber,
+            roomId: o.roomId,
+            bookingId: o.bookingId,
           }));
         }
       }
@@ -1533,6 +1545,12 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
           time: o.createdAt
             ? new Date(o.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
             : "Just now",
+          orderSource: o.orderSource,
+          placedBy: o.placedBy,
+          billingMethod: o.billingMethod,
+          roomNumber: o.roomNumber,
+          roomId: o.roomId,
+          bookingId: o.bookingId,
         }));
 
         set({ orders: remoteOrders });

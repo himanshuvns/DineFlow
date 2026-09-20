@@ -382,27 +382,84 @@ func (s *Service) BulkCreateRooms(ctx context.Context, tenantID bson.ObjectID, s
 	return created, nil
 }
 
-// ToggleDND updates Do Not Disturb flag.
-func (s *Service) ToggleDND(ctx context.Context, tenantID bson.ObjectID, identifier string, dnd bool) error {
+// GetRoomDNDStatus retrieves DND preference for a room.
+func (s *Service) GetRoomDNDStatus(ctx context.Context, tenantID bson.ObjectID, identifier string) (bool, *time.Time, error) {
 	roomID, err := s.ResolveRoomID(ctx, tenantID, identifier)
 	if err != nil {
-		return err
+		return false, nil, err
 	}
 
-	coll := s.db.Collection("rooms")
-	res, err := coll.UpdateOne(ctx, bson.M{"_id": roomID, "tenantId": tenantID}, bson.M{
+	var pref domainroom.RoomPreference
+	prefColl := s.db.Collection("room_preferences")
+	err = prefColl.FindOne(ctx, bson.M{"tenantId": tenantID, "roomId": roomID}).Decode(&pref)
+	if err == nil {
+		return pref.DNDStatus, &pref.UpdatedAt, nil
+	}
+
+	var r domainroom.Room
+	err = s.db.Collection("rooms").FindOne(ctx, bson.M{"_id": roomID, "tenantId": tenantID}).Decode(&r)
+	if err != nil {
+		return false, nil, err
+	}
+	return r.DoNotDisturb, &r.UpdatedAt, nil
+}
+
+// UpdateRoomDND updates Do Not Disturb flag in room_preferences collection and syncs to room.
+func (s *Service) UpdateRoomDND(ctx context.Context, tenantID bson.ObjectID, identifier string, dnd bool, updatedBy string) (*domainroom.Room, error) {
+	roomID, err := s.ResolveRoomID(ctx, tenantID, identifier)
+	if err != nil {
+		return nil, err
+	}
+
+	now := time.Now().UTC()
+	roomsColl := s.db.Collection("rooms")
+	var r domainroom.Room
+	err = roomsColl.FindOne(ctx, bson.M{"_id": roomID, "tenantId": tenantID}).Decode(&r)
+	if err != nil {
+		return nil, errors.New("room not found")
+	}
+
+	if updatedBy == "" {
+		updatedBy = "guest"
+	}
+
+	// 1. Upsert into room_preferences collection
+	prefColl := s.db.Collection("room_preferences")
+	prefUpdate := bson.M{
+		"$set": bson.M{
+			"dndStatus": dnd,
+			"bookingId": r.CurrentGuestID,
+			"updatedBy": updatedBy,
+			"updatedAt": now,
+		},
+		"$setOnInsert": bson.M{
+			"_id":      bson.NewObjectID(),
+			"tenantId": tenantID,
+			"roomId":   roomID,
+		},
+	}
+	_, _ = prefColl.UpdateOne(ctx, bson.M{"tenantId": tenantID, "roomId": roomID}, prefUpdate, options.UpdateOne().SetUpsert(true))
+
+	// 2. Update room document
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+	var updatedRoom domainroom.Room
+	err = roomsColl.FindOneAndUpdate(ctx, bson.M{"_id": roomID, "tenantId": tenantID}, bson.M{
 		"$set": bson.M{
 			"doNotDisturb": dnd,
-			"updatedAt":    time.Now().UTC(),
+			"updatedAt":    now,
 		},
-	})
+	}, opts).Decode(&updatedRoom)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	if res.MatchedCount == 0 {
-		return errors.New("room not found")
-	}
-	return nil
+
+	return &updatedRoom, nil
+}
+
+// ToggleDND updates Do Not Disturb flag.
+func (s *Service) ToggleDND(ctx context.Context, tenantID bson.ObjectID, identifier string, dnd bool) error {
+	_, err := s.UpdateRoomDND(ctx, tenantID, identifier, dnd, "staff")
+	return err
 }
 
 // UpdateStatus updates the operational status of a room.
@@ -413,6 +470,15 @@ func (s *Service) UpdateStatus(ctx context.Context, tenantID bson.ObjectID, iden
 	}
 
 	coll := s.db.Collection("rooms")
+	if status == domainroom.StatusVacant {
+		var r domainroom.Room
+		if err := coll.FindOne(ctx, bson.M{"_id": roomID, "tenantId": tenantID}).Decode(&r); err == nil {
+			if r.DoNotDisturb {
+				return errors.New("cannot mark room service-ready while Do Not Disturb (DND) is active")
+			}
+		}
+	}
+
 	res, err := coll.UpdateOne(ctx, bson.M{"_id": roomID, "tenantId": tenantID}, bson.M{
 		"$set": bson.M{
 			"status":    status,
@@ -1027,12 +1093,15 @@ func (s *Service) UpdateHousekeepingTask(ctx context.Context, tenantID bson.Obje
 		return nil, err
 	}
 
-	// If cleaning task completed, mark room clean & ready (vacant)
-	if status == domainroom.TaskCompleted && updated.TaskType == domainroom.TaskCleaning {
+	// If task is completed, check if room has DND active
+	if status == domainroom.TaskCompleted {
 		roomsColl := s.db.Collection("rooms")
 		var r domainroom.Room
 		if err := roomsColl.FindOne(ctx, bson.M{"_id": updated.RoomID, "tenantId": tenantID}).Decode(&r); err == nil {
-			if r.Status == domainroom.StatusCleaning {
+			if r.DoNotDisturb {
+				return nil, errors.New("cannot mark room service-ready while Do Not Disturb (DND) is active")
+			}
+			if updated.TaskType == domainroom.TaskCleaning && r.Status == domainroom.StatusCleaning {
 				_, _ = roomsColl.UpdateOne(ctx, bson.M{"_id": updated.RoomID}, bson.M{
 					"$set": bson.M{
 						"status":    domainroom.StatusVacant,
@@ -1470,3 +1539,304 @@ func (s *Service) ExtendPublicGuestStay(ctx context.Context, tenantSlug, roomIde
 
 	return &g, &updatedRoom, additionalNights, currentCheckOut, nil
 }
+
+// CreateStayExtensionRequest creates a formal guest stay extension request requiring hotel approval.
+func (s *Service) CreateStayExtensionRequest(ctx context.Context, tenantSlug, roomIdentifier string, requestedCheckout time.Time, notes string) (*domainroom.StayExtensionRequest, *domainroom.Room, *domainroom.Guest, error) {
+	if requestedCheckout.IsZero() {
+		return nil, nil, nil, errors.New("a valid requested check-out date is required")
+	}
+
+	room, _, err := s.GetPublicRoom(ctx, tenantSlug, roomIdentifier)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	guestsColl := s.db.Collection("guests")
+	var g domainroom.Guest
+	if room.CurrentGuestID != nil && !room.CurrentGuestID.IsZero() {
+		_ = guestsColl.FindOne(ctx, bson.M{"_id": *room.CurrentGuestID, "tenantId": room.TenantID}).Decode(&g)
+	}
+	if g.ID.IsZero() {
+		_ = guestsColl.FindOne(ctx, bson.M{
+			"roomId":   room.ID,
+			"tenantId": room.TenantID,
+			"status":   domainroom.GuestCheckedIn,
+		}, options.FindOne().SetSort(bson.D{{Key: "checkIn", Value: -1}})).Decode(&g)
+	}
+
+	nowTime := time.Now().UTC()
+	if g.ID.IsZero() {
+		guestName := strings.TrimSpace(room.CurrentGuestName)
+		if guestName == "" {
+			guestName = fmt.Sprintf("Guest of %s", room.Name)
+		}
+		checkInTime := nowTime.Add(-24 * time.Hour)
+		if room.CurrentGuestCheckIn != nil && !room.CurrentGuestCheckIn.IsZero() {
+			checkInTime = *room.CurrentGuestCheckIn
+		}
+		defaultCheckout := time.Date(nowTime.Year(), nowTime.Month(), nowTime.Day(), 11, 0, 0, 0, time.UTC)
+		if !defaultCheckout.After(checkInTime) {
+			defaultCheckout = defaultCheckout.Add(24 * time.Hour)
+		}
+
+		g = domainroom.Guest{
+			ID:               bson.NewObjectID(),
+			TenantID:         room.TenantID,
+			RoomID:           room.ID,
+			RoomNumber:       room.RoomNumber,
+			Name:             guestName,
+			Status:           domainroom.GuestCheckedIn,
+			CheckIn:          checkInTime,
+			ExpectedCheckOut: &defaultCheckout,
+			NumberOfGuests:   2,
+			CreatedAt:        nowTime,
+			UpdatedAt:        nowTime,
+		}
+		_, _ = guestsColl.InsertOne(ctx, g)
+		room.CurrentGuestID = &g.ID
+		room.CurrentGuestName = guestName
+		room.Status = domainroom.StatusOccupied
+		room.CurrentGuestCheckIn = &checkInTime
+		room.CurrentGuestExpectedCheckOut = &defaultCheckout
+	}
+
+	// Current checkout baseline
+	currentCheckout := time.Date(nowTime.Year(), nowTime.Month(), nowTime.Day(), 11, 0, 0, 0, time.UTC)
+	if g.ExpectedCheckOut != nil && !g.ExpectedCheckOut.IsZero() {
+		currentCheckout = *g.ExpectedCheckOut
+	} else if room.CurrentGuestExpectedCheckOut != nil && !room.CurrentGuestExpectedCheckOut.IsZero() {
+		currentCheckout = *room.CurrentGuestExpectedCheckOut
+	} else if !g.CheckIn.IsZero() {
+		currentCheckout = g.CheckIn.Add(24 * time.Hour)
+	}
+
+	// Validation: stay can only be extended forward
+	if !requestedCheckout.After(currentCheckout) {
+		return nil, nil, nil, fmt.Errorf("requested check-out date must be later than current check-out (%s)", currentCheckout.Format("02 Jan 2006, 03:04 PM"))
+	}
+
+	diff := requestedCheckout.Sub(currentCheckout)
+	additionalNights := int(math.Max(1, math.Round(diff.Hours()/24)))
+
+	requestsColl := s.db.Collection("stay_extension_requests")
+
+	// Generate friendly ID: EXT-YYYYMMDD-XXXX
+	reqID := fmt.Sprintf("EXT-%s-%04d", nowTime.Format("20060102"), nowTime.UnixNano()%10000)
+
+	extReq := &domainroom.StayExtensionRequest{
+		ID:                bson.NewObjectID(),
+		RequestID:         reqID,
+		TenantID:          room.TenantID,
+		BookingID:         &g.ID,
+		RoomID:            room.ID,
+		RoomNumber:        room.RoomNumber,
+		GuestID:           &g.ID,
+		GuestName:         g.Name,
+		CurrentCheckout:   currentCheckout,
+		RequestedCheckout: requestedCheckout,
+		AdditionalNights:  additionalNights,
+		Status:            domainroom.ExtensionPending,
+		Reason:            strings.TrimSpace(notes),
+		CreatedAt:         nowTime,
+		UpdatedAt:         nowTime,
+	}
+
+	if err := extReq.Validate(); err != nil {
+		return nil, nil, nil, err
+	}
+
+	_, err = requestsColl.InsertOne(ctx, extReq)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("failed to submit extension request: %w", err)
+	}
+
+	return extReq, room, &g, nil
+}
+
+// GetPublicStayExtensionStatus retrieves active stay extension request for a room.
+func (s *Service) GetPublicStayExtensionStatus(ctx context.Context, tenantSlug, roomIdentifier string) (*domainroom.StayExtensionRequest, error) {
+	room, _, err := s.GetPublicRoom(ctx, tenantSlug, roomIdentifier)
+	if err != nil {
+		return nil, err
+	}
+
+	requestsColl := s.db.Collection("stay_extension_requests")
+	var ext domainroom.StayExtensionRequest
+	// Find the most recent request for this room
+	opts := options.FindOne().SetSort(bson.D{{Key: "createdAt", Value: -1}})
+	err = requestsColl.FindOne(ctx, bson.M{
+		"tenantId": room.TenantID,
+		"roomId":   room.ID,
+	}, opts).Decode(&ext)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &ext, nil
+}
+
+// ListStayExtensionRequests retrieves extension requests for tenant management.
+func (s *Service) ListStayExtensionRequests(ctx context.Context, tenantID bson.ObjectID, status string) ([]domainroom.StayExtensionRequest, error) {
+	requestsColl := s.db.Collection("stay_extension_requests")
+	filter := bson.M{"tenantId": tenantID}
+	if strings.TrimSpace(status) != "" && status != "all" {
+		filter["status"] = status
+	}
+
+	opts := options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}})
+	cursor, err := requestsColl.Find(ctx, filter, opts)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var list []domainroom.StayExtensionRequest
+	if err := cursor.All(ctx, &list); err != nil {
+		return nil, err
+	}
+	if list == nil {
+		list = []domainroom.StayExtensionRequest{}
+	}
+	return list, nil
+}
+
+// ApproveStayExtensionRequest approves a pending extension and updates the guest booking & room checkout.
+func (s *Service) ApproveStayExtensionRequest(ctx context.Context, tenantID bson.ObjectID, requestIdentifier string, managerName string, comment string) (*domainroom.StayExtensionRequest, *domainroom.Room, *domainroom.Guest, error) {
+	requestsColl := s.db.Collection("stay_extension_requests")
+
+	var filter bson.M
+	if oid, err := bson.ObjectIDFromHex(requestIdentifier); err == nil {
+		filter = bson.M{"_id": oid, "tenantId": tenantID}
+	} else {
+		filter = bson.M{"requestId": requestIdentifier, "tenantId": tenantID}
+	}
+
+	var extReq domainroom.StayExtensionRequest
+	if err := requestsColl.FindOne(ctx, filter).Decode(&extReq); err != nil {
+		return nil, nil, nil, errors.New("extension request not found")
+	}
+
+	if extReq.Status != domainroom.ExtensionPending {
+		return nil, nil, nil, fmt.Errorf("request already %s", extReq.Status)
+	}
+
+	now := time.Now().UTC()
+	if managerName == "" {
+		managerName = "Manager"
+	}
+
+	// 1. Update stay_extension_requests
+	extReq.Status = domainroom.ExtensionApproved
+	extReq.ApprovedBy = managerName
+	extReq.ApprovedAt = &now
+	extReq.ManagerComment = strings.TrimSpace(comment)
+	extReq.UpdatedAt = now
+
+	_, err := requestsColl.UpdateOne(ctx, bson.M{"_id": extReq.ID}, bson.M{
+		"$set": bson.M{
+			"status":         domainroom.ExtensionApproved,
+			"approvedBy":     managerName,
+			"approvedAt":     now,
+			"managerComment": extReq.ManagerComment,
+			"updatedAt":      now,
+		},
+	})
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("failed to update request status: %w", err)
+	}
+
+	// 2. Update guest booking checkout date
+	guestsColl := s.db.Collection("guests")
+	var g domainroom.Guest
+	if extReq.BookingID != nil && !extReq.BookingID.IsZero() {
+		_ = guestsColl.FindOne(ctx, bson.M{"_id": *extReq.BookingID, "tenantId": tenantID}).Decode(&g)
+	}
+	if g.ID.IsZero() && extReq.GuestID != nil && !extReq.GuestID.IsZero() {
+		_ = guestsColl.FindOne(ctx, bson.M{"_id": *extReq.GuestID, "tenantId": tenantID}).Decode(&g)
+	}
+	if !g.ID.IsZero() {
+		_, _ = guestsColl.UpdateOne(ctx, bson.M{"_id": g.ID}, bson.M{
+			"$set": bson.M{
+				"expectedCheckOut": extReq.RequestedCheckout,
+				"updatedAt":        now,
+			},
+		})
+		g.ExpectedCheckOut = &extReq.RequestedCheckout
+	}
+
+	// 3. Update room current guest expected checkout date
+	roomsColl := s.db.Collection("rooms")
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+	var updatedRoom domainroom.Room
+	_ = roomsColl.FindOneAndUpdate(ctx, bson.M{"_id": extReq.RoomID, "tenantId": tenantID}, bson.M{
+		"$set": bson.M{
+			"currentGuestExpectedCheckOut": extReq.RequestedCheckout,
+			"updatedAt":                    now,
+		},
+	}, opts).Decode(&updatedRoom)
+
+	return &extReq, &updatedRoom, &g, nil
+}
+
+// RejectStayExtensionRequest declines a pending extension with a reason. Booking remains unchanged.
+func (s *Service) RejectStayExtensionRequest(ctx context.Context, tenantID bson.ObjectID, requestIdentifier string, managerName string, reason string) (*domainroom.StayExtensionRequest, *domainroom.Room, *domainroom.Guest, error) {
+	requestsColl := s.db.Collection("stay_extension_requests")
+
+	var filter bson.M
+	if oid, err := bson.ObjectIDFromHex(requestIdentifier); err == nil {
+		filter = bson.M{"_id": oid, "tenantId": tenantID}
+	} else {
+		filter = bson.M{"requestId": requestIdentifier, "tenantId": tenantID}
+	}
+
+	var extReq domainroom.StayExtensionRequest
+	if err := requestsColl.FindOne(ctx, filter).Decode(&extReq); err != nil {
+		return nil, nil, nil, errors.New("extension request not found")
+	}
+
+	if extReq.Status != domainroom.ExtensionPending {
+		return nil, nil, nil, fmt.Errorf("request already %s", extReq.Status)
+	}
+
+	now := time.Now().UTC()
+	if managerName == "" {
+		managerName = "Manager"
+	}
+	trimmedReason := strings.TrimSpace(reason)
+	if trimmedReason == "" {
+		trimmedReason = "Room is fully booked for subsequent dates."
+	}
+
+	extReq.Status = domainroom.ExtensionRejected
+	extReq.ApprovedBy = managerName
+	extReq.Reason = trimmedReason
+	extReq.ManagerComment = trimmedReason
+	extReq.UpdatedAt = now
+
+	_, err := requestsColl.UpdateOne(ctx, bson.M{"_id": extReq.ID}, bson.M{
+		"$set": bson.M{
+			"status":         domainroom.ExtensionRejected,
+			"approvedBy":     managerName,
+			"reason":         trimmedReason,
+			"managerComment": trimmedReason,
+			"updatedAt":      now,
+		},
+	})
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("failed to update request status: %w", err)
+	}
+
+	var r domainroom.Room
+	_ = s.db.Collection("rooms").FindOne(ctx, bson.M{"_id": extReq.RoomID, "tenantId": tenantID}).Decode(&r)
+
+	var g domainroom.Guest
+	if extReq.BookingID != nil && !extReq.BookingID.IsZero() {
+		_ = s.db.Collection("guests").FindOne(ctx, bson.M{"_id": *extReq.BookingID, "tenantId": tenantID}).Decode(&g)
+	}
+
+	return &extReq, &r, &g, nil
+}
+

@@ -84,3 +84,36 @@ func TestOrderStatusTransitions(t *testing.T) {
 		t.Errorf("paid order should not transition to preparing")
 	}
 }
+
+func TestStaffRoomOrderFields(t *testing.T) {
+	roomID := bson.NewObjectID()
+	bookingID := bson.NewObjectID()
+
+	ord := &order.Order{
+		TenantID:      bson.NewObjectID(),
+		OrderNumber:   "#IRD-1092",
+		Destination:   order.DestinationRoomService,
+		Source:        order.SourceFrontDesk,
+		OrderSource:   "front_desk",
+		PlacedBy:      "Front Desk - Rahul",
+		RoomID:        &roomID,
+		RoomNumber:    "204",
+		BookingID:     &bookingID,
+		BillingMethod: "charge_to_room",
+		ChargeToFolio: true,
+	}
+
+	if ord.OrderSource != "front_desk" {
+		t.Errorf("expected orderSource 'front_desk', got %s", ord.OrderSource)
+	}
+	if ord.PlacedBy != "Front Desk - Rahul" {
+		t.Errorf("expected placedBy 'Front Desk - Rahul', got %s", ord.PlacedBy)
+	}
+	if ord.BillingMethod != "charge_to_room" {
+		t.Errorf("expected billingMethod 'charge_to_room', got %s", ord.BillingMethod)
+	}
+	if ord.BookingID == nil || *ord.BookingID != bookingID {
+		t.Errorf("expected bookingId to match")
+	}
+}
+

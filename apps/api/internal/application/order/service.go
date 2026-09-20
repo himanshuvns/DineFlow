@@ -25,6 +25,7 @@ import (
 type notifServiceIface interface {
 	EmitOrderCreated(ctx context.Context, tenantID bson.ObjectID, order *domainorder.Order) error
 	EmitOrderUpdated(ctx context.Context, tenantID bson.ObjectID, order *domainorder.Order) error
+	EmitStaffRoomOrderPlaced(ctx context.Context, tenantID bson.ObjectID, ord *domainorder.Order, staffName string) error
 }
 
 // WhatsAppOrderNotifier defines the order notification contract for WhatsApp.
@@ -94,6 +95,11 @@ type CreateOrderInput struct {
 	CustomerPhone       string              `json:"customerPhone"`
 	Items               []CustomerItemInput `json:"items"`
 	SpecialInstructions string              `json:"specialInstructions"`
+	OrderSource         string              `json:"orderSource,omitempty"`
+	PlacedBy            string              `json:"placedBy,omitempty"`
+	BookingID           string              `json:"bookingId,omitempty"`
+	RoomID              string              `json:"roomId,omitempty"`
+	BillingMethod       string              `json:"billingMethod,omitempty"`
 }
 
 // CreateCustomerOrder processes a contactless QR order with server-side price verification.
@@ -339,7 +345,51 @@ func (s *Service) CreateCustomerOrder(ctx context.Context, input CreateOrderInpu
 
 	orderTimelineNote := "Order placed via digital QR menu"
 	if orderDest == domainorder.DestinationRoomService {
-		orderTimelineNote = fmt.Sprintf("In-Room Dining order placed for Suite %s", strings.ToUpper(roomNum))
+		if input.PlacedBy != "" {
+			orderTimelineNote = fmt.Sprintf("Order placed by front desk staff (%s) for Suite %s", input.PlacedBy, strings.ToUpper(roomNum))
+		} else {
+			orderTimelineNote = fmt.Sprintf("In-Room Dining order placed for Suite %s", strings.ToUpper(roomNum))
+		}
+	}
+
+	finalSource := orderSource
+	sourceStr := string(orderSource)
+	if input.OrderSource != "" {
+		sourceStr = input.OrderSource
+		if input.OrderSource == "front_desk" {
+			finalSource = domainorder.SourceFrontDesk
+		}
+	} else if input.PlacedBy != "" {
+		finalSource = domainorder.SourceFrontDesk
+		sourceStr = "front_desk"
+	}
+
+	billingMethod := strings.TrimSpace(input.BillingMethod)
+	chargeToFolio := input.ChargeToFolio
+	if billingMethod == "charge_to_room" || billingMethod == "folio" {
+		chargeToFolio = true
+		billingMethod = "charge_to_room"
+	} else if billingMethod == "" {
+		if chargeToFolio {
+			billingMethod = "charge_to_room"
+		} else {
+			billingMethod = "immediate"
+		}
+	}
+
+	var bookingOID *bson.ObjectID
+	if input.BookingID != "" {
+		if bOID, err := bson.ObjectIDFromHex(input.BookingID); err == nil {
+			bookingOID = &bOID
+		}
+	} else if matchedGuestID != nil {
+		bookingOID = matchedGuestID
+	}
+
+	if input.RoomID != "" && matchedRoomID == nil {
+		if rOID, err := bson.ObjectIDFromHex(input.RoomID); err == nil {
+			matchedRoomID = &rOID
+		}
 	}
 
 	now := time.Now().UTC()
@@ -354,12 +404,16 @@ func (s *Service) CreateCustomerOrder(ctx context.Context, input CreateOrderInpu
 		RoomID:              matchedRoomID,
 		GuestID:             matchedGuestID,
 		RoomNumber:          strings.ToUpper(roomNum),
-		ChargeToFolio:       input.ChargeToFolio,
+		ChargeToFolio:       chargeToFolio,
 		CustomerName:        input.CustomerName,
 		CustomerPhone:       input.CustomerPhone,
 		Items:               orderItems,
 		Currency:            t.Currency,
-		Source:              orderSource,
+		Source:              finalSource,
+		OrderSource:         sourceStr,
+		PlacedBy:            input.PlacedBy,
+		BookingID:           bookingOID,
+		BillingMethod:       billingMethod,
 		Status:              domainorder.StatusPending,
 		PaymentStatus:       domainorder.PaymentUnpaid,
 		SpecialInstructions: input.SpecialInstructions,
@@ -377,11 +431,28 @@ func (s *Service) CreateCustomerOrder(ctx context.Context, input CreateOrderInpu
 	// Calculate totals with 5% standard dining tax or tenant tax
 	ord.CalculateTotals(5.0)
 
+	// Complimentary orders waive all billing totals
+	if billingMethod == "complimentary" {
+		ord.TotalAmount = 0
+		ord.Total = 0
+		ord.Subtotal = 0
+		ord.TaxAmount = 0
+		ord.RoomServiceFee = 0
+		ord.PaymentStatus = domainorder.PaymentPaid
+	}
+
 	// 5. Insert order
 	orderColl := s.db.Collection("orders")
 	scope := mongoinfra.NewScope(orderColl, t.ID)
 	if _, err := scope.InsertOne(ctx, ord); err != nil {
 		return nil, err
+	}
+
+	// Emit staff placed notification if order came from front desk
+	if input.PlacedBy != "" && s.notifService != nil {
+		go func() {
+			_ = s.notifService.EmitStaffRoomOrderPlaced(context.Background(), t.ID, ord, input.PlacedBy)
+		}()
 	}
 
 	// 6. Update table/room active order, occupancy, and guest folio

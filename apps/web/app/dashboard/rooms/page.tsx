@@ -239,6 +239,7 @@ export default function RoomsDirectoryPage() {
   const [wingFilter, setWingFilter] = React.useState("all");
   const [statusFilter, setStatusFilter] = React.useState("all");
   const [searchQuery, setSearchQuery] = React.useState("");
+  const [pendingExtensionRooms, setPendingExtensionRooms] = React.useState<Map<string, any>>(new Map());
 
   React.useEffect(() => {
     if (typeof window !== "undefined") {
@@ -306,9 +307,10 @@ export default function RoomsDirectoryPage() {
 
   const fetchRooms = React.useCallback(async () => {
     try {
-      const [roomsRes, statsRes] = await Promise.allSettled([
+      const [roomsRes, statsRes, extensionsRes] = await Promise.allSettled([
         apiClient.get("/rooms"),
         apiClient.get("/rooms/stats"),
+        apiClient.get("/rooms/extension-requests"),
       ]);
 
       if (roomsRes.status === "fulfilled" && Array.isArray(roomsRes.value.data?.data) && roomsRes.value.data.data.length > 0) {
@@ -336,6 +338,19 @@ export default function RoomsDirectoryPage() {
 
       if (statsRes.status === "fulfilled" && statsRes.value.data?.data) {
         setStats(statsRes.value.data.data);
+      }
+
+      if (extensionsRes.status === "fulfilled") {
+        const data = extensionsRes.value.data?.data || extensionsRes.value.data;
+        const list = Array.isArray(data?.requests) ? data.requests : Array.isArray(data) ? data : [];
+        const extMap = new Map<string, any>();
+        list.forEach((req: any) => {
+          if (req.status === "pending") {
+            if (req.roomId) extMap.set(String(req.roomId).trim(), req);
+            if (req.roomNumber) extMap.set(String(req.roomNumber).toUpperCase().trim(), req);
+          }
+        });
+        setPendingExtensionRooms(extMap);
       }
     } catch (e) {
       console.warn("Rooms fetch error:", e);
@@ -606,12 +621,21 @@ export default function RoomsDirectoryPage() {
   };
 
   const handleMarkClean = async (id: string, name: string) => {
+    const targetRoom = rooms.find((r) => r.id === id);
+    if (targetRoom?.doNotDisturb) {
+      addToast(
+        "error",
+        "Action Blocked by DND",
+        `Cannot mark ${name} clean & service-ready while Do Not Disturb (DND) is active. Please clear DND first.`
+      );
+      return;
+    }
     try {
       await apiClient.patch(`/rooms/${encodeURIComponent(id)}/status`, { status: "vacant" });
       addToast("success", "Room Clean & Ready", `${name} is now vacant and ready for next guest.`);
       fetchRooms();
-    } catch (e) {
-      console.warn("Status update error:", e);
+    } catch (e: any) {
+      addToast("error", "Status Update Failed", e?.response?.data?.message || e?.message || "Could not update room status.");
     }
   };
 
@@ -701,7 +725,7 @@ export default function RoomsDirectoryPage() {
         </div>
 
         {/* Hotel PMS KPI Strip */}
-        <div className="flex overflow-x-auto gap-2 pb-0.5 scrollbar-none sm:grid sm:grid-cols-3 lg:grid-cols-5 shrink-0">
+        <div className="flex overflow-x-auto gap-2 pb-0.5 scrollbar-none sm:grid sm:grid-cols-3 lg:grid-cols-6 shrink-0">
           <Card variant="glass" className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 shrink-0 min-w-[140px] sm:min-w-0">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 block">
               Occupied Rooms
@@ -737,6 +761,18 @@ export default function RoomsDirectoryPage() {
                 {stats.cleaningRooms || rooms.filter((r) => r.status === "cleaning").length}
               </span>
               <span className="text-[10px] text-slate-500 font-mono">Cleaning</span>
+            </div>
+          </Card>
+
+          <Card variant="glass" className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 shrink-0 min-w-[140px] sm:min-w-0">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 block">
+              Do Not Disturb
+            </span>
+            <div className="flex items-baseline justify-between mt-0.5">
+              <span className="text-lg sm:text-xl font-black text-rose-600 dark:text-rose-400 font-mono">
+                {rooms.filter((r) => r.doNotDisturb).length}
+              </span>
+              <span className="text-[10px] text-rose-500 font-mono font-bold">🔴 Active</span>
             </div>
           </Card>
 
@@ -891,10 +927,26 @@ export default function RoomsDirectoryPage() {
                       {isOccupied ? "Guest In-House" : isCleaning ? "Cleaning" : "Clean & Ready"}
                     </Badge>
 
-                    {room.doNotDisturb && (
-                      <Badge variant="danger" size="sm" className="text-[10px]">
-                        DND Active
-                      </Badge>
+                    <span
+                      className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 ${
+                        room.doNotDisturb
+                          ? "bg-rose-500 text-white shadow-xs"
+                          : "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+                      }`}
+                    >
+                      <span
+                        className={`h-1.5 w-1.5 rounded-full ${
+                          room.doNotDisturb ? "bg-white animate-pulse" : "bg-emerald-500"
+                        }`}
+                      />
+                      {room.doNotDisturb ? "🔴 DND Active" : "🟢 Available"}
+                    </span>
+
+                    {(pendingExtensionRooms.has(room.id) || pendingExtensionRooms.has(room.roomNumber)) && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-500 text-white shadow-xs animate-pulse flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        <span>Extension Req</span>
+                      </span>
                     )}
                   </div>
                 </div>
@@ -1151,9 +1203,25 @@ export default function RoomsDirectoryPage() {
                   >
                     {isOccupied ? "Guest In-House" : isCleaning ? "Cleaning" : isMaintenance ? "Maintenance" : "Clean & Ready"}
                   </Badge>
-                  {room.doNotDisturb && (
-                    <Badge variant="danger" size="sm">
-                      <BellOff className="h-3 w-3 mr-0.5" />DND
+                  <span
+                    className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 ${
+                      room.doNotDisturb
+                        ? "bg-rose-500 text-white shadow-xs"
+                        : "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+                    }`}
+                  >
+                    <span
+                      className={`h-1.5 w-1.5 rounded-full ${
+                        room.doNotDisturb ? "bg-white animate-pulse" : "bg-emerald-500"
+                      }`}
+                    />
+                    {room.doNotDisturb ? "🔴 DND" : "🟢 Available"}
+                  </span>
+
+                  {(pendingExtensionRooms.has(room.id) || pendingExtensionRooms.has(room.roomNumber)) && (
+                    <Badge variant="warning" size="sm" className="text-[10px] font-bold animate-pulse">
+                      <Clock className="h-3 w-3 mr-1" />
+                      Extension Req
                     </Badge>
                   )}
                 </div>

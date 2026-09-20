@@ -492,3 +492,140 @@ func (s *Service) EmitHousekeepingCompleted(ctx context.Context, tenantID bson.O
 	return err
 }
 
+// EmitDNDToggled fires when a guest or staff member toggles Do Not Disturb status.
+func (s *Service) EmitDNDToggled(ctx context.Context, tenantID bson.ObjectID, roomNumber, roomID string, dndOn bool, updatedBy string) error {
+	var title, message string
+	priority := domainnotification.PriorityHigh
+	if dndOn {
+		title = fmt.Sprintf("🔴 DND Activated — Room %s", roomNumber)
+		message = fmt.Sprintf("Room %s has turned ON Do Not Disturb. Housekeeping and stewards must not knock.", roomNumber)
+	} else {
+		title = fmt.Sprintf("🟢 DND Cleared — Room %s", roomNumber)
+		message = fmt.Sprintf("Room %s has turned OFF Do Not Disturb. Room is now available for standard servicing.", roomNumber)
+		priority = domainnotification.PriorityMedium
+	}
+
+	_, err := s.CreateNotification(ctx, CreateNotificationInput{
+		TenantID:  tenantID,
+		Category:  domainnotification.CategoryHousekeeping,
+		Title:     title,
+		Message:   message,
+		Priority:  priority,
+		ActionURL: fmt.Sprintf("/dashboard/rooms/%s", roomID),
+		Metadata: map[string]interface{}{
+			"roomId":     roomID,
+			"roomNumber": roomNumber,
+			"dndStatus":  dndOn,
+			"updatedBy":  updatedBy,
+		},
+	})
+	return err
+}
+
+// EmitStayExtensionRequested fires when a guest requests an extension from the portal.
+func (s *Service) EmitStayExtensionRequested(ctx context.Context, tenantID bson.ObjectID, guestName, roomNumber, roomID, requestID string, currentCheckout, requestedCheckout time.Time, notes string) error {
+	gName := cleanGuestName(guestName)
+	formattedRequested := requestedCheckout.Format("02 Jan 2006, 03:04 PM")
+	title := fmt.Sprintf("Stay Extension Requested — Room %s", roomNumber)
+	message := fmt.Sprintf("%s requested to extend stay until %s. Review & approve from dashboard.", gName, formattedRequested)
+
+	_, err := s.CreateNotification(ctx, CreateNotificationInput{
+		TenantID:  tenantID,
+		Category:  domainnotification.CategoryReservations,
+		Title:     title,
+		Message:   message,
+		Priority:  domainnotification.PriorityHigh,
+		ActionURL: fmt.Sprintf("/dashboard/rooms/%s", roomID),
+		Metadata: map[string]interface{}{
+			"requestId":         requestID,
+			"roomId":            roomID,
+			"roomNumber":        roomNumber,
+			"guestName":         gName,
+			"currentCheckout":   currentCheckout.Format(time.RFC3339),
+			"requestedCheckout": requestedCheckout.Format(time.RFC3339),
+			"notes":             notes,
+		},
+	})
+	return err
+}
+
+// EmitStayExtensionApproved fires when management approves a guest stay extension.
+func (s *Service) EmitStayExtensionApproved(ctx context.Context, tenantID bson.ObjectID, guestName, roomNumber, roomID string, newCheckout time.Time, managerName string) error {
+	gName := cleanGuestName(guestName)
+	formattedDate := newCheckout.Format("02 Jan 2006, 03:04 PM")
+	title := fmt.Sprintf("Stay Extension Approved — Room %s", roomNumber)
+	message := fmt.Sprintf("Extension request for %s approved by %s until %s.", gName, managerName, formattedDate)
+
+	_, err := s.CreateNotification(ctx, CreateNotificationInput{
+		TenantID:  tenantID,
+		Category:  domainnotification.CategoryReservations,
+		Title:     title,
+		Message:   message,
+		Priority:  domainnotification.PriorityHigh,
+		ActionURL: fmt.Sprintf("/dashboard/rooms/%s", roomID),
+		Metadata: map[string]interface{}{
+			"roomId":      roomID,
+			"roomNumber":  roomNumber,
+			"guestName":   gName,
+			"newCheckout": newCheckout.Format(time.RFC3339),
+			"approvedBy":  managerName,
+		},
+	})
+	return err
+}
+
+// EmitStayExtensionRejected fires when management rejects a guest stay extension.
+func (s *Service) EmitStayExtensionRejected(ctx context.Context, tenantID bson.ObjectID, guestName, roomNumber, roomID string, reason, managerName string) error {
+	gName := cleanGuestName(guestName)
+	title := fmt.Sprintf("Stay Extension Declined — Room %s", roomNumber)
+	message := fmt.Sprintf("Extension request for %s declined by %s. Reason: %s", gName, managerName, reason)
+
+	_, err := s.CreateNotification(ctx, CreateNotificationInput{
+		TenantID:  tenantID,
+		Category:  domainnotification.CategoryReservations,
+		Title:     title,
+		Message:   message,
+		Priority:  domainnotification.PriorityMedium,
+		ActionURL: fmt.Sprintf("/dashboard/rooms/%s", roomID),
+		Metadata: map[string]interface{}{
+			"roomId":     roomID,
+			"roomNumber": roomNumber,
+			"guestName":  gName,
+			"reason":     reason,
+			"declinedBy": managerName,
+		},
+	})
+	return err
+}
+
+// EmitStaffRoomOrderPlaced fires when hotel staff places a room service order on behalf of an in-house guest.
+func (s *Service) EmitStaffRoomOrderPlaced(ctx context.Context, tenantID bson.ObjectID, ord *domainorder.Order, staffName string) error {
+	cleanOrdNum := cleanOrderNumber(ord.OrderNumber)
+	roomText := ord.RoomNumber
+	if roomText == "" {
+		roomText = ord.TableName
+	}
+	title := fmt.Sprintf("In-Room Dining Order — Room %s (#%s)", roomText, cleanOrdNum)
+	message := fmt.Sprintf("Staff member %s placed order #%s for %s (%s).", staffName, cleanOrdNum, ord.CustomerName, ord.BillingMethod)
+
+	_, err := s.CreateNotification(ctx, CreateNotificationInput{
+		TenantID:  tenantID,
+		Category:  domainnotification.CategoryRoomService,
+		Title:     title,
+		Message:   message,
+		Priority:  domainnotification.PriorityHigh,
+		ActionURL: "/dashboard/orders",
+		Metadata: map[string]interface{}{
+			"orderId":       ord.ID.Hex(),
+			"orderNumber":   cleanOrdNum,
+			"roomNumber":    roomText,
+			"customerName":  ord.CustomerName,
+			"orderedBy":     staffName,
+			"billingMethod": ord.BillingMethod,
+			"total":         ord.TotalAmount,
+		},
+	})
+	return err
+}
+
+

@@ -216,7 +216,7 @@ type ToggleRoomDNDRequest struct {
 	DoNotDisturb bool `json:"doNotDisturb"`
 }
 
-// ToggleDND updates Do Not Disturb flag.
+// ToggleDND updates Do Not Disturb flag from staff dashboard.
 func (h *RoomHandler) ToggleDND(c *gin.Context) {
 	tenantID := middleware.GetTenantID(c)
 	if tenantID == "" {
@@ -232,12 +232,108 @@ func (h *RoomHandler) ToggleDND(c *gin.Context) {
 		return
 	}
 
-	if err := h.roomService.ToggleDND(c.Request.Context(), tOID, id, req.DoNotDisturb); err != nil {
+	updatedRoom, err := h.roomService.UpdateRoomDND(c.Request.Context(), tOID, id, req.DoNotDisturb, "staff")
+	if err != nil {
 		response.BadRequest(c, "UPDATE_FAILED", err.Error())
 		return
 	}
 
-	response.OK(c, gin.H{"id": id, "doNotDisturb": req.DoNotDisturb})
+	if h.notifService != nil {
+		go func() {
+			_ = h.notifService.EmitDNDToggled(
+				context.Background(),
+				tOID,
+				updatedRoom.RoomNumber,
+				updatedRoom.ID.Hex(),
+				req.DoNotDisturb,
+				"staff",
+			)
+		}()
+	}
+
+	response.OK(c, gin.H{"id": id, "doNotDisturb": req.DoNotDisturb, "dndStatus": req.DoNotDisturb, "room": updatedRoom})
+}
+
+// GetPublicDND retrieves DND preference for the guest room portal.
+func (h *RoomHandler) GetPublicDND(c *gin.Context) {
+	tenantSlug := c.Param("tenantSlug")
+	roomNumber := c.Param("roomNumber")
+
+	room, _, err := h.roomService.GetPublicRoom(c.Request.Context(), tenantSlug, roomNumber)
+	if err != nil {
+		response.NotFound(c, "room not found")
+		return
+	}
+
+	dnd, updatedAt, err := h.roomService.GetRoomDNDStatus(c.Request.Context(), room.TenantID, room.ID.Hex())
+	if err != nil {
+		response.BadRequest(c, "QUERY_FAILED", err.Error())
+		return
+	}
+
+	response.OK(c, gin.H{
+		"success":    true,
+		"dndStatus":  dnd,
+		"updatedAt":  updatedAt,
+		"roomId":     room.ID.Hex(),
+		"roomNumber": room.RoomNumber,
+	})
+}
+
+type UpdatePublicDNDRequest struct {
+	DNDStatus    *bool `json:"dndStatus"`
+	DoNotDisturb *bool `json:"doNotDisturb"`
+}
+
+// UpdatePublicDND toggles DND from the guest room portal.
+func (h *RoomHandler) UpdatePublicDND(c *gin.Context) {
+	tenantSlug := c.Param("tenantSlug")
+	roomNumber := c.Param("roomNumber")
+
+	var req UpdatePublicDNDRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "INVALID_PAYLOAD", err.Error())
+		return
+	}
+
+	dndVal := false
+	if req.DNDStatus != nil {
+		dndVal = *req.DNDStatus
+	} else if req.DoNotDisturb != nil {
+		dndVal = *req.DoNotDisturb
+	}
+
+	room, _, err := h.roomService.GetPublicRoom(c.Request.Context(), tenantSlug, roomNumber)
+	if err != nil {
+		response.NotFound(c, "room not found")
+		return
+	}
+
+	updatedRoom, err := h.roomService.UpdateRoomDND(c.Request.Context(), room.TenantID, room.ID.Hex(), dndVal, "guest")
+	if err != nil {
+		response.BadRequest(c, "UPDATE_FAILED", err.Error())
+		return
+	}
+
+	if h.notifService != nil {
+		go func() {
+			_ = h.notifService.EmitDNDToggled(
+				context.Background(),
+				room.TenantID,
+				room.RoomNumber,
+				room.ID.Hex(),
+				dndVal,
+				"guest",
+			)
+		}()
+	}
+
+	response.OK(c, gin.H{
+		"success":   true,
+		"dndStatus": dndVal,
+		"room":      updatedRoom,
+		"message":   fmt.Sprintf("Do Not Disturb %s for Room %s", map[bool]string{true: "activated", false: "deactivated"}[dndVal], room.RoomNumber),
+	})
 }
 
 type UpdateRoomStatusRequest struct {
@@ -774,6 +870,29 @@ func (h *RoomHandler) GetPublicRoomTasks(c *gin.Context) {
 	})
 }
 
+// GetPublicRoomOrders returns active and recent in-room dining orders for a public room.
+func (h *RoomHandler) GetPublicRoomOrders(c *gin.Context) {
+	tenantSlug := c.Param("tenantSlug")
+	roomNumber := c.Param("roomNumber")
+
+	room, _, err := h.roomService.GetPublicRoom(c.Request.Context(), tenantSlug, roomNumber)
+	if err != nil {
+		response.NotFound(c, "room not found")
+		return
+	}
+
+	orders, err := h.roomService.GetRoomOrders(c.Request.Context(), room.TenantID, room.ID.Hex(), room.RoomNumber)
+	if err != nil {
+		response.InternalError(c)
+		return
+	}
+
+	response.OK(c, gin.H{
+		"roomNumber": room.RoomNumber,
+		"orders":     orders,
+	})
+}
+
 // ClearHistory purges historical orders and housekeeping tasks for a room.
 func (h *RoomHandler) ClearHistory(c *gin.Context) {
 	tenantID := middleware.GetTenantID(c)
@@ -810,8 +929,7 @@ type PublicExtendStayRequest struct {
 	AdditionalNights int    `json:"additionalNights"`
 }
 
-// PublicExtendStay allows an in-house guest to extend their stay duration from the QR room portal.
-// Stays can strictly only be increased / extended. Reductions are rejected with an explicit error.
+// PublicExtendStay submits a formal stay extension request from the QR room portal for hotel approval.
 func (h *RoomHandler) PublicExtendStay(c *gin.Context) {
 	tenantSlug := c.Param("tenantSlug")
 	roomNumber := c.Param("roomNumber")
@@ -834,7 +952,7 @@ func (h *RoomHandler) PublicExtendStay(c *gin.Context) {
 		parsedDate = time.Date(parsedDate.Year(), parsedDate.Month(), parsedDate.Day(), 11, 0, 0, 0, time.UTC)
 	}
 
-	guest, room, nights, oldCheckOut, err := h.roomService.ExtendPublicGuestStay(c.Request.Context(), tenantSlug, roomNumber, parsedDate, req.Notes)
+	extReq, room, guest, err := h.roomService.CreateStayExtensionRequest(c.Request.Context(), tenantSlug, roomNumber, parsedDate, req.Notes)
 	if err != nil {
 		response.BadRequest(c, "EXTEND_STAY_FAILED", err.Error())
 		return
@@ -843,27 +961,48 @@ func (h *RoomHandler) PublicExtendStay(c *gin.Context) {
 	// Fire real-time notification to hotel staff & notification center
 	if h.notifService != nil {
 		go func() {
-			_ = h.notifService.EmitGuestStayExtended(
+			_ = h.notifService.EmitStayExtensionRequested(
 				context.Background(),
 				room.TenantID,
 				guest.Name,
 				room.RoomNumber,
 				room.ID.Hex(),
-				oldCheckOut,
-				parsedDate,
-				nights,
+				extReq.RequestID,
+				extReq.CurrentCheckout,
+				extReq.RequestedCheckout,
+				req.Notes,
 			)
 		}()
 	}
 
 	response.OK(c, gin.H{
 		"success":          true,
-		"message":          fmt.Sprintf("Stay successfully extended by %d night(s) until %s", nights, parsedDate.Format("02 Jan 2006, 03:04 PM")),
+		"status":           "pending",
+		"message":          fmt.Sprintf("Stay extension request for %d night(s) submitted for hotel approval.", extReq.AdditionalNights),
+		"requestId":        extReq.RequestID,
 		"newCheckOut":      parsedDate.Format(time.RFC3339),
-		"additionalNights": nights,
+		"additionalNights": extReq.AdditionalNights,
 		"guestName":        guest.Name,
 		"roomNumber":       room.RoomNumber,
 		"room":             room,
+		"request":          extReq,
+	})
+}
+
+// GetPublicStayExtension retrieves current extension request status for the guest room portal.
+func (h *RoomHandler) GetPublicStayExtension(c *gin.Context) {
+	tenantSlug := c.Param("tenantSlug")
+	roomNumber := c.Param("roomNumber")
+
+	extReq, err := h.roomService.GetPublicStayExtensionStatus(c.Request.Context(), tenantSlug, roomNumber)
+	if err != nil {
+		response.BadRequest(c, "QUERY_FAILED", err.Error())
+		return
+	}
+
+	response.OK(c, gin.H{
+		"success": true,
+		"data":    extReq,
 	})
 }
 
@@ -941,5 +1080,146 @@ func (h *RoomHandler) StaffExtendStay(c *gin.Context) {
 		"room":             updatedRoom,
 	})
 }
+
+// ListExtensionRequests retrieves stay extension requests for hotel staff.
+func (h *RoomHandler) ListExtensionRequests(c *gin.Context) {
+	tenantID := middleware.GetTenantID(c)
+	if tenantID == "" {
+		response.Unauthorized(c, "tenant context missing")
+		return
+	}
+	tOID, err := bson.ObjectIDFromHex(tenantID)
+	if err != nil {
+		response.BadRequest(c, "INVALID_TENANT_ID", "invalid tenant ID")
+		return
+	}
+
+	status := c.Query("status")
+	list, err := h.roomService.ListStayExtensionRequests(c.Request.Context(), tOID, status)
+	if err != nil {
+		response.BadRequest(c, "QUERY_FAILED", err.Error())
+		return
+	}
+
+	response.OK(c, gin.H{
+		"success": true,
+		"count":   len(list),
+		"data":    list,
+	})
+}
+
+type ApproveExtensionRequestInput struct {
+	Comment string `json:"comment"`
+}
+
+// ApproveExtensionRequest approves a guest stay extension.
+func (h *RoomHandler) ApproveExtensionRequest(c *gin.Context) {
+	tenantID := middleware.GetTenantID(c)
+	if tenantID == "" {
+		response.Unauthorized(c, "tenant context missing")
+		return
+	}
+	tOID, err := bson.ObjectIDFromHex(tenantID)
+	if err != nil {
+		response.BadRequest(c, "INVALID_TENANT_ID", "invalid tenant ID")
+		return
+	}
+
+	id := c.Param("id")
+	var req ApproveExtensionRequestInput
+	_ = c.ShouldBindJSON(&req)
+
+	managerRole := middleware.GetRole(c)
+	managerName := "Front Desk Manager"
+	if managerRole != "" {
+		managerName = fmt.Sprintf("Manager (%s)", managerRole)
+	}
+
+	extReq, room, guest, err := h.roomService.ApproveStayExtensionRequest(c.Request.Context(), tOID, id, managerName, req.Comment)
+	if err != nil {
+		response.BadRequest(c, "APPROVAL_FAILED", err.Error())
+		return
+	}
+
+	if h.notifService != nil {
+		go func() {
+			_ = h.notifService.EmitStayExtensionApproved(
+				context.Background(),
+				tOID,
+				guest.Name,
+				room.RoomNumber,
+				room.ID.Hex(),
+				extReq.RequestedCheckout,
+				managerName,
+			)
+		}()
+	}
+
+	response.OK(c, gin.H{
+		"success": true,
+		"message": fmt.Sprintf("Extension request %s approved until %s", extReq.RequestID, extReq.RequestedCheckout.Format("02 Jan 2006, 03:04 PM")),
+		"data":    extReq,
+		"room":    room,
+		"guest":   guest,
+	})
+}
+
+type RejectExtensionRequestInput struct {
+	Reason string `json:"reason" binding:"required"`
+}
+
+// RejectExtensionRequest declines a guest stay extension.
+func (h *RoomHandler) RejectExtensionRequest(c *gin.Context) {
+	tenantID := middleware.GetTenantID(c)
+	if tenantID == "" {
+		response.Unauthorized(c, "tenant context missing")
+		return
+	}
+	tOID, err := bson.ObjectIDFromHex(tenantID)
+	if err != nil {
+		response.BadRequest(c, "INVALID_TENANT_ID", "invalid tenant ID")
+		return
+	}
+
+	id := c.Param("id")
+	var req RejectExtensionRequestInput
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "INVALID_PAYLOAD", "reason is required")
+		return
+	}
+
+	managerRole := middleware.GetRole(c)
+	managerName := "Front Desk Manager"
+	if managerRole != "" {
+		managerName = fmt.Sprintf("Manager (%s)", managerRole)
+	}
+
+	extReq, room, guest, err := h.roomService.RejectStayExtensionRequest(c.Request.Context(), tOID, id, managerName, req.Reason)
+	if err != nil {
+		response.BadRequest(c, "REJECTION_FAILED", err.Error())
+		return
+	}
+
+	if h.notifService != nil {
+		go func() {
+			_ = h.notifService.EmitStayExtensionRejected(
+				context.Background(),
+				tOID,
+				guest.Name,
+				room.RoomNumber,
+				room.ID.Hex(),
+				req.Reason,
+				managerName,
+			)
+		}()
+	}
+
+	response.OK(c, gin.H{
+		"success": true,
+		"message": fmt.Sprintf("Extension request %s declined", extReq.RequestID),
+		"data":    extReq,
+	})
+}
+
 
 

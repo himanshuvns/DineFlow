@@ -2,6 +2,7 @@ package room
 
 import (
 	"testing"
+	"time"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
@@ -153,3 +154,83 @@ func TestIndianPhoneValidation(t *testing.T) {
 		}
 	}
 }
+
+func TestRoomPreferenceValidation(t *testing.T) {
+	tenantID := bson.NewObjectID()
+	roomID := bson.NewObjectID()
+
+	// Missing tenantId
+	p := &RoomPreference{
+		RoomID: roomID,
+	}
+	if err := p.Validate(); err == nil {
+		t.Errorf("expected error for missing tenantId")
+	}
+
+	// Missing roomId
+	p = &RoomPreference{
+		TenantID: tenantID,
+	}
+	if err := p.Validate(); err == nil {
+		t.Errorf("expected error for missing roomId")
+	}
+
+	// Valid preference
+	p = &RoomPreference{
+		TenantID:  tenantID,
+		RoomID:    roomID,
+		DNDStatus: true,
+		UpdatedBy: "guest",
+	}
+	if err := p.Validate(); err != nil {
+		t.Fatalf("unexpected validation error: %v", err)
+	}
+	if p.UpdatedAt.IsZero() {
+		t.Errorf("expected updatedAt timestamp to be populated")
+	}
+}
+
+func TestStayExtensionRequestValidation(t *testing.T) {
+	tenantID := bson.NewObjectID()
+	roomID := bson.NewObjectID()
+	now := time.Now().UTC()
+
+	// Missing tenantId
+	req := &StayExtensionRequest{
+		RoomID:            roomID,
+		CurrentCheckout:   now,
+		RequestedCheckout: now.Add(24 * time.Hour),
+	}
+	if err := req.Validate(); err == nil {
+		t.Errorf("expected error for missing tenantId")
+	}
+
+	// Requested checkout before current checkout
+	req = &StayExtensionRequest{
+		TenantID:          tenantID,
+		RoomID:            roomID,
+		CurrentCheckout:   now.Add(24 * time.Hour),
+		RequestedCheckout: now,
+	}
+	if err := req.Validate(); err == nil {
+		t.Errorf("expected error when requested checkout is not after current checkout")
+	}
+
+	// Valid request
+	req = &StayExtensionRequest{
+		TenantID:          tenantID,
+		RoomID:            roomID,
+		RoomNumber:        "102",
+		GuestName:         "Sophia Lauren",
+		CurrentCheckout:   now,
+		RequestedCheckout: now.Add(48 * time.Hour),
+		AdditionalNights:  2,
+	}
+	if err := req.Validate(); err != nil {
+		t.Fatalf("unexpected validation error: %v", err)
+	}
+	if req.Status != ExtensionPending {
+		t.Errorf("expected default status 'pending', got %s", req.Status)
+	}
+}
+

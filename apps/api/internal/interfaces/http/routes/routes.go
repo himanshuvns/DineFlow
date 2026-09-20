@@ -56,10 +56,14 @@ func Setup(
 			publicGroup.POST("/orders", orderHandler.CreateCustomerOrder)
 			publicGroup.GET("/orders/:orderId", orderHandler.GetCustomerOrder)
 			publicGroup.GET("/rooms/:tenantSlug/:roomNumber", roomHandler.GetPublicRoom)
+			publicGroup.GET("/rooms/:tenantSlug/:roomNumber/dnd", roomHandler.GetPublicDND)
+			publicGroup.POST("/rooms/:tenantSlug/:roomNumber/dnd", roomHandler.UpdatePublicDND)
 			publicGroup.GET("/rooms/:tenantSlug/:roomNumber/tasks", roomHandler.GetPublicRoomTasks)
+			publicGroup.GET("/rooms/:tenantSlug/:roomNumber/orders", roomHandler.GetPublicRoomOrders)
 			publicGroup.POST("/rooms/:tenantSlug/:roomNumber/amenity", roomHandler.RequestPublicAmenity)
 			publicGroup.GET("/room-tasks/:tenantSlug/:roomNumber", roomHandler.GetPublicRoomTasks)
 			publicGroup.POST("/room-tasks/:tenantSlug/:roomNumber", roomHandler.RequestPublicAmenity)
+			publicGroup.GET("/rooms/:tenantSlug/:roomNumber/extend-stay", roomHandler.GetPublicStayExtension)
 			publicGroup.POST("/rooms/:tenantSlug/:roomNumber/extend-stay", roomHandler.PublicExtendStay)
 			publicGroup.GET("/workforce/verify-token", waHandler.VerifyCheckInToken)
 			publicGroup.POST("/workforce/check-in", waHandler.PublicWorkforceCheckIn)
@@ -212,6 +216,9 @@ func Setup(
 				roomGroup.POST("/:id/tasks", roomHandler.CreateTask)
 				roomGroup.PATCH("/:id/tasks/:taskId", roomHandler.UpdateTask)
 				roomGroup.DELETE("/:id/history", middleware.OwnerOrManager(), roomHandler.ClearHistory)
+				roomGroup.GET("/extension-requests", roomHandler.ListExtensionRequests)
+				roomGroup.POST("/extension-requests/:id/approve", middleware.OwnerOrManager(), roomHandler.ApproveExtensionRequest)
+				roomGroup.POST("/extension-requests/:id/reject", middleware.OwnerOrManager(), roomHandler.RejectExtensionRequest)
 			}
 
 			// ── Live Orders & KDS (Phase 2 & 3) ───────────────────────────

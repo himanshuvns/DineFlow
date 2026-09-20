@@ -26,7 +26,8 @@ const (
 	SourceQRTable  OrderSource = "qr_table"
 	SourceQRRoom   OrderSource = "qr_room"
 	SourceWhatsApp OrderSource = "whatsapp"
-	SourcePOS      OrderSource = "pos"
+	SourcePOS       OrderSource = "pos"
+	SourceFrontDesk OrderSource = "front_desk"
 )
 
 type DestinationType string
@@ -103,6 +104,10 @@ type Order struct {
 	PaymentStatus       PaymentStatus   `bson:"paymentStatus" json:"paymentStatus"`
 	SpecialInstructions string          `bson:"specialInstructions,omitempty" json:"specialInstructions,omitempty"`
 	Timeline            []OrderTimeline `bson:"timeline" json:"timeline"`
+	OrderSource         string          `bson:"orderSource,omitempty" json:"orderSource,omitempty"`
+	PlacedBy            string          `bson:"placedBy,omitempty" json:"placedBy,omitempty"`
+	BookingID           *bson.ObjectID  `bson:"bookingId,omitempty" json:"bookingId,omitempty"`
+	BillingMethod       string          `bson:"billingMethod,omitempty" json:"billingMethod,omitempty"`
 	CreatedAt           time.Time       `bson:"createdAt" json:"createdAt"`
 	UpdatedAt           time.Time       `bson:"updatedAt" json:"updatedAt"`
 }
