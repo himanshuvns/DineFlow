@@ -48,7 +48,7 @@ func NewOpenWAProvider(cfg OpenWAConfig) *OpenWAProvider {
 			WebhookSecret: cfg.WebhookSecret,
 		},
 		httpClient: &http.Client{
-			Timeout: 15 * time.Second,
+			Timeout: 45 * time.Second,
 		},
 		sessionUUIDMap: make(map[string]string),
 		lastStatus: &SessionStatus{
@@ -156,9 +156,8 @@ func (p *OpenWAProvider) SendText(ctx context.Context, to string, text string) (
 	url := fmt.Sprintf("%s/api/sessions/%s/messages/send-text", p.cfg.BaseURL, sessionUUID)
 
 	payload := map[string]interface{}{
-		"chatId":  chatId,
-		"text":    text,
-		"message": text, // backward compat with varied OpenWA builds
+		"chatId": chatId,
+		"text":   text,
 	}
 
 	bodyBytes, err := json.Marshal(payload)
@@ -219,7 +218,7 @@ func (p *OpenWAProvider) SendImage(ctx context.Context, to string, imageURL stri
 
 	payload := map[string]interface{}{
 		"chatId":  chatId,
-		"file":    imageURL,
+		"url":     imageURL,
 		"caption": caption,
 	}
 
@@ -264,7 +263,7 @@ func (p *OpenWAProvider) SendDocument(ctx context.Context, to string, docURL str
 
 	payload := map[string]interface{}{
 		"chatId":   chatId,
-		"file":     docURL,
+		"url":      docURL,
 		"filename": filename,
 		"caption":  caption,
 	}

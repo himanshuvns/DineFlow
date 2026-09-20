@@ -245,7 +245,10 @@ func (s *Service) SendOrderConfirmation(ctx context.Context, tenantID bson.Objec
 	}
 
 	body := domainwa.BuildOrderConfirmationMessage(data)
-	extID, _ := s.dispatchMetaMessage(ctx, tenantID, recipientPhone, body)
+	extID, err := s.dispatchMetaMessage(ctx, tenantID, recipientPhone, body)
+	if err != nil {
+		return nil, fmt.Errorf("whatsapp gateway error: %w", err)
+	}
 
 	return s.LogMessage(ctx, tenantID, recipientPhone, data.CustomerName, domainwa.TemplateOrderConfirmed, body, data.LocationName, domainwa.StatusDelivered, extID)
 }
@@ -256,7 +259,10 @@ func (s *Service) SendKitchenReady(ctx context.Context, tenantID bson.ObjectID, 
 	}
 
 	body := domainwa.BuildKitchenReadyMessage(customerName, restName, locName)
-	extID, _ := s.dispatchMetaMessage(ctx, tenantID, recipientPhone, body)
+	extID, err := s.dispatchMetaMessage(ctx, tenantID, recipientPhone, body)
+	if err != nil {
+		return nil, fmt.Errorf("whatsapp gateway error: %w", err)
+	}
 
 	return s.LogMessage(ctx, tenantID, recipientPhone, customerName, domainwa.TemplateKitchenReady, body, locName, domainwa.StatusDelivered, extID)
 }
@@ -267,7 +273,10 @@ func (s *Service) SendFeedbackRequest(ctx context.Context, tenantID bson.ObjectI
 	}
 
 	body := domainwa.BuildFeedbackRequestMessage(customerName, restName)
-	extID, _ := s.dispatchMetaMessage(ctx, tenantID, recipientPhone, body)
+	extID, err := s.dispatchMetaMessage(ctx, tenantID, recipientPhone, body)
+	if err != nil {
+		return nil, fmt.Errorf("whatsapp gateway error: %w", err)
+	}
 
 	return s.LogMessage(ctx, tenantID, recipientPhone, customerName, domainwa.TemplateFeedbackRequest, body, "Dine-in", domainwa.StatusDelivered, extID)
 }
