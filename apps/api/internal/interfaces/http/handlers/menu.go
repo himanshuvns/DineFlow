@@ -535,12 +535,6 @@ type ScanMenuRequest struct {
 }
 
 func (h *MenuHandler) ScanMenu(c *gin.Context) {
-	tenantID := middleware.GetTenantID(c)
-	if tenantID == "" {
-		response.Unauthorized(c, "tenant context missing")
-		return
-	}
-
 	var req ScanMenuRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "INVALID_PAYLOAD", err.Error())
@@ -551,10 +545,11 @@ func (h *MenuHandler) ScanMenu(c *gin.Context) {
 		dishes, err := h.aiService.ScanMenuWithVision(c.Request.Context(), req.ImageBase64)
 		if err == nil && len(dishes) > 0 {
 			response.OK(c, gin.H{
-				"status": "success",
-				"source": "gemini_vision",
-				"count":  len(dishes),
-				"items":  dishes,
+				"status":  "success",
+				"success": true,
+				"source":  "gemini_vision",
+				"count":   len(dishes),
+				"items":   dishes,
 			})
 			return
 		}
@@ -562,6 +557,7 @@ func (h *MenuHandler) ScanMenu(c *gin.Context) {
 
 	response.OK(c, gin.H{
 		"status":  "success",
+		"success": true,
 		"source":  "fallback",
 		"message": "Processed payload",
 		"items":   []interface{}{},

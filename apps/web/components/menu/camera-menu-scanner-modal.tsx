@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import type { ParsedMenuItem } from "@/lib/utils/menu-nlp-engine";
 import type { MenuItem } from "@/lib/stores/tenant-data-store";
+import { apiClient } from "@/lib/api";
 
 interface CameraMenuScannerModalProps {
   isOpen: boolean;
@@ -216,38 +217,61 @@ export function CameraMenuScannerModal({
     setAnalysisStep("Analyzing menu layout with Gemini Vision AI…");
 
     try {
-      const response = await fetch("/api/menu/scan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      let data: any = null;
+
+      // 1. Try Go backend API endpoint (/api/v1/menu/scan) via apiClient
+      try {
+        const apiRes = await apiClient.post("/menu/scan", {
+          imageBase64: pagesToProcess[0]?.dataUrl,
           imagesBase64: pagesToProcess.map((p) => p.dataUrl),
           existingItems,
-        }),
-      });
+        });
+        if (apiRes.data && (apiRes.data.items || apiRes.data.data)) {
+          data = apiRes.data;
+        }
+      } catch (apiErr) {
+        console.warn("[camera-scanner] apiClient.post('/menu/scan') failed, trying Next.js proxy route:", apiErr);
+      }
+
+      // 2. Fallback to Next.js route (/api/menu/scan)
+      if (!data || !data.items || data.items.length === 0) {
+        const response = await fetch("/api/menu/scan", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            imagesBase64: pagesToProcess.map((p) => p.dataUrl),
+            existingItems,
+          }),
+        });
+
+        if (response.ok) {
+          data = await response.json();
+        } else {
+          let errDetail = `HTTP ${response.status}`;
+          try {
+            const errData = await response.json();
+            errDetail = errData.details || errData.error || errDetail;
+          } catch { /* ignore */ }
+          if (!data) {
+            setIsAnalyzing(false);
+            addToast("error", "AI Extraction Failed", `Gemini API error: ${errDetail}`);
+            return;
+          }
+        }
+      }
 
       setAnalysisStep("Normalizing Indian categories, prices & dietary flags…");
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.items && data.items.length > 0) {
-          setIsAnalyzing(false);
-          onClose();
-          addToast(
-            "success",
-            "AI Vision Complete",
-            `Successfully extracted ${data.items.length} items across all categories!`
-          );
-          onExtracted(data.items);
-          return;
-        }
-      } else {
-        let errDetail = `HTTP ${response.status}`;
-        try {
-          const errData = await response.json();
-          errDetail = errData.details || errData.error || errDetail;
-        } catch { /* ignore */ }
+      const items = data?.items || data?.data || [];
+      if (items && items.length > 0) {
         setIsAnalyzing(false);
-        addToast("error", "AI Extraction Failed", `Gemini API error: ${errDetail}`);
+        onClose();
+        addToast(
+          "success",
+          "AI Vision Complete",
+          `Successfully extracted ${items.length} items across all categories!`
+        );
+        onExtracted(items);
         return;
       }
     } catch (err) {

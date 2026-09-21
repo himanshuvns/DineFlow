@@ -152,6 +152,11 @@ func (p *OpenWAProvider) resolveSessionUUID(ctx context.Context, sessionIDOrName
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode >= 300 {
+		body, _ := io.ReadAll(resp.Body)
+		return sessionIDOrName, fmt.Errorf("openwa session create rejected (HTTP %d): %s", resp.StatusCode, strings.TrimSpace(string(body)))
+	}
+
 	var created struct {
 		ID string `json:"id"`
 	}
@@ -341,6 +346,11 @@ func (p *OpenWAProvider) StartSession(ctx context.Context, sessionID string) err
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode >= 300 {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("openwa gateway rejected start request (status %d): %s", resp.StatusCode, strings.TrimSpace(string(body)))
+	}
+
 	// Register webhook for this session if not already registered
 	p.ensureSessionWebhook(ctx, sessionUUID)
 
@@ -413,6 +423,10 @@ func (p *OpenWAProvider) GetQRCode(ctx context.Context, sessionID string) (strin
 
 	if resp.StatusCode == http.StatusNotFound {
 		return "", "disconnected", nil
+	}
+
+	if resp.StatusCode >= 300 {
+		return "", "error", fmt.Errorf("openwa gateway returned status %d: %s", resp.StatusCode, strings.TrimSpace(string(respBytes)))
 	}
 
 	var parsed struct {
@@ -498,6 +512,20 @@ func (p *OpenWAProvider) GetSessionStatus(ctx context.Context, sessionID string)
 	defer resp.Body.Close()
 
 	respBytes, _ := io.ReadAll(resp.Body)
+
+	if resp.StatusCode >= 300 {
+		errMsg := fmt.Sprintf("OpenWA gateway error (HTTP %d): %s", resp.StatusCode, strings.TrimSpace(string(respBytes)))
+		if len(errMsg) > 160 {
+			errMsg = errMsg[:160] + "..."
+		}
+		return &SessionStatus{
+			SessionID:    sessionID,
+			Status:       "disconnected",
+			Engine:       "whatsapp-web.js",
+			UpdatedAt:    time.Now().UTC(),
+			ErrorMessage: errMsg,
+		}, nil
+	}
 
 	var parsed struct {
 		Status      string      `json:"status"`

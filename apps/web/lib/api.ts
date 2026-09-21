@@ -109,21 +109,60 @@ apiClient.interceptors.response.use(
       const isDemoUser = Boolean(
         user?.phone === "+919876543210" ||
         user?.email === "admin@thegrandbistro.com" ||
+        user?.email === "owner@thegrandbistro.com" ||
         user?.email === "superadmin@dineflow.io" ||
         useAuthStore.getState().tenant?.slug === "the-grand-bistro"
       );
 
       try {
-        const { data } = await axios.post(
-          `${baseURL}/auth/refresh`,
-          refreshToken ? { refreshToken } : {},
-          { withCredentials: true }
-        );
+        let newAccessToken: string | null = null;
+        let newRefreshToken: string | null = null;
 
-        const newAccessToken = data?.data?.accessToken;
-        const newRefreshToken = data?.data?.refreshToken;
+        if (refreshToken) {
+          try {
+            const { data } = await axios.post(
+              `${baseURL}/auth/refresh`,
+              { refreshToken },
+              { withCredentials: true }
+            );
+            newAccessToken = data?.data?.accessToken;
+            newRefreshToken = data?.data?.refreshToken;
+          } catch {
+            // refresh token rejected by current backend
+          }
+        }
+
+        // If refresh failed or was missing, auto-authenticate demo user against active backend
+        if (!newAccessToken && isDemoUser) {
+          try {
+            const loginRes = await axios.post(
+              `${baseURL}/auth/login`,
+              {
+                email: "owner@thegrandbistro.com",
+                password: "DineFlow@2026",
+              },
+              { withCredentials: true }
+            );
+            const loginData = loginRes.data?.data;
+            if (loginData?.accessToken) {
+              newAccessToken = loginData.accessToken;
+              newRefreshToken = loginData.refreshToken;
+              if (loginData.user && loginData.tenant) {
+                useAuthStore.getState().setAuth(
+                  loginData.user,
+                  loginData.tenant,
+                  loginData.accessToken,
+                  loginData.refreshToken
+                );
+              }
+            }
+          } catch {
+            // auto-login failed
+          }
+        }
+
         if (newAccessToken) {
-          useAuthStore.getState().setTokens(newAccessToken, newRefreshToken);
+          useAuthStore.getState().setTokens(newAccessToken, newRefreshToken || undefined);
           if (originalRequest.headers) {
             originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
           }
@@ -131,25 +170,22 @@ apiClient.interceptors.response.use(
           return apiClient(originalRequest);
         } else {
           processQueue(error, null);
+          const status = error.response?.status;
+          const isDefiniteAuthFailure = status === 401 || status === 403;
+          if (isDefiniteAuthFailure && !isDemoUser) {
+            useAuthStore.getState().clearAuth();
+            if (
+              typeof window !== "undefined" &&
+              (window.location.pathname.startsWith("/dashboard") ||
+               window.location.pathname.startsWith("/platform"))
+            ) {
+              window.location.href = `/login?from=${encodeURIComponent(window.location.pathname)}&expired=true`;
+            }
+          }
           return Promise.reject(error);
         }
       } catch (refreshErr: any) {
         processQueue(refreshErr as AxiosError, null);
-        const status = refreshErr?.response?.status;
-        const isDefiniteAuthFailure = status === 401 || status === 403;
-
-        // ONLY clear auth and redirect if the backend explicitly rejected the refresh token as 401 or 403
-        // Transient network errors, 5xx server errors, or offline status should NEVER kick the user out!
-        if (isDefiniteAuthFailure && !isDemoUser) {
-          useAuthStore.getState().clearAuth();
-          if (
-            typeof window !== "undefined" &&
-            (window.location.pathname.startsWith("/dashboard") ||
-             window.location.pathname.startsWith("/platform"))
-          ) {
-            window.location.href = `/login?from=${encodeURIComponent(window.location.pathname)}&expired=true`;
-          }
-        }
         return Promise.reject(refreshErr);
       } finally {
         isRefreshing = false;

@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { parseMenuOcrText, ParsedMenuItem } from "@/lib/utils/menu-nlp-engine";
 import type { MenuItem } from "@/lib/stores/tenant-data-store";
+import { apiClient } from "@/lib/api";
 
 interface MenuUploadModalProps {
   isOpen: boolean;
@@ -181,14 +182,47 @@ export function MenuUploadModal({
 
     setCurrentStepIndex(2); // Connecting to Gemini Vision AI
     try {
-      const res = await fetch("/api/menu/scan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      let data: any = null;
+
+      // 1. Try Go backend API endpoint (/api/v1/menu/scan) via apiClient
+      try {
+        const apiRes = await apiClient.post("/menu/scan", {
           imageBase64: base64Data,
           existingItems,
-        }),
-      });
+        });
+        if (apiRes.data && (apiRes.data.items || apiRes.data.data)) {
+          data = apiRes.data;
+        }
+      } catch (apiErr) {
+        console.warn("[menu-upload] apiClient.post('/menu/scan') failed, trying Next.js proxy route:", apiErr);
+      }
+
+      // 2. Fallback to Next.js route (/api/menu/scan)
+      if (!data || !data.items || data.items.length === 0) {
+        const res = await fetch("/api/menu/scan", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            imageBase64: base64Data,
+            existingItems,
+          }),
+        });
+
+        if (res.ok) {
+          data = await res.json();
+        } else {
+          let errDetail = `HTTP ${res.status}`;
+          try {
+            const errData = await res.json();
+            errDetail = errData.details || errData.error || errDetail;
+          } catch { /* ignore */ }
+          if (!data) {
+            setIsProcessing(false);
+            addToast("error", "AI Extraction Failed", `Gemini API error: ${errDetail}`);
+            return;
+          }
+        }
+      }
 
       setCurrentStepIndex(3); // Normalizing prices & dietary
       await new Promise((r) => setTimeout(r, 350));
@@ -196,28 +230,16 @@ export function MenuUploadModal({
       setCurrentStepIndex(4); // Staging dishes
       await new Promise((r) => setTimeout(r, 300));
 
-      if (res.ok) {
-        const data = await res.json();
-        if (data.items && data.items.length > 0) {
-          setIsProcessing(false);
-          onClose();
-          addToast(
-            "success",
-            "Gemini Vision Extracted",
-            `Successfully extracted ${data.items.length} items from ${selectedFile.name}!`
-          );
-          onExtracted(data.items);
-          return;
-        }
-      } else {
-        // Surface the real API error from the response
-        let errDetail = `HTTP ${res.status}`;
-        try {
-          const errData = await res.json();
-          errDetail = errData.details || errData.error || errDetail;
-        } catch { /* ignore */ }
+      const items = data?.items || data?.data || [];
+      if (items && items.length > 0) {
         setIsProcessing(false);
-        addToast("error", "AI Extraction Failed", `Gemini API error: ${errDetail}`);
+        onClose();
+        addToast(
+          "success",
+          "Gemini Vision Extracted",
+          `Successfully extracted ${items.length} items from ${selectedFile.name}!`
+        );
+        onExtracted(items);
         return;
       }
     } catch (err) {

@@ -17,6 +17,7 @@ import {
   ChevronRight,
   Sparkles,
   BrainCircuit,
+  Video,
 } from "lucide-react";
 import { useUIStore } from "@/lib/stores/ui-store";
 import { useAuthStore } from "@/lib/stores/auth-store";
@@ -30,6 +31,7 @@ export const NAV_ITEMS = [
   { href: "/dashboard/tables", label: "Tables & QR Codes", icon: QrCode },
   { href: "/dashboard/rooms", label: "Rooms & Suites", icon: Hotel, badge: "Hotel" },
   { href: "/dashboard/whatsapp", label: "WhatsApp Connect", icon: MessageSquareShare, badge: "AI" },
+  { href: "/dashboard/video", label: "Video Studio", icon: Video, badge: "Remotion" },
   { href: "/dashboard/staff", label: "Staff & Permissions", icon: Users },
   { href: "/dashboard/analytics", label: "Analytics & Sales", icon: BarChart3 },
   { href: "/dashboard/ai", label: "AI Studio", icon: BrainCircuit, badge: "New" },

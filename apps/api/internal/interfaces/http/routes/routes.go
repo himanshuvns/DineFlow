@@ -1,6 +1,10 @@
 package routes
 
 import (
+	"net/http/httputil"
+	"net/url"
+	"os"
+	"strings"
 	"time"
 
 	redisinfra "github.com/dineflow/api/internal/infrastructure/redis"
@@ -386,5 +390,39 @@ func Setup(
 				searchGroup.GET("", searchHandler.Search)
 			}
 		}
+	}
+
+	// Direct aliases for common frontend endpoints with and without /v1 prefix
+	r.POST("/api/menu/scan", menuHandler.ScanMenu)
+	r.POST("/api/v1/menu/scan", menuHandler.ScanMenu)
+
+	// Fallback reverse proxy for Next.js App Router API routes (/api/*) when running behind
+	// an Nginx reverse proxy (e.g. on VPS) where all /api requests are forwarded to the Go backend.
+	frontendURL := os.Getenv("FRONTEND_URL")
+	if frontendURL == "" {
+		if os.Getenv("APP_ENV") == "production" {
+			frontendURL = "http://dineflow-web:3000"
+		} else {
+			frontendURL = "http://127.0.0.1:3000"
+		}
+	}
+
+	if target, err := url.Parse(frontendURL); err == nil {
+		proxy := httputil.NewSingleHostReverseProxy(target)
+		r.NoRoute(func(c *gin.Context) {
+			// If request starts with /api/ and was not matched by any Go route,
+			// proxy it to the Next.js frontend container/server.
+			if strings.HasPrefix(c.Request.URL.Path, "/api/") {
+				c.Request.Host = target.Host
+				c.Request.URL.Host = target.Host
+				c.Request.URL.Scheme = target.Scheme
+				proxy.ServeHTTP(c.Writer, c.Request)
+				return
+			}
+			c.JSON(404, gin.H{
+				"error": "page not found",
+				"path":  c.Request.URL.Path,
+			})
+		})
 	}
 }

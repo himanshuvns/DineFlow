@@ -24,6 +24,7 @@ services:
       EMAIL_FROM: ${EMAIL_FROM:-noreply@dine.rovixatech.com}
       EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-DineFlow}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      FRONTEND_URL: ${FRONTEND_URL:-http://dineflow-web:3000}
     depends_on:
       - mongo
       - redis
@@ -56,6 +57,7 @@ services:
       NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL:-wss://dine.rovixatech.com}
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://dine.rovixatech.com}
       NEXT_PUBLIC_ORDERING_URL: ${NEXT_PUBLIC_ORDERING_URL:-https://dine.rovixatech.com/order}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
     depends_on:
       - api
     healthcheck:

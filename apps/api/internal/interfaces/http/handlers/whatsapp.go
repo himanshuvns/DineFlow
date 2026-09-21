@@ -661,15 +661,16 @@ func (h *WhatsAppHandler) GetOpenWAQR(c *gin.Context) {
 		sessionID = "dineflow-dev"
 	}
 	qr, status, err := h.waService.GetOpenWAQR(c.Request.Context(), sessionID)
-	if err != nil && status == "error" {
-		response.BadRequest(c, "QR_FETCH_FAILED", err.Error())
-		return
+	errMsg := ""
+	if err != nil {
+		errMsg = err.Error()
 	}
 	response.OK(c, gin.H{
-		"qr":         qr,
-		"status":     status,
-		"sessionId":  sessionID,
-		"gatewayUrl": h.getGatewayURL(),
+		"qr":           qr,
+		"status":       status,
+		"sessionId":    sessionID,
+		"gatewayUrl":   h.getGatewayURL(),
+		"errorMessage": errMsg,
 	})
 }
 

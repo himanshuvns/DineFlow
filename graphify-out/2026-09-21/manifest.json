@@ -324,9 +324,9 @@
     "semantic_hash": "fd99a2ca2cdc86a8ee0bff30bf8b16d1"
   },
   "apps/api/internal/interfaces/http/handlers/whatsapp.go": {
-    "mtime": 1789905315.303067,
-    "seen": 1789905420.0102699,
-    "ast_hash": "d629e189ac76026a26e1fc8ff852f0f0",
+    "mtime": 1789975933.726512,
+    "seen": 1789979131.209953,
+    "ast_hash": "dc80ca3f11f5fb1b9f2b5a9ad4ec3070",
     "semantic_hash": ""
   },
   "apps/api/internal/interfaces/http/middleware/auth.go": {
@@ -504,9 +504,9 @@
     "semantic_hash": ""
   },
   "apps/web/app/api/room/tasks/route.ts": {
-    "mtime": 1789970971.8269033,
-    "seen": 1789972021.927362,
-    "ast_hash": "aa218a579aa0b93cfd2ff0026fbde101",
+    "mtime": 1789973431.6761527,
+    "seen": 1789973763.806964,
+    "ast_hash": "9c458081e4782690866be54859fd88fc",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/ai/forecast/page.tsx": {
@@ -588,9 +588,9 @@
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/rooms/[roomId]/page.tsx": {
-    "mtime": 1789971921.2535393,
-    "seen": 1789972021.9273732,
-    "ast_hash": "a334529f4da1805c00762fd778e733e4",
+    "mtime": 1789974513.7027094,
+    "seen": 1789979131.209991,
+    "ast_hash": "96e0a4d407a7b87a5faf645d771442b0",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/rooms/page.tsx": {
@@ -618,9 +618,9 @@
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/whatsapp/page.tsx": {
-    "mtime": 1789970870.8611007,
-    "seen": 1789972021.927377,
-    "ast_hash": "2f8ab53475673cd5f816a086a3e80f63",
+    "mtime": 1789976941.930278,
+    "seen": 1789979131.209996,
+    "ast_hash": "cadef57ca27175e5ccd87a5fcb5eaa25",
     "semantic_hash": ""
   },
   "apps/web/app/demo/page.tsx": {
@@ -756,10 +756,10 @@
     "semantic_hash": ""
   },
   "apps/web/components/customer/customer-housekeeping-tracker.tsx": {
-    "mtime": 1789530786.1850946,
-    "seen": 1789625093.70101,
-    "ast_hash": "422e5d7896ed1835293540894e369585",
-    "semantic_hash": "422e5d7896ed1835293540894e369585"
+    "mtime": 1789973551.686537,
+    "seen": 1789973763.807009,
+    "ast_hash": "1ac78fa616b3a33afd599bbac24198c4",
+    "semantic_hash": ""
   },
   "apps/web/components/customer/dish-customizer-sheet.tsx": {
     "mtime": 1789530707.7596638,
@@ -768,9 +768,9 @@
     "semantic_hash": "1949d2c976b3ee6fd48edf96b9482e63"
   },
   "apps/web/components/dashboard/sidebar.tsx": {
-    "mtime": 1789673168.9013638,
-    "seen": 1789673932.253254,
-    "ast_hash": "b49ace660d864c8346e3996745dca93e",
+    "mtime": 1789978842.9362845,
+    "seen": 1789979131.210027,
+    "ast_hash": "b54218a0cd0a252ee90818e1d535a4c6",
     "semantic_hash": ""
   },
   "apps/web/components/dashboard/topbar.tsx": {
@@ -966,9 +966,9 @@
     "semantic_hash": "264466c5e170cbe467a53806973977de"
   },
   "apps/web/lib/api.ts": {
-    "mtime": 1789846198.1802518,
-    "seen": 1789846264.646749,
-    "ast_hash": "e3e0f9b80c0f410490d4ccd5586e77fe",
+    "mtime": 1789976881.9976242,
+    "seen": 1789979131.2100658,
+    "ast_hash": "d5bf6fca1cbf31f93a50fcfce059b565",
     "semantic_hash": ""
   },
   "apps/web/lib/data/indian-food-database.ts": {
@@ -1044,10 +1044,10 @@
     "semantic_hash": ""
   },
   "apps/web/package.json": {
-    "mtime": 1789487073.3740456,
-    "seen": 1789625093.70104,
-    "ast_hash": "e21eb53941a07d45501743c9ae857256",
-    "semantic_hash": "e21eb53941a07d45501743c9ae857256"
+    "mtime": 1789979729.3584864,
+    "seen": 1789979992.4253492,
+    "ast_hash": "2c05aec8d9039ee0f8fdc781f05f996a",
+    "semantic_hash": ""
   },
   "apps/web/postcss.config.mjs": {
     "mtime": 1789157518.0796914,
@@ -2034,9 +2034,9 @@
     "semantic_hash": ""
   },
   "apps/api/internal/messaging/openwa.go": {
-    "mtime": 1789905330.5624287,
-    "seen": 1789905420.010277,
-    "ast_hash": "068adef2f7212480b5907c60f42bcce7",
+    "mtime": 1789975922.8779352,
+    "seen": 1789979131.20996,
+    "ast_hash": "45c64c09c1313d5ac3c1b2752cda2ba7",
     "semantic_hash": ""
   },
   "apps/api/internal/messaging/provider.go": {
@@ -2100,9 +2100,111 @@
     "semantic_hash": ""
   },
   "apps/web/lib/room-tasks.ts": {
-    "mtime": 1789970961.5912092,
-    "seen": 1789972021.927447,
-    "ast_hash": "3dde17e51cb8e99f9fb6c214663d00fc",
+    "mtime": 1789973409.4529386,
+    "seen": 1789973763.807082,
+    "ast_hash": "702b4adc1ab905e4f5592ac82bea108a",
+    "semantic_hash": ""
+  },
+  "apps/web/app/dashboard/video/page.tsx": {
+    "mtime": 1789979749.869018,
+    "seen": 1789979992.425267,
+    "ast_hash": "36a3fd478c205cf62e76fc12fdde5933",
+    "semantic_hash": ""
+  },
+  "apps/web/remotion.config.ts": {
+    "mtime": 1789978793.529145,
+    "seen": 1789979131.210079,
+    "ast_hash": "5d52b89bf04c994649ccf0703baf30ba",
+    "semantic_hash": ""
+  },
+  "apps/web/remotion/Root.tsx": {
+    "mtime": 1789979719.915865,
+    "seen": 1789979992.4253519,
+    "ast_hash": "e19c4643a7381bc5619884c3f13e3200",
+    "semantic_hash": ""
+  },
+  "apps/web/remotion/compositions/DineFlowPromo.tsx": {
+    "mtime": 1789978888.1909602,
+    "seen": 1789979131.210081,
+    "ast_hash": "91141265cc9dda2140686e15d1d6fdc9",
+    "semantic_hash": ""
+  },
+  "apps/web/remotion/index.ts": {
+    "mtime": 1789978790.2658787,
+    "seen": 1789979131.210081,
+    "ast_hash": "f80d830d60d1913e6845ca6d7d25a420",
+    "semantic_hash": ""
+  },
+  "apps/web/remotion/components/AIPresenter.tsx": {
+    "mtime": 1789979689.0215228,
+    "seen": 1789979992.425353,
+    "ast_hash": "89da074ee1325b1b6d16ef575feb3633",
+    "semantic_hash": ""
+  },
+  "apps/web/remotion/compositions/QROrderingDemo.tsx": {
+    "mtime": 1789979710.495579,
+    "seen": 1789979992.425355,
+    "ast_hash": "44043aae9cf97946e8b53e2b3d88ccf8",
+    "semantic_hash": ""
+  },
+  "generate_audio.sh": {
+    "mtime": 1789979659.745832,
+    "seen": 1789979992.42536,
+    "ast_hash": "772f7efda4e63613ab948fb32a57cbe7",
+    "semantic_hash": ""
+  },
+  "apps/web/public/images/ai_presenter.jpg": {
+    "mtime": 1789979641.3373752,
+    "seen": 1789979992.4254022,
+    "ast_hash": "66efe99b819415f940320eb8f0cea724",
+    "semantic_hash": ""
+  },
+  "apps/web/public/audio/narration.mp3": {
+    "mtime": 1789979650.6170819,
+    "seen": 1789979992.4254231,
+    "ast_hash": "6230dc3bef3ae764fb0dfd11986f6e27",
+    "semantic_hash": ""
+  },
+  "apps/web/public/audio/scene1_intro.mp3": {
+    "mtime": 1789979661.412747,
+    "seen": 1789979992.4254239,
+    "ast_hash": "a3f42da6ee8aa1c33a75196592e6f66b",
+    "semantic_hash": ""
+  },
+  "apps/web/public/audio/scene2_scan.mp3": {
+    "mtime": 1789979662.4862163,
+    "seen": 1789979992.4254248,
+    "ast_hash": "86101da93e31bacde33f129f45fe72ae",
+    "semantic_hash": ""
+  },
+  "apps/web/public/audio/scene3_customize.mp3": {
+    "mtime": 1789979663.6186733,
+    "seen": 1789979992.4254248,
+    "ast_hash": "406489fd1cc138eec9b5407153210fa7",
+    "semantic_hash": ""
+  },
+  "apps/web/public/audio/scene4_dispatch.mp3": {
+    "mtime": 1789979664.6786525,
+    "seen": 1789979992.425426,
+    "ast_hash": "156179e9803ad96a0c765d4157438995",
+    "semantic_hash": ""
+  },
+  "apps/web/public/audio/sfx_beep.mp3": {
+    "mtime": 1789979664.7196941,
+    "seen": 1789979992.425427,
+    "ast_hash": "b59596b2f72a23ddedf78c6b42fb5517",
+    "semantic_hash": ""
+  },
+  "apps/web/public/audio/sfx_success.mp3": {
+    "mtime": 1789979674.489148,
+    "seen": 1789979992.425427,
+    "ast_hash": "a9fa5f155e22ead29f9e3d43daf5ddf5",
+    "semantic_hash": ""
+  },
+  "apps/web/public/audio/sfx_tap.mp3": {
+    "mtime": 1789979664.7552931,
+    "seen": 1789979992.425428,
+    "ast_hash": "2eac9016bbca9c9c34020d4b1453bc62",
     "semantic_hash": ""
   }
 }

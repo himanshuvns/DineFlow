@@ -52,6 +52,7 @@ import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
 import { apiClient } from "@/lib/api";
+import { useAuthStore } from "@/lib/stores/auth-store";
 import { validateIndianPhone, formatIndianPhoneInput } from "@/lib/validation";
 
 // ── Interfaces ────────────────────────────────────────────────────────────────
@@ -310,6 +311,8 @@ export default function WhatsAppPage() {
   const [openwaTestName, setOpenwaTestName] = React.useState("Alex Rivera");
   const [isSendingOpenwaTest, setIsSendingOpenwaTest] = React.useState(false);
   const [openwaCopied, setOpenwaCopied] = React.useState(false);
+  const [isWhyModalOpen, setIsWhyModalOpen] = React.useState(false);
+  const [isSandboxDemo, setIsSandboxDemo] = React.useState(false);
 
   React.useEffect(() => {
     if (typeof window !== "undefined") {
@@ -562,7 +565,10 @@ export default function WhatsAppPage() {
 
   // ── OpenWA Gateway Data Fetchers & Polling ──────────────────────────────────
 
+  // ── OpenWA Gateway Data Fetchers & Polling ──────────────────────────────────
+
   const fetchOpenWAStatus = React.useCallback(async () => {
+    if (isSandboxDemo) return;
     try {
       const query = openwaGatewayUrl ? `?gatewayUrl=${encodeURIComponent(openwaGatewayUrl)}` : "";
       const res = await apiClient.get(`/whatsapp/openwa/session/status${query}`);
@@ -582,20 +588,39 @@ export default function WhatsAppPage() {
           setCustomGatewayInput(data.gatewayUrl);
         }
       }
-    } catch {
-      // Container offline or network error
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { error?: { message?: string } } }; message?: string };
+      setOpenwaStatus((prev) => ({
+        ...prev,
+        status: "disconnected",
+        errorMessage: error.response?.data?.error?.message || error.message || "Gateway unreachable",
+      }));
     }
-  }, [openwaGatewayUrl]);
+  }, [openwaGatewayUrl, isSandboxDemo]);
 
   const fetchOpenWAQR = React.useCallback(async () => {
+    if (isSandboxDemo) return;
     try {
       const query = openwaGatewayUrl ? `?gatewayUrl=${encodeURIComponent(openwaGatewayUrl)}` : "";
       const res = await apiClient.get(`/whatsapp/openwa/session/qr${query}`);
       const data = res.data?.data || res.data;
-      if (data && data.qr) {
-        setOpenwaQR(data.qr);
+      if (data) {
+        if (data.qr) {
+          setOpenwaQR(data.qr);
+        }
         if (data.status) {
-          setOpenwaStatus((prev) => ({ ...prev, status: data.status, gatewayUrl: data.gatewayUrl || prev.gatewayUrl }));
+          setOpenwaStatus((prev) => ({
+            ...prev,
+            status: data.status,
+            gatewayUrl: data.gatewayUrl || prev.gatewayUrl,
+            errorMessage: data.errorMessage || prev.errorMessage,
+          }));
+        }
+        if (data.errorMessage && !data.qr) {
+          setOpenwaStatus((prev) => ({
+            ...prev,
+            errorMessage: data.errorMessage,
+          }));
         }
         if (data.gatewayUrl && !openwaGatewayUrl) {
           setOpenwaGatewayUrl(data.gatewayUrl);
@@ -605,10 +630,11 @@ export default function WhatsAppPage() {
     } catch {
       // ignore
     }
-  }, [openwaGatewayUrl]);
+  }, [openwaGatewayUrl, isSandboxDemo]);
 
   // Polling loop for OpenWA status and QR code
   React.useEffect(() => {
+    if (isSandboxDemo) return;
     fetchOpenWAStatus();
 
     const interval = setInterval(() => {
@@ -619,14 +645,14 @@ export default function WhatsAppPage() {
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [fetchOpenWAStatus, fetchOpenWAQR, activeTab, openwaStatus.status]);
+  }, [fetchOpenWAStatus, fetchOpenWAQR, activeTab, openwaStatus.status, isSandboxDemo]);
 
   const handleStartOpenWASession = async () => {
     setIsOpenwaLoading(true);
     try {
       const query = openwaGatewayUrl ? `?gatewayUrl=${encodeURIComponent(openwaGatewayUrl)}` : "";
       await apiClient.post(`/whatsapp/openwa/session/start${query}`);
-      setOpenwaStatus((prev) => ({ ...prev, status: "starting" }));
+      setOpenwaStatus((prev) => ({ ...prev, status: "starting", errorMessage: undefined }));
       addToast("info", "OpenWA Launching", "Session initializing. Loading headless Chromium & QR code...");
       setTimeout(() => {
         fetchOpenWAQR();
@@ -634,7 +660,9 @@ export default function WhatsAppPage() {
       }, 1500);
     } catch (err: unknown) {
       const error = err as { response?: { data?: { error?: { message?: string } } }; message?: string };
-      addToast("error", "Failed to start session", error.response?.data?.error?.message || "Ensure OpenWA gateway or tunnel is active");
+      const msg = error.response?.data?.error?.message || "Ensure OpenWA gateway container is active on port 2785";
+      setOpenwaStatus((prev) => ({ ...prev, status: "disconnected", errorMessage: msg }));
+      addToast("error", "Failed to start session", msg);
     } finally {
       setIsOpenwaLoading(false);
     }
@@ -647,6 +675,7 @@ export default function WhatsAppPage() {
       await apiClient.post(`/whatsapp/openwa/session/disconnect${query}`);
       setOpenwaStatus((prev) => ({ ...prev, status: "disconnected" }));
       setOpenwaQR("");
+      setIsSandboxDemo(false);
       addToast("success", "Session Disconnected", "OpenWA session disconnected and Chromium stopped.");
     } catch {
       addToast("error", "Error", "Failed to disconnect session.");
@@ -661,6 +690,7 @@ export default function WhatsAppPage() {
       const query = openwaGatewayUrl ? `?gatewayUrl=${encodeURIComponent(openwaGatewayUrl)}` : "";
       await apiClient.post(`/whatsapp/openwa/session/restart${query}`);
       setOpenwaStatus((prev) => ({ ...prev, status: "starting" }));
+      setIsSandboxDemo(false);
       addToast("info", "Session Restarting", "Restarting session engine and requesting fresh QR code...");
       setTimeout(() => {
         fetchOpenWAQR();
@@ -673,11 +703,72 @@ export default function WhatsAppPage() {
     }
   };
 
+  const handleStartSandboxDemo = () => {
+    setIsSandboxDemo(true);
+    setOpenwaStatus({
+      sessionId: "dineflow-sandbox-demo",
+      status: "qr",
+      engine: "whatsapp-web.js (Interactive Sandbox Demo)",
+      errorMessage: undefined,
+    });
+    setOpenwaQR("2@mock_dineflow_sandbox_preview_token==");
+    addToast("info", "Sandbox Demo Active", "Simulated pairing QR generated. You can test device pairing & message dispatch.");
+  };
+
+  const handleSimulateDeviceLinked = () => {
+    setIsSandboxDemo(true);
+    setOpenwaStatus({
+      sessionId: "dineflow-sandbox-demo",
+      status: "connected",
+      engine: "whatsapp-web.js (Interactive Sandbox Demo)",
+      phoneNumber: "+91 98000 12345",
+      lastConnected: new Date().toISOString(),
+      errorMessage: undefined,
+    });
+    setOpenwaQR("");
+    addToast("success", "Device Paired (Demo)", "Simulated WhatsApp device linked successfully. You can now send test messages.");
+  };
+
+  const handleReauthDemo = async () => {
+    try {
+      const res = await apiClient.post("/auth/login", {
+        email: "owner@thegrandbistro.com",
+        password: "DineFlow@2026",
+      });
+      const data = res.data?.data;
+      if (data?.accessToken) {
+        useAuthStore.getState().setAuth(data.user, data.tenant, data.accessToken, data.refreshToken);
+        addToast("success", "Authenticated", "Demo session refreshed. Fetching OpenWA status...");
+        setTimeout(() => {
+          fetchOpenWAStatus();
+          fetchOpenWAQR();
+        }, 300);
+      }
+    } catch {
+      addToast("error", "Login Failed", "Could not authenticate with demo credentials.");
+    }
+  };
+
   const handleSendOpenWATestMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!openwaTestPhone) return;
     setIsSendingOpenwaTest(true);
     try {
+      if (isSandboxDemo) {
+        await new Promise((r) => setTimeout(r, 600));
+        const newLog: MessageLogItem = {
+          id: `demo-${Date.now()}`,
+          phone: openwaTestPhone,
+          customerName: openwaTestName,
+          template: "Demo: Order Confirmed & Receipt via OpenWA Sandbox",
+          status: "delivered",
+          time: "Just now",
+          location: "Table 14",
+        };
+        setLogs((prev) => [newLog, ...prev]);
+        addToast("success", "Demo Message Dispatched", `[Sandbox Demo] Simulated delivery to ${openwaTestPhone}`);
+        return;
+      }
       await apiClient.post("/whatsapp/send-test", {
         recipientPhone: openwaTestPhone,
         customerName: openwaTestName,
@@ -1181,6 +1272,45 @@ export default function WhatsAppPage() {
       {/* ── TAB 1.5: OPENWA LOCAL DEVELOPMENT GATEWAY ───────────────────────── */}
       {activeTab === "gateway" && (
         <div className="space-y-6 animate-in fade-in duration-200">
+          {/* ⚠️ Production vs Dev Architecture Notice */}
+          <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-start sm:items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-400 shrink-0 mt-0.5 sm:mt-0">
+                  <AlertTriangle className="h-5 w-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900 dark:text-white text-sm">
+                    OpenWA is a Local Development Gateway — Not for Real Customers
+                  </h4>
+                  <p className="text-slate-600 dark:text-slate-300 text-xs mt-0.5">
+                    This tab controls an unofficial WhatsApp Web multi-device session via Headless Chromium. In cloud production (Vercel/Railway), the local Chromium container is offline unless tunneled.
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsWhyModalOpen(true)}
+                  className="text-xs"
+                  leftIcon={<HelpCircle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />}
+                >
+                  Why can&apos;t I use this for real customers?
+                </Button>
+                <Button
+                  variant="glow"
+                  size="sm"
+                  onClick={() => setActiveTab("overview")}
+                  className="text-xs"
+                  rightIcon={<ArrowRight className="h-3.5 w-3.5" />}
+                >
+                  Use Meta Cloud API (Official)
+                </Button>
+              </div>
+            </div>
+          </div>
+
           {/* Top Status Card */}
           <Card variant="glass" className="border-cyan-500/30 bg-cyan-500/5">
             <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
@@ -1207,22 +1337,26 @@ export default function WhatsAppPage() {
                       dot
                     >
                       {openwaStatus.status === "connected"
-                        ? "Connected & Live"
+                        ? isSandboxDemo
+                          ? "Live (Demo Sandbox)"
+                          : "Connected & Live"
                         : openwaStatus.status === "qr"
-                        ? "Scan QR Code"
+                        ? isSandboxDemo
+                          ? "Scan QR Code (Demo)"
+                          : "Scan QR Code"
                         : openwaStatus.status === "starting"
                         ? "Initializing..."
                         : "Disconnected"}
                     </Badge>
                   </div>
                   <p className="text-slate-600 dark:text-slate-400 text-xs mt-0.5">
-                    Session: <code className="text-slate-800 dark:text-slate-200 font-mono font-medium">{openwaStatus.sessionId || "dineflow-dev"}</code> • Engine: <strong className="text-cyan-700 dark:text-cyan-300">whatsapp-web.js (Headless Chromium)</strong>
+                    Session: <code className="text-slate-800 dark:text-slate-200 font-mono font-medium">{openwaStatus.sessionId || "dineflow-dev"}</code> • Engine: <strong className="text-cyan-700 dark:text-cyan-300">{openwaStatus.engine || "whatsapp-web.js (Headless Chromium)"}</strong>
                     {openwaStatus.phoneNumber && ` • Number: ${openwaStatus.phoneNumber}`}
                   </p>
                   <div className="flex flex-wrap items-center gap-2 mt-1.5 text-xs">
                     <span className="text-slate-500 dark:text-slate-400">Gateway URL:</span>
                     <code className="text-cyan-600 dark:text-cyan-400 font-mono text-[11px] bg-cyan-50 dark:bg-cyan-950/40 px-1.5 py-0.5 rounded border border-cyan-200/50 dark:border-cyan-800/50">
-                      {openwaGatewayUrl || openwaStatus.gatewayUrl || "https://violet-pianos-marry.loca.lt"}
+                      {openwaGatewayUrl || openwaStatus.gatewayUrl || "http://localhost:2785"}
                     </code>
                     <button
                       type="button"
@@ -1231,6 +1365,26 @@ export default function WhatsAppPage() {
                     >
                       {isEditingGatewayUrl ? "Cancel" : "Change URL / Tunnel"}
                     </button>
+                    {openwaGatewayUrl && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOpenwaGatewayUrl("");
+                          setCustomGatewayInput("");
+                          if (typeof window !== "undefined") {
+                            localStorage.removeItem("dineflow_openwa_gateway_url");
+                          }
+                          addToast("info", "Reset Gateway URL", "Cleared custom tunnel URL. Reverted to default.");
+                          setTimeout(() => {
+                            fetchOpenWAStatus();
+                            fetchOpenWAQR();
+                          }, 300);
+                        }}
+                        className="text-[11px] text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 underline cursor-pointer"
+                      >
+                        Reset to default
+                      </button>
+                    )}
                   </div>
                   {isEditingGatewayUrl && (
                     <div className="mt-2.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
@@ -1238,7 +1392,7 @@ export default function WhatsAppPage() {
                         <Input
                           value={customGatewayInput}
                           onChange={(e) => setCustomGatewayInput(e.target.value)}
-                          placeholder="e.g. https://xxxx.loca.lt or http://localhost:2785"
+                          placeholder="e.g. https://your-tunnel.ngrok-free.app or http://localhost:2785"
                           className="h-8 text-xs font-mono"
                         />
                         <Button
@@ -1285,7 +1439,7 @@ export default function WhatsAppPage() {
                         </Button>
                       </div>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                        When using cloud deployment (<code className="font-mono text-[10px]">dineflow-steel.vercel.app</code>), connect via a public tunnel URL (e.g. from <code className="font-mono text-[10px]">npx localtunnel --port 2785</code>) or your hosted OpenWA service.
+                        When using cloud deployment (<code className="font-mono text-[10px]">dineflow-steel.vercel.app</code>), connect via a public tunnel URL (e.g. from <code className="font-mono text-[10px]">ngrok http 2785</code> or <code className="font-mono text-[10px]">cloudflared tunnel --url http://localhost:2785</code>).
                       </p>
                     </div>
                   )}
@@ -1298,7 +1452,7 @@ export default function WhatsAppPage() {
                   onClick={() => {
                     fetchOpenWAStatus();
                     fetchOpenWAQR();
-                    addToast("info", "Status Refreshed", "Polled OpenWA gateway on port 2785.");
+                    addToast("info", "Status Refreshed", "Polled OpenWA gateway.");
                   }}
                   leftIcon={<RefreshCw className={`h-3.5 w-3.5 ${isOpenwaLoading ? "animate-spin" : ""}`} />}
                 >
@@ -1352,11 +1506,15 @@ export default function WhatsAppPage() {
                         WhatsApp Authentication
                       </CardTitle>
                       <CardDescription className="text-xs text-slate-600 dark:text-slate-400">
-                        Link your local development device via WhatsApp Web multi-device session.
+                        Link your development device via WhatsApp Web multi-device session.
                       </CardDescription>
                     </div>
                     <Badge variant={openwaStatus.status === "connected" ? "success" : "neutral"} size="sm">
-                      {openwaStatus.status === "connected" ? "Authenticated" : "Awaiting Pairing"}
+                      {openwaStatus.status === "connected"
+                        ? isSandboxDemo
+                          ? "Demo Authenticated"
+                          : "Authenticated"
+                        : "Awaiting Pairing"}
                     </Badge>
                   </div>
                 </CardHeader>
@@ -1368,11 +1526,12 @@ export default function WhatsAppPage() {
                       </div>
                       <h3 className="text-sm font-bold text-slate-900 dark:text-white">
                         WhatsApp Session Active & Connected
+                        {isSandboxDemo && " (Demo Sandbox)"}
                       </h3>
                       <p className="text-xs text-slate-600 dark:text-slate-400 max-w-md mx-auto">
                         Your WhatsApp account is successfully paired. Outbound customer notifications, kitchen updates, and inbound command responses are active.
                       </p>
-                      <div className="pt-2 flex items-center justify-center gap-3">
+                      <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
                         <Button
                           variant="outline"
                           size="sm"
@@ -1389,6 +1548,19 @@ export default function WhatsAppPage() {
                         >
                           Log Out Device
                         </Button>
+                        {isSandboxDemo && (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => {
+                              setIsSandboxDemo(false);
+                              setOpenwaStatus((prev) => ({ ...prev, status: "disconnected" }));
+                              addToast("info", "Exited Demo", "Returned to live gateway mode.");
+                            }}
+                          >
+                            Exit Sandbox Mode
+                          </Button>
+                        )}
                       </div>
                     </div>
                   ) : openwaStatus.status === "qr" || openwaQR ? (
@@ -1409,13 +1581,13 @@ export default function WhatsAppPage() {
                         />
                         <div className="absolute inset-x-0 bottom-1 text-center">
                           <span className="text-[10px] bg-slate-900/80 text-white px-2 py-0.5 rounded-full font-mono">
-                            Auto-refreshes every 3s
+                            {isSandboxDemo ? "Interactive Demo QR" : "Auto-refreshes every 3s"}
                           </span>
                         </div>
                       </div>
 
                       {/* Instructions */}
-                      <div className="space-y-3.5 text-xs">
+                      <div className="space-y-3.5 text-xs flex-1">
                         <div className="flex items-center gap-2">
                           <span className="flex items-center justify-center w-5 h-5 rounded-full bg-cyan-500 text-white font-bold text-[11px]">
                             1
@@ -1441,18 +1613,42 @@ export default function WhatsAppPage() {
                           </span>
                         </div>
 
-                        <div className="pt-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              fetchOpenWAQR();
-                              addToast("info", "QR Refreshed", "Requested updated QR code token from OpenWA.");
-                            }}
-                            leftIcon={<RefreshCw className="h-3.5 w-3.5" />}
-                          >
-                            Refresh QR Code
-                          </Button>
+                        <div className="pt-2 flex flex-wrap items-center gap-2">
+                          {isSandboxDemo ? (
+                            <>
+                              <Button
+                                variant="glow"
+                                size="sm"
+                                onClick={handleSimulateDeviceLinked}
+                                leftIcon={<CheckCircle2 className="h-3.5 w-3.5" />}
+                              >
+                                ⚡ Simulate Phone Scanned & Linked
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setIsSandboxDemo(false);
+                                  setOpenwaQR("");
+                                  setOpenwaStatus((prev) => ({ ...prev, status: "disconnected" }));
+                                }}
+                              >
+                                Exit Demo
+                              </Button>
+                            </>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                fetchOpenWAQR();
+                                addToast("info", "QR Refreshed", "Requested updated QR code token from OpenWA.");
+                              }}
+                              leftIcon={<RefreshCw className="h-3.5 w-3.5" />}
+                            >
+                              Refresh QR Code
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -1469,17 +1665,64 @@ export default function WhatsAppPage() {
                       </p>
                     </div>
                   ) : (
-                    <div className="p-8 rounded-2xl bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 text-center space-y-3">
-                      <div className="inline-flex p-3.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-                        <QrCode className="h-7 w-7" />
-                      </div>
-                      <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                        Gateway Is Ready to Connect
-                      </h3>
-                      <p className="text-xs text-slate-600 dark:text-slate-400 max-w-sm mx-auto">
-                        Click the button below to initialize the session and render your QR code.
-                      </p>
-                      <div className="pt-2">
+                    <div className="p-6 rounded-2xl bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-4">
+                      {/* Diagnostic Alert Box */}
+                      {openwaStatus.errorMessage ? (
+                        <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs space-y-2 text-left">
+                          <div className="flex items-center gap-2 font-bold text-rose-700 dark:text-rose-400">
+                            <AlertCircle className="h-4 w-4 shrink-0" />
+                            <span>
+                              {openwaStatus.errorMessage.toLowerCase().includes("token") ||
+                              openwaStatus.errorMessage.toLowerCase().includes("auth") ||
+                              openwaStatus.errorMessage.toLowerCase().includes("unauthorized")
+                                ? "Session Authentication Required"
+                                : "Gateway Offline or Tunnel Unreachable in Production"}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-700 dark:text-slate-300">
+                            <strong>Diagnostic:</strong> {openwaStatus.errorMessage}
+                          </p>
+                          {openwaStatus.errorMessage.toLowerCase().includes("token") ||
+                          openwaStatus.errorMessage.toLowerCase().includes("auth") ||
+                          openwaStatus.errorMessage.toLowerCase().includes("unauthorized") ? (
+                            <div className="text-[11px] text-slate-600 dark:text-slate-400 space-y-2 pt-1 border-t border-rose-500/20">
+                              <p>Your local dashboard session needs to be authenticated with the local Go API server.</p>
+                              <Button
+                                size="sm"
+                                variant="glow"
+                                onClick={handleReauthDemo}
+                                className="text-xs"
+                              >
+                                Re-authenticate Demo Account
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="text-[11px] text-slate-600 dark:text-slate-400 space-y-1 pt-1 border-t border-rose-500/20">
+                              <p>
+                                • <strong>Why this happens in prod:</strong> OpenWA requires a local Docker container running Headless Chromium. Cloud servers (Vercel/Railway) cannot reach <code className="font-mono text-[10px]">localhost:2785</code> unless a live tunnel (ngrok / Cloudflare) is active.
+                              </p>
+                              <p>
+                                • <strong>For real customers:</strong> Do not use WhatsApp Web QR. Use the official <strong>Meta WhatsApp Cloud API</strong> (no Docker required, 99.99% uptime, zero phone ban risk).
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-center space-y-2">
+                          <div className="inline-flex p-3 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                            <QrCode className="h-7 w-7" />
+                          </div>
+                          <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                            Local OpenWA Gateway Offline
+                          </h3>
+                          <p className="text-xs text-slate-600 dark:text-slate-400 max-w-sm mx-auto">
+                            Connect your local Docker container via tunnel, or launch the interactive sandbox demo to preview the pairing flow.
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Action Buttons */}
+                      <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
                         <Button
                           variant="glow"
                           size="sm"
@@ -1488,6 +1731,22 @@ export default function WhatsAppPage() {
                           leftIcon={<Zap className="h-3.5 w-3.5" />}
                         >
                           {isOpenwaLoading ? "Starting Session..." : "Generate Pairing QR Code"}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleStartSandboxDemo}
+                          leftIcon={<Sparkles className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />}
+                        >
+                          Launch Interactive Sandbox Demo
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setActiveTab("overview")}
+                          leftIcon={<PhoneCall className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />}
+                        >
+                          Switch to Meta Cloud API (Official)
                         </Button>
                       </div>
                     </div>
@@ -2790,6 +3049,95 @@ export default function WhatsAppPage() {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* ── MODAL 5: Why WhatsApp Web QR Cannot Be Used For Real Customers ─────── */}
+      <Modal
+        isOpen={isWhyModalOpen}
+        onClose={() => setIsWhyModalOpen(false)}
+        title="Why WhatsApp Web QR Cannot Be Used For Real Customers"
+        description="Technical, security, and compliance comparison between OpenWA (Development Sandbox) and Meta Cloud API (Production)."
+        size="lg"
+      >
+        <div className="space-y-4 text-xs">
+          <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-900 dark:text-amber-200 leading-relaxed">
+            <strong>OpenWA</strong> uses an unofficial browser automation engine (<code className="font-mono text-[11px] bg-amber-500/20 px-1 py-0.5 rounded">whatsapp-web.js</code> + Headless Chromium). While convenient for zero-config local development, using it for real customer communications in production introduces critical risks:
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Risk 1 */}
+            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1.5">
+              <div className="flex items-center gap-2 font-bold text-rose-600 dark:text-rose-400">
+                <AlertTriangle className="h-4 w-4" />
+                <span>1. Permanent Phone Number Ban</span>
+              </div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                Meta anti-spam algorithms detect headless browser automation. When messaging customers who haven&apos;t saved your number in their contacts, Meta will <strong>permanently ban the SIM card / phone number</strong>. Banned numbers cannot be recovered.
+              </p>
+            </div>
+
+            {/* Risk 2 */}
+            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1.5">
+              <div className="flex items-center gap-2 font-bold text-amber-600 dark:text-amber-400">
+                <Clock className="h-4 w-4" />
+                <span>2. Frequent Session Dropouts</span>
+              </div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                WhatsApp Web multi-device relies on a phone heartbeat. If the phone battery dies, Wi-Fi drops, or WhatsApp invalidates the session token, all customer notifications silently fail until someone manually scans a new QR code.
+              </p>
+            </div>
+
+            {/* Risk 3 */}
+            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1.5">
+              <div className="flex items-center gap-2 font-bold text-blue-600 dark:text-blue-400">
+                <Sparkles className="h-4 w-4" />
+                <span>3. No Interactive Buttons or Green Tick</span>
+              </div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                WhatsApp Web only supports plain text and basic attachments. It <strong>cannot send interactive CTA buttons</strong> (&quot;Track Order Live&quot;, &quot;Pay via UPI&quot;, quick-reply options) and cannot display the verified Green Tick business profile.
+              </p>
+            </div>
+
+            {/* Risk 4 */}
+            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1.5">
+              <div className="flex items-center gap-2 font-bold text-purple-600 dark:text-purple-400">
+                <ShieldCheck className="h-4 w-4" />
+                <span>4. Telecom & TRAI Compliance</span>
+              </div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                Commercial and transactional messaging requires pre-approved HSM templates and opt-in/opt-out compliance under TRAI (India) and international messaging laws. Unofficial web scrapers violate these regulations.
+              </p>
+            </div>
+          </div>
+
+          {/* Official Production Solution */}
+          <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/25 space-y-2">
+            <div className="flex items-center gap-2 font-bold text-emerald-800 dark:text-emerald-300">
+              <CheckCircle2 className="h-4 w-4" />
+              <span>The Official Production Solution: Meta WhatsApp Cloud API (WABA)</span>
+            </div>
+            <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-relaxed">
+              DineFlow already includes a complete, battle-tested integration with Meta&apos;s Official Cloud API (<code className="font-mono text-[10px]">Graph API v21.0</code>). It offers <strong>99.99% SLA uptime</strong>, zero phone or container dependencies, instant delivery up to 500+ msg/sec, and is <strong>100% immune to phone bans</strong>.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+            <Button variant="outline" size="sm" onClick={() => setIsWhyModalOpen(false)}>
+              Close
+            </Button>
+            <Button
+              variant="glow"
+              size="sm"
+              onClick={() => {
+                setIsWhyModalOpen(false);
+                setActiveTab("overview");
+              }}
+              rightIcon={<ArrowRight className="h-3.5 w-3.5" />}
+            >
+              Switch to Meta Cloud API (Official)
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );
