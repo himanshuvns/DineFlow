@@ -119,9 +119,9 @@ export function TopBar() {
           <Menu className="h-5 w-5" />
         </button>
 
-        <div className="hidden sm:flex items-center gap-1.5 text-xs">
+        <div className="flex items-center gap-1.5 text-xs">
           {(tenant?.logoUrl || tenant?.logo) && (
-            <div className="h-6 w-6 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0A0F1D] flex items-center justify-center p-0.5 shrink-0 shadow-xs">
+            <div className="hidden md:flex h-6 w-6 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0A0F1D] items-center justify-center p-0.5 shrink-0 shadow-xs">
               <img
                 src={tenant.logoUrl || tenant.logo}
                 alt={tenant?.name || "Logo"}
@@ -129,19 +129,19 @@ export function TopBar() {
               />
             </div>
           )}
-          <span className="text-slate-700 dark:text-slate-300 font-semibold truncate max-w-[140px]">
+          <span className="hidden md:inline text-slate-700 dark:text-slate-300 font-semibold truncate max-w-[100px] sm:max-w-[140px]">
             {tenant?.name || "Your Restaurant"}
           </span>
-          <span className="text-slate-300 dark:text-slate-600">/</span>
-          <span className="text-emerald-600 dark:text-emerald-400 font-bold truncate max-w-[160px]">
+          <span className="hidden md:inline text-slate-300 dark:text-slate-600">/</span>
+          <span className="text-emerald-600 dark:text-emerald-400 font-bold truncate max-w-[100px] sm:max-w-[160px] text-base md:text-xs">
             {currentTitle}
           </span>
         </div>
       </div>
 
       {/* Center: Global Search — takes all remaining space and is truly centered */}
-      <div className="flex-1 flex justify-center px-2 sm:px-4">
-        <div className="w-full max-w-lg">
+      <div className="flex-1 hidden md:flex justify-center px-2 sm:px-4">
+        <div className="w-full max-w-xs md:max-w-sm lg:max-w-lg">
           <GlobalSearch />
         </div>
       </div>

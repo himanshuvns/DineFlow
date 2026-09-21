@@ -55,7 +55,7 @@ export function Sidebar() {
     <aside
       className={cn(
         "hidden md:flex flex-col justify-between border-r border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-gradient-to-b dark:from-[#0B0F19] dark:to-[#070A12] transition-all duration-300 z-30 sticky top-0 h-screen overflow-hidden",
-        sidebarCollapsed ? "w-20" : "w-64"
+        sidebarCollapsed ? "w-20" : "w-20 lg:w-64"
       )}
     >
       <div className="flex-1 overflow-y-auto scrollbar-none flex flex-col min-h-0">
@@ -78,7 +78,7 @@ export function Sidebar() {
               </div>
             )}
             {!sidebarCollapsed && (
-              <div className="flex flex-col min-w-0">
+              <div className="hidden lg:flex flex-col min-w-0">
                 <span className="text-base font-extrabold tracking-tight text-slate-900 dark:text-white truncate">
                   {tenant?.name || "DineFlow"}
                 </span>
@@ -130,12 +130,12 @@ export function Sidebar() {
                   )}
                 />
                 {!sidebarCollapsed && (
-                  <span className="flex-1 truncate">{displayLabel}</span>
+                  <span className="hidden lg:inline flex-1 truncate">{displayLabel}</span>
                 )}
                 {!sidebarCollapsed && item.badge && (
                   <span
                     className={cn(
-                      "px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase",
+                      "hidden lg:inline-block px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase",
                       item.badge === "Live"
                         ? "bg-rose-500/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400 border border-rose-500/30 animate-pulse"
                         : "bg-emerald-500/10 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-500/30"
@@ -152,7 +152,7 @@ export function Sidebar() {
 
       {/* Plan & Footer Badge */}
       {!sidebarCollapsed && (
-        <div className="p-4 border border-slate-200/80 dark:border-slate-800/60 m-3 rounded-2xl bg-slate-50 dark:bg-slate-900/50">
+        <div className="hidden lg:block p-4 border border-slate-200/80 dark:border-slate-800/60 m-3 rounded-2xl bg-slate-50 dark:bg-slate-900/50">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-1.5">
               <Sparkles className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" />

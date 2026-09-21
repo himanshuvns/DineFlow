@@ -303,15 +303,19 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      <Tabs
-        tabs={[
-          { id: "general", label: "Brand & Business" },
-          ...(!isManager ? [{ id: "billing", label: "Subscription & Invoices" }] : []),
-          { id: "appearance", label: "Appearance & Theme" },
-        ]}
-        activeTab={activeTab}
-        onChange={setActiveTab}
-      />
+      <div className="overflow-x-auto scrollbar-none w-full">
+        <div className="min-w-max">
+          <Tabs
+            tabs={[
+              { id: "general", label: "Brand & Business" },
+              ...(!isManager ? [{ id: "billing", label: "Subscription & Invoices" }] : []),
+              { id: "appearance", label: "Appearance & Theme" },
+            ]}
+            activeTab={activeTab}
+            onChange={setActiveTab}
+          />
+        </div>
+      </div>
 
       {/* ── Tab: Appearance & Theme ────────────────────────────────────────── */}
       {activeTab === "appearance" && (
@@ -509,7 +513,7 @@ export default function SettingsPage() {
                     </p>
                   </div>
 
-                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5 pt-1">
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 pt-1">
                     <Button
                       type="button"
                       variant="outline"
@@ -556,25 +560,37 @@ export default function SettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Input
-                label="Restaurant / Brand Name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
+              <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 md:w-1/3">Restaurant / Brand Name</label>
+                <div className="flex-1 w-full">
+                  <Input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <Input
-                  label="Display Currency"
-                  value={currency}
-                  onChange={(e) => setCurrency(e.target.value)}
-                  helperText="e.g. INR (₹), USD ($), EUR (€)"
-                />
-                <Input
-                  label="GSTIN / Tax ID"
-                  placeholder="27AABCU9603R1ZM"
-                  helperText="Printed on digital tax receipts"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 md:w-1/3">Display Currency</label>
+                  <div className="flex-1 w-full">
+                    <Input
+                      value={currency}
+                      onChange={(e) => setCurrency(e.target.value)}
+                      helperText="e.g. INR (₹), USD ($), EUR (€)"
+                    />
+                  </div>
+                </div>
+                <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 md:w-1/3">GSTIN / Tax ID</label>
+                  <div className="flex-1 w-full">
+                    <Input
+                      placeholder="27AABCU9603R1ZM"
+                      helperText="Printed on digital tax receipts"
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="pt-2 flex justify-end">
@@ -768,7 +784,7 @@ export default function SettingsPage() {
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[500px] text-left text-xs border-collapse">
+                <table className="w-full min-w-[600px] text-left text-xs border-collapse">
                   <thead>
                     <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold bg-slate-50/60 dark:bg-transparent">
                       <th className="py-2.5 pl-2">Invoice Number</th>

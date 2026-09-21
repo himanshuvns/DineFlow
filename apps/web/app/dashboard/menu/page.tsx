@@ -634,7 +634,7 @@ export default function MenuManagementPage() {
           </div>
 
           {/* Action Group: 3 Creation Options + Add Category */}
-          <div className="flex items-center gap-1.5 flex-wrap shrink-0">
+          <div className="flex items-center gap-2 flex-wrap shrink-0">
             <Button
               variant="outline"
               size="sm"
@@ -677,8 +677,8 @@ export default function MenuManagementPage() {
           </div>
         </div>
 
-        {/* 1.5. Sleek Compact KPI Metrics Strip (Horizontal swipe on mobile, 5-col on desktop) */}
-        <div className="flex overflow-x-auto gap-2 pb-0.5 scrollbar-none sm:grid sm:grid-cols-3 lg:grid-cols-5">
+        {/* 1.5. Sleek Compact KPI Metrics Strip */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 pb-0.5">
           <div className="p-2 sm:p-2.5 rounded-xl bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 shadow-2xs min-w-[130px] sm:min-w-0">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total Dishes</span>
@@ -769,8 +769,10 @@ export default function MenuManagementPage() {
         <div className="bg-white/80 dark:bg-slate-900/60 backdrop-blur-md rounded-2xl border border-slate-200/80 dark:border-slate-800/80 p-2 sm:p-2.5 space-y-2 shadow-2xs">
           {/* Top Row: Category Tabs + Search Bar + View Toggle */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-            <div className="min-w-0 flex-1 overflow-x-auto scrollbar-none">
-              <Tabs tabs={categoriesTabs} activeTab={activeCategory} onChange={setActiveCategory} />
+            <div className="min-w-0 flex-1 overflow-x-auto scrollbar-none [-webkit-overflow-scrolling:touch]">
+              <div className="min-w-max">
+                <Tabs tabs={categoriesTabs} activeTab={activeCategory} onChange={setActiveCategory} />
+              </div>
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
@@ -791,48 +793,48 @@ export default function MenuManagementPage() {
           </div>
 
           {/* Bottom Row: Dietary Chips + Stock Chips + Bestseller Chips + Sorter */}
-          <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/80">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/80">
             {/* Left: Filter Chips Group */}
-            <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-0.5 min-w-0 flex-1">
-              <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 shrink-0 mr-1 flex items-center gap-1">
-                <SlidersHorizontal className="h-3 w-3" />
-                <span className="hidden sm:inline">Filters:</span>
-              </span>
+            <div className="flex-1 overflow-x-auto scrollbar-none [-webkit-overflow-scrolling:touch]">
+              <div className="flex items-center gap-1.5 min-w-max pb-0.5">
+                <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 shrink-0 mr-1 flex items-center gap-1">
+                  <SlidersHorizontal className="h-3 w-3" />
+                  <span className="hidden sm:inline">Filters:</span>
+                </span>
 
-              {/* Dietary Filter */}
-              {(["all", "veg", "non_veg"] as const).map((diet) => (
-                <button
-                  key={diet}
-                  type="button"
-                  onClick={() => setDietaryFilter(diet)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
-                    dietaryFilter === diet
-                      ? "bg-emerald-500 text-slate-950 shadow-xs font-bold"
-                      : "bg-slate-100 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700/60 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
-                  }`}
-                >
-                  {diet === "all" ? "All Diets" : diet === "veg" ? "Pure Veg 🟢" : "Non-Veg 🔴"}
-                </button>
-              ))}
+                {/* Dietary Filter */}
+                {(["all", "veg", "non_veg"] as const).map((diet) => (
+                  <button
+                    key={diet}
+                    type="button"
+                    onClick={() => setDietaryFilter(diet)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
+                      dietaryFilter === diet
+                        ? "bg-emerald-500 text-slate-950 shadow-xs font-bold"
+                        : "bg-slate-100 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700/60 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+                    }`}
+                  >
+                    {diet === "all" ? "All Diets" : diet === "veg" ? "Pure Veg 🟢" : "Non-Veg 🔴"}
+                  </button>
+                ))}
 
-              <span className="h-3 w-px bg-slate-200 dark:bg-slate-800 shrink-0 mx-0.5" />
+                <span className="h-3 w-px bg-slate-200 dark:bg-slate-800 shrink-0 mx-0.5" />
 
-              {/* Stock Filter */}
-              {(["all", "available", "unavailable"] as const).map((stock) => (
-                <button
-                  key={stock}
-                  type="button"
-                  onClick={() => setAvailabilityFilter(stock)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
-                    availabilityFilter === stock
-                      ? "bg-emerald-500 text-slate-950 shadow-xs font-bold"
-                      : "bg-slate-100 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700/60 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
-                  }`}
-                >
-                  {stock === "all" ? "All Stock" : stock === "available" ? "In Stock" : "86'd (Sold Out)"}
-                </button>
-              ))}
-
+                {/* Stock Filter */}
+                {(["all", "available", "unavailable"] as const).map((stock) => (
+                  <button
+                    key={stock}
+                    type="button"
+                    onClick={() => setAvailabilityFilter(stock)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
+                      availabilityFilter === stock
+                        ? "bg-emerald-500 text-slate-950 shadow-xs font-bold"
+                        : "bg-slate-100 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700/60 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+                    }`}
+                  >
+                    {stock === "all" ? "All Stock" : stock === "available" ? "In Stock" : "86'd (Sold Out)"}
+                  </button>
+                ))}
               <span className="h-3 w-px bg-slate-200 dark:bg-slate-800 shrink-0 mx-0.5" />
 
               {/* Bestseller Filter */}
@@ -850,6 +852,7 @@ export default function MenuManagementPage() {
                   {mode === "all" ? "All Items" : mode === "bestseller" ? "⭐ Bestsellers" : "✨ Recommended"}
                 </button>
               ))}
+              </div>
             </div>
 
             {/* Right: Price Sorter */}
@@ -1068,7 +1071,7 @@ export default function MenuManagementPage() {
                       onClick={() => handleToggleAvailability(item.id, item.available)}
                       className="flex items-center gap-1.5 text-xs font-semibold px-2 py-1 rounded-lg transition-colors cursor-pointer shrink-0"
                     >
-                      <Badge variant={item.available ? "success" : "danger"} size="sm" dot>
+                      <Badge variant={item.available ? "success" : "danger"} size="sm" dot className="whitespace-nowrap">
                         {item.available ? "In Stock" : "86'd"}
                       </Badge>
                     </button>
@@ -1167,8 +1170,9 @@ export default function MenuManagementPage() {
         /* ======================================================== */
         /* ENTERPRISE MENU LIST VIEW                                */
         /* ======================================================== */
-        <div className="space-y-2">
-          {/* Table Column Headers (Desktop) */}
+        <div className="overflow-x-auto scrollbar-none [-webkit-overflow-scrolling:touch]">
+          <div className="space-y-2 min-w-[600px]">
+            {/* Table Column Headers (Desktop) */}
           <div className="sticky top-0 z-10 bg-slate-50/95 dark:bg-[#090D16]/95 backdrop-blur-md hidden lg:grid grid-cols-12 gap-3 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-slate-200/80 dark:border-slate-800/80 select-none">
             <div className="col-span-5 flex items-center gap-2.5">
               <button
@@ -1289,7 +1293,7 @@ export default function MenuManagementPage() {
                     ) : null}
 
                     {item.desc ? (
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 max-w-[140px] sm:max-w-[200px] truncate block">
                         {item.desc}
                       </span>
                     ) : null}
@@ -1328,7 +1332,7 @@ export default function MenuManagementPage() {
                     className="cursor-pointer"
                     title={`Click to mark as ${item.available ? "86'd" : "In Stock"}`}
                   >
-                    <Badge variant={item.available ? "success" : "danger"} size="sm" dot>
+                    <Badge variant={item.available ? "success" : "danger"} size="sm" dot className="whitespace-nowrap">
                       {item.available ? "In Stock" : "86'd"}
                     </Badge>
                   </button>
@@ -1376,6 +1380,7 @@ export default function MenuManagementPage() {
               </div>
             );
           })}
+          </div>
         </div>
       )}
       </div>

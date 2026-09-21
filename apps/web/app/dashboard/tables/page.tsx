@@ -219,7 +219,7 @@ export default function TablesManagementPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
             {tables.length > 0 && (
               <Button
                 variant="secondary"
@@ -248,20 +248,22 @@ export default function TablesManagementPage() {
           <div className="bg-white/80 dark:bg-slate-900/60 backdrop-blur-md rounded-2xl border border-slate-200/80 dark:border-slate-800/80 p-2 sm:p-2.5 shadow-2xs transition-all">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
               {/* Zone Filter Chips */}
-              <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none min-w-0 flex-1 pb-0.5 sm:pb-0">
-                {zones.map((zone) => (
-                  <button
-                    key={zone}
-                    onClick={() => setFilterZone(zone)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold capitalize transition-all cursor-pointer whitespace-nowrap shrink-0 ${
-                      filterZone === zone
-                        ? "bg-emerald-500 text-slate-950 shadow-xs font-bold"
-                        : "bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white"
-                    }`}
-                  >
-                    {zone === "all" ? "All Locations" : zone}
-                  </button>
-                ))}
+              <div className="overflow-x-auto scrollbar-none min-w-0 flex-1 pb-0.5 sm:pb-0">
+                <div className="flex min-w-max items-center gap-1.5">
+                  {zones.map((zone) => (
+                    <button
+                      key={zone}
+                      onClick={() => setFilterZone(zone)}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-semibold capitalize transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                        filterZone === zone
+                          ? "bg-emerald-500 text-slate-950 shadow-xs font-bold"
+                          : "bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white"
+                      }`}
+                    >
+                      {zone === "all" ? "All Locations" : zone}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Right: Search + Status Filter + View Toggle */}
@@ -373,7 +375,7 @@ export default function TablesManagementPage() {
         </div>
       ) : viewMode === "grid" ? (
         /* Grid of Tables */
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
           {filteredTables.map((table) => {
             const statusColors = {
               occupied: "border-amber-500/40 bg-amber-500/5",
@@ -613,7 +615,7 @@ export default function TablesManagementPage() {
               <QRCodeImage
                 value={getQRLink(selectedTable)}
                 size={220}
-                className="w-40 h-40 xs:w-48 xs:h-48 sm:w-56 sm:h-56 mx-auto"
+                className="w-40 h-40 sm:w-56 sm:h-56 mx-auto"
               />
               <div className="mt-3 text-slate-900 font-extrabold text-sm tracking-tight">
                 {selectedTable.name}

@@ -80,7 +80,7 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="h-screen flex bg-slate-50 text-slate-900 dark:bg-[#090D16] dark:text-slate-100 transition-colors duration-200 overflow-hidden">
+    <div className="h-screen flex bg-slate-50 text-slate-900 dark:bg-[#090D16] dark:text-slate-100 transition-colors duration-200 overflow-hidden overflow-x-hidden">
       {/* Pinned Desktop Sidebar */}
       <Sidebar />
 

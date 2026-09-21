@@ -822,7 +822,8 @@ export default function StaffPage() {
       </div>
 
       {/* ── Tab Navigation ────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-slate-200 dark:border-slate-800 scrollbar-none">
+      <div className="overflow-x-auto scrollbar-none [-webkit-overflow-scrolling:touch] border-b border-slate-200 dark:border-slate-800">
+        <div className="flex items-center gap-2 min-w-max pb-1">
         {[
           { id: "staff", label: "Staff Directory & Profiles", icon: Shield, badge: loading && staffList.length === 0 ? undefined : `${displayStaff.length}` },
           { id: "attendance", label: "Live Attendance & Geofencing", icon: MapPin, badge: `${todayAttendance.length} Today` },
@@ -859,6 +860,7 @@ export default function StaffPage() {
             </button>
           );
         })}
+        </div>
       </div>
 
       {/* ── TAB 1: STAFF DIRECTORY & PROFILES ─────────────────────────────────── */}
@@ -883,8 +885,8 @@ export default function StaffPage() {
                     <th className="py-3.5 pl-6">Employee</th>
                     <th className="py-3.5">Department</th>
                     <th className="py-3.5">Role</th>
-                    <th className="py-3.5">Shift</th>
-                    <th className="py-3.5">Basic CTC</th>
+                    <th className="py-3.5 hidden md:table-cell">Shift</th>
+                    <th className="py-3.5 hidden md:table-cell">Basic CTC</th>
                     <th className="py-3.5">Status</th>
                     <th className="py-3.5 text-right pr-6">Actions</th>
                   </tr>
@@ -904,8 +906,8 @@ export default function StaffPage() {
                         </td>
                         <td className="py-3.5"><div className="h-5 w-16 bg-slate-200 dark:bg-slate-800 rounded-full" /></td>
                         <td className="py-3.5"><div className="h-4 w-20 bg-slate-200 dark:bg-slate-800 rounded" /></td>
-                        <td className="py-3.5"><div className="h-4 w-24 bg-slate-200 dark:bg-slate-800 rounded" /></td>
-                        <td className="py-3.5"><div className="h-4 w-16 bg-slate-200 dark:bg-slate-800 rounded" /></td>
+                        <td className="py-3.5 hidden md:table-cell"><div className="h-4 w-24 bg-slate-200 dark:bg-slate-800 rounded" /></td>
+                        <td className="py-3.5 hidden md:table-cell"><div className="h-4 w-16 bg-slate-200 dark:bg-slate-800 rounded" /></td>
                         <td className="py-3.5"><div className="h-5 w-14 bg-slate-200 dark:bg-slate-800 rounded-full" /></td>
                         <td className="py-3.5 text-right pr-6"><div className="h-7 w-16 bg-slate-200 dark:bg-slate-800 rounded ml-auto" /></td>
                       </tr>
@@ -976,10 +978,10 @@ export default function StaffPage() {
                           {member.role}
                         </span>
                       </td>
-                      <td className="py-3.5 text-slate-600 dark:text-slate-400">
+                      <td className="py-3.5 hidden md:table-cell text-slate-600 dark:text-slate-400">
                         {member.shiftName || "Morning (09:00 - 18:00)"}
                       </td>
-                      <td className="py-3.5 font-semibold text-slate-900 dark:text-white">
+                      <td className="py-3.5 hidden md:table-cell font-semibold text-slate-900 dark:text-white">
                         {currentUser?.role !== "manager" || (member.role !== "owner" && member.role !== "manager")
                           ? `₹${(member.salary?.basic || 25000).toLocaleString("en-IN")}/mo`
                           : "Confidential"}

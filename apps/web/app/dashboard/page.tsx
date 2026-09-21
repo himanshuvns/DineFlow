@@ -180,7 +180,7 @@ export default function DashboardOverviewPage() {
   return (
     <div className="space-y-8 pb-12">
       {/* Welcome Banner */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold mb-2">
             <Sparkles className="h-3.5 w-3.5" />
@@ -196,7 +196,7 @@ export default function DashboardOverviewPage() {
         </div>
 
         {/* Quick Action Buttons */}
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2">
           {user?.role === "chef" ? (
             <>
               <Button
@@ -268,7 +268,7 @@ export default function DashboardOverviewPage() {
 
       {/* Quick Starter Preset Banner if New Tenant has no items (Owner & Manager only) */}
       {!isDemoTenant && (isOwner(user?.role) || isManager(user?.role)) && safeMenuItems.length === 0 && (
-        <Card variant="glass" className="border-emerald-500/30 bg-emerald-500/5 p-5">
+        <Card variant="glass" className="border-emerald-500/30 bg-emerald-500/5 p-4 sm:p-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2">
@@ -323,7 +323,7 @@ export default function DashboardOverviewPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Metric 1: Today's Revenue (Owner only) vs Total Orders Processed (Manager, Waiter, Chef, Cashier, Staff) */}
         {!canViewFinancials(user?.role) ? (
-          <Card variant="glass" hoverEffect>
+          <Card variant="glass" hoverEffect className="min-w-0 p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Total Orders Processed</span>
               <div className="h-8 w-8 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400">
@@ -346,7 +346,7 @@ export default function DashboardOverviewPage() {
             </div>
           </Card>
         ) : (
-          <Card variant="glass" hoverEffect>
+          <Card variant="glass" hoverEffect className="min-w-0 p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Today&apos;s Revenue</span>
               <div className="h-8 w-8 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
@@ -386,7 +386,7 @@ export default function DashboardOverviewPage() {
         )}
 
         {/* Metric 2 */}
-        <Card variant="glass" hoverEffect>
+        <Card variant="glass" hoverEffect className="min-w-0 p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Active Kitchen Orders</span>
             <div className="h-8 w-8 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400">
@@ -407,7 +407,7 @@ export default function DashboardOverviewPage() {
         </Card>
 
         {/* Metric 3 */}
-        <Card variant="glass" hoverEffect>
+        <Card variant="glass" hoverEffect className="min-w-0 p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Table Occupancy</span>
             <div className="h-8 w-8 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
@@ -438,7 +438,7 @@ export default function DashboardOverviewPage() {
         </Card>
 
         {/* Metric 4 */}
-        <Card variant="glass" hoverEffect>
+        <Card variant="glass" hoverEffect className="min-w-0 p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Menu Catalog</span>
             <div className="h-8 w-8 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">

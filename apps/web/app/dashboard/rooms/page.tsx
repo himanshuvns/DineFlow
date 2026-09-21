@@ -1036,7 +1036,7 @@ export default function RoomsDirectoryPage() {
         </div>
 
         {/* Hotel PMS KPI Strip */}
-        <div className="flex overflow-x-auto gap-2 pb-0.5 scrollbar-none sm:grid sm:grid-cols-3 lg:grid-cols-6 shrink-0">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2 pb-0.5 shrink-0">
           <Card variant="glass" className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 shrink-0 min-w-[140px] sm:min-w-0">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 block">
               Occupied Rooms
@@ -1115,36 +1115,38 @@ export default function RoomsDirectoryPage() {
         {/* Toolbar: Floors, Statuses, Search & View Toggle */}
         <div className="p-2 sm:p-2.5 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80 shadow-xs space-y-2">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none min-w-0 flex-1">
-              {floors.map((f) => (
-                <button
-                  key={f}
-                  onClick={() => setFloorFilter(f)}
-                  className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                    floorFilter === f
-                      ? "bg-emerald-500 text-slate-950 shadow font-bold"
-                      : "bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white"
-                  }`}
-                >
-                  {f === "all" ? "All Floors" : f}
-                </button>
-              ))}
+            <div className="overflow-x-auto pb-1 sm:pb-0 scrollbar-none min-w-0 flex-1">
+              <div className="flex min-w-max items-center gap-1.5">
+                {floors.map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setFloorFilter(f)}
+                    className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                      floorFilter === f
+                        ? "bg-emerald-500 text-slate-950 shadow font-bold"
+                        : "bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white"
+                    }`}
+                  >
+                    {f === "all" ? "All Floors" : f}
+                  </button>
+                ))}
 
-              <div className="h-4 w-px bg-slate-300 dark:bg-slate-800 shrink-0 mx-1" />
+                <div className="h-4 w-px bg-slate-300 dark:bg-slate-800 shrink-0 mx-1" />
 
-              {statuses.map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setStatusFilter(s)}
-                  className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer capitalize ${
-                    statusFilter === s
-                      ? "bg-cyan-500 text-slate-950 shadow font-bold"
-                      : "bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white"
-                  }`}
-                >
-                  {s === "all" ? "All Statuses" : s}
-                </button>
-              ))}
+                {statuses.map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setStatusFilter(s)}
+                    className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer capitalize ${
+                      statusFilter === s
+                        ? "bg-indigo-500 text-white shadow font-bold"
+                        : "bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white"
+                    }`}
+                  >
+                    {s === "all" ? "All Statuses" : s}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
@@ -1252,7 +1254,7 @@ export default function RoomsDirectoryPage() {
 
       {/* Hotel Rooms: Loading Skeleton OR Empty State OR Grid / List View */}
       {loading && rooms.length === 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {Array.from({ length: 8 }).map((_, i) => (
             <div
               key={`room-skel-${i}`}
@@ -1300,7 +1302,7 @@ export default function RoomsDirectoryPage() {
           />
         </div>
       ) : viewMode === "grid" ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filteredRooms.map((room) => {
             const isOccupied = room.status === "occupied";
           const isCleaning = room.status === "cleaning";
@@ -1384,7 +1386,7 @@ export default function RoomsDirectoryPage() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5 truncate">
                         <Users className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-                        <span className="text-slate-900 dark:text-white font-bold truncate">
+                        <span className="text-slate-900 dark:text-white font-bold truncate max-w-full">
                           {room.activeGuest || room.currentGuestName}
                         </span>
                       </div>
@@ -1593,7 +1595,7 @@ export default function RoomsDirectoryPage() {
                     <div className="space-y-0.5">
                       <div className="flex items-center gap-1.5 min-w-0">
                         <Users className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-                        <span className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                        <span className="text-sm font-semibold text-slate-900 dark:text-white truncate max-w-full">
                           {room.activeGuest || room.currentGuestName}
                         </span>
                         {room.currentGuestCount && room.currentGuestCount > 1 && (

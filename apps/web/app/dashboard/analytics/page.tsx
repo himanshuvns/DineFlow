@@ -151,7 +151,7 @@ export default function AnalyticsPage() {
 
         {/* Timeframe Switcher & Export */}
         <div className="flex flex-wrap items-center gap-2.5">
-          <div className="p-1 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center gap-1 text-xs overflow-x-auto max-w-full">
+          <div className="p-1 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center gap-1 text-xs overflow-x-auto scrollbar-none max-w-full">
             {[
               { id: "today" as const, label: "Today" },
               { id: "7d" as const, label: "7 Days" },
@@ -193,7 +193,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Primary Financial / Operational KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {isManager ? (
           <Card variant="glass" padding="none" className="border-emerald-500/30 bg-emerald-500/5">
             <CardContent className="p-5">
@@ -318,7 +318,7 @@ export default function AnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto pb-2 scrollbar-none">
-              <div className="h-60 min-w-[440px] sm:min-w-full flex items-end gap-2 sm:gap-3 pt-8 pb-2 px-2 border-b border-slate-200 dark:border-slate-800">
+              <div className="h-60 min-h-[200px] w-full min-w-[440px] sm:min-w-full flex items-end gap-2 sm:gap-3 pt-8 pb-2 px-2 border-b border-slate-200 dark:border-slate-800">
                 {data.hourly.map((bar, i) => (
                   <div key={i} className="flex-1 flex flex-col items-center gap-2 h-full justify-end group">
                     <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
@@ -420,7 +420,7 @@ export default function AnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
+              <table className="w-full min-w-[500px] text-left text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-semibold bg-slate-100/70 dark:bg-slate-950/40">
                     <th className="p-3">Dish / Culinary Item</th>

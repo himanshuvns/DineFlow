@@ -110,7 +110,7 @@ export default function VideoStudioPage() {
       </div>
 
       {/* Video Selection Tabs */}
-      <div className="flex flex-wrap items-center gap-3 p-1.5 bg-slate-100 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 rounded-2xl w-fit">
+      <div className="flex flex-nowrap sm:flex-wrap items-center gap-3 p-1.5 bg-slate-100 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 rounded-2xl w-full sm:w-fit overflow-x-auto scrollbar-none">
         <button
           onClick={() => setSelectedVideo("qr-demo")}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
@@ -169,8 +169,8 @@ export default function VideoStudioPage() {
                 loop
               />
             </div>
-            <div className="p-4 bg-slate-900/90 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-              <div className="flex items-center gap-4">
+            <div className="p-4 bg-slate-900/90 border-t border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs text-slate-400">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-4">
                 <span>Resolution: <b>1920×1080 (1080p Full HD)</b></span>
                 <span>Framerate: <b>30 FPS</b></span>
                 <span>Duration: <b>{isQr ? "30s (900 frames)" : "12s (360 frames)"}</b></span>
@@ -195,7 +195,7 @@ export default function VideoStudioPage() {
             </div>
 
             {isQr ? (
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                 {[
                   {
                     title: "1. Presenter Intro",
@@ -244,7 +244,7 @@ export default function VideoStudioPage() {
                 ))}
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-5 gap-2.5">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-2.5">
                 {[
                   { title: "1. Brand Intro", time: "0.0s – 2.5s", desc: "Logo reveal & glow" },
                   { title: "2. QR Dining", time: "2.5s – 5.0s", desc: "Mobile ordering mock" },

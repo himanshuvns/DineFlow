@@ -204,7 +204,7 @@ export default function MenuWriterPage() {
                 </CardDescription>
               </div>
               {result && (
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Button variant="outline" size="sm" onClick={handleCopy} leftIcon={copied ? <CheckCheck className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}>
                     {copied ? "Copied" : "Copy"}
                   </Button>
@@ -247,7 +247,7 @@ export default function MenuWriterPage() {
                   {/* Description */}
                   <div>
                     <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold mb-1.5">Description</p>
-                    <p className="text-sm text-slate-800 dark:text-slate-300 leading-relaxed italic font-medium">"{result.description}"</p>
+                    <p className="text-sm text-slate-800 dark:text-slate-300 leading-relaxed italic font-medium w-full break-words">"{result.description}"</p>
                   </div>
 
                   {/* Tag Line */}

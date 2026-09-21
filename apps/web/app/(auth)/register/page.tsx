@@ -194,7 +194,7 @@ export default function RegisterPage() {
                 Business Name
               </label>
               {slug && (
-                <span className="text-[10.5px] font-mono text-emerald-600 dark:text-[#14F1C7] font-medium truncate max-w-[180px]">
+                <span className="text-[10.5px] font-mono text-emerald-600 dark:text-[#14F1C7] font-medium truncate max-w-full">
                   dineflow.app/m/{slug}
                 </span>
               )}

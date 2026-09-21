@@ -456,37 +456,41 @@ export default function KDSOrdersPage() {
       )}
 
       {/* Station Filter Pills */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1">
-        {stations.map((st) => (
-          <button
-            key={st.id}
-            type="button"
-            onClick={() => setStationFilter(st.id)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-colors shadow-xs ${
-              stationFilter === st.id
-                ? "bg-emerald-500 text-slate-950 shadow"
-                : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/60"
-            }`}
-          >
-            {st.label}
-          </button>
-        ))}
+      <div className="overflow-x-auto scrollbar-none [-webkit-overflow-scrolling:touch]">
+        <div className="flex items-center gap-2 min-w-max pb-1">
+          {stations.map((st) => (
+            <button
+              key={st.id}
+              type="button"
+              onClick={() => setStationFilter(st.id)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-colors shadow-xs ${
+                stationFilter === st.id
+                  ? "bg-emerald-500 text-slate-950 shadow"
+                  : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/60"
+              }`}
+            >
+              {st.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Status Tabs */}
-      <div className="flex items-center justify-between">
-        <Tabs
-          tabs={[
-            { id: "all", label: "Active Tickets", badge: orders.filter((o) => o.status !== "served" && o.status !== "cancelled" && o.status !== "paid").length },
-            { id: "pending", label: "New / Pending", badge: orders.filter((o) => o.status === "pending").length },
-            { id: "preparing", label: "Cooking / Plating", badge: orders.filter((o) => o.status === "preparing").length },
-            { id: "ready", label: "Ready to Dispatch", badge: orders.filter((o) => o.status === "ready").length },
-            { id: "served", label: "Served History", badge: orders.filter((o) => o.status === "served").length },
-            { id: "cancelled", label: "Rejected / Cancelled", badge: orders.filter((o) => o.status === "cancelled").length },
-          ]}
-          activeTab={activeTab}
-          onChange={setActiveTab}
-        />
+      <div className="overflow-x-auto scrollbar-none [-webkit-overflow-scrolling:touch] pb-1">
+        <div className="min-w-max flex items-center justify-between">
+          <Tabs
+            tabs={[
+              { id: "all", label: "Active Tickets", badge: orders.filter((o) => o.status !== "served" && o.status !== "cancelled" && o.status !== "paid").length },
+              { id: "pending", label: "New / Pending", badge: orders.filter((o) => o.status === "pending").length },
+              { id: "preparing", label: "Cooking / Plating", badge: orders.filter((o) => o.status === "preparing").length },
+              { id: "ready", label: "Ready to Dispatch", badge: orders.filter((o) => o.status === "ready").length },
+              { id: "served", label: "Served History", badge: orders.filter((o) => o.status === "served").length },
+              { id: "cancelled", label: "Rejected / Cancelled", badge: orders.filter((o) => o.status === "cancelled").length },
+            ]}
+            activeTab={activeTab}
+            onChange={setActiveTab}
+          />
+        </div>
       </div>
 
       {/* KDS Ticket Cards Grid */}
@@ -515,7 +519,7 @@ export default function KDSOrdersPage() {
                 key={order.id}
                 variant="glass"
                 padding="none"
-                className={`flex flex-col justify-between border-2 rounded-2xl overflow-hidden transition-all ${
+                className={`flex flex-col justify-between border-2 rounded-2xl overflow-hidden transition-all w-full ${
                   isRed
                     ? "border-rose-500/70 shadow-lg shadow-rose-500/10"
                     : isRoomService
@@ -532,7 +536,7 @@ export default function KDSOrdersPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5 flex-wrap min-w-0">
                       <span
-                        className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight truncate max-w-[140px] sm:max-w-[180px]"
+                        className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight min-w-0 w-full truncate"
                         title={order.table}
                       >
                         {formatKdsTableName(order.table)}
@@ -562,7 +566,7 @@ export default function KDSOrdersPage() {
                         {order.id}
                       </span>
                       <span className="text-slate-400 dark:text-slate-600 shrink-0">•</span>
-                      <span className="text-[11px] text-slate-600 dark:text-slate-400 truncate max-w-[120px]">
+                      <span className="text-[11px] text-slate-600 dark:text-slate-400 truncate min-w-0 w-full">
                         {order.customerName}
                       </span>
                     </div>
