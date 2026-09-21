@@ -113,7 +113,7 @@ export function TopBar() {
       <div className="flex items-center gap-2 shrink-0">
         <button
           onClick={() => setMobileMenuOpen(true)}
-          className="md:hidden p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 transition-colors cursor-pointer"
+          className="md:hidden p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 transition-colors cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
           aria-label="Open navigation drawer"
         >
           <Menu className="h-5 w-5" />
@@ -133,7 +133,7 @@ export function TopBar() {
             {tenant?.name || "Your Restaurant"}
           </span>
           <span className="hidden md:inline text-slate-300 dark:text-slate-600">/</span>
-          <span className="text-emerald-600 dark:text-emerald-400 font-bold truncate max-w-[100px] sm:max-w-[160px] text-base md:text-xs">
+          <span className="text-emerald-600 dark:text-emerald-400 font-bold truncate max-w-[160px] sm:max-w-[220px] md:max-w-[260px] text-base md:text-xs">
             {currentTitle}
           </span>
         </div>
@@ -141,15 +141,15 @@ export function TopBar() {
 
       {/* Center: Global Search — takes all remaining space and is truly centered */}
       <div className="flex-1 hidden md:flex justify-center px-2 sm:px-4">
-        <div className="w-full max-w-xs md:max-w-sm lg:max-w-lg">
+        <div className="w-full max-w-[180px] lg:max-w-sm xl:max-w-md">
           <GlobalSearch />
         </div>
       </div>
 
       {/* Right: Actions */}
       <div className="flex items-center gap-2 shrink-0">
-        {/* Live KDS status */}
-        <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[11px] font-semibold whitespace-nowrap">
+        {/* Live KDS status - visible at xl+ so 1024px has plenty of space */}
+        <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[11px] font-semibold whitespace-nowrap">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping shrink-0" />
           KDS Connected
         </div>
@@ -164,7 +164,7 @@ export function TopBar() {
         <Dropdown
           align="right"
           trigger={
-            <button className="flex items-center gap-2 p-1 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors cursor-pointer">
+            <button className="flex items-center gap-2 p-1 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors cursor-pointer min-h-[44px]">
               <Avatar
                 fallback={userDisplayName}
                 src={user?.avatarUrl}

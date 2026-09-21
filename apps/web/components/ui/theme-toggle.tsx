@@ -89,7 +89,7 @@ export function ThemeToggle({ className, variant = "icon" }: ThemeToggleProps) {
       type="button"
       onClick={toggleTheme}
       className={cn(
-        "relative p-2 rounded-xl border transition-all duration-200 cursor-pointer flex items-center justify-center",
+        "relative p-2 rounded-xl border transition-all duration-200 cursor-pointer flex items-center justify-center min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px]",
         "bg-white/80 hover:bg-slate-100 text-slate-700 border-slate-200/80 shadow-sm",
         "dark:bg-slate-900/80 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-800 dark:shadow-none",
         "focus:outline-none focus:ring-2 focus:ring-emerald-500/30",
