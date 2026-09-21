@@ -392,9 +392,8 @@ func Setup(
 		}
 	}
 
-	// Direct aliases for common frontend endpoints with and without /v1 prefix
+	// Direct alias for common frontend endpoint without /v1 prefix
 	r.POST("/api/menu/scan", menuHandler.ScanMenu)
-	r.POST("/api/v1/menu/scan", menuHandler.ScanMenu)
 
 	// Fallback reverse proxy for Next.js App Router API routes (/api/*) when running behind
 	// an Nginx reverse proxy (e.g. on VPS) where all /api requests are forwarded to the Go backend.
