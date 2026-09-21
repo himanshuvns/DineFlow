@@ -1,0 +1,10 @@
+node_modules
+apps/web/node_modules
+apps/web/.next
+apps/web/.turbo
+apps/web/out
+apps/web/build
+apps/web/dist
+apps/api/tmp
+.git
+*.log

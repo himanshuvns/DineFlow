@@ -9,9 +9,11 @@ if [ ! -f .env ]; then
   ./deploy/gen-secrets.sh
 fi
 
-# Read configured ports
-BE_PORT=$(grep -E '^BACKEND_PORT=' .env | cut -d= -f2 || echo 8500)
-FE_PORT=$(grep -E '^FRONTEND_PORT=' .env | cut -d= -f2 || echo 3500)
+# Read configured ports safely
+BE_PORT=$(grep -E '^BACKEND_PORT=' .env 2>/dev/null | cut -d= -f2 | tr -d '"'"' \r' || echo 8500)
+FE_PORT=$(grep -E '^FRONTEND_PORT=' .env 2>/dev/null | cut -d= -f2 | tr -d '"'"' \r' || echo 3500)
+BE_PORT=${BE_PORT:-8500}
+FE_PORT=${FE_PORT:-3500}
 
 echo "── 2. Updating repository from origin/main..."
 git fetch origin main
@@ -34,7 +36,7 @@ probe() {
 }
 
 api_healthy=0
-for i in $(seq 1 25); do
+for i in $(seq 1 35); do
   if probe "http://127.0.0.1:${BE_PORT}/health"; then
     api_healthy=1
     echo "✔ API healthy on port ${BE_PORT} (attempt ${i})"
@@ -50,7 +52,7 @@ if [ "$api_healthy" -ne 1 ]; then
 fi
 
 web_healthy=0
-for i in $(seq 1 25); do
+for i in $(seq 1 35); do
   if probe "http://127.0.0.1:${FE_PORT}"; then
     web_healthy=1
     echo "✔ Frontend healthy on port ${FE_PORT} (attempt ${i})"
