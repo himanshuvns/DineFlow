@@ -65,10 +65,22 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// ── Connect MongoDB ───────────────────────────────────────────────────────
-	mongoDB, err := mongoinfra.New(ctx, cfg.MongoDB.URI, cfg.MongoDB.Database, log)
+	// ── Connect MongoDB (with retry) ──────────────────────────────────────────
+	var mongoDB *mongoinfra.Client
+	for attempt := 1; attempt <= 15; attempt++ {
+		mongoDB, err = mongoinfra.New(ctx, cfg.MongoDB.URI, cfg.MongoDB.Database, log)
+		if err == nil {
+			break
+		}
+		log.Warn("MongoDB not ready, retrying...", zap.Int("attempt", attempt), zap.Error(err))
+		select {
+		case <-ctx.Done():
+			log.Fatal("Context cancelled while waiting for MongoDB")
+		case <-time.After(2 * time.Second):
+		}
+	}
 	if err != nil {
-		log.Fatal("Failed to connect to MongoDB", zap.Error(err))
+		log.Fatal("Failed to connect to MongoDB after retries", zap.Error(err))
 	}
 	defer func() {
 		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -97,10 +109,22 @@ func main() {
 		}
 	}()
 
-	// ── Connect Redis ─────────────────────────────────────────────────────────
-	rdb, err := redisinfra.New(ctx, cfg.Redis.URL, log)
+	// ── Connect Redis (with retry) ────────────────────────────────────────────
+	var rdb *redisinfra.Client
+	for attempt := 1; attempt <= 15; attempt++ {
+		rdb, err = redisinfra.New(ctx, cfg.Redis.URL, log)
+		if err == nil {
+			break
+		}
+		log.Warn("Redis not ready, retrying...", zap.Int("attempt", attempt), zap.Error(err))
+		select {
+		case <-ctx.Done():
+			log.Fatal("Context cancelled while waiting for Redis")
+		case <-time.After(2 * time.Second):
+		}
+	}
 	if err != nil {
-		log.Fatal("Failed to connect to Redis", zap.Error(err))
+		log.Fatal("Failed to connect to Redis after retries", zap.Error(err))
 	}
 	defer func() { _ = rdb.Close() }()
 
