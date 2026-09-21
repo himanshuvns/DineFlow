@@ -628,7 +628,7 @@ export default function MenuManagementPage() {
                 <span className="truncate max-w-[120px]">{tenantName}</span>
               </div>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate max-w-xl">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 max-w-xl">
               Scan menus, upload PDFs, or build signature dishes manually. Live QR menus update instantaneously.
             </p>
           </div>
@@ -1191,7 +1191,7 @@ export default function MenuManagementPage() {
             </div>
             <div className="col-span-2">Category</div>
             <div className="col-span-2">Price</div>
-            <div className="col-span-1">Status</div>
+            <div className="col-span-2">Status</div>
             <div className="col-span-2 text-right">Quick Actions</div>
           </div>
 
@@ -1210,8 +1210,8 @@ export default function MenuManagementPage() {
                     : "bg-white dark:bg-slate-900/70 border-slate-200/80 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-xs"
                 }`}
               >
-                {/* Col 1 (Span 5): Multi-select + Thumbnail + Veg Dot + Name & Highlights */}
-                <div className="col-span-5 flex items-center gap-3 min-w-0 w-full">
+                {/* Col 1 (Span 4): Multi-select + Thumbnail + Veg Dot + Name & Highlights */}
+                <div className="col-span-4 flex items-center gap-3 min-w-0 w-full">
                   <button
                     type="button"
                     onClick={() => handleToggleSelectDish(item.id)}
@@ -1324,8 +1324,8 @@ export default function MenuManagementPage() {
                   ) : null}
                 </div>
 
-                {/* Col 4 (Span 1): Availability Badge */}
-                <div className="col-span-1 flex items-center">
+                {/* Col 4 (Span 2): Availability Badge */}
+                <div className="col-span-2 flex items-center">
                   <button
                     type="button"
                     onClick={() => handleToggleAvailability(item.id, item.available)}
