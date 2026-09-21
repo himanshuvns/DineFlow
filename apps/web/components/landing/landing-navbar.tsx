@@ -68,7 +68,7 @@ export function LandingNavbar() {
         {/* Brand Logo */}
         <Link
           href="/"
-          className="flex items-center gap-2.5 sm:gap-3 group focus:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500 rounded-xl"
+          className="flex items-center gap-2.5 sm:gap-3 group focus:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500 rounded-xl shrink-0"
           aria-label="DineFlow Home"
         >
           <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 p-0.5 shadow-md shadow-emerald-500/20 flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105">
@@ -81,23 +81,23 @@ export function LandingNavbar() {
           </span>
         </Link>
 
-        {/* Desktop Navigation Links */}
+        {/* Desktop Navigation Links — ml-8 lg:ml-10 mr-auto guarantees generous separation from logo */}
         <nav
-          className="hidden md:flex items-center gap-7 text-sm font-medium text-slate-600 dark:text-slate-300"
+          className="hidden lg:flex items-center gap-4 xl:gap-6 text-sm font-medium text-slate-600 dark:text-slate-300 ml-8 xl:ml-12 mr-auto"
           aria-label="Main Navigation"
         >
           {NAV_LINKS.map((link) => (
             <a
               key={link.label}
               href={link.href}
-              className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500 rounded-md px-1 py-0.5"
+              className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500 rounded-md px-1 py-0.5 whitespace-nowrap"
             >
               {link.label}
             </a>
           ))}
           <Link
             href="/dashboard"
-            className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors font-semibold"
+            className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors font-semibold whitespace-nowrap"
           >
             <Sparkles className="h-3.5 w-3.5" />
             <span>Live Demo</span>
@@ -105,7 +105,7 @@ export function LandingNavbar() {
         </nav>
 
         {/* Right Actions: Theme Toggle, Sign In, Primary CTA */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <ThemeToggle />
 
           <Button
@@ -133,7 +133,7 @@ export function LandingNavbar() {
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden flex items-center justify-center min-h-[44px] min-w-[44px] rounded-lg border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500"
+            className="lg:hidden flex items-center justify-center min-h-[44px] min-w-[44px] rounded-lg border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500"
             aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
             aria-expanded={mobileMenuOpen}
           >

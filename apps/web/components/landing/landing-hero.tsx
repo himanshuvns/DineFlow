@@ -52,7 +52,7 @@ export function LandingHero() {
           {/* Headline */}
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 dark:text-white tracking-tight leading-[1.12]">
             Run Your Restaurant & Hotel{" "}
-            <span className="bg-gradient-to-r from-emerald-600 via-teal-500 to-amber-500 dark:from-emerald-400 dark:via-teal-300 dark:to-amber-300 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-500 dark:from-emerald-400 dark:via-teal-300 dark:to-emerald-400 bg-clip-text text-transparent">
               Smarter with DineFlow
             </span>
           </h1>
@@ -230,8 +230,8 @@ export function LandingHero() {
             </div>
           </div>
 
-          {/* Layered Mobile Customer QR Ordering Phone Mockup */}
-          <div className="absolute -bottom-6 sm:-bottom-8 -right-2 sm:-right-6 w-52 sm:w-64 rounded-3xl border-4 border-slate-800 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl shadow-black/40 overflow-hidden transform rotate-1 sm:rotate-2 hover:rotate-0 transition-transform duration-300 hidden sm:block">
+          {/* Layered Mobile Customer QR Ordering Phone Mockup — safely positioned without right overflow */}
+          <div className="absolute -bottom-6 sm:-bottom-8 right-0 sm:right-2 lg:-right-2 xl:-right-4 w-48 sm:w-56 lg:w-60 rounded-3xl border-4 border-slate-800 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl shadow-black/40 overflow-hidden transform rotate-1 sm:rotate-2 hover:rotate-0 transition-transform duration-300 hidden sm:block">
             {/* Phone Notch & Header */}
             <div className="bg-slate-900 text-white p-2.5 pt-3 text-center space-y-1">
               <div className="w-12 h-3.5 bg-black rounded-full mx-auto mb-1" />
@@ -276,14 +276,14 @@ export function LandingHero() {
           </div>
 
           {/* Floating Trust Pills */}
-          <div className="absolute -top-4 -left-4 sm:left-2 bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 rounded-full px-3 py-1.5 shadow-lg flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
-            <span>⚡ 0s App Install Time</span>
+          <div className="absolute -top-4 -left-4 sm:left-2 bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 rounded-full px-3.5 py-1.5 shadow-lg flex items-center gap-2 text-xs font-semibold text-slate-800 dark:text-slate-200">
+            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping shrink-0" />
+            <span>⚡ Instant QR • Zero App Install</span>
           </div>
 
-          <div className="absolute -bottom-4 left-4 bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 rounded-full px-3 py-1.5 shadow-lg flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 hidden sm:flex">
-            <MessageSquare className="h-3.5 w-3.5 text-emerald-500" />
-            <span>📲 Instant WhatsApp Receipt</span>
+          <div className="absolute -bottom-4 left-4 bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 rounded-full px-3.5 py-1.5 shadow-lg flex items-center gap-2 text-xs font-semibold text-slate-800 dark:text-slate-200 hidden sm:flex">
+            <MessageSquare className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+            <span>Instant WhatsApp Receipts</span>
           </div>
         </div>
       </div>
