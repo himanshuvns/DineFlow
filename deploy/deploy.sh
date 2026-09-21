@@ -10,8 +10,8 @@ if [ ! -f .env ]; then
 fi
 
 # Read configured ports safely
-BE_PORT=$(grep -E '^BACKEND_PORT=' .env 2>/dev/null | cut -d= -f2 | tr -d '"'"' \r' || echo 8500)
-FE_PORT=$(grep -E '^FRONTEND_PORT=' .env 2>/dev/null | cut -d= -f2 | tr -d '"'"' \r' || echo 3500)
+BE_PORT=$(grep -E '^BACKEND_PORT=' .env 2>/dev/null | cut -d= -f2 | tr -d '"'"' \r' || true)
+FE_PORT=$(grep -E '^FRONTEND_PORT=' .env 2>/dev/null | cut -d= -f2 | tr -d '"'"' \r' || true)
 BE_PORT=${BE_PORT:-8500}
 FE_PORT=${FE_PORT:-3500}
 
