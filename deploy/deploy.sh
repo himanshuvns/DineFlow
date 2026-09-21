@@ -21,23 +21,15 @@ git log -1 --oneline
 echo "── 3. Building and starting stack..."
 docker compose -f docker-compose.prod.yml --env-file .env up -d --build
 
-echo "── 4. Health Gate Verification..."
-echo "Waiting for API (port ${BE_PORT}) and Frontend (port ${FE_PORT})..."
-
-probe() {
-  local url="$1"
-  local code="000"
-  if command -v curl >/dev/null 2>&1; then
-    code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 "$url" 2>/dev/null || echo "000")
-  elif command -v wget >/dev/null 2>&1; then
-    code=$(wget --spider -S "$url" 2>&1 | awk '/HTTP\// {print $2}' | tail -1 || echo "000")
-  fi
-  echo "$code"
-}
-
+set +e
 api_healthy=0
 for i in $(seq 1 40); do
-  code=$(probe "http://127.0.0.1:${BE_PORT}/health")
+  code="000"
+  if command -v curl >/dev/null 2>&1; then
+    code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 "http://127.0.0.1:${BE_PORT}/health" 2>/dev/null || echo "000")
+  elif command -v wget >/dev/null 2>&1; then
+    code=$(wget --spider -S "http://127.0.0.1:${BE_PORT}/health" 2>&1 | awk '/HTTP\// {print $2}' | tail -1 || echo "000")
+  fi
   case "$code" in
     2*|3*)
       api_healthy=1
@@ -50,17 +42,24 @@ for i in $(seq 1 40); do
   esac
   sleep 3
 done
+set -e
 
 if [ "$api_healthy" -ne 1 ]; then
   echo "✖ API health gate FAILED on http://127.0.0.1:${BE_PORT}/health"
-  docker compose -f docker-compose.prod.yml logs --tail=100 api
-  docker compose -f docker-compose.prod.yml ps
+  docker compose -f docker-compose.prod.yml logs --tail=100 api || true
+  docker compose -f docker-compose.prod.yml ps || true
   exit 1
 fi
 
+set +e
 web_healthy=0
 for i in $(seq 1 40); do
-  code=$(probe "http://127.0.0.1:${FE_PORT}")
+  code="000"
+  if command -v curl >/dev/null 2>&1; then
+    code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 "http://127.0.0.1:${FE_PORT}" 2>/dev/null || echo "000")
+  elif command -v wget >/dev/null 2>&1; then
+    code=$(wget --spider -S "http://127.0.0.1:${FE_PORT}" 2>&1 | awk '/HTTP\// {print $2}' | tail -1 || echo "000")
+  fi
   case "$code" in
     2*|3*)
       web_healthy=1
@@ -73,11 +72,12 @@ for i in $(seq 1 40); do
   esac
   sleep 3
 done
+set -e
 
 if [ "$web_healthy" -ne 1 ]; then
   echo "✖ Frontend health gate FAILED on http://127.0.0.1:${FE_PORT}"
-  docker compose -f docker-compose.prod.yml logs --tail=100 web
-  docker compose -f docker-compose.prod.yml ps
+  docker compose -f docker-compose.prod.yml logs --tail=100 web || true
+  docker compose -f docker-compose.prod.yml ps || true
   exit 1
 fi
 
