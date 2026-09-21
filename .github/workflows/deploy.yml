@@ -12,6 +12,7 @@ concurrency:
 
 permissions:
   contents: read
+  issues: write
   pull-requests: read
 
 jobs:
@@ -56,11 +57,27 @@ jobs:
 
       - name: Deploy to VPS
         if: ${{ env.DEPLOY_KEY != '' }}
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.DINEFLOW_SERVER_IP }}
-          username: ${{ secrets.DINEFLOW_SERVER_USER }}
-          key: ${{ secrets.DINEFLOW_SSH_KEY }}
-          command_timeout: 30m
-          script: |
-            cd /opt/dineflow && git fetch origin main && git reset --hard origin/main && chmod +x deploy/*.sh && ./deploy/deploy.sh
+        env:
+          SSH_KEY: ${{ secrets.DINEFLOW_SSH_KEY }}
+          SERVER_IP: ${{ secrets.DINEFLOW_SERVER_IP }}
+          SERVER_USER: ${{ secrets.DINEFLOW_SERVER_USER }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$SERVER_IP" >> ~/.ssh/known_hosts 2>/dev/null || true
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa "$SERVER_USER@$SERVER_IP" "cd /opt/dineflow && git fetch origin main && git reset --hard origin/main && chmod +x deploy/*.sh && ./deploy/deploy.sh" 2>&1 | tee deploy.log
+        continue-on-error: true
+
+      - name: Publish Deploy Log to Issue
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -f deploy.log ]; then
+            gh issue create --repo himanshuvns/DineFlow --title "Deploy Log: $(git rev-parse --short HEAD)" --body-file deploy.log || true
+            if grep -q "✖" deploy.log 2>/dev/null || ! grep -q "✔ DineFlow deployment complete successfully!" deploy.log 2>/dev/null; then
+              echo "Deploy gate reported failure in deploy.log"
+              exit 1
+            fi
+          fi
