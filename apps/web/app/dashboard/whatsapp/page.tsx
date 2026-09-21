@@ -1067,20 +1067,21 @@ export default function WhatsAppPage() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* ── Page Header ─────────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold mb-2">
-            <Sparkles className="h-3.5 w-3.5" /> Meta Cloud API (WABA) Integration
+            <Sparkles className="h-3.5 w-3.5" />
+            <span>Meta Cloud API (WABA) Integration</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
             WhatsApp Marketing & Invoicing
           </h1>
-          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1">
+          <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mt-1 max-w-2xl">
             Meta Cloud API, Real-Time AI Chatbot, Audience Segmentation, and Compliant Indian GST Invoicing.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           <Button variant="outline" size="sm" onClick={() => setIsConfigModalOpen(true)}>
             <Sliders className="h-3.5 w-3.5 mr-1.5" /> Meta WABA Settings
           </Button>

@@ -58,7 +58,7 @@ export default function DashboardOverviewPage() {
   const { addToast } = useToast();
 
   const userDisplayName =
-    user?.firstName || user?.name || (isDemoTenant ? "Laurent" : getRoleLabel(user?.role));
+    (user?.firstName || user?.name || (isDemoTenant ? "Laurent" : getRoleLabel(user?.role)))?.trim() || "User";
 
   // Track first login vs returning login - defaults to true so initial view is always "Welcome, {name}"
   const [isFirstLogin, setIsFirstLogin] = React.useState<boolean>(true);
@@ -492,7 +492,7 @@ export default function DashboardOverviewPage() {
                 <button
                   type="button"
                   onClick={() => toggleOnboardingStep(step.id)}
-                  className="flex items-center gap-2.5 min-w-0 text-left cursor-pointer"
+                  className="flex items-center gap-2.5 min-w-0 text-left cursor-pointer min-h-[44px] py-1 flex-1"
                 >
                   {step.completed ? (
                     <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
@@ -500,7 +500,7 @@ export default function DashboardOverviewPage() {
                     <div className="h-4 w-4 rounded-full border-2 border-slate-400 dark:border-slate-600 shrink-0" />
                   )}
                   <span
-                    className={`text-xs font-semibold truncate ${
+                    className={`text-xs font-semibold leading-snug ${
                       step.completed
                         ? "text-slate-400 dark:text-slate-500 line-through"
                         : "text-slate-800 dark:text-slate-200"
@@ -512,7 +512,7 @@ export default function DashboardOverviewPage() {
                 {step.cta && step.href && (
                   <Link
                     href={step.href}
-                    className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 dark:hover:text-emerald-300 ml-2 shrink-0 flex items-center gap-1"
+                    className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 dark:hover:text-emerald-300 ml-2 shrink-0 flex items-center gap-1 min-h-[44px] py-1"
                   >
                     {step.cta} <ExternalLink className="h-2.5 w-2.5" />
                   </Link>
