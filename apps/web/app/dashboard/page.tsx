@@ -30,6 +30,7 @@ import { useTenantData, STARTER_TEMPLATES } from "@/lib/stores/tenant-data-store
 import { useToast } from "@/components/ui/toast";
 import { formatCurrency } from "@/lib/utils";
 import { HospitalityLoader } from "@/components/ui/hospitality-loader";
+import { getRoleLabel, canViewFinancials, isOwner, isManager } from "@/lib/rbac/roles";
 import NumberFlow from "@number-flow/react";
 
 export default function DashboardOverviewPage() {
@@ -57,7 +58,7 @@ export default function DashboardOverviewPage() {
   const { addToast } = useToast();
 
   const userDisplayName =
-    user?.firstName || user?.name || (isDemoTenant ? "Laurent" : user?.role === "manager" ? "Floor Manager" : "Restaurant Owner");
+    user?.firstName || user?.name || (isDemoTenant ? "Laurent" : getRoleLabel(user?.role));
 
   // Track first login vs returning login - defaults to true so initial view is always "Welcome, {name}"
   const [isFirstLogin, setIsFirstLogin] = React.useState<boolean>(true);
@@ -196,43 +197,77 @@ export default function DashboardOverviewPage() {
 
         {/* Quick Action Buttons */}
         <div className="flex flex-wrap items-center gap-2.5">
-          <Button
-            variant="outline"
-            size="sm"
-            leftIcon={<QrCode className="h-4 w-4" />}
-            asChild
-          >
-            <Link href="/dashboard/tables">Table QRs</Link>
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            leftIcon={<Hotel className="h-4 w-4 text-emerald-500" />}
-            asChild
-          >
-            <Link href="/dashboard/rooms">Hotel Suites</Link>
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            leftIcon={<ChefHat className="h-4 w-4" />}
-            asChild
-          >
-            <Link href="/dashboard/orders">Open KDS Screen</Link>
-          </Button>
-          <Button
-            variant="glow"
-            size="sm"
-            leftIcon={<Plus className="h-4 w-4" />}
-            onClick={() => setIsNewOrderOpen(true)}
-          >
-            New Order
-          </Button>
+          {user?.role === "chef" ? (
+            <>
+              <Button
+                variant="secondary"
+                size="sm"
+                leftIcon={<ChefHat className="h-4 w-4" />}
+                asChild
+              >
+                <Link href="/dashboard/orders">Open KDS Screen</Link>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                leftIcon={<Utensils className="h-4 w-4 text-emerald-500" />}
+                asChild
+              >
+                <Link href="/dashboard/menu">Menu Catalog</Link>
+              </Button>
+            </>
+          ) : user?.role === "housekeeping" ? (
+            <Button
+              variant="outline"
+              size="sm"
+              leftIcon={<Hotel className="h-4 w-4 text-emerald-500" />}
+              asChild
+            >
+              <Link href="/dashboard/rooms">Hotel Suites & Rooms</Link>
+            </Button>
+          ) : (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                leftIcon={<QrCode className="h-4 w-4" />}
+                asChild
+              >
+                <Link href="/dashboard/tables">Table QRs</Link>
+              </Button>
+              {(isOwner(user?.role) || isManager(user?.role)) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  leftIcon={<Hotel className="h-4 w-4 text-emerald-500" />}
+                  asChild
+                >
+                  <Link href="/dashboard/rooms">Hotel Suites</Link>
+                </Button>
+              )}
+              <Button
+                variant="secondary"
+                size="sm"
+                leftIcon={<ChefHat className="h-4 w-4" />}
+                asChild
+              >
+                <Link href="/dashboard/orders">Open KDS Screen</Link>
+              </Button>
+              <Button
+                variant="glow"
+                size="sm"
+                leftIcon={<Plus className="h-4 w-4" />}
+                onClick={() => setIsNewOrderOpen(true)}
+              >
+                New Order
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
-      {/* Quick Starter Preset Banner if New Tenant has no items */}
-      {!isDemoTenant && safeMenuItems.length === 0 && (
+      {/* Quick Starter Preset Banner if New Tenant has no items (Owner & Manager only) */}
+      {!isDemoTenant && (isOwner(user?.role) || isManager(user?.role)) && safeMenuItems.length === 0 && (
         <Card variant="glass" className="border-emerald-500/30 bg-emerald-500/5 p-5">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
@@ -286,8 +321,8 @@ export default function DashboardOverviewPage() {
 
       {/* KPI Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Metric 1: Today's Revenue (Owner) or Total Orders Processed (Manager) */}
-        {user?.role === "manager" ? (
+        {/* Metric 1: Today's Revenue (Owner only) vs Total Orders Processed (Manager, Waiter, Chef, Cashier, Staff) */}
+        {!canViewFinancials(user?.role) ? (
           <Card variant="glass" hoverEffect>
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Total Orders Processed</span>
@@ -425,66 +460,68 @@ export default function DashboardOverviewPage() {
         </Card>
       </div>
 
-      {/* Onboarding Checklist Widget */}
-      <Card variant="glow" className="border-emerald-500/30">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800/80">
-          <div>
-            <div className="flex items-center gap-2">
-              <CardTitle className="text-base font-bold text-slate-900 dark:text-white">
-                Workspace Setup Progress
-              </CardTitle>
-              <Badge variant="success" size="sm">{completedCount} of {safeOnboardingSteps.length} Completed</Badge>
+      {/* Onboarding Checklist Widget (Owner & Manager only) */}
+      {(isOwner(user?.role) || isManager(user?.role)) && (
+        <Card variant="glow" className="border-emerald-500/30">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800/80">
+            <div>
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-base font-bold text-slate-900 dark:text-white">
+                  Workspace Setup Progress
+                </CardTitle>
+                <Badge variant="success" size="sm">{completedCount} of {safeOnboardingSteps.length} Completed</Badge>
+              </div>
+              <CardDescription className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+                Complete these setup steps to launch contactless QR menus, live KDS, and WhatsApp marketing for {tenantName}.
+              </CardDescription>
             </div>
-            <CardDescription className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-              Complete these setup steps to launch contactless QR menus, live KDS, and WhatsApp marketing for {tenantName}.
-            </CardDescription>
+            <div className="w-full sm:w-48 bg-slate-200 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+              <div
+                style={{ width: `${progressPct}%` }}
+                className="bg-emerald-500 h-full rounded-full transition-all duration-500"
+              />
+            </div>
           </div>
-          <div className="w-full sm:w-48 bg-slate-200 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-            <div
-              style={{ width: `${progressPct}%` }}
-              className="bg-emerald-500 h-full rounded-full transition-all duration-500"
-            />
-          </div>
-        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-4">
-          {safeOnboardingSteps.map((step) => (
-            <div
-              key={step.id}
-              className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-colors shadow-xs"
-            >
-              <button
-                type="button"
-                onClick={() => toggleOnboardingStep(step.id)}
-                className="flex items-center gap-2.5 min-w-0 text-left cursor-pointer"
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-4">
+            {safeOnboardingSteps.map((step) => (
+              <div
+                key={step.id}
+                className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-colors shadow-xs"
               >
-                {step.completed ? (
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                ) : (
-                  <div className="h-4 w-4 rounded-full border-2 border-slate-400 dark:border-slate-600 shrink-0" />
+                <button
+                  type="button"
+                  onClick={() => toggleOnboardingStep(step.id)}
+                  className="flex items-center gap-2.5 min-w-0 text-left cursor-pointer"
+                >
+                  {step.completed ? (
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  ) : (
+                    <div className="h-4 w-4 rounded-full border-2 border-slate-400 dark:border-slate-600 shrink-0" />
+                  )}
+                  <span
+                    className={`text-xs font-semibold truncate ${
+                      step.completed
+                        ? "text-slate-400 dark:text-slate-500 line-through"
+                        : "text-slate-800 dark:text-slate-200"
+                    }`}
+                  >
+                    {step.title}
+                  </span>
+                </button>
+                {step.cta && step.href && (
+                  <Link
+                    href={step.href}
+                    className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 dark:hover:text-emerald-300 ml-2 shrink-0 flex items-center gap-1"
+                  >
+                    {step.cta} <ExternalLink className="h-2.5 w-2.5" />
+                  </Link>
                 )}
-                <span
-                  className={`text-xs font-semibold truncate ${
-                    step.completed
-                      ? "text-slate-400 dark:text-slate-500 line-through"
-                      : "text-slate-800 dark:text-slate-200"
-                  }`}
-                >
-                  {step.title}
-                </span>
-              </button>
-              {step.cta && step.href && (
-                <Link
-                  href={step.href}
-                  className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 dark:hover:text-emerald-300 ml-2 shrink-0 flex items-center gap-1"
-                >
-                  {step.cta} <ExternalLink className="h-2.5 w-2.5" />
-                </Link>
-              )}
-            </div>
-          ))}
-        </div>
-      </Card>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {/* Main Bottom Section: Live Order Feed & Quick Telemetry */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

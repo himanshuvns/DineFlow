@@ -9,7 +9,7 @@ import { ImpersonationBanner } from "@/components/dashboard/impersonation-banner
 import { BroadcastBanner } from "@/components/dashboard/broadcast-banner";
 import { useUIStore } from "@/lib/stores/ui-store";
 import { useAuthStore } from "@/lib/stores/auth-store";
-import { isPlatformRole } from "@/lib/rbac/roles";
+import { isPlatformRole, isRouteAllowed, getPrimaryRouteForRole } from "@/lib/rbac/roles";
 import { X, UtensilsCrossed, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -54,6 +54,14 @@ export default function DashboardLayout({
     // 3. Platform admins must NEVER see the client dashboard — redirect to /platform/dashboard
     if (isPlatformRole(roleFromStorage)) {
       router.replace("/platform/dashboard");
+      return;
+    }
+
+    // 4. Role-based Route Protection: verify if current pathname is allowed for user's role
+    const effectiveRole = roleFromStorage || user?.role;
+    if (effectiveRole && !isRouteAllowed(pathname, effectiveRole)) {
+      const fallbackRoute = getPrimaryRouteForRole(effectiveRole);
+      router.replace(fallbackRoute);
       return;
     }
 
@@ -123,7 +131,7 @@ export default function DashboardLayout({
               </div>
 
               <nav className="mt-4 space-y-1">
-                {NAV_ITEMS.filter((item: any) => !item.ownerOnly || user?.role !== "manager").map((item) => {
+                {NAV_ITEMS.filter((item) => isRouteAllowed(item.href, user?.role)).map((item) => {
                   const isActive = pathname === item.href;
                   const Icon = item.icon;
                   const displayLabel = item.href === "/dashboard/settings" && user?.role === "manager" ? "Settings" : item.label;

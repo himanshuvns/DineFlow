@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { useUIStore } from "@/lib/stores/ui-store";
 import { useAuthStore } from "@/lib/stores/auth-store";
+import { isRouteAllowed, isOwner } from "@/lib/rbac/roles";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 
@@ -44,11 +45,10 @@ export function Sidebar() {
   const { sidebarCollapsed, toggleSidebar } = useUIStore();
   const tenant = useAuthStore((state) => state.tenant);
   const user = useAuthStore((state) => state.user);
-  const isOwnerUser = user?.role !== "manager";
+  const isOwnerUser = isOwner(user?.role);
 
   const visibleNavItems = NAV_ITEMS.filter((item) => {
-    if (item.ownerOnly && !isOwnerUser) return false;
-    return true;
+    return isRouteAllowed(item.href, user?.role);
   });
 
   return (

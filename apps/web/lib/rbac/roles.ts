@@ -17,6 +17,7 @@ export type TenantRole =
   | "manager"
   | "cashier"
   | "chef"
+  | "waiter"
   | "housekeeping"
   | "staff";
 
@@ -34,6 +35,7 @@ export const TENANT_ROLES: TenantRole[] = [
   "manager",
   "cashier",
   "chef",
+  "waiter",
   "housekeeping",
   "staff",
 ];
@@ -142,6 +144,8 @@ export function getRoleLabel(role?: string | null): string {
       return "Cashier";
     case "chef":
       return "Head Chef";
+    case "waiter":
+      return "Floor Waiter";
     case "housekeeping":
       return "Housekeeping";
     case "staff":
@@ -168,7 +172,116 @@ export function getRoleBadgeClass(role?: string | null): string {
       return "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20";
     case "manager":
       return "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20";
+    case "chef":
+      return "bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20";
+    case "waiter":
+      return "bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20";
+    case "cashier":
+      return "bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20";
+    case "housekeeping":
+      return "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20";
     default:
       return "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20";
   }
 }
+
+/**
+ * Whitelist of allowed routes per role.
+ */
+export const ROLE_ALLOWED_ROUTES: Record<string, string[]> = {
+  owner: [
+    "/dashboard",
+    "/dashboard/orders",
+    "/dashboard/menu",
+    "/dashboard/tables",
+    "/dashboard/rooms",
+    "/dashboard/whatsapp",
+    "/dashboard/video",
+    "/dashboard/staff",
+    "/dashboard/analytics",
+    "/dashboard/ai",
+    "/pricing",
+    "/dashboard/settings",
+    "/dashboard/notifications",
+  ],
+  manager: [
+    "/dashboard",
+    "/dashboard/orders",
+    "/dashboard/menu",
+    "/dashboard/tables",
+    "/dashboard/rooms",
+    "/dashboard/whatsapp",
+    "/dashboard/video",
+    "/dashboard/staff",
+    "/dashboard/analytics",
+    "/dashboard/ai",
+    "/dashboard/settings",
+    "/dashboard/notifications",
+  ],
+  chef: [
+    "/dashboard",
+    "/dashboard/orders",
+    "/dashboard/menu",
+    "/dashboard/notifications",
+  ],
+  waiter: [
+    "/dashboard",
+    "/dashboard/tables",
+    "/dashboard/orders",
+    "/dashboard/menu",
+    "/dashboard/notifications",
+  ],
+  cashier: [
+    "/dashboard",
+    "/dashboard/orders",
+    "/dashboard/tables",
+    "/dashboard/menu",
+    "/dashboard/notifications",
+  ],
+  housekeeping: [
+    "/dashboard",
+    "/dashboard/rooms",
+    "/dashboard/notifications",
+  ],
+  staff: [
+    "/dashboard",
+    "/dashboard/orders",
+    "/dashboard/tables",
+    "/dashboard/notifications",
+  ],
+};
+
+/**
+ * Checks if a role is permitted to view or navigate to a given route.
+ */
+export function isRouteAllowed(pathname: string, role?: string | null): boolean {
+  if (!role) return false;
+  // Super admin and platform admins have full access across workspace
+  if (isPlatformAdmin(role) || isOwner(role)) return true;
+
+  const allowedRoutes = ROLE_ALLOWED_ROUTES[role] || ROLE_ALLOWED_ROUTES["staff"];
+
+  // Exact match or subroute prefix match (e.g. /dashboard/rooms/101 or /dashboard/ai/forecast)
+  return allowedRoutes.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`) || pathname.startsWith(`${route}?`)
+  );
+}
+
+/**
+ * Returns the primary landing route for a specific role.
+ */
+export function getPrimaryRouteForRole(role?: string | null): string {
+  switch (role) {
+    case "chef":
+      return "/dashboard/orders";
+    case "waiter":
+      return "/dashboard/tables";
+    case "cashier":
+      return "/dashboard/orders";
+    case "housekeeping":
+      return "/dashboard/rooms";
+    default:
+      return "/dashboard";
+  }
+}
+

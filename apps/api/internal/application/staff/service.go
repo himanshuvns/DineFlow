@@ -117,10 +117,16 @@ func (s *Service) ListStaff(ctx context.Context, tenantID bson.ObjectID) ([]doma
 		users = []domainuser.User{}
 	}
 
-	// Ensure each user has an EmployeeID for HR display
+	// Ensure each user has an EmployeeID for HR display and valid Department
 	for i := range users {
 		if users[i].EmployeeID == "" {
 			users[i].EmployeeID = fmt.Sprintf("DF-EMP-%04d", (i+1)*100+1)
+		}
+		// If user is owner or manager, ensure department is Management if empty or legacy "Floor Service"
+		if (users[i].Role == domainuser.RoleOwner || users[i].Role == domainuser.RoleManager) &&
+			(users[i].Department == "" || users[i].Department == "Floor Service") {
+			users[i].Department = "Management"
+			_, _ = scope.UpdateOne(ctx, bson.M{"_id": users[i].ID}, bson.M{"$set": bson.M{"department": "Management"}})
 		}
 	}
 
@@ -150,6 +156,8 @@ func (s *Service) InviteStaff(ctx context.Context, tenantID bson.ObjectID, input
 			input.Department = "Floor Service"
 		case domainuser.RoleCashier:
 			input.Department = "Front Desk & Billing"
+		case domainuser.RoleHousekeeping:
+			input.Department = "Housekeeping"
 		case domainuser.RoleManager, domainuser.RoleOwner:
 			input.Department = "Management"
 		default:

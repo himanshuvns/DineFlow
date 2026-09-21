@@ -277,6 +277,7 @@ func (s *Service) Register(ctx context.Context, req RegisterRequest) (string, er
 		Email:       email,
 		Name:        name,
 		Role:        user.RoleOwner,
+		Department:  "Management",
 		Permissions: user.DefaultPermissionsForRole(user.RoleOwner),
 		Auth: user.Auth{
 			PasswordHash:  string(passwordHash),

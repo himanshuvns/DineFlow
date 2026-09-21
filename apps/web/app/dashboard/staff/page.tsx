@@ -669,7 +669,7 @@ export default function StaffPage() {
     setProfilePhone(member.phone || "");
     setProfilePhoneTouched(false);
     setProfileEmail(member.email || "");
-    setProfileDepartment(member.department || "Floor Service");
+    setProfileDepartment(member.department || (member.role === "owner" || member.role === "manager" ? "Management" : "Floor Service"));
     setProfileEmpType(member.employmentType || "full_time");
     setProfileShiftName(member.shiftName || "Morning Shift (09:00 - 18:00)");
     setProfileBasic(member.salary?.basic?.toString() || "20000");
@@ -968,7 +968,7 @@ export default function StaffPage() {
                       </td>
                       <td className="py-3.5">
                         <span className="font-medium text-slate-700 dark:text-slate-300">
-                          {member.department || "Floor Service"}
+                          {member.department || (member.role === "owner" || member.role === "manager" ? "Management" : "Floor Service")}
                         </span>
                       </td>
                       <td className="py-3.5">
@@ -1191,7 +1191,7 @@ export default function StaffPage() {
                             </div>
                           </div>
                         </td>
-                        <td className="py-3.5 text-slate-600 dark:text-slate-400">{rec.department || "Floor Service"}</td>
+                        <td className="py-3.5 text-slate-600 dark:text-slate-400">{rec.department || "Operations"}</td>
                         <td className="py-3.5 font-mono text-slate-800 dark:text-slate-200">
                           {rec.checkInTime ? new Date(rec.checkInTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—"}
                         </td>
@@ -1644,7 +1644,15 @@ export default function StaffPage() {
               <label className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">Role</label>
               <select
                 value={inviteRole}
-                onChange={(e) => setInviteRole(e.target.value)}
+                onChange={(e) => {
+                  const role = e.target.value;
+                  setInviteRole(role);
+                  if (role === "manager") setInviteDepartment("Management");
+                  else if (role === "chef") setInviteDepartment("Kitchen");
+                  else if (role === "cashier") setInviteDepartment("Front Desk & Billing");
+                  else if (role === "housekeeping") setInviteDepartment("Housekeeping");
+                  else setInviteDepartment("Floor Service");
+                }}
                 className="w-full rounded-xl text-xs text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-2 outline-none"
               >
                 {currentUser?.role !== "manager" && <option value="manager">Manager</option>}
@@ -1665,6 +1673,7 @@ export default function StaffPage() {
                 <option value="Kitchen">Kitchen</option>
                 <option value="Floor Service">Floor Service</option>
                 <option value="Front Desk & Billing">Front Desk & Billing</option>
+                <option value="Housekeeping">Housekeeping</option>
                 <option value="Bar & Beverage">Bar & Beverage</option>
                 <option value="Management">Management</option>
               </select>
@@ -1765,6 +1774,7 @@ export default function StaffPage() {
                 <option value="Kitchen">Kitchen</option>
                 <option value="Floor Service">Floor Service</option>
                 <option value="Front Desk & Billing">Front Desk & Billing</option>
+                <option value="Housekeeping">Housekeeping</option>
                 <option value="Bar & Beverage">Bar & Beverage</option>
                 <option value="Management">Management</option>
               </select>

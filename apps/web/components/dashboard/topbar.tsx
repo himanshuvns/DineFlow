@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useUIStore } from "@/lib/stores/ui-store";
 import { useAuthStore } from "@/lib/stores/auth-store";
+import { getRoleLabel, isOwner, isManager } from "@/lib/rbac/roles";
 import { Avatar } from "@/components/ui/avatar";
 import { Dropdown } from "@/components/ui/dropdown";
 import { useToast } from "@/components/ui/toast";
@@ -45,6 +46,10 @@ export function TopBar() {
   const { user, tenant, clearAuth } = useAuthStore();
   const { addToast } = useToast();
 
+  const isOwnerUser = isOwner(user?.role);
+  const isManagerUser = isManager(user?.role);
+  const canAccessSettings = isOwnerUser || isManagerUser;
+
   // Determine current page title
   const currentTitle = React.useMemo(() => {
     if (ROUTE_TITLES[pathname]) return ROUTE_TITLES[pathname];
@@ -65,8 +70,41 @@ export function TopBar() {
   };
 
   const userDisplayName = user
-    ? `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.email
-    : "Restaurant Owner";
+    ? `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.email || getRoleLabel(user.role)
+    : "Staff";
+
+  const dropdownItems = [
+    ...(canAccessSettings
+      ? [
+          {
+            label: "Restaurant Profile",
+            icon: <UserIcon className="h-3.5 w-3.5 text-slate-400" />,
+            onClick: () => router.push("/dashboard/settings"),
+          },
+        ]
+      : []),
+    ...(isOwnerUser
+      ? [
+          {
+            label: "Subscription & Invoices",
+            icon: <Sparkles className="h-3.5 w-3.5 text-amber-400" />,
+            onClick: () => router.push("/dashboard/settings?tab=billing"),
+          },
+        ]
+      : []),
+    {
+      label: "Documentation & Support",
+      icon: <HelpCircle className="h-3.5 w-3.5 text-slate-400" />,
+      onClick: () => window.open("https://docs.dineflow.app", "_blank"),
+    },
+    { separator: true, label: "" },
+    {
+      label: "Sign Out",
+      icon: <LogOut className="h-3.5 w-3.5" />,
+      danger: true,
+      onClick: handleSignOut,
+    },
+  ];
 
   return (
     <header className="h-14 border-b border-slate-200/80 dark:border-slate-800/80 bg-white/95 dark:bg-[#090D16]/95 backdrop-blur-md sticky top-0 z-40 flex items-center px-3 sm:px-5 gap-3 transition-colors duration-200">
@@ -138,35 +176,12 @@ export function TopBar() {
                   {userDisplayName}
                 </span>
                 <span className="text-[10px] text-slate-500 dark:text-slate-400 capitalize">
-                  {user?.role || "Owner"}
+                  {getRoleLabel(user?.role)}
                 </span>
               </div>
             </button>
           }
-          items={[
-            {
-              label: "Restaurant Profile",
-              icon: <UserIcon className="h-3.5 w-3.5 text-slate-400" />,
-              onClick: () => router.push("/dashboard/settings"),
-            },
-            {
-              label: "Subscription & Invoices",
-              icon: <Sparkles className="h-3.5 w-3.5 text-amber-400" />,
-              onClick: () => router.push("/dashboard/settings?tab=billing"),
-            },
-            {
-              label: "Documentation & Support",
-              icon: <HelpCircle className="h-3.5 w-3.5 text-slate-400" />,
-              onClick: () => window.open("https://docs.dineflow.app", "_blank"),
-            },
-            { separator: true, label: "" },
-            {
-              label: "Sign Out",
-              icon: <LogOut className="h-3.5 w-3.5" />,
-              danger: true,
-              onClick: handleSignOut,
-            },
-          ]}
+          items={dropdownItems}
         />
       </div>
     </header>
