@@ -54,7 +54,7 @@ export function LandingInteractivePreview() {
       className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full scroll-mt-24"
     >
       {/* Section Header */}
-      <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-12 space-y-3">
+      <div className="text-center max-w-3xl mx-auto mb-6 sm:mb-8 space-y-3">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-semibold shadow-xs">
           <Sparkles className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
           <span>Interactive Product Exploration</span>
@@ -77,10 +77,10 @@ export function LandingInteractivePreview() {
               key={tab.key}
               type="button"
               onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap shrink-0 cursor-pointer ${
+              className={`flex items-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap shrink-0 cursor-pointer border ${
                 isActive
-                  ? "bg-emerald-600 text-white shadow-md shadow-emerald-500/25 ring-2 ring-emerald-500/30"
-                  : "bg-white dark:bg-slate-900/80 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-800/80"
+                  ? "bg-emerald-600 border-emerald-600 text-white shadow-md shadow-emerald-500/25 ring-2 ring-emerald-500/30"
+                  : "bg-white dark:bg-slate-900/80 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border-slate-200/80 dark:border-slate-800/80"
               }`}
             >
               <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-white" : "text-emerald-500"}`} />
@@ -91,9 +91,9 @@ export function LandingInteractivePreview() {
       </div>
 
       {/* Preview Container */}
-      <div className="mt-6 rounded-2xl border border-slate-200/80 dark:border-slate-800/90 bg-white/95 dark:bg-[#0B0F19]/95 backdrop-blur-xl shadow-xl overflow-hidden transition-all duration-300">
+      <div className="mt-3 rounded-2xl border border-slate-200/80 dark:border-slate-800/90 bg-white/95 dark:bg-[#0B0F19]/95 backdrop-blur-xl shadow-xl overflow-hidden transition-all duration-300">
         {/* Mock Window Header */}
-        <div className="px-4 py-3 border-b border-slate-200/70 dark:border-slate-800/70 bg-slate-50 dark:bg-slate-900/60 flex items-center justify-between text-xs">
+        <div className="px-4 sm:px-6 lg:px-8 py-3 border-b border-slate-200/70 dark:border-slate-800/70 bg-slate-50 dark:bg-slate-900/60 flex items-center justify-between text-xs">
           <div className="flex items-center gap-2">
             <div className="flex gap-1.5">
               <div className="w-2.5 h-2.5 rounded-full bg-rose-400/80" />
@@ -109,7 +109,7 @@ export function LandingInteractivePreview() {
             </span>
           </div>
 
-          <Badge variant="outline" size="sm" className="text-[10px] text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-700">
+          <Badge variant="outline" size="sm" className="text-xs text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-700">
             Interactive Preview
           </Badge>
         </div>
@@ -182,17 +182,17 @@ export function LandingInteractivePreview() {
                     Quick Operational Actions
                   </span>
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between p-2 rounded-lg bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-xs">
+                    <div className="flex items-center justify-between p-2.5 rounded-lg bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-xs">
                       <span className="font-medium">Generate Table QR Stands</span>
-                      <QrCode className="h-4 w-4 text-emerald-500" />
+                      <Badge variant="outline" size="sm" className="text-xs text-emerald-600 dark:text-emerald-400 border-emerald-500/30">Ready</Badge>
                     </div>
-                    <div className="flex items-center justify-between p-2 rounded-lg bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-xs">
+                    <div className="flex items-center justify-between p-2.5 rounded-lg bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-xs">
                       <span className="font-medium">Broadcast WhatsApp Offer</span>
-                      <Badge variant="success" size="sm">Active</Badge>
+                      <Badge variant="success" size="sm" className="text-xs">Active</Badge>
                     </div>
-                    <div className="flex items-center justify-between p-2 rounded-lg bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-xs">
+                    <div className="flex items-center justify-between p-2.5 rounded-lg bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-xs">
                       <span className="font-medium">Kitchen Bump Bar Sync</span>
-                      <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                      <Badge variant="success" size="sm" className="text-xs">Live</Badge>
                     </div>
                   </div>
                 </div>

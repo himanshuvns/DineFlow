@@ -35,9 +35,9 @@ export function LandingFooter() {
 
           {/* Col 2: Product */}
           <div className="space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
               Product
-            </h4>
+            </h3>
             <ul className="space-y-2 text-xs text-slate-600 dark:text-slate-400">
               <li>
                 <a href="#features" className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
@@ -74,9 +74,9 @@ export function LandingFooter() {
 
           {/* Col 3: Solutions */}
           <div className="space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
               Solutions
-            </h4>
+            </h3>
             <ul className="space-y-2 text-xs text-slate-600 dark:text-slate-400">
               <li>
                 <a href="#solutions" className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
@@ -113,9 +113,9 @@ export function LandingFooter() {
 
           {/* Col 4: Platform & Legal */}
           <div className="space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
               Platform & Trust
-            </h4>
+            </h3>
             <ul className="space-y-2 text-xs text-slate-600 dark:text-slate-400">
               <li>
                 <a href="#security" className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">

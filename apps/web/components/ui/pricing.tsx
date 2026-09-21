@@ -172,9 +172,9 @@ export function Pricing({
                 isLargeScreen
                   ? isFourColumns
                     ? {
-                        y: plan.isPopular ? -16 : 0,
+                        y: 0,
                         opacity: 1,
-                        scale: plan.isPopular ? 1.02 : 0.98,
+                        scale: 1,
                       }
                     : {
                         y: plan.isPopular ? -20 : 0,
@@ -184,10 +184,10 @@ export function Pricing({
                       }
                   : isTablet
                   ? {
-                      y: plan.isPopular ? -10 : 0,
+                      y: 0,
                       opacity: 1,
                       x: 0,
-                      scale: plan.isPopular ? 1.02 : 1.0,
+                      scale: 1,
                     }
                   : { y: 0, opacity: 1, x: 0 }
               }
@@ -201,11 +201,11 @@ export function Pricing({
                 opacity: { duration: 0.4 },
               }}
               className={cn(
-                "rounded-3xl border p-6 sm:p-7 flex flex-col justify-between relative transition-all duration-300",
+                "rounded-2xl border p-6 sm:p-7 flex flex-col justify-between relative transition-all duration-300",
                 "bg-white/80 dark:bg-slate-900/60 backdrop-blur-xl",
                 plan.isPopular
-                  ? "border-emerald-500 dark:border-[#14F1C7] border-2 shadow-[0_16px_40px_rgba(16,185,129,0.15)] dark:shadow-[0_20px_50px_rgba(20,241,199,0.2)] z-10"
-                  : "border-slate-200/90 dark:border-white/10 hover:border-slate-300 dark:hover:border-slate-700 shadow-sm z-0",
+                  ? "border-emerald-500 dark:border-emerald-400 border-2 shadow-[0_16px_40px_rgba(16,185,129,0.12)] z-10"
+                  : "border-slate-200/90 dark:border-white/10 hover:border-slate-300 dark:hover:border-slate-700 shadow-xs z-0",
                 !plan.isPopular && !isFourColumns && "lg:mt-4",
                 !isFourColumns && index === 0 && "lg:origin-right",
                 !isFourColumns && index === 2 && "lg:origin-left"
@@ -306,19 +306,19 @@ export function Pricing({
               </div>
 
               {/* Action Button */}
-              <div className="pt-2">
+              <div className="pt-4 mt-auto">
                 {onSelectPlan ? (
                   <button
                     type="button"
                     onClick={() => onSelectPlan(plan)}
                     className={cn(
                       buttonVariants({
-                        variant: plan.isPopular ? "glow" : "outline",
+                        variant: plan.isPopular ? "default" : "outline",
                       }),
-                      "w-full text-sm font-bold tracking-tight rounded-xl py-2.5 transition-all duration-200 cursor-pointer shadow-sm",
+                      "w-full h-11 text-sm font-bold tracking-tight rounded-xl flex items-center justify-center transition-all duration-200 cursor-pointer shadow-xs",
                       plan.isPopular
-                        ? "bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 text-slate-950 hover:shadow-emerald-500/40 hover:scale-[1.01]"
-                        : "hover:border-emerald-500 dark:hover:border-[#14F1C7] hover:text-emerald-600 dark:hover:text-[#14F1C7]"
+                        ? "bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
+                        : "border-slate-300 dark:border-slate-700 hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400 text-slate-700 dark:text-slate-300"
                     )}
                   >
                     {plan.buttonText}
@@ -328,12 +328,12 @@ export function Pricing({
                     href={plan.href}
                     className={cn(
                       buttonVariants({
-                        variant: plan.isPopular ? "glow" : "outline",
+                        variant: plan.isPopular ? "default" : "outline",
                       }),
-                      "w-full text-sm font-bold tracking-tight rounded-xl py-2.5 transition-all duration-200 shadow-sm flex items-center justify-center",
+                      "w-full h-11 text-sm font-bold tracking-tight rounded-xl flex items-center justify-center transition-all duration-200 shadow-xs",
                       plan.isPopular
-                        ? "bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 text-slate-950 hover:shadow-emerald-500/40 hover:scale-[1.01]"
-                        : "hover:border-emerald-500 dark:hover:border-[#14F1C7] hover:text-emerald-600 dark:hover:text-[#14F1C7]"
+                        ? "bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
+                        : "border-slate-300 dark:border-slate-700 hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400 text-slate-700 dark:text-slate-300"
                     )}
                   >
                     {plan.buttonText}

@@ -205,11 +205,11 @@ export function LandingHero() {
                   <div className="p-2.5 rounded-lg bg-white dark:bg-slate-800/80 border border-emerald-500/30 shadow-xs space-y-1">
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-bold text-slate-900 dark:text-white">#DF-802 • Table 04</span>
-                      <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.2 rounded">
+                      <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md">
                         Cooking 4m
                       </span>
                     </div>
-                    <p className="text-[11px] text-slate-600 dark:text-slate-300 line-clamp-1">
+                    <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-1">
                       1x Truffle Risotto, 1x Valencia Spritz
                     </p>
                   </div>
@@ -217,11 +217,11 @@ export function LandingHero() {
                   <div className="p-2.5 rounded-lg bg-white dark:bg-slate-800/80 border border-teal-500/30 shadow-xs space-y-1">
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-bold text-slate-900 dark:text-white">#DF-801 • Suite 204</span>
-                      <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded">
+                      <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md">
                         Plated for Room Service
                       </span>
                     </div>
-                    <p className="text-[11px] text-slate-600 dark:text-slate-300 line-clamp-1">
+                    <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-1">
                       1x Artisanal Club Sandwich, 1x Fresh Juice
                     </p>
                   </div>

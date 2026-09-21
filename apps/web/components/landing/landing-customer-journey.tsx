@@ -165,7 +165,7 @@ export function LandingCustomerJourney() {
                   <Badge variant="success" size="sm">
                     {journeyType === "restaurant" ? "Restaurant Flow" : "Hotel Suite Flow"}
                   </Badge>
-                  <h4 className="text-base font-bold text-white">
+                  <h4 className="text-lg sm:text-xl font-extrabold text-white tracking-tight">
                     {currentStep.title}
                   </h4>
                   <p className="text-xs text-slate-400 leading-relaxed max-w-[220px] mx-auto">
@@ -173,23 +173,53 @@ export function LandingCustomerJourney() {
                   </p>
                 </div>
 
-                {/* Micro preview mock */}
-                <div className="p-3 rounded-xl bg-slate-800/80 border border-slate-700/80 text-xs space-y-2">
-                  <div className="flex justify-between items-center text-[11px]">
-                    <span className="text-slate-300 font-medium">Active Order</span>
-                    <span className="text-emerald-400 font-semibold">#DF-904</span>
+                {/* Context-aware micro preview mock */}
+                {activeStep === 0 ? (
+                  <div className="p-3 rounded-xl bg-slate-800/80 border border-slate-700/80 text-xs space-y-1.5 text-center">
+                    <div className="flex items-center justify-center gap-1.5 text-emerald-400 font-semibold text-xs">
+                      <QrCode className="h-4 w-4" />
+                      <span>Camera Ready to Scan</span>
+                    </div>
+                    <p className="text-xs text-slate-400">Point at table QR stand to launch digital menu instantly</p>
                   </div>
-                  <div className="flex justify-between items-center text-[11px]">
-                    <span className="text-slate-400">Total Charged</span>
-                    <span className="font-bold text-white">₹1,450</span>
+                ) : activeStep === 1 ? (
+                  <div className="p-3 rounded-xl bg-slate-800/80 border border-slate-700/80 text-xs space-y-1.5">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-slate-300 font-medium">Digital Menu Loaded</span>
+                      <span className="text-emerald-400 font-semibold">42 Dishes</span>
+                    </div>
+                    <p className="text-xs text-slate-400">Zero app download • High-res photos & dietary tags</p>
                   </div>
-                  <div className="w-full bg-slate-700 h-1.5 rounded-full overflow-hidden">
-                    <div
-                      className="bg-emerald-500 h-full transition-all duration-300"
-                      style={{ width: `${((activeStep + 1) / steps.length) * 100}%` }}
-                    />
+                ) : activeStep === 2 ? (
+                  <div className="p-3 rounded-xl bg-slate-800/80 border border-slate-700/80 text-xs space-y-1.5">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-slate-300 font-medium">Cart Ready (2 Items)</span>
+                      <span className="text-emerald-400 font-semibold">₹1,450</span>
+                    </div>
+                    <p className="text-xs text-slate-400">Custom cooking notes added: "Extra crispy crust"</p>
                   </div>
-                </div>
+                ) : (
+                  <div className="p-3 rounded-xl bg-slate-800/80 border border-slate-700/80 text-xs space-y-2">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-slate-300 font-medium">
+                        {activeStep === 5 ? "Digital Receipt Sent" : "Active Order"}
+                      </span>
+                      <span className="text-emerald-400 font-semibold">#DF-904</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-slate-400">
+                        {activeStep === 5 ? "Paid via UPI" : "Total Charged"}
+                      </span>
+                      <span className="font-bold text-white">₹1,450</span>
+                    </div>
+                    <div className="w-full bg-slate-700 h-1.5 rounded-full overflow-hidden">
+                      <div
+                        className="bg-emerald-500 h-full transition-all duration-300"
+                        style={{ width: `${((activeStep + 1) / steps.length) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Screen Bottom Bar */}
