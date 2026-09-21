@@ -980,7 +980,9 @@ export default function StaffPage() {
                         {member.shiftName || "Morning (09:00 - 18:00)"}
                       </td>
                       <td className="py-3.5 font-semibold text-slate-900 dark:text-white">
-                        ₹{(member.salary?.basic || 25000).toLocaleString("en-IN")}/mo
+                        {currentUser?.role !== "manager" || (member.role !== "owner" && member.role !== "manager")
+                          ? `₹${(member.salary?.basic || 25000).toLocaleString("en-IN")}/mo`
+                          : "Confidential"}
                       </td>
                       <td className="py-3.5">
                         <Badge variant={member.status === "active" ? "success" : "warning"} dot size="sm">
@@ -989,15 +991,17 @@ export default function StaffPage() {
                       </td>
                       <td className="py-3.5 text-right pr-6">
                         <div className="flex items-center justify-end gap-1.5">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-slate-600 dark:text-slate-300 hover:text-emerald-600 hover:bg-emerald-500/10"
-                            onClick={() => handleOpenEditProfile(member)}
-                          >
-                            <Edit2 className="h-3.5 w-3.5 mr-1" /> Profile
-                          </Button>
-                          {member.role !== "owner" && (
+                          {(currentUser?.role !== "manager" || (member.role !== "owner" && member.role !== "manager")) && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-slate-600 dark:text-slate-300 hover:text-emerald-600 hover:bg-emerald-500/10"
+                              onClick={() => handleOpenEditProfile(member)}
+                            >
+                              <Edit2 className="h-3.5 w-3.5 mr-1" /> Profile
+                            </Button>
+                          )}
+                          {currentUser?.role !== "manager" && member.role !== "owner" && (
                             <Button
                               variant="ghost"
                               size="sm"
@@ -1643,10 +1647,11 @@ export default function StaffPage() {
                 onChange={(e) => setInviteRole(e.target.value)}
                 className="w-full rounded-xl text-xs text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-2 outline-none"
               >
-                <option value="manager">Manager</option>
+                {currentUser?.role !== "manager" && <option value="manager">Manager</option>}
                 <option value="chef">Kitchen Chef</option>
                 <option value="waiter">Floor Waiter</option>
                 <option value="cashier">Cashier</option>
+                <option value="housekeeping">Housekeeping</option>
               </select>
             </div>
 

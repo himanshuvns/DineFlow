@@ -35,7 +35,7 @@ export const NAV_ITEMS = [
   { href: "/dashboard/staff", label: "Staff & Permissions", icon: Users },
   { href: "/dashboard/analytics", label: "Analytics & Sales", icon: BarChart3 },
   { href: "/dashboard/ai", label: "AI Studio", icon: BrainCircuit, badge: "New" },
-  { href: "/pricing", label: "Subscription Plans", icon: Sparkles, badge: "SaaS" },
+  { href: "/pricing", label: "Subscription Plans", icon: Sparkles, badge: "SaaS", ownerOnly: true },
   { href: "/dashboard/settings", label: "Settings & Billing", icon: Settings },
 ];
 
@@ -43,6 +43,13 @@ export function Sidebar() {
   const pathname = usePathname();
   const { sidebarCollapsed, toggleSidebar } = useUIStore();
   const tenant = useAuthStore((state) => state.tenant);
+  const user = useAuthStore((state) => state.user);
+  const isOwnerUser = user?.role !== "manager";
+
+  const visibleNavItems = NAV_ITEMS.filter((item) => {
+    if (item.ownerOnly && !isOwnerUser) return false;
+    return true;
+  });
 
   return (
     <aside
@@ -95,9 +102,10 @@ export function Sidebar() {
 
         {/* Navigation list */}
         <nav className="p-3 space-y-1.5">
-          {NAV_ITEMS.map((item) => {
+          {visibleNavItems.map((item) => {
             const isActive = pathname === item.href;
             const Icon = item.icon;
+            const displayLabel = item.href === "/dashboard/settings" && !isOwnerUser ? "Settings" : item.label;
             return (
               <Link
                 key={item.href}
@@ -108,7 +116,7 @@ export function Sidebar() {
                     ? "bg-emerald-500/10 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300 font-semibold border border-emerald-500/25 dark:border-emerald-500/30 shadow-sm"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800/60"
                 )}
-                title={sidebarCollapsed ? item.label : undefined}
+                title={sidebarCollapsed ? displayLabel : undefined}
               >
                 {isActive && (
                   <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
@@ -122,7 +130,7 @@ export function Sidebar() {
                   )}
                 />
                 {!sidebarCollapsed && (
-                  <span className="flex-1 truncate">{item.label}</span>
+                  <span className="flex-1 truncate">{displayLabel}</span>
                 )}
                 {!sidebarCollapsed && item.badge && (
                   <span

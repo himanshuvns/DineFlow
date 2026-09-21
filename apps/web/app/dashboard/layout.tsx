@@ -123,9 +123,10 @@ export default function DashboardLayout({
               </div>
 
               <nav className="mt-4 space-y-1">
-                {NAV_ITEMS.map((item) => {
+                {NAV_ITEMS.filter((item: any) => !item.ownerOnly || user?.role !== "manager").map((item) => {
                   const isActive = pathname === item.href;
                   const Icon = item.icon;
+                  const displayLabel = item.href === "/dashboard/settings" && user?.role === "manager" ? "Settings" : item.label;
                   return (
                     <Link
                       key={item.href}
@@ -147,7 +148,7 @@ export default function DashboardLayout({
                               : "text-slate-400 dark:text-slate-400"
                           )}
                         />
-                        <span className="truncate">{item.label}</span>
+                        <span className="truncate">{displayLabel}</span>
                       </div>
                       {item.badge && (
                         <span

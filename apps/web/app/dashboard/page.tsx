@@ -57,7 +57,7 @@ export default function DashboardOverviewPage() {
   const { addToast } = useToast();
 
   const userDisplayName =
-    user?.firstName || user?.name || (isDemoTenant ? "Laurent" : "Restaurant Owner");
+    user?.firstName || user?.name || (isDemoTenant ? "Laurent" : user?.role === "manager" ? "Floor Manager" : "Restaurant Owner");
 
   // Track first login vs returning login - defaults to true so initial view is always "Welcome, {name}"
   const [isFirstLogin, setIsFirstLogin] = React.useState<boolean>(true);
@@ -286,44 +286,69 @@ export default function DashboardOverviewPage() {
 
       {/* KPI Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Metric 1 */}
-        <Card variant="glass" hoverEffect>
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Today&apos;s Revenue</span>
-            <div className="h-8 w-8 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-              <TrendingUp className="h-4 w-4" />
+        {/* Metric 1: Today's Revenue (Owner) or Total Orders Processed (Manager) */}
+        {user?.role === "manager" ? (
+          <Card variant="glass" hoverEffect>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Total Orders Processed</span>
+              <div className="h-8 w-8 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                <ShoppingBag className="h-4 w-4" />
+              </div>
             </div>
-          </div>
-          <div className="mt-3">
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center">
-              <NumberFlow
-                value={displayRevenue}
-                prefix={
-                  tenant?.currency === "USD"
-                    ? "$"
-                    : tenant?.currency === "EUR"
-                    ? "€"
-                    : tenant?.currency === "GBP"
-                    ? "£"
-                    : tenant?.currency === "INR" || !tenant?.currency
-                    ? "₹"
-                    : `${tenant.currency} `
-                }
-                locales={tenant?.currency === "INR" || !tenant?.currency ? "en-IN" : "en-US"}
-                format={{ minimumFractionDigits: 0, maximumFractionDigits: 0 }}
-                willChange
-              />
-            </h2>
-            <div className="flex items-center gap-1.5 mt-1 text-xs">
-              <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center">
-                <ArrowUpRight className="h-3.5 w-3.5" /> {safeOrders.length > 0 ? "+100%" : "+0%"}
-              </span>
-              <span className="text-slate-600 dark:text-slate-400 font-medium">
-                {safeOrders.length > 0 ? `across ${safeOrders.length} orders` : "ready for sales"}
-              </span>
+            <div className="mt-3">
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-1.5">
+                <NumberFlow value={safeOrders.length} willChange />
+                <span>Orders</span>
+              </h2>
+              <div className="flex items-center gap-1.5 mt-1 text-xs">
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center">
+                  <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> {safeOrders.filter((o) => o?.status === "served" || o?.status === "paid").length} done
+                </span>
+                <span className="text-slate-600 dark:text-slate-400 font-medium">
+                  • {activeCount} active
+                </span>
+              </div>
             </div>
-          </div>
-        </Card>
+          </Card>
+        ) : (
+          <Card variant="glass" hoverEffect>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Today&apos;s Revenue</span>
+              <div className="h-8 w-8 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                <TrendingUp className="h-4 w-4" />
+              </div>
+            </div>
+            <div className="mt-3">
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center">
+                <NumberFlow
+                  value={displayRevenue}
+                  prefix={
+                    tenant?.currency === "USD"
+                      ? "$"
+                      : tenant?.currency === "EUR"
+                      ? "€"
+                      : tenant?.currency === "GBP"
+                      ? "£"
+                      : tenant?.currency === "INR" || !tenant?.currency
+                      ? "₹"
+                      : `${tenant.currency} `
+                  }
+                  locales={tenant?.currency === "INR" || !tenant?.currency ? "en-IN" : "en-US"}
+                  format={{ minimumFractionDigits: 0, maximumFractionDigits: 0 }}
+                  willChange
+                />
+              </h2>
+              <div className="flex items-center gap-1.5 mt-1 text-xs">
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center">
+                  <ArrowUpRight className="h-3.5 w-3.5" /> {safeOrders.length > 0 ? "+100%" : "+0%"}
+                </span>
+                <span className="text-slate-600 dark:text-slate-400 font-medium">
+                  {safeOrders.length > 0 ? `across ${safeOrders.length} orders` : "ready for sales"}
+                </span>
+              </div>
+            </div>
+          </Card>
+        )}
 
         {/* Metric 2 */}
         <Card variant="glass" hoverEffect>

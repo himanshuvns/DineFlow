@@ -68,6 +68,16 @@ func (h *StaffHandler) Invite(c *gin.Context) {
 		return
 	}
 
+	callerRole := middleware.GetRole(c)
+	if callerRole == string(domainuser.RoleManager) {
+		// Managers can only invite operational staff; cannot appoint other managers or owners
+		if input.Role == domainuser.RoleManager || input.Role == domainuser.RoleOwner ||
+			input.Role == domainuser.RoleSuperAdmin || input.Role == domainuser.RolePlatformAdmin {
+			response.Forbidden(c, "INSUFFICIENT_ROLE", "Managers can only invite operational staff (Chefs, Waiters, Cashiers, Housekeeping). Only the Business Owner can add Managers.")
+			return
+		}
+	}
+
 	newUser, err := h.staffService.InviteStaff(c.Request.Context(), tOID, input)
 	if err != nil {
 		response.BadRequest(c, "INVITE_FAILED", err.Error())
@@ -113,6 +123,15 @@ func (h *StaffHandler) Update(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "INVALID_PAYLOAD", err.Error())
 		return
+	}
+
+	callerRole := middleware.GetRole(c)
+	if callerRole == string(domainuser.RoleManager) {
+		// Managers cannot promote staff to Manager or Owner
+		if req.Role == domainuser.RoleManager || req.Role == domainuser.RoleOwner {
+			response.Forbidden(c, "INSUFFICIENT_ROLE", "Only the Business Owner can assign or promote to the Manager or Owner role.")
+			return
+		}
 	}
 
 	updated, err := h.staffService.UpdateStaff(c.Request.Context(), tOID, uOID, req.Role, req.Status)

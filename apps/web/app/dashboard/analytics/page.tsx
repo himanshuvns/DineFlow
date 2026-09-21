@@ -17,14 +17,18 @@ import {
   Hotel,
   ArrowUpRight,
   Filter,
+  CheckCircle2,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
 import { apiClient } from "@/lib/api";
+import { useAuthStore } from "@/lib/stores/auth-store";
 
 export default function AnalyticsPage() {
+  const user = useAuthStore((s) => s.user);
+  const isManager = user?.role === "manager";
   const { addToast } = useToast();
   const [timeframe, setTimeframe] = React.useState<"today" | "7d" | "30d" | "90d">("30d");
   const [overview, setOverview] = React.useState<any>(null);
@@ -133,13 +137,15 @@ export default function AnalyticsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-semibold mb-2">
-            <Sparkles className="h-3.5 w-3.5" /> Intelligence & Financial Reports
+            <Sparkles className="h-3.5 w-3.5" /> {isManager ? "Operational Analytics & Throughput" : "Intelligence & Financial Reports"}
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
-            Sales & Operational Analytics
+            {isManager ? "Kitchen & Service Analytics" : "Sales & Operational Analytics"}
           </h1>
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-            Real-time revenue metrics, average order value (AOV), channel velocity, and customer satisfaction.
+            {isManager
+              ? "Real-time kitchen turnaround, order throughput, channel velocity, and customer satisfaction."
+              : "Real-time revenue metrics, average order value (AOV), channel velocity, and customer satisfaction."}
           </p>
         </div>
 
@@ -186,41 +192,79 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* Primary Financial KPI Cards */}
+      {/* Primary Financial / Operational KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card variant="glass" padding="none" className="border-emerald-500/30 bg-emerald-500/5">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Gross Sales Revenue</span>
-              <span className="p-2 rounded-lg bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
-                <DollarSign className="h-4 w-4" />
+        {isManager ? (
+          <Card variant="glass" padding="none" className="border-emerald-500/30 bg-emerald-500/5">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Total Orders Served</span>
+                <span className="p-2 rounded-lg bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                  <CheckCircle2 className="h-4 w-4" />
+                </span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mt-2">
+                {ordersNum} Orders
+              </h2>
+              <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium mt-1 flex items-center gap-1">
+                <TrendingUp className="h-3 w-3" /> Real-time kitchen & dining throughput
               </span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mt-2">
-              {data.gross}
-            </h2>
-            <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium mt-1 flex items-center gap-1">
-              <TrendingUp className="h-3 w-3" /> {data.growth}
-            </span>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card variant="glass" padding="none" className="border-emerald-500/30 bg-emerald-500/5">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Gross Sales Revenue</span>
+                <span className="p-2 rounded-lg bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                  <DollarSign className="h-4 w-4" />
+                </span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mt-2">
+                {data.gross}
+              </h2>
+              <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium mt-1 flex items-center gap-1">
+                <TrendingUp className="h-3 w-3" /> {data.growth}
+              </span>
+            </CardContent>
+          </Card>
+        )}
 
-        <Card variant="glass" padding="none">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Average Order Value (AOV)</span>
-              <span className="p-2 rounded-lg bg-teal-500/20 text-teal-600 dark:text-teal-400">
-                <TrendingUp className="h-4 w-4" />
+        {isManager ? (
+          <Card variant="glass" padding="none">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Table Turnaround Time</span>
+                <span className="p-2 rounded-lg bg-teal-500/20 text-teal-600 dark:text-teal-400">
+                  <Clock className="h-4 w-4" />
+                </span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mt-2">
+                {data.turnTime}
+              </h2>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">
+                Average service cycle per table seating
               </span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mt-2">
-              {data.aov}
-            </h2>
-            <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">
-              +12.4% higher ticket size via QR photo upsells
-            </span>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card variant="glass" padding="none">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Average Order Value (AOV)</span>
+                <span className="p-2 rounded-lg bg-teal-500/20 text-teal-600 dark:text-teal-400">
+                  <TrendingUp className="h-4 w-4" />
+                </span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mt-2">
+                {data.aov}
+              </h2>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">
+                +12.4% higher ticket size via QR photo upsells
+              </span>
+            </CardContent>
+          </Card>
+        )}
 
         <Card variant="glass" padding="none">
           <CardContent className="p-5">
@@ -278,7 +322,7 @@ export default function AnalyticsPage() {
                 {data.hourly.map((bar, i) => (
                   <div key={i} className="flex-1 flex flex-col items-center gap-2 h-full justify-end group">
                     <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                      {bar.amount}
+                      {isManager ? `${bar.val} orders` : bar.amount}
                     </span>
                     <div
                       style={{ height: `${bar.val}%` }}
@@ -309,7 +353,7 @@ export default function AnalyticsPage() {
         <Card variant="glass" className="lg:col-span-4">
           <CardHeader>
             <CardTitle className="text-base font-bold text-slate-900 dark:text-white">
-              Revenue by Channel
+              {isManager ? "Orders by Channel" : "Revenue by Channel"}
             </CardTitle>
             <CardDescription className="text-xs text-slate-500 dark:text-slate-400">
               Multi-outlet dining split
@@ -327,7 +371,7 @@ export default function AnalyticsPage() {
                 <div className="w-full bg-slate-200 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
                   <div className="bg-emerald-400 h-full rounded-full" style={{ width: "62.8%" }} />
                 </div>
-                <div className="text-[10px] text-slate-500 text-right">₹8,97,000</div>
+                {!isManager && <div className="text-[10px] text-slate-500 text-right">₹8,97,000</div>}
               </div>
 
               <div className="p-3 rounded-xl bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-1.5">
@@ -340,7 +384,7 @@ export default function AnalyticsPage() {
                 <div className="w-full bg-slate-200 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
                   <div className="bg-amber-400 h-full rounded-full" style={{ width: "28.4%" }} />
                 </div>
-                <div className="text-[10px] text-slate-500 text-right">₹4,05,700</div>
+                {!isManager && <div className="text-[10px] text-slate-500 text-right">₹4,05,700</div>}
               </div>
 
               <div className="p-3 rounded-xl bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-1.5">
@@ -353,7 +397,7 @@ export default function AnalyticsPage() {
                 <div className="w-full bg-slate-200 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
                   <div className="bg-cyan-400 h-full rounded-full" style={{ width: "8.8%" }} />
                 </div>
-                <div className="text-[10px] text-slate-500 text-right">₹1,25,800</div>
+                {!isManager && <div className="text-[10px] text-slate-500 text-right">₹1,25,800</div>}
               </div>
             </div>
           </CardContent>
@@ -367,10 +411,10 @@ export default function AnalyticsPage() {
           <CardHeader className="flex flex-row items-center justify-between pb-3">
             <div>
               <CardTitle className="text-base font-bold text-slate-900 dark:text-white">
-                Menu Item Profitability & Velocity Matrix
+                {isManager ? "Menu Item Volume & Popularity Matrix" : "Menu Item Profitability & Velocity Matrix"}
               </CardTitle>
               <CardDescription className="text-xs text-slate-500 dark:text-slate-400">
-                High-margin stars vs high-volume favorites
+                {isManager ? "Fastest-moving kitchen dishes and popular guest choices" : "High-margin stars vs high-volume favorites"}
               </CardDescription>
             </div>
           </CardHeader>
@@ -382,8 +426,8 @@ export default function AnalyticsPage() {
                     <th className="p-3">Dish / Culinary Item</th>
                     <th className="p-3">Category</th>
                     <th className="p-3">Units Sold</th>
-                    <th className="p-3">Gross Revenue</th>
-                    <th className="p-3">Profit Margin</th>
+                    {!isManager && <th className="p-3">Gross Revenue</th>}
+                    {!isManager && <th className="p-3">Profit Margin</th>}
                     <th className="p-3 text-right">Classification</th>
                   </tr>
                 </thead>
@@ -399,8 +443,8 @@ export default function AnalyticsPage() {
                       <td className="p-3 font-semibold text-slate-900 dark:text-white">{row.name}</td>
                       <td className="p-3 text-slate-500 dark:text-slate-400">{row.cat}</td>
                       <td className="p-3 font-mono text-slate-700 dark:text-slate-200">{row.qty}</td>
-                      <td className="p-3 font-mono font-semibold text-slate-900 dark:text-white">{row.rev}</td>
-                      <td className="p-3 font-mono text-emerald-600 dark:text-emerald-400 font-bold">{row.margin}</td>
+                      {!isManager && <td className="p-3 font-mono font-semibold text-slate-900 dark:text-white">{row.rev}</td>}
+                      {!isManager && <td className="p-3 font-mono text-emerald-600 dark:text-emerald-400 font-bold">{row.margin}</td>}
                       <td className="p-3 text-right">
                         <Badge variant={row.tagVariant} size="sm">{row.tag}</Badge>
                       </td>

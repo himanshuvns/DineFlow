@@ -564,9 +564,9 @@
     "semantic_hash": "fb3d216d06d08716a65bcb486f6db956"
   },
   "apps/web/app/dashboard/menu/page.tsx": {
-    "mtime": 1789926005.3410852,
-    "seen": 1789926177.004535,
-    "ast_hash": "47b884a2e8637c9fbac5efe6a35ace00",
+    "mtime": 1789994753.7211843,
+    "seen": 1789994817.6342962,
+    "ast_hash": "da1738d2c3de2de5a95f8a9d5b19bfd8",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/notifications/page.tsx": {
@@ -594,9 +594,9 @@
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/rooms/page.tsx": {
-    "mtime": 1789970882.7821586,
-    "seen": 1789972021.9273741,
-    "ast_hash": "58c58455dc095ee6629a72bc510c4261",
+    "mtime": 1789994765.6241379,
+    "seen": 1789994817.6343,
+    "ast_hash": "9511560b01ac793bd7b231e78c728a11",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/settings/page.tsx": {
@@ -606,9 +606,9 @@
     "semantic_hash": "3e5feb37755484dabd67b1d332e22a37"
   },
   "apps/web/app/dashboard/staff/page.tsx": {
-    "mtime": 1789665253.7157907,
-    "seen": 1789665767.193826,
-    "ast_hash": "ec452fb141fe0e85caecb0db24b9bb25",
+    "mtime": 1789994673.5997803,
+    "seen": 1789994817.634301,
+    "ast_hash": "2c18a83222e728992bdcb538bae88db3",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/tables/page.tsx": {
@@ -996,9 +996,9 @@
     "semantic_hash": ""
   },
   "apps/web/lib/stores/tenant-data-store.ts": {
-    "mtime": 1789919486.0977104,
-    "seen": 1789919566.15612,
-    "ast_hash": "858f70be5cedc9c842dfae7338f3d346",
+    "mtime": 1789994701.1998718,
+    "seen": 1789994817.634374,
+    "ast_hash": "248d46e67e7df1c61571831932e111ed",
     "semantic_hash": ""
   },
   "apps/web/lib/stores/ui-store.ts": {

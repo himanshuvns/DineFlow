@@ -47,6 +47,42 @@ export function isPlatformRole(role?: string | null): boolean {
 }
 
 /**
+ * Checks if a user has Business Owner privileges.
+ */
+export function isOwner(role?: string | null): boolean {
+  return role === "owner" || isPlatformAdmin(role);
+}
+
+/**
+ * Checks if a user has General Manager privileges.
+ */
+export function isManager(role?: string | null): boolean {
+  return role === "manager";
+}
+
+/**
+ * Checks if a user can invite, manage, or delete Managers.
+ * Only Owners (or platform admins) can manage Managers.
+ */
+export function canManageManagers(role?: string | null): boolean {
+  return isOwner(role);
+}
+
+/**
+ * Checks if a user can view financial revenue, profit margins, and payouts.
+ */
+export function canViewFinancials(role?: string | null): boolean {
+  return isOwner(role);
+}
+
+/**
+ * Checks if a user can manage SaaS billing, upgrade plans, and view invoices.
+ */
+export function canManageBilling(role?: string | null): boolean {
+  return isOwner(role);
+}
+
+/**
  * Checks if a user has Super Admin platform privileges.
  */
 export function isSuperAdmin(role?: string | null): boolean {

@@ -75,7 +75,8 @@ const INITIAL_INVOICES: Invoice[] = [
 ];
 
 export default function SettingsPage() {
-  const { tenant, updateTenant } = useAuthStore();
+  const { tenant, updateTenant, user } = useAuthStore();
+  const isManager = user?.role === "manager";
   const { addToast } = useToast();
   const { theme, setTheme } = useTheme();
   const [activeTab, setActiveTab] = React.useState("general");
@@ -98,14 +99,18 @@ export default function SettingsPage() {
       const params = new URLSearchParams(window.location.search);
       const tab = params.get("tab");
       if (tab && ["general", "billing", "appearance"].includes(tab)) {
-        setActiveTab(tab);
+        if (tab === "billing" && isManager) {
+          setActiveTab("general");
+        } else {
+          setActiveTab(tab);
+        }
       }
       if (params.get("openLogoModal") === "true" || tab === "logo") {
         setActiveTab("general");
         setIsLogoModalOpen(true);
       }
     }
-  }, []);
+  }, [isManager]);
 
   // Billing & Subscription state
   const currentPlan = tenant?.plan || "growth";
@@ -289,17 +294,19 @@ export default function SettingsPage() {
           <Sparkles className="h-3.5 w-3.5" /> Workspace Configuration
         </div>
         <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
-          Settings & Billing
+          {isManager ? "Workspace Settings" : "Settings & Billing"}
         </h1>
         <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-          Manage your brand profile, tax registrations, subscription plans, and invoice recipients.
+          {isManager
+            ? "Manage your brand profile, dining room preferences, and display appearance."
+            : "Manage your brand profile, tax registrations, subscription plans, and invoice recipients."}
         </p>
       </div>
 
       <Tabs
         tabs={[
           { id: "general", label: "Brand & Business" },
-          { id: "billing", label: "Subscription & Invoices" },
+          ...(!isManager ? [{ id: "billing", label: "Subscription & Invoices" }] : []),
           { id: "appearance", label: "Appearance & Theme" },
         ]}
         activeTab={activeTab}
@@ -581,7 +588,7 @@ export default function SettingsPage() {
       )}
 
       {/* ── Tab: Subscription & Invoices ─────────────────────────────────── */}
-      {activeTab === "billing" && (
+      {activeTab === "billing" && !isManager && (
         <div className="space-y-6">
           {/* 14-Day Grace Period Alert Banner (if simulated or active) */}
           {isGracePeriod ? (
