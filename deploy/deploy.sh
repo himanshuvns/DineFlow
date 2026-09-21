@@ -15,9 +15,8 @@ FE_PORT=$(grep -E '^FRONTEND_PORT=' .env 2>/dev/null | cut -d= -f2 | tr -d '"'"'
 BE_PORT=${BE_PORT:-8500}
 FE_PORT=${FE_PORT:-3500}
 
-echo "── 2. Updating repository from origin/main..."
-git fetch origin main
-git reset --hard origin/main
+echo "── 2. Verifying repository revision..."
+git log -1 --oneline
 
 echo "── 3. Building and starting stack..."
 docker compose -f docker-compose.prod.yml --env-file .env up -d --build
@@ -27,43 +26,58 @@ echo "Waiting for API (port ${BE_PORT}) and Frontend (port ${FE_PORT})..."
 
 probe() {
   local url="$1"
-  local code
-  code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 "$url" || echo "000")
-  case "$code" in
-    2*|3*) return 0 ;;
-    *) return 1 ;;
-  esac
+  local code="000"
+  if command -v curl >/dev/null 2>&1; then
+    code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 "$url" 2>/dev/null || echo "000")
+  elif command -v wget >/dev/null 2>&1; then
+    code=$(wget --spider -S "$url" 2>&1 | awk '/HTTP\// {print $2}' | tail -1 || echo "000")
+  fi
+  echo "$code"
 }
 
 api_healthy=0
-for i in $(seq 1 35); do
-  if probe "http://127.0.0.1:${BE_PORT}/health"; then
-    api_healthy=1
-    echo "✔ API healthy on port ${BE_PORT} (attempt ${i})"
-    break
-  fi
+for i in $(seq 1 40); do
+  code=$(probe "http://127.0.0.1:${BE_PORT}/health")
+  case "$code" in
+    2*|3*)
+      api_healthy=1
+      echo "✔ API healthy on port ${BE_PORT} (attempt ${i}, HTTP ${code})"
+      break
+      ;;
+    *)
+      echo "  [${i}/40] API probe returned HTTP ${code}, retrying in 3s..."
+      ;;
+  esac
   sleep 3
 done
 
 if [ "$api_healthy" -ne 1 ]; then
   echo "✖ API health gate FAILED on http://127.0.0.1:${BE_PORT}/health"
-  docker compose -f docker-compose.prod.yml logs --tail=40 api
+  docker compose -f docker-compose.prod.yml logs --tail=100 api
+  docker compose -f docker-compose.prod.yml ps
   exit 1
 fi
 
 web_healthy=0
-for i in $(seq 1 35); do
-  if probe "http://127.0.0.1:${FE_PORT}"; then
-    web_healthy=1
-    echo "✔ Frontend healthy on port ${FE_PORT} (attempt ${i})"
-    break
-  fi
+for i in $(seq 1 40); do
+  code=$(probe "http://127.0.0.1:${FE_PORT}")
+  case "$code" in
+    2*|3*)
+      web_healthy=1
+      echo "✔ Frontend healthy on port ${FE_PORT} (attempt ${i}, HTTP ${code})"
+      break
+      ;;
+    *)
+      echo "  [${i}/40] Frontend probe returned HTTP ${code}, retrying in 3s..."
+      ;;
+  esac
   sleep 3
 done
 
 if [ "$web_healthy" -ne 1 ]; then
   echo "✖ Frontend health gate FAILED on http://127.0.0.1:${FE_PORT}"
-  docker compose -f docker-compose.prod.yml logs --tail=40 web
+  docker compose -f docker-compose.prod.yml logs --tail=100 web
+  docker compose -f docker-compose.prod.yml ps
   exit 1
 fi
 

@@ -61,7 +61,13 @@ jobs:
           host: ${{ secrets.DINEFLOW_SERVER_IP }}
           username: ${{ secrets.DINEFLOW_SERVER_USER }}
           key: ${{ secrets.DINEFLOW_SSH_KEY }}
+          command_timeout: 30m
           script: |
             set -e
             cd /opt/dineflow
+            echo "── Updating repository on VPS..."
+            git fetch origin main
+            git reset --hard origin/main
+            chmod +x deploy/*.sh
+            echo "── Executing deploy script..."
             ./deploy/deploy.sh
