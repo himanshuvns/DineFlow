@@ -169,6 +169,36 @@ export function CustomerExtendStayModal({
         `Your request to extend stay in ${roomDisplay} by +${additionalNights} night(s) until ${formatDateDisplay(selectedDate)} at 11:00 AM has been sent to Front Desk for approval.`
       );
 
+      // Real-time broadcast to Client Dashboard & active tabs
+      try {
+        const syncPayload = {
+          type: "STAY_EXTENSION_REQUESTED",
+          roomNumber: cleanNum,
+          tenantSlug,
+          request: data?.data?.request || {
+            id: data?.requestId || `ext-${Date.now()}`,
+            roomNumber: cleanNum,
+            tenantSlug,
+            guestName: currentGuestName || "Valued Guest",
+            currentCheckout: currentCheckOut,
+            requestedCheckout: isoCheckout,
+            additionalNights,
+            notes: notes.trim(),
+            status: "pending",
+            createdAt: new Date().toISOString(),
+          },
+        };
+        if (typeof window !== "undefined") {
+          if ("BroadcastChannel" in window) {
+            const ch = new BroadcastChannel("dineflow_extension_sync");
+            ch.postMessage(syncPayload);
+            ch.close();
+          }
+          localStorage.setItem("dineflow_extension_sync", JSON.stringify({ ...syncPayload, _t: Date.now() }));
+          window.dispatchEvent(new CustomEvent("dineflow_extension_sync", { detail: syncPayload }));
+        }
+      } catch (_) {}
+
       if (onStayExtended) {
         onStayExtended(isoCheckout, additionalNights);
       }

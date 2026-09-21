@@ -148,6 +148,25 @@ const DEFAULT_ROOMS: RoomItem[] = [
     amenities: ["Twin Beds", "Work Desk", "Smart TV", "Mini Fridge"],
   },
   {
+    id: "room-104",
+    name: "Deluxe Suite 104",
+    roomNumber: "104",
+    floor: "Floor 1",
+    wing: "East Wing",
+    type: "suite",
+    status: "occupied",
+    doNotDisturb: false,
+    folioEnabled: true,
+    activeGuest: "Guest Resident",
+    currentGuestName: "Guest Resident",
+    currentGuestPhone: "+91 98200 44332",
+    capacity: 2,
+    currentGuestCount: 2,
+    currentGuestCheckIn: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
+    currentGuestExpectedCheckOut: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
+    amenities: ["King Bed", "High-Speed Wi-Fi", "En-Suite Bath", "Smart TV"],
+  },
+  {
     id: "room-201",
     name: "Presidential Suite 201",
     roomNumber: "201",
@@ -340,26 +359,111 @@ export default function RoomsDirectoryPage() {
         setStats(statsRes.value.data.data);
       }
 
+      const extMap = new Map<string, any>();
       if (extensionsRes.status === "fulfilled") {
         const data = extensionsRes.value.data?.data || extensionsRes.value.data;
         const list = Array.isArray(data?.requests) ? data.requests : Array.isArray(data) ? data : [];
-        const extMap = new Map<string, any>();
         list.forEach((req: any) => {
           if (req.status === "pending") {
             if (req.roomId) extMap.set(String(req.roomId).trim(), req);
-            if (req.roomNumber) extMap.set(String(req.roomNumber).toUpperCase().trim(), req);
+            if (req.roomNumber) {
+              const clean = String(req.roomNumber).toUpperCase().replace(/^(ROOM-|SUITE-)/, "").trim();
+              extMap.set(clean, req);
+            }
           }
         });
-        setPendingExtensionRooms(extMap);
       }
+
+      // Also query resilient Next.js /api/room/extend-stay store
+      try {
+        const localExtRes = await fetch(
+          `/api/room/extend-stay?all=true&tenantSlug=${encodeURIComponent(tenantSlug)}`,
+          { cache: "no-store" }
+        ).catch(() => null);
+        if (localExtRes && localExtRes.ok) {
+          const extJson = await localExtRes.json().catch(() => null);
+          const list = Array.isArray(extJson?.data?.requests)
+            ? extJson.data.requests
+            : Array.isArray(extJson?.requests)
+            ? extJson.requests
+            : [];
+          list.forEach((req: any) => {
+            const clean = String(req.roomNumber || "").toUpperCase().replace(/^(ROOM-|SUITE-)/, "").trim();
+            if (req.status === "pending") {
+              if (req.roomId) extMap.set(String(req.roomId).trim(), req);
+              if (clean) extMap.set(clean, req);
+            } else if (req.status === "approved" && req.requestedCheckout) {
+              setRooms((currentRooms) =>
+                currentRooms.map((r) => {
+                  const rNum = (r.roomNumber || "").toUpperCase().replace(/^(ROOM-|SUITE-)/, "").trim();
+                  if (rNum === clean) {
+                    return { ...r, currentGuestExpectedCheckOut: req.requestedCheckout };
+                  }
+                  return r;
+                })
+              );
+            }
+          });
+        }
+      } catch (_) {}
+      setPendingExtensionRooms(extMap);
+      // Also query the resilient /api/room/dnd store for any customer toggles
+      try {
+        const dndRes = await fetch(
+          `/api/room/dnd?all=true&tenantSlug=${encodeURIComponent(tenantSlug)}`,
+          { cache: "no-store" }
+        ).catch(() => null);
+        if (dndRes && dndRes.ok) {
+          const dndJson = await dndRes.json().catch(() => null);
+          if (Array.isArray(dndJson?.data)) {
+            setRooms((currentRooms) => {
+              const updated = [...currentRooms];
+              dndJson.data.forEach((rec: any) => {
+                const recRoom = String(rec.roomNumber || "")
+                  .toUpperCase()
+                  .replace(/^(ROOM-|SUITE-)/, "")
+                  .trim();
+                const recDND = Boolean(rec.dndStatus);
+                const idx = updated.findIndex((r) => {
+                  const rNum = (r.roomNumber || "")
+                    .toUpperCase()
+                    .replace(/^(ROOM-|SUITE-)/, "")
+                    .trim();
+                  return rNum === recRoom;
+                });
+                if (idx >= 0) {
+                  updated[idx] = { ...updated[idx], doNotDisturb: recDND };
+                } else if (recDND) {
+                  updated.unshift({
+                    id: `room-${recRoom.toLowerCase()}`,
+                    name: `Suite ${recRoom}`,
+                    roomNumber: recRoom,
+                    floor: "Floor 1",
+                    wing: "East Wing",
+                    type: "suite",
+                    status: "occupied",
+                    doNotDisturb: true,
+                    folioEnabled: true,
+                    activeGuest: "Guest Resident",
+                    currentGuestName: "Guest Resident",
+                    capacity: 2,
+                    amenities: ["King Bed", "High-Speed Wi-Fi", "En-Suite Bath"],
+                  });
+                }
+              });
+              return updated;
+            });
+          }
+        }
+      } catch (_) {}
     } catch (e) {
       console.warn("Rooms fetch error:", e);
     }
-  }, []);
+  }, [tenantSlug]);
 
   React.useEffect(() => {
     fetchRooms();
-    const interval = setInterval(fetchRooms, 5000);
+    const interval = setInterval(fetchRooms, 4000);
     return () => clearInterval(interval);
   }, [fetchRooms]);
 
@@ -380,27 +484,56 @@ export default function RoomsDirectoryPage() {
   const wings = ["all", "East Wing", "West Wing", "Lakeview", "Poolside"];
   const statuses = ["all", "vacant", "occupied", "cleaning", "maintenance"];
 
+  const channelRef = React.useRef<BroadcastChannel | null>(null);
+
   // Listen for real-time DND sync from customer portal or other tabs
   React.useEffect(() => {
-    let channel: BroadcastChannel | null = null;
     const handleSync = (cleanRoom: string, dndVal: boolean, roomId?: string) => {
-      setRooms((prev) =>
-        prev.map((r) => {
-          const rNum = (r.roomNumber || "").toUpperCase().replace(/^(ROOM-|SUITE-)/, "").trim();
-          if (rNum === cleanRoom || (roomId && r.id === roomId)) {
-            return { ...r, doNotDisturb: dndVal };
-          }
-          return r;
-        })
-      );
+      setRooms((prev) => {
+        const existingIdx = prev.findIndex((r) => {
+          const rNum = (r.roomNumber || "")
+            .toUpperCase()
+            .replace(/^(ROOM-|SUITE-)/, "")
+            .trim();
+          return rNum === cleanRoom || (roomId && r.id === roomId);
+        });
+
+        if (existingIdx >= 0) {
+          const copy = [...prev];
+          copy[existingIdx] = { ...copy[existingIdx], doNotDisturb: dndVal };
+          return copy;
+        }
+
+        // Room is not in current list: dynamically insert it
+        const newRoom: RoomItem = {
+          id: roomId || `room-${cleanRoom.toLowerCase()}`,
+          name: `Suite ${cleanRoom}`,
+          roomNumber: cleanRoom,
+          floor: "Floor 1",
+          wing: "East Wing",
+          type: "suite",
+          status: "occupied",
+          doNotDisturb: dndVal,
+          folioEnabled: true,
+          activeGuest: "Guest Resident",
+          currentGuestName: "Guest Resident",
+          capacity: 2,
+          amenities: ["King Bed", "High-Speed Wi-Fi", "En-Suite Bath"],
+        };
+        return [newRoom, ...prev];
+      });
     };
 
     try {
       if (typeof window !== "undefined" && "BroadcastChannel" in window) {
-        channel = new BroadcastChannel("dineflow_dnd_sync");
-        channel.onmessage = (event) => {
+        channelRef.current = new BroadcastChannel("dineflow_dnd_sync");
+        channelRef.current.onmessage = (event) => {
           if (event.data?.type === "DND_STATUS_CHANGED" && event.data.roomNumber) {
-            handleSync(event.data.roomNumber, Boolean(event.data.dndStatus), event.data.roomId);
+            handleSync(
+              event.data.roomNumber,
+              Boolean(event.data.dndStatus),
+              event.data.roomId
+            );
           }
         };
       }
@@ -414,13 +547,23 @@ export default function RoomsDirectoryPage() {
             handleSync(parsed.roomNumber, Boolean(parsed.dndStatus), parsed.roomId);
           }
         } catch (_) {}
+      } else if (e.key?.startsWith("dineflow_dnd_") && e.newValue !== null) {
+        const parts = e.key.split("_");
+        const roomNum = parts[parts.length - 1];
+        if (roomNum) {
+          handleSync(roomNum, e.newValue === "true");
+        }
       }
     };
 
     const handleCustomEvent = (e: Event) => {
       const customEvent = e as CustomEvent;
       if (customEvent.detail?.roomNumber) {
-        handleSync(customEvent.detail.roomNumber, Boolean(customEvent.detail.dndStatus), customEvent.detail.roomId);
+        handleSync(
+          customEvent.detail.roomNumber,
+          Boolean(customEvent.detail.dndStatus),
+          customEvent.detail.roomId
+        );
       }
     };
 
@@ -428,36 +571,131 @@ export default function RoomsDirectoryPage() {
     window.addEventListener("dineflow_dnd_change", handleCustomEvent);
 
     return () => {
-      if (channel) channel.close();
+      if (channelRef.current) {
+        channelRef.current.close();
+        channelRef.current = null;
+      }
       window.removeEventListener("storage", handleStorage);
       window.removeEventListener("dineflow_dnd_change", handleCustomEvent);
     };
   }, []);
 
-  const broadcastDNDUpdate = React.useCallback((roomNum: string, dndVal: boolean, roomId?: string) => {
-    try {
-      if (typeof window !== "undefined") {
-        const cleanRoom = roomNum.toUpperCase().replace(/^(ROOM-|SUITE-)/, "").trim();
-        const payload = {
-          type: "DND_STATUS_CHANGED",
-          tenantSlug,
-          roomNumber: cleanRoom,
-          roomId,
-          dndStatus: dndVal,
-          timestamp: Date.now(),
-        };
-        if ("BroadcastChannel" in window) {
-          const channel = new BroadcastChannel("dineflow_dnd_sync");
-          channel.postMessage(payload);
-          channel.close();
+  React.useEffect(() => {
+    let extChannel: BroadcastChannel | null = null;
+
+    const handleExtensionSync = (data: any) => {
+      if (!data) return;
+      const clean = String(data.roomNumber || "").toUpperCase().replace(/^(ROOM-|SUITE-)/, "").trim();
+
+      if (data.type === "STAY_EXTENSION_REQUESTED") {
+        if (clean && data.request) {
+          setPendingExtensionRooms((prev) => {
+            const next = new Map(prev);
+            next.set(clean, data.request);
+            if (data.request.roomId) next.set(String(data.request.roomId).trim(), data.request);
+            return next;
+          });
         }
-        localStorage.setItem(`dineflow_dnd_${tenantSlug}_${cleanRoom}`, String(dndVal));
-        localStorage.setItem(`dineflow_dnd_${cleanRoom}`, String(dndVal));
-        localStorage.setItem("dineflow_dnd_sync", JSON.stringify(payload));
-        window.dispatchEvent(new CustomEvent("dineflow_dnd_change", { detail: payload }));
+        fetchRooms();
+      } else if (data.type === "STAY_EXTENSION_APPROVED") {
+        if (clean) {
+          setPendingExtensionRooms((prev) => {
+            const next = new Map(prev);
+            next.delete(clean);
+            if (data.roomId) next.delete(String(data.roomId).trim());
+            return next;
+          });
+          if (data.newCheckout) {
+            setRooms((currentRooms) =>
+              currentRooms.map((r) => {
+                const rNum = (r.roomNumber || "").toUpperCase().replace(/^(ROOM-|SUITE-)/, "").trim();
+                if (rNum === clean) {
+                  return { ...r, currentGuestExpectedCheckOut: data.newCheckout };
+                }
+                return r;
+              })
+            );
+          }
+        }
+        fetchRooms();
+      } else if (data.type === "STAY_EXTENSION_REJECTED") {
+        if (clean) {
+          setPendingExtensionRooms((prev) => {
+            const next = new Map(prev);
+            next.delete(clean);
+            if (data.roomId) next.delete(String(data.roomId).trim());
+            return next;
+          });
+        }
+        fetchRooms();
+      }
+    };
+
+    try {
+      if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+        extChannel = new BroadcastChannel("dineflow_extension_sync");
+        extChannel.onmessage = (e) => {
+          handleExtensionSync(e.data);
+        };
       }
     } catch (_) {}
-  }, [tenantSlug]);
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "dineflow_extension_sync" && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          handleExtensionSync(parsed);
+        } catch (_) {}
+      }
+    };
+
+    const handleCustomEvent = (e: Event) => {
+      const ce = e as CustomEvent;
+      if (ce.detail) {
+        handleExtensionSync(ce.detail);
+      }
+    };
+
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener("dineflow_extension_sync", handleCustomEvent);
+
+    return () => {
+      if (extChannel) {
+        try { extChannel.close(); } catch (_) {}
+      }
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("dineflow_extension_sync", handleCustomEvent);
+    };
+  }, [fetchRooms]);
+
+  const broadcastDNDUpdate = React.useCallback(
+    (roomNum: string, dndVal: boolean, roomId?: string) => {
+      try {
+        if (typeof window !== "undefined") {
+          const cleanRoom = roomNum
+            .toUpperCase()
+            .replace(/^(ROOM-|SUITE-)/, "")
+            .trim();
+          const payload = {
+            type: "DND_STATUS_CHANGED",
+            tenantSlug,
+            roomNumber: cleanRoom,
+            roomId,
+            dndStatus: dndVal,
+            timestamp: Date.now(),
+          };
+          if (channelRef.current) {
+            channelRef.current.postMessage(payload);
+          }
+          localStorage.setItem(`dineflow_dnd_${tenantSlug}_${cleanRoom}`, String(dndVal));
+          localStorage.setItem(`dineflow_dnd_${cleanRoom}`, String(dndVal));
+          localStorage.setItem("dineflow_dnd_sync", JSON.stringify(payload));
+          window.dispatchEvent(new CustomEvent("dineflow_dnd_change", { detail: payload }));
+        }
+      } catch (_) {}
+    },
+    [tenantSlug]
+  );
 
   const handleToggleDND = async (id: string, current: boolean) => {
     const targetRoom = rooms.find((r) => r.id === id);
@@ -469,6 +707,18 @@ export default function RoomsDirectoryPage() {
     );
 
     broadcastDNDUpdate(roomNum, nextStatus, id);
+
+    // Resilient server-side update
+    fetch("/api/room/dnd", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        tenantSlug,
+        roomNumber: roomNum,
+        dndStatus: nextStatus,
+        updatedBy: "staff",
+      }),
+    }).catch(() => null);
 
     try {
       await apiClient.patch(`/rooms/${encodeURIComponent(id)}/dnd`, { doNotDisturb: nextStatus });
@@ -945,6 +1195,46 @@ export default function RoomsDirectoryPage() {
       {/* ======================================================== */}
       <div className="flex-1 min-h-0 overflow-y-auto pr-1 pb-16 scrollbar-thin">
 
+      {/* Pending Extension Review Notification Banner */}
+      {pendingExtensionRooms.size > 0 && (
+        <div className="mb-4 p-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3">
+            <span className="h-9 w-9 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+              <Clock className="h-5 w-5 animate-pulse" />
+            </span>
+            <div>
+              <p className="text-xs sm:text-sm font-bold flex items-center gap-2">
+                <span>{pendingExtensionRooms.size} Stay Extension Request{pendingExtensionRooms.size > 1 ? "s" : ""} Pending Review</span>
+                <Badge variant="warning" size="sm" className="font-extrabold text-[9px] uppercase tracking-wider">
+                  Action Required
+                </Badge>
+              </p>
+              <p className="text-[11px] opacity-80 mt-0.5">
+                In-house guest(s) have requested stay extensions. Review requested dates and approve or decline.
+              </p>
+            </div>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              const firstKey = Array.from(pendingExtensionRooms.keys())[0];
+              const matchingRoom = rooms.find(
+                (r) =>
+                  r.id === firstKey ||
+                  (r.roomNumber || "").toUpperCase().replace(/^(ROOM-|SUITE-)/, "").trim() === firstKey
+              );
+              if (matchingRoom) {
+                router.push(`/dashboard/rooms/${matchingRoom.id}`);
+              }
+            }}
+            className="border-amber-500/40 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 rounded-xl text-xs font-bold shrink-0 self-end sm:self-auto cursor-pointer"
+          >
+            Review Request →
+          </Button>
+        </div>
+      )}
+
       {/* Hotel Rooms: Empty State OR Grid / List View */}
       {filteredRooms.length === 0 ? (
         <div className="py-8">
@@ -1019,8 +1309,17 @@ export default function RoomsDirectoryPage() {
                       </span>
                     )}
 
-                    {(pendingExtensionRooms.has(room.id) || pendingExtensionRooms.has(room.roomNumber)) && (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-500 text-white shadow-xs animate-pulse flex items-center gap-1">
+                    {(pendingExtensionRooms.has(room.id) ||
+                      pendingExtensionRooms.has(room.roomNumber) ||
+                      pendingExtensionRooms.has((room.roomNumber || "").toUpperCase().replace(/^(ROOM-|SUITE-)/, "").trim())) && (
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(`/dashboard/rooms/${room.id}`);
+                        }}
+                        title="Click to review stay extension request"
+                        className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-500 hover:bg-amber-600 text-white shadow-xs animate-pulse flex items-center gap-1 cursor-pointer transition-colors"
+                      >
                         <Clock className="h-3 w-3" />
                         <span>Extension Req</span>
                       </span>
@@ -1286,8 +1585,19 @@ export default function RoomsDirectoryPage() {
                     </span>
                   )}
 
-                  {(pendingExtensionRooms.has(room.id) || pendingExtensionRooms.has(room.roomNumber)) && (
-                    <Badge variant="warning" size="sm" className="text-[10px] font-bold animate-pulse">
+                  {(pendingExtensionRooms.has(room.id) ||
+                    pendingExtensionRooms.has(room.roomNumber) ||
+                    pendingExtensionRooms.has((room.roomNumber || "").toUpperCase().replace(/^(ROOM-|SUITE-)/, "").trim())) && (
+                    <Badge
+                      variant="warning"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/dashboard/rooms/${room.id}`);
+                      }}
+                      className="text-[10px] font-bold animate-pulse cursor-pointer hover:opacity-85 transition-opacity"
+                      title="Click to review stay extension request"
+                    >
                       <Clock className="h-3 w-3 mr-1" />
                       Extension Req
                     </Badge>

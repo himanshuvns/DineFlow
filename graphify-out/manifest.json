@@ -498,9 +498,9 @@
     "semantic_hash": "cc00f9125c8ad0baf20f99ff09968de3"
   },
   "apps/web/app/api/room/extend-stay/route.ts": {
-    "mtime": 1789918824.9857588,
-    "seen": 1789919566.1560361,
-    "ast_hash": "25eaa24ada940e5d869eaf4c6ce9e8cc",
+    "mtime": 1789931977.327011,
+    "seen": 1789932583.785881,
+    "ast_hash": "ef05d35b0350f32bfb45e8c152558408",
     "semantic_hash": ""
   },
   "apps/web/app/api/room/tasks/route.ts": {
@@ -588,15 +588,15 @@
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/rooms/[roomId]/page.tsx": {
-    "mtime": 1789929677.505548,
-    "seen": 1789929764.294485,
-    "ast_hash": "c8340df4fcba6e49df4e737e4c434bf5",
+    "mtime": 1789932257.6447818,
+    "seen": 1789932583.7858932,
+    "ast_hash": "ba1a4c25cc009df5f70243380d112bb2",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/rooms/page.tsx": {
-    "mtime": 1789929655.0289423,
-    "seen": 1789929764.294485,
-    "ast_hash": "c1aab5b305c666046533db0f908433d6",
+    "mtime": 1789932217.6893525,
+    "seen": 1789932583.7858932,
+    "ast_hash": "e214874a04ebac4924913ce863f364ab",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/settings/page.tsx": {
@@ -654,9 +654,9 @@
     "semantic_hash": "fcb7beb1c4578564fd692b13424c573a"
   },
   "apps/web/app/m/[tenantSlug]/room/[roomNumber]/page.tsx": {
-    "mtime": 1789929700.115024,
-    "seen": 1789929764.294492,
-    "ast_hash": "a523752ef527891c4617a743657359a4",
+    "mtime": 1789932436.1164289,
+    "seen": 1789932583.7859,
+    "ast_hash": "b1a2a6fd85b6eb194ce8e15290bf2e1b",
     "semantic_hash": ""
   },
   "apps/web/app/page.tsx": {
@@ -744,9 +744,9 @@
     "semantic_hash": ""
   },
   "apps/web/components/customer/customer-extend-stay-modal.tsx": {
-    "mtime": 1789918854.0039542,
-    "seen": 1789919566.156076,
-    "ast_hash": "fe4ba5b8d2977c03a9eb6beebe5b2ece",
+    "mtime": 1789932105.4917727,
+    "seen": 1789932583.785922,
+    "ast_hash": "c63686faa40bdb12e3e6a7edadcd6a0d",
     "semantic_hash": ""
   },
   "apps/web/components/customer/customer-housekeeping-sheet.tsx": {
@@ -2076,9 +2076,9 @@
     "semantic_hash": ""
   },
   "apps/web/app/api/room/dnd/route.ts": {
-    "mtime": 1789929614.036268,
-    "seen": 1789929764.294474,
-    "ast_hash": "e0a4f5275599605e5929286b5db4e040",
+    "mtime": 1789931310.2716627,
+    "seen": 1789932583.78588,
+    "ast_hash": "306167e99a7b176745c26c9de576d531",
     "semantic_hash": ""
   },
   "apps/web/app/api/room/orders/route.ts": {
