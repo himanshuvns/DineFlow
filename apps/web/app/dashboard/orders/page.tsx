@@ -536,7 +536,7 @@ export default function KDSOrdersPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5 flex-wrap min-w-0">
                       <span
-                        className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight min-w-0 w-full truncate"
+                        className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight shrink-0 max-w-full truncate"
                         title={order.table}
                       >
                         {formatKdsTableName(order.table)}

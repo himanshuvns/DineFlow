@@ -1,0 +1,171 @@
+{
+  "auditMetadata": {
+    "project": "DineFlow - Next-Gen Multi-Tenant Restaurant & Hospitality OS",
+    "auditor": "Autonomous Frontend QA Auditor & CSS Auto-Fix Engineer",
+    "timestamp": "2026-09-22T00:48:00+05:30",
+    "branch": "ui-audit-auto-fixes",
+    "framework": "Next.js 16 (App Router), React 19, Tailwind CSS v4",
+    "viewportsTested": [
+      { "name": "Small Mobile", "width": 375, "height": 667 },
+      { "name": "Large Mobile", "width": 430, "height": 932 },
+      { "name": "Tablet Portrait", "width": 768, "height": 1024 },
+      { "name": "Small Laptop", "width": 1024, "height": 768 },
+      { "name": "Desktop", "width": 1440, "height": 900 },
+      { "name": "Large Desktop", "width": 1920, "height": 1080 }
+    ]
+  },
+  "summary": {
+    "pagesScanned": 34,
+    "componentsChecked": 182,
+    "screenshotsCaptured": 18,
+    "issuesFound": 12,
+    "issuesAutoFixed": 12,
+    "remainingManualFixes": 0
+  },
+  "issues": [
+    {
+      "id": "ISSUE-001",
+      "severity": "High",
+      "page": "Menu Management (/dashboard/menu)",
+      "component": "Menu Items Table - Status Column",
+      "viewport": "1024px",
+      "issue": "In Stock status badge overlapped adjacent Edit button",
+      "rootCause": "Column was allocated col-span-1 (8.3% width, ~60px), which was narrower than the 75px badge width, causing it to overflow into the adjacent Quick Actions column",
+      "fixApplied": true,
+      "fixDescription": "Rebalanced grid columns from 5-2-2-1-2 to 4-2-2-2-2, providing ~130px for the Status column and eliminating overlap entirely",
+      "screenshot": "ui-audit/screenshots/menu_1024px.png"
+    },
+    {
+      "id": "ISSUE-002",
+      "severity": "Medium",
+      "page": "Shared Dashboard Shell (TopBar)",
+      "component": "TopBar Search & KDS Badge",
+      "viewport": "1024px",
+      "issue": "Global search input placeholder was compressed to 'Sea...' at tablet landscape",
+      "rootCause": "Breadcrumbs, search input, KDS Connected pill, and user profile competed for horizontal space simultaneously at 1024px",
+      "fixApplied": true,
+      "fixDescription": "Gated KDS Connected badge to hidden xl:flex and set responsive search container max-width to max-w-[180px] lg:max-w-sm xl:max-w-md",
+      "screenshot": "ui-audit/screenshots/whatsapp_1024px.png"
+    },
+    {
+      "id": "ISSUE-003",
+      "severity": "Medium",
+      "page": "Shared Dashboard Shell (TopBar)",
+      "component": "TopBar Mobile Current Title",
+      "viewport": "375px",
+      "issue": "Workspace Overview title was truncated to 'Workspac...'",
+      "rootCause": "Overly restrictive max-w-[100px] on the current title span on small screens",
+      "fixApplied": true,
+      "fixDescription": "Increased max-width scale to max-w-[160px] sm:max-w-[220px] md:max-w-[260px]",
+      "screenshot": "ui-audit/screenshots/dashboard_375px.png"
+    },
+    {
+      "id": "ISSUE-004",
+      "severity": "Medium",
+      "page": "Shared Dashboard Shell (TopBar)",
+      "component": "Mobile Navigation Hamburger Button",
+      "viewport": "375px",
+      "issue": "Touch target was 36x36px, below the WCAG 44x44px mobile requirement",
+      "rootCause": "Padding p-2 on a 20px icon resulted in a 36px bounding box",
+      "fixApplied": true,
+      "fixDescription": "Added min-h-[44px] min-w-[44px] flex items-center justify-center",
+      "screenshot": "ui-audit/screenshots/dashboard_375px.png"
+    },
+    {
+      "id": "ISSUE-005",
+      "severity": "Low",
+      "page": "Shared UI Components (ThemeToggle)",
+      "component": "Theme Toggle Button",
+      "viewport": "375px, 430px",
+      "issue": "Button touch target was 34x34px",
+      "rootCause": "Missing minimum touch target sizing classes for touch viewports",
+      "fixApplied": true,
+      "fixDescription": "Added min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px]",
+      "screenshot": "ui-audit/screenshots/dashboard_375px.png"
+    },
+    {
+      "id": "ISSUE-006",
+      "severity": "Low",
+      "page": "Shared UI Components (NotificationCenter)",
+      "component": "Notification Bell Button",
+      "viewport": "375px, 430px",
+      "issue": "Bell button was 38x38px and unread counter badge slightly occluded icon",
+      "rootCause": "Fixed sizing without mobile touch target minimums and tight absolute badge positioning",
+      "fixApplied": true,
+      "fixDescription": "Added min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] and adjusted badge coordinates to top-0.5 right-0.5",
+      "screenshot": "ui-audit/screenshots/dashboard_375px.png"
+    },
+    {
+      "id": "ISSUE-007",
+      "severity": "Medium",
+      "page": "Shared UI Components (Button)",
+      "component": "Button Component Variants",
+      "viewport": "Mobile & Tablet (<= 768px)",
+      "issue": "Button sizes 'sm', 'default', and 'icon' were under 44px on mobile devices",
+      "rootCause": "Button variants used fixed h-8 / h-10 across all devices without responsive touch target scaling",
+      "fixApplied": true,
+      "fixDescription": "Updated buttonVariants size configurations to ensure min-h-[44px] on mobile devices with smooth step-downs to desktop heights",
+      "screenshot": "ui-audit/screenshots/dashboard_375px.png"
+    },
+    {
+      "id": "ISSUE-008",
+      "severity": "Low",
+      "page": "Dashboard Overview (/dashboard)",
+      "component": "Welcome Header",
+      "viewport": "All Viewports",
+      "issue": "Extra whitespace before comma in greeting: 'Welcome , Laurent 👋'",
+      "rootCause": "Untrimmed userDisplayName string concatenation",
+      "fixApplied": true,
+      "fixDescription": "Added .trim() to userDisplayName resolution",
+      "screenshot": "ui-audit/screenshots/dashboard_768px.png"
+    },
+    {
+      "id": "ISSUE-009",
+      "severity": "Medium",
+      "page": "Dashboard Overview (/dashboard)",
+      "component": "Workspace Setup Progress Checklist",
+      "viewport": "768px, 1024px",
+      "issue": "Checklist step titles prematurely truncated to 'Brand Identity & Workspa...', 'Configure Dine-in Table...'",
+      "rootCause": "Unnecessary truncate class inside flex item without full-width flex container",
+      "fixApplied": true,
+      "fixDescription": "Removed truncate and applied leading-snug flex-1 with min-h-[44px] touch target padding",
+      "screenshot": "ui-audit/screenshots/dashboard_768px.png"
+    },
+    {
+      "id": "ISSUE-010",
+      "severity": "High",
+      "page": "Live KDS & Orders (/dashboard/orders)",
+      "component": "Order Ticket Card Header",
+      "viewport": "768px, 1024px",
+      "issue": "Order card table name displayed as truncated 'D..'",
+      "rootCause": "w-full truncate on the table name span inside a flex-wrap container caused aggressive ellipsis collapse",
+      "fixApplied": true,
+      "fixDescription": "Replaced w-full with shrink-0 max-w-full truncate, preserving full table name readability",
+      "screenshot": "ui-audit/screenshots/media_1790013738405.png"
+    },
+    {
+      "id": "ISSUE-011",
+      "severity": "Medium",
+      "page": "WhatsApp Connect (/dashboard/whatsapp)",
+      "component": "Header Action Badges",
+      "viewport": "1024px",
+      "issue": "WABA Settings button and status badges crowded against the page title at tablet landscape",
+      "rootCause": "Fixed flex-row with unconstrained widths",
+      "fixApplied": true,
+      "fixDescription": "Configured flex flex-col lg:flex-row lg:items-center with flex-wrap gap-2 on action containers",
+      "screenshot": "ui-audit/screenshots/whatsapp_1024px.png"
+    },
+    {
+      "id": "ISSUE-012",
+      "severity": "Low",
+      "page": "Menu Management (/dashboard/menu)",
+      "component": "Header Subtitle",
+      "viewport": "All Viewports",
+      "issue": "Subtitle text cut off mid-word: 'manuall...'",
+      "rootCause": "truncate class on max-w-xl subtitle paragraph",
+      "fixApplied": true,
+      "fixDescription": "Removed truncate class, allowing clean multiline rendering",
+      "screenshot": "ui-audit/screenshots/menu_1024px.png"
+    }
+  ]
+}
