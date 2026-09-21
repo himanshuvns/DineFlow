@@ -174,7 +174,7 @@ func DefaultPermissionsForRole(role Role) Permissions {
 		}
 	case RoleManager:
 		return Permissions{
-			CanManageMenu: true, CanManageStaff: false, CanViewAnalytics: true,
+			CanManageMenu: true, CanManageStaff: true, CanViewAnalytics: true,
 			CanManageBilling: false, CanManageOrders: true, CanAccessKDS: true, CanManageTables: true,
 			CanApproveLeave: true, CanViewPayroll: true, CanClockAttendance: true,
 		}
