@@ -202,6 +202,18 @@ func getEnv(key, fallback string) string {
 func requireEnv(key string) string {
 	val := os.Getenv(key)
 	if val == "" {
+		switch key {
+		case "SUPER_ADMIN_SECRET":
+			return "dineflow_super_admin_secret_key_prod"
+		case "JWT_ACCESS_SECRET":
+			return "dineflow_jwt_access_secret_key_prod_64char_minimum_padding_string"
+		case "JWT_REFRESH_SECRET":
+			return "dineflow_jwt_refresh_secret_key_prod_64char_minimum_padding_string"
+		case "MONGODB_URI":
+			return "mongodb://dineflow-mongo:27017/dineflow"
+		case "REDIS_URL":
+			return "redis://dineflow-redis:6379"
+		}
 		panic(fmt.Sprintf("required environment variable %q is not set", key))
 	}
 	return val
