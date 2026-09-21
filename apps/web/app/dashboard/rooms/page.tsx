@@ -114,124 +114,6 @@ const getStayMetrics = (checkInStr?: string, checkOutStr?: string) => {
   };
 };
 
-const DEFAULT_ROOMS: RoomItem[] = [
-  {
-    id: "room-101",
-    name: "Deluxe King Suite 101",
-    roomNumber: "101",
-    floor: "Floor 1",
-    wing: "East Wing",
-    type: "suite",
-    status: "occupied",
-    doNotDisturb: false,
-    folioEnabled: true,
-    activeGuest: "Vikram Malhotra",
-    currentGuestName: "Vikram Malhotra",
-    currentGuestPhone: "+91 98201 12345",
-    capacity: 2,
-    currentGuestCount: 2,
-    currentGuestCheckIn: new Date(Date.now() - 36 * 3600 * 1000).toISOString(),
-    currentGuestExpectedCheckOut: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
-    amenities: ["King Bed", "High-Speed Wi-Fi", "En-Suite Bath", "Mini Bar"],
-  },
-  {
-    id: "room-102",
-    name: "Executive Twin 102",
-    roomNumber: "102",
-    floor: "Floor 1",
-    wing: "East Wing",
-    type: "room",
-    status: "vacant",
-    doNotDisturb: false,
-    folioEnabled: true,
-    capacity: 2,
-    amenities: ["Twin Beds", "Work Desk", "Smart TV", "Mini Fridge"],
-  },
-  {
-    id: "room-104",
-    name: "Deluxe Suite 104",
-    roomNumber: "104",
-    floor: "Floor 1",
-    wing: "East Wing",
-    type: "suite",
-    status: "occupied",
-    doNotDisturb: false,
-    folioEnabled: true,
-    activeGuest: "Guest Resident",
-    currentGuestName: "Guest Resident",
-    currentGuestPhone: "+91 98200 44332",
-    capacity: 2,
-    currentGuestCount: 2,
-    currentGuestCheckIn: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
-    currentGuestExpectedCheckOut: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
-    amenities: ["King Bed", "High-Speed Wi-Fi", "En-Suite Bath", "Smart TV"],
-  },
-  {
-    id: "room-201",
-    name: "Presidential Suite 201",
-    roomNumber: "201",
-    floor: "Floor 2",
-    wing: "Lakeview",
-    type: "presidential",
-    status: "occupied",
-    doNotDisturb: true,
-    folioEnabled: true,
-    activeGuest: "Ananya Sharma",
-    currentGuestName: "Ananya Sharma",
-    currentGuestPhone: "+91 98111 98765",
-    capacity: 4,
-    currentGuestCount: 2,
-    currentGuestCheckIn: new Date(Date.now() - 18 * 3600 * 1000).toISOString(),
-    currentGuestExpectedCheckOut: new Date(Date.now() + 48 * 3600 * 1000).toISOString(),
-    amenities: ["Jacuzzi", "Lake View Balcony", "Butler Service", "Champagne Bar"],
-  },
-  {
-    id: "room-202",
-    name: "Garden Suite 202",
-    roomNumber: "202",
-    floor: "Floor 2",
-    wing: "Lakeview",
-    type: "suite",
-    status: "cleaning",
-    doNotDisturb: false,
-    folioEnabled: true,
-    capacity: 2,
-    amenities: ["Garden Terrace", "King Bed", "Rain Shower", "Espresso Machine"],
-  },
-  {
-    id: "room-301",
-    name: "Sky Penthouse 301",
-    roomNumber: "301",
-    floor: "Penthouse",
-    wing: "Poolside",
-    type: "penthouse",
-    status: "occupied",
-    doNotDisturb: false,
-    folioEnabled: true,
-    activeGuest: "Rohan Varma",
-    currentGuestName: "Rohan Varma",
-    currentGuestPhone: "+91 99887 66554",
-    capacity: 6,
-    currentGuestCount: 4,
-    currentGuestCheckIn: new Date(Date.now() - 12 * 3600 * 1000).toISOString(),
-    currentGuestExpectedCheckOut: new Date(Date.now() + 72 * 3600 * 1000).toISOString(),
-    amenities: ["Private Pool", "Rooftop Deck", "Personal Chef Setup", "Home Theater"],
-  },
-  {
-    id: "room-302",
-    name: "Grand Chalet 302",
-    roomNumber: "302",
-    floor: "Penthouse",
-    wing: "Poolside",
-    type: "chalet",
-    status: "vacant",
-    doNotDisturb: false,
-    folioEnabled: true,
-    capacity: 4,
-    amenities: ["Fireplace", "King Master", "Jacuzzi", "Mountain View"],
-  },
-];
-
 export default function RoomsDirectoryPage() {
   const router = useRouter();
   const { addToast } = useToast();
@@ -239,18 +121,19 @@ export default function RoomsDirectoryPage() {
   const tenantSlug = tenant?.slug || "dineflow";
   const tenantName = tenant?.name || "Your Hotel & Suites";
 
-  const [rooms, setRooms] = React.useState<RoomItem[]>(DEFAULT_ROOMS);
+  const [rooms, setRooms] = React.useState<RoomItem[]>([]);
+  const [loading, setLoading] = React.useState(true);
   const [stats, setStats] = React.useState<HotelStats>({
-    totalRooms: 6,
-    occupiedRooms: 3,
-    vacantRooms: 2,
-    cleaningRooms: 1,
+    totalRooms: 0,
+    occupiedRooms: 0,
+    vacantRooms: 0,
+    cleaningRooms: 0,
     maintenanceRooms: 0,
-    occupancyRate: 50,
-    checkInsToday: 2,
-    checkOutsToday: 1,
-    pendingRoomService: 2,
-    activeHousekeepingTasks: 1,
+    occupancyRate: 0,
+    checkInsToday: 0,
+    checkOutsToday: 0,
+    pendingRoomService: 0,
+    activeHousekeepingTasks: 0,
   });
 
   const [viewMode, setViewMode] = useViewMode("rooms", "grid");
@@ -334,7 +217,7 @@ export default function RoomsDirectoryPage() {
         apiClient.get("/rooms/tasks"),
       ]);
 
-      if (roomsRes.status === "fulfilled" && Array.isArray(roomsRes.value.data?.data) && roomsRes.value.data.data.length > 0) {
+      if (roomsRes.status === "fulfilled" && Array.isArray(roomsRes.value.data?.data)) {
         const loaded = roomsRes.value.data.data.map((r: any) => ({
           id: r.id || r._id,
           name: r.name || `Room ${r.roomNumber}`,
@@ -520,6 +403,8 @@ export default function RoomsDirectoryPage() {
       } catch (_) {}
     } catch (e) {
       console.warn("Rooms fetch error:", e);
+    } finally {
+      setLoading(false);
     }
   }, [tenantSlug]);
 
@@ -1158,10 +1043,10 @@ export default function RoomsDirectoryPage() {
             </span>
             <div className="flex items-baseline justify-between mt-0.5">
               <span className="text-lg sm:text-xl font-black text-amber-600 dark:text-amber-400 font-mono">
-                {stats.occupiedRooms || rooms.filter((r) => r.status === "occupied").length}
+                {loading && rooms.length === 0 ? "—" : (stats.occupiedRooms || rooms.filter((r) => r.status === "occupied").length)}
               </span>
               <span className="text-[10px] text-slate-500 font-mono">
-                {Math.round(stats.occupancyRate || 0)}% Occ
+                {loading && rooms.length === 0 ? "—" : `${Math.round(stats.occupancyRate || 0)}% Occ`}
               </span>
             </div>
           </Card>
@@ -1172,7 +1057,7 @@ export default function RoomsDirectoryPage() {
             </span>
             <div className="flex items-baseline justify-between mt-0.5">
               <span className="text-lg sm:text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
-                {stats.vacantRooms || rooms.filter((r) => r.status === "vacant").length}
+                {loading && rooms.length === 0 ? "—" : (stats.vacantRooms || rooms.filter((r) => r.status === "vacant").length)}
               </span>
               <span className="text-[10px] text-slate-500 font-mono">Vacant</span>
             </div>
@@ -1184,7 +1069,7 @@ export default function RoomsDirectoryPage() {
             </span>
             <div className="flex items-baseline justify-between mt-0.5">
               <span className="text-lg sm:text-xl font-black text-rose-600 dark:text-rose-400 font-mono">
-                {stats.cleaningRooms || rooms.filter((r) => r.status === "cleaning").length}
+                {loading && rooms.length === 0 ? "—" : (stats.cleaningRooms || rooms.filter((r) => r.status === "cleaning").length)}
               </span>
               <span className="text-[10px] text-slate-500 font-mono">Cleaning</span>
             </div>
@@ -1196,7 +1081,7 @@ export default function RoomsDirectoryPage() {
             </span>
             <div className="flex items-baseline justify-between mt-0.5">
               <span className="text-lg sm:text-xl font-black text-rose-600 dark:text-rose-400 font-mono">
-                {rooms.filter((r) => r.doNotDisturb).length}
+                {loading && rooms.length === 0 ? "—" : rooms.filter((r) => r.doNotDisturb).length}
               </span>
               <span className="text-[10px] text-rose-500 font-mono font-bold">🔴 Active</span>
             </div>
@@ -1208,7 +1093,7 @@ export default function RoomsDirectoryPage() {
             </span>
             <div className="flex items-baseline justify-between mt-0.5">
               <span className="text-lg sm:text-xl font-black text-cyan-600 dark:text-cyan-400 font-mono">
-                {stats.checkInsToday || 0}
+                {loading && rooms.length === 0 ? "—" : (stats.checkInsToday || 0)}
               </span>
               <span className="text-[10px] text-slate-500 font-mono">Arrivals</span>
             </div>
@@ -1220,7 +1105,7 @@ export default function RoomsDirectoryPage() {
             </span>
             <div className="flex items-baseline justify-between mt-0.5">
               <span className="text-lg sm:text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
-                {stats.pendingRoomService || 0}
+                {loading && rooms.length === 0 ? "—" : (stats.pendingRoomService || 0)}
               </span>
               <span className="text-[10px] text-slate-500 font-mono">Active</span>
             </div>
@@ -1365,8 +1250,28 @@ export default function RoomsDirectoryPage() {
         </div>
       )}
 
-      {/* Hotel Rooms: Empty State OR Grid / List View */}
-      {filteredRooms.length === 0 ? (
+      {/* Hotel Rooms: Loading Skeleton OR Empty State OR Grid / List View */}
+      {loading && rooms.length === 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div
+              key={`room-skel-${i}`}
+              className="rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white/70 dark:bg-slate-900/70 p-4 space-y-3 animate-pulse"
+            >
+              <div className="flex items-center justify-between">
+                <div className="h-5 w-20 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+                <div className="h-5 w-16 bg-slate-200 dark:bg-slate-800 rounded-full" />
+              </div>
+              <div className="h-4 w-32 bg-slate-100 dark:bg-slate-800/60 rounded" />
+              <div className="h-16 bg-slate-100 dark:bg-slate-800/40 rounded-xl" />
+              <div className="flex gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <div className="h-8 flex-1 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+                <div className="h-8 flex-1 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : filteredRooms.length === 0 ? (
         <div className="py-8">
           <EmptyState
             icon={<Hotel className="h-8 w-8 text-slate-400 dark:text-slate-500" />}

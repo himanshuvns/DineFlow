@@ -6,9 +6,9 @@
     "semantic_hash": "5ccefffaba9f66f7bf35021aab9e4822"
   },
   "apps/api/cmd/server/main.go": {
-    "mtime": 1789970184.679155,
-    "seen": 1789972021.927283,
-    "ast_hash": "d2c8e0dd9e6bf9aae2505e5a1d64540a",
+    "mtime": 1789990781.85132,
+    "seen": 1789990867.872925,
+    "ast_hash": "43b8a22e6bf9b6b728bf564e73ca05c9",
     "semantic_hash": ""
   },
   "apps/api/cmd/server/seed.go": {
@@ -348,9 +348,9 @@
     "semantic_hash": ""
   },
   "apps/api/internal/interfaces/http/routes/routes.go": {
-    "mtime": 1789986716.111319,
-    "seen": 1789986868.6046562,
-    "ast_hash": "cc52aad598d6612078dc88fd0f66645d",
+    "mtime": 1789993187.7502034,
+    "seen": 1789993568.876977,
+    "ast_hash": "f69d258b79af09b7840c31825e491f5c",
     "semantic_hash": ""
   },
   "apps/api/package.json": {
@@ -360,9 +360,9 @@
     "semantic_hash": "3a0aeb420d22c12a21443c86d2845802"
   },
   "apps/api/pkg/config/config.go": {
-    "mtime": 1789873392.2945962,
-    "seen": 1789873805.4852931,
-    "ast_hash": "6261db7d7764b2778cf3f0936cabdbb4",
+    "mtime": 1789991291.5406988,
+    "seen": 1789993568.8769841,
+    "ast_hash": "6772b3e7f290574323deae5353d0b0b4",
     "semantic_hash": ""
   },
   "apps/api/pkg/logger/logger.go": {
@@ -1980,9 +1980,9 @@
     "semantic_hash": ""
   },
   "deploy/deploy.sh": {
-    "mtime": 1789844175.8921976,
-    "seen": 1789846264.646763,
-    "ast_hash": "5f7899b61920a57fe7fd86ade3f85f29",
+    "mtime": 1789992375.8287373,
+    "seen": 1789993568.877106,
+    "ast_hash": "1ea9bc754963b8e6c7c9a6c2fd5a6e13",
     "semantic_hash": ""
   },
   "deploy/gen-secrets.sh": {
@@ -1992,15 +1992,15 @@
     "semantic_hash": ""
   },
   ".github/workflows/deploy.yml": {
-    "mtime": 1789844175.8574352,
-    "seen": 1789846264.646789,
-    "ast_hash": "49375a84e4e528f7258291c21594da43",
+    "mtime": 1789992841.1304781,
+    "seen": 1789993568.877131,
+    "ast_hash": "5c2ac28cdfb89102f72a5c018492114d",
     "semantic_hash": ""
   },
   "docker-compose.prod.yml": {
-    "mtime": 1789986742.6572003,
-    "seen": 1789986868.6048121,
-    "ast_hash": "22c9f70995ed865119f01f984ac38485",
+    "mtime": 1789992408.377812,
+    "seen": 1789993568.877137,
+    "ast_hash": "4cc524d4483b3f9b3fbfb3c92e9485ba",
     "semantic_hash": ""
   },
   "apps/api/internal/application/whatsapp/commands.go": {
@@ -2199,6 +2199,12 @@
     "mtime": 1789979664.7552931,
     "seen": 1789979992.425428,
     "ast_hash": "2eac9016bbca9c9c34020d4b1453bc62",
+    "semantic_hash": ""
+  },
+  "apps/api/internal/interfaces/http/routes/routes_test.go": {
+    "mtime": 1789993200.1236553,
+    "seen": 1789993568.8769789,
+    "ast_hash": "e17ec7db698c24435d7ffb0a0052be74",
     "semantic_hash": ""
   }
 }

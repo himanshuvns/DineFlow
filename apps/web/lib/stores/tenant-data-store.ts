@@ -498,15 +498,32 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
 
     if (cachedData && typeof cachedData === "object") {
       const rawCachedItems = Array.isArray(cachedData.menuItems) ? cachedData.menuItems : [];
-      const normalizedItems: MenuItem[] = rawCachedItems.map((item: MenuItem) => ({
+      const hasAccessToken = Boolean(useAuthStore.getState().accessToken);
+      const isStarterTemplateOnly =
+        rawCachedItems.length > 0 &&
+        rawCachedItems.every(
+          (i: any) =>
+            typeof i.id === "string" &&
+            (i.id.startsWith("itm_b") ||
+              i.id.startsWith("itm_c") ||
+              i.id.startsWith("itm_p") ||
+              i.id.startsWith("itm_fd"))
+        );
+
+      // If user has an active backend session and cached items are only starter template items,
+      // do NOT preload them into menuItems to prevent the flash of fake starter dishes!
+      const itemsToLoad = (hasAccessToken && isStarterTemplateOnly) ? [] : rawCachedItems;
+      const normalizedItems: MenuItem[] = itemsToLoad.map((item: MenuItem) => ({
         ...item,
         category: formatCategoryName(item.category || "General"),
       }));
       const rawCats = Array.isArray(cachedData.categories) ? cachedData.categories : [];
-      const cleanCats = deduplicateCategories(
-        [...rawCats, ...normalizedItems.map((i) => i.category)],
-        { removePlaceholderGeneral: true }
-      );
+      const cleanCats = (hasAccessToken && isStarterTemplateOnly)
+        ? []
+        : deduplicateCategories(
+            [...rawCats, ...normalizedItems.map((i) => i.category)],
+            { removePlaceholderGeneral: true }
+          );
 
       set({
         categories: cleanCats,
@@ -516,8 +533,8 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
         onboardingSteps: Array.isArray(cachedData.onboardingSteps)
           ? cachedData.onboardingSteps
           : DEFAULT_ONBOARDING,
-        isLoading: false,
-        initialized: true,
+        isLoading: hasAccessToken,
+        initialized: !hasAccessToken,
       });
       // Do not return early: allow SWR background fetch to sync latest database items
     }
@@ -739,9 +756,10 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
     }
 
     // Default Fallback:
-    // If it's a demo account, load Bistro preset
-    // If it's a new tenant, initialize clean/empty state with real dynamic metadata
-    if (isDemoTenant) {
+    // Only load Bistro preset if it's an unauthenticated demo session.
+    // If the user has an active session token or is a real tenant, initialize clean/empty state.
+    const hasAccessToken = Boolean(useAuthStore.getState().accessToken);
+    if (isDemoTenant && !hasAccessToken) {
       const demoPreset = STARTER_TEMPLATES.bistro;
       const initialOrders: KdsOrder[] = [
         {

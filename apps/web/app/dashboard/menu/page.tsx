@@ -68,6 +68,8 @@ export default function MenuManagementPage() {
     isDemoTenant,
     menuItems,
     categories,
+    isLoading,
+    initialized,
     addMenuItem,
     updateMenuItem,
     deleteMenuItem,
@@ -290,7 +292,7 @@ export default function MenuManagementPage() {
 
   const categoriesTabs = React.useMemo(() => {
     return [
-      { id: "all", label: "All Items", badge: menuItems.length },
+      { id: "all", label: "All Items", badge: isLoading && menuItems.length === 0 ? undefined : menuItems.length },
       ...categoryList
         .filter((cat) => {
           const badgeCount = menuItems.filter((i) => isCategoryMatch(i.category, cat)).length;
@@ -299,10 +301,10 @@ export default function MenuManagementPage() {
         .map((cat) => ({
           id: cat,
           label: cat,
-          badge: menuItems.filter((i) => isCategoryMatch(i.category, cat)).length,
+          badge: isLoading && menuItems.length === 0 ? undefined : menuItems.filter((i) => isCategoryMatch(i.category, cat)).length,
         })),
     ];
-  }, [categoryList, menuItems, categories]);
+  }, [categoryList, menuItems, categories, isLoading]);
 
   // Instant 86 / Out of Stock Toggle
   const handleToggleAvailability = async (dishId: string, current: boolean) => {
@@ -686,9 +688,11 @@ export default function MenuManagementPage() {
             </div>
             <div className="mt-1 flex items-baseline gap-1.5">
               <span className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight">
-                {kpiStats.total}
+                {isLoading && menuItems.length === 0 ? "—" : kpiStats.total}
               </span>
-              <span className="text-[10px] text-slate-400 font-medium">in {kpiStats.categoriesCount} cats</span>
+              <span className="text-[10px] text-slate-400 font-medium">
+                {isLoading && menuItems.length === 0 ? "loading..." : `in ${kpiStats.categoriesCount} cats`}
+              </span>
             </div>
           </div>
 
@@ -701,7 +705,7 @@ export default function MenuManagementPage() {
             </div>
             <div className="mt-1 flex items-baseline gap-1.5">
               <span className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight">
-                {kpiStats.categoriesCount}
+                {isLoading && menuItems.length === 0 ? "—" : kpiStats.categoriesCount}
               </span>
               <span className="text-[10px] text-slate-400 font-medium">sections</span>
             </div>
@@ -716,10 +720,10 @@ export default function MenuManagementPage() {
             </div>
             <div className="mt-1 flex items-baseline gap-1.5">
               <span className="text-base sm:text-lg font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
-                {kpiStats.inStock}
+                {isLoading && menuItems.length === 0 ? "—" : kpiStats.inStock}
               </span>
               <span className="text-[10px] text-slate-400 font-medium">
-                {kpiStats.outOfStock > 0 ? `${kpiStats.outOfStock} 86'd` : "100% In Stock"}
+                {isLoading && menuItems.length === 0 ? "—" : (kpiStats.outOfStock > 0 ? `${kpiStats.outOfStock} 86'd` : "100% In Stock")}
               </span>
             </div>
           </div>
@@ -733,14 +737,14 @@ export default function MenuManagementPage() {
             </div>
             <div className="mt-1 flex items-baseline gap-1">
               <span className="text-sm sm:text-base font-black text-emerald-600 dark:text-emerald-400">
-                {kpiStats.veg}V
+                {isLoading && menuItems.length === 0 ? "—" : `${kpiStats.veg}V`}
               </span>
               <span className="text-xs text-slate-300 dark:text-slate-700">/</span>
               <span className="text-sm sm:text-base font-black text-rose-600 dark:text-rose-400">
-                {kpiStats.nonVeg}NV
+                {isLoading && menuItems.length === 0 ? "—" : `${kpiStats.nonVeg}NV`}
               </span>
               <span className="text-[10px] text-slate-400 font-medium ml-1">
-                ({kpiStats.total > 0 ? Math.round((kpiStats.veg / kpiStats.total) * 100) : 0}% Veg)
+                {isLoading && menuItems.length === 0 ? "" : `(${kpiStats.total > 0 ? Math.round((kpiStats.veg / kpiStats.total) * 100) : 0}% Veg)`}
               </span>
             </div>
           </div>
@@ -754,7 +758,7 @@ export default function MenuManagementPage() {
             </div>
             <div className="mt-1 flex items-baseline gap-1">
               <span className="text-base sm:text-lg font-black text-slate-900 dark:text-white font-mono tracking-tight">
-                ₹{kpiStats.avg}
+                {isLoading && menuItems.length === 0 ? "—" : `₹${kpiStats.avg}`}
               </span>
               <span className="text-[10px] text-slate-400 font-medium">avg</span>
             </div>
@@ -873,9 +877,52 @@ export default function MenuManagementPage() {
       <div className="flex-1 min-h-0 overflow-y-auto pr-1 pb-16 scrollbar-thin">
 
       {/* ======================================================== */}
-      {/* 4. DISHES GRID OR STARTER TEMPLATE EMPTY STATE           */}
+      {/* 4. DISHES LOADING SKELETON / EMPTY STATE / GRID / LIST    */}
       {/* ======================================================== */}
-      {filteredItems.length === 0 ? (
+      {isLoading && menuItems.length === 0 ? (
+        viewMode === "grid" ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div
+                key={`menu-skel-${i}`}
+                className="rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white/70 dark:bg-slate-900/70 overflow-hidden animate-pulse flex flex-col justify-between"
+              >
+                <div className="h-44 bg-slate-200 dark:bg-slate-800" />
+                <div className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="h-5 w-36 bg-slate-200 dark:bg-slate-800 rounded" />
+                    <div className="h-5 w-14 bg-slate-200 dark:bg-slate-800 rounded-full" />
+                  </div>
+                  <div className="h-3.5 w-full bg-slate-100 dark:bg-slate-800/60 rounded" />
+                  <div className="h-3.5 w-2/3 bg-slate-100 dark:bg-slate-800/60 rounded" />
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <div className="h-6 w-16 bg-slate-200 dark:bg-slate-800 rounded" />
+                    <div className="h-6 w-20 bg-slate-200 dark:bg-slate-800 rounded-full" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div
+                key={`menu-skel-row-${i}`}
+                className="h-16 rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-white/70 dark:bg-slate-900/70 animate-pulse px-4 flex items-center justify-between"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-slate-200 dark:bg-slate-800" />
+                  <div className="space-y-1">
+                    <div className="h-4 w-32 bg-slate-200 dark:bg-slate-800 rounded" />
+                    <div className="h-3 w-20 bg-slate-100 dark:bg-slate-800/60 rounded" />
+                  </div>
+                </div>
+                <div className="h-5 w-16 bg-slate-200 dark:bg-slate-800 rounded" />
+              </div>
+            ))}
+          </div>
+        )
+      ) : filteredItems.length === 0 ? (
         <div className="p-10 text-center bg-slate-50 dark:bg-slate-900/50 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-4">
           <div className="max-w-md mx-auto">
             <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">

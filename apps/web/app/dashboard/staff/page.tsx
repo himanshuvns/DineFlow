@@ -771,60 +771,8 @@ export default function StaffPage() {
     }
   };
 
-  // Fallback display list if empty
-  const displayStaff =
-    staffList.length > 0
-      ? staffList
-      : [
-          {
-            id: "usr_1",
-            employeeId: "DF-EMP-1001",
-            name: "Jean Laurent",
-            email: "laurent@thegrandbistro.com",
-            role: "owner",
-            status: "active",
-            department: "Management",
-            employmentType: "full_time",
-            shiftName: "Morning Shift",
-            salary: { basic: 45000, hra: 18000, specialAllowance: 5000, overtimeRate: 250 },
-          },
-          {
-            id: "usr_2",
-            employeeId: "DF-EMP-1002",
-            name: "Sarah Jenkins",
-            email: "sarah.j@thegrandbistro.com",
-            role: "manager",
-            status: "active",
-            department: "Management",
-            employmentType: "full_time",
-            shiftName: "Morning Shift",
-            salary: { basic: 35000, hra: 14000, specialAllowance: 4000, overtimeRate: 220 },
-          },
-          {
-            id: "usr_3",
-            employeeId: "DF-EMP-1003",
-            name: "Chef Marco Rossi",
-            email: "marco.kitchen@thegrandbistro.com",
-            role: "chef",
-            status: "active",
-            department: "Kitchen",
-            employmentType: "full_time",
-            shiftName: "Morning Shift",
-            salary: { basic: 32000, hra: 12800, specialAllowance: 3500, overtimeRate: 200 },
-          },
-          {
-            id: "usr_4",
-            employeeId: "DF-EMP-1004",
-            name: "David Chen",
-            email: "david.c@thegrandbistro.com",
-            role: "waiter",
-            status: "active",
-            department: "Floor Service",
-            employmentType: "full_time",
-            shiftName: "Evening Shift",
-            salary: { basic: 18000, hra: 7200, specialAllowance: 2000, overtimeRate: 150 },
-          },
-        ];
+  // Display staff list directly
+  const displayStaff = staffList;
 
   // Geofence status calculation
   const isInsideGeofence = gpsDistance !== null ? gpsDistance <= geofence.radiusMeters : true;
@@ -876,7 +824,7 @@ export default function StaffPage() {
       {/* ── Tab Navigation ────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-slate-200 dark:border-slate-800 scrollbar-none">
         {[
-          { id: "staff", label: "Staff Directory & Profiles", icon: Shield, badge: `${displayStaff.length}` },
+          { id: "staff", label: "Staff Directory & Profiles", icon: Shield, badge: loading && staffList.length === 0 ? undefined : `${displayStaff.length}` },
           { id: "attendance", label: "Live Attendance & Geofencing", icon: MapPin, badge: `${todayAttendance.length} Today` },
           { id: "shifts", label: "Shift Scheduling", icon: Clock, badge: `${shifts.length || 3}` },
           { id: "leaves", label: "Leave Management", icon: CalendarCheck, badge: `${leaves.filter((l) => l.status === "pending").length} Pending` },
@@ -942,7 +890,27 @@ export default function StaffPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
-                  {displayStaff.length === 0 ? (
+                  {loading && staffList.length === 0 ? (
+                    Array.from({ length: 4 }).map((_, i) => (
+                      <tr key={`staff-skel-${i}`} className="animate-pulse">
+                        <td className="py-3.5 pl-6">
+                          <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-full bg-slate-200 dark:bg-slate-800" />
+                            <div className="space-y-1.5">
+                              <div className="h-4 w-28 bg-slate-200 dark:bg-slate-800 rounded" />
+                              <div className="h-3 w-36 bg-slate-100 dark:bg-slate-800/60 rounded" />
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3.5"><div className="h-5 w-16 bg-slate-200 dark:bg-slate-800 rounded-full" /></td>
+                        <td className="py-3.5"><div className="h-4 w-20 bg-slate-200 dark:bg-slate-800 rounded" /></td>
+                        <td className="py-3.5"><div className="h-4 w-24 bg-slate-200 dark:bg-slate-800 rounded" /></td>
+                        <td className="py-3.5"><div className="h-4 w-16 bg-slate-200 dark:bg-slate-800 rounded" /></td>
+                        <td className="py-3.5"><div className="h-5 w-14 bg-slate-200 dark:bg-slate-800 rounded-full" /></td>
+                        <td className="py-3.5 text-right pr-6"><div className="h-7 w-16 bg-slate-200 dark:bg-slate-800 rounded ml-auto" /></td>
+                      </tr>
+                    ))
+                  ) : displayStaff.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="py-12">
                         <EmptyState
@@ -1152,7 +1120,7 @@ export default function StaffPage() {
               <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
                 <p className="text-xs text-slate-500 dark:text-slate-400">Total Clocked In Today</p>
                 <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
-                  {todayAttendance.filter((a) => a.checkInTime).length} / {displayStaff.length}
+                  {loading && staffList.length === 0 ? "—" : `${todayAttendance.filter((a) => a.checkInTime).length} / ${displayStaff.length}`}
                 </p>
                 <div className="mt-2 text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                   <CheckCircle2 className="h-3 w-3" /> Real-time active workforce
