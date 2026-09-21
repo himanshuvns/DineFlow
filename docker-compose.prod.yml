@@ -25,6 +25,11 @@ services:
       EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-DineFlow}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       FRONTEND_URL: ${FRONTEND_URL:-http://dineflow-web:3000}
+    networks:
+      default:
+        aliases:
+          - dineflow-api
+          - api
     depends_on:
       - mongo
       - redis
@@ -52,6 +57,11 @@ services:
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://dine.rovixatech.com}
       NEXT_PUBLIC_ORDERING_URL: ${NEXT_PUBLIC_ORDERING_URL:-https://dine.rovixatech.com/order}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    networks:
+      default:
+        aliases:
+          - dineflow-web
+          - web
     depends_on:
       - api
 
@@ -59,6 +69,11 @@ services:
     image: mongo:7.0
     container_name: dineflow-mongo
     restart: unless-stopped
+    networks:
+      default:
+        aliases:
+          - dineflow-mongo
+          - mongo
     volumes:
       - dineflow_mongodata:/data/db
 
@@ -66,6 +81,11 @@ services:
     image: redis:7.2-alpine
     container_name: dineflow-redis
     restart: unless-stopped
+    networks:
+      default:
+        aliases:
+          - dineflow-redis
+          - redis
     volumes:
       - dineflow_redisdata:/data
 
