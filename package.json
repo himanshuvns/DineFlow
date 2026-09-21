@@ -2,7 +2,7 @@
   "name": "dineflow",
   "version": "0.1.0",
   "private": true,
-  "description": "DineFlow \u2014 Multi-tenant SaaS platform for restaurants, caf\u00e9s, hotels, and cloud kitchens",
+  "description": "DineFlow — Multi-tenant SaaS platform for restaurants, cafés, hotels, and cloud kitchens",
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
@@ -12,8 +12,9 @@
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\" --ignore-path .gitignore"
   },
   "devDependencies": {
-    "turbo": "^2.5.4",
     "prettier": "^3.5.3",
+    "puppeteer-core": "^25.11.0",
+    "turbo": "^2.5.4",
     "typescript": "^5.8.3"
   },
   "engines": {
