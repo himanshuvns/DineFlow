@@ -259,6 +259,7 @@ export default function RoomsDirectoryPage() {
   const [statusFilter, setStatusFilter] = React.useState("all");
   const [searchQuery, setSearchQuery] = React.useState("");
   const [pendingExtensionRooms, setPendingExtensionRooms] = React.useState<Map<string, any>>(new Map());
+  const [pendingHousekeepingRooms, setPendingHousekeepingRooms] = React.useState<Map<string, any>>(new Map());
 
   React.useEffect(() => {
     if (typeof window !== "undefined") {
@@ -326,10 +327,11 @@ export default function RoomsDirectoryPage() {
 
   const fetchRooms = React.useCallback(async () => {
     try {
-      const [roomsRes, statsRes, extensionsRes] = await Promise.allSettled([
+      const [roomsRes, statsRes, extensionsRes, tasksRes] = await Promise.allSettled([
         apiClient.get("/rooms"),
         apiClient.get("/rooms/stats"),
         apiClient.get("/rooms/extension-requests"),
+        apiClient.get("/rooms/tasks"),
       ]);
 
       if (roomsRes.status === "fulfilled" && Array.isArray(roomsRes.value.data?.data) && roomsRes.value.data.data.length > 0) {
@@ -373,6 +375,66 @@ export default function RoomsDirectoryPage() {
           }
         });
       }
+
+      const hkMap = new Map<string, any>();
+      if (tasksRes.status === "fulfilled") {
+        const tData = tasksRes.value.data?.data || tasksRes.value.data;
+        const tList = Array.isArray(tData) ? tData : [];
+        tList.forEach((task: any) => {
+          if (task.status === "pending" || task.status === "in_progress") {
+            if (task.roomId) hkMap.set(String(task.roomId).trim(), task);
+            if (task.roomNumber) {
+              const clean = String(task.roomNumber).toUpperCase().replace(/^(ROOM-|SUITE-)/, "").trim();
+              hkMap.set(clean, task);
+              hkMap.set(String(task.roomNumber).trim(), task);
+            }
+          }
+        });
+      }
+
+      // Also query resilient Next.js /api/room/tasks store
+      try {
+        const localTasksRes = await fetch(
+          `/api/room/tasks?all=true&tenantSlug=${encodeURIComponent(tenantSlug)}`,
+          { cache: "no-store" }
+        ).catch(() => null);
+        if (localTasksRes && localTasksRes.ok) {
+          const tasksJson = await localTasksRes.json().catch(() => null);
+          const tList = Array.isArray(tasksJson?.tasks) ? tasksJson.tasks : Array.isArray(tasksJson?.data?.tasks) ? tasksJson.data.tasks : [];
+          tList.forEach((task: any) => {
+            if (task.status === "pending" || task.status === "in_progress") {
+              if (task.roomId) hkMap.set(String(task.roomId).trim(), task);
+              if (task.roomNumber) {
+                const clean = String(task.roomNumber).toUpperCase().replace(/^(ROOM-|SUITE-)/, "").trim();
+                hkMap.set(clean, task);
+                hkMap.set(String(task.roomNumber).trim(), task);
+              }
+            }
+          });
+        }
+      } catch (_) {}
+
+      // Also query localStorage for any instant client-side tasks
+      if (typeof window !== "undefined") {
+        try {
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith(`dineflow_tasks_${tenantSlug}_`)) {
+              const parsed = JSON.parse(localStorage.getItem(key) || "[]");
+              if (Array.isArray(parsed)) {
+                parsed.forEach((task: any) => {
+                  if (task.status === "pending" || task.status === "in_progress") {
+                    const clean = String(task.roomNumber || key.replace(`dineflow_tasks_${tenantSlug}_`, "")).toUpperCase().trim();
+                    if (clean) hkMap.set(clean, task);
+                  }
+                });
+              }
+            }
+          }
+        } catch (_) {}
+      }
+
+      setPendingHousekeepingRooms(hkMap);
 
       // Also query resilient Next.js /api/room/extend-stay store
       try {
@@ -665,6 +727,34 @@ export default function RoomsDirectoryPage() {
       }
       window.removeEventListener("storage", handleStorage);
       window.removeEventListener("dineflow_extension_sync", handleCustomEvent);
+    };
+  }, [fetchRooms]);
+
+  React.useEffect(() => {
+    let taskChannel: BroadcastChannel | null = null;
+    const handleTaskSync = () => {
+      fetchRooms();
+    };
+
+    try {
+      if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+        taskChannel = new BroadcastChannel("dineflow_task_sync");
+        taskChannel.onmessage = () => handleTaskSync();
+      }
+    } catch (_) {}
+
+    window.addEventListener("dineflow_task_created", handleTaskSync);
+    window.addEventListener("storage", (e) => {
+      if (e.key?.startsWith("dineflow_tasks_") || e.key === "dineflow_task_created") {
+        handleTaskSync();
+      }
+    });
+
+    return () => {
+      if (taskChannel) {
+        try { taskChannel.close(); } catch (_) {}
+      }
+      window.removeEventListener("dineflow_task_created", handleTaskSync);
     };
   }, [fetchRooms]);
 
@@ -1235,6 +1325,46 @@ export default function RoomsDirectoryPage() {
         </div>
       )}
 
+      {/* Pending Housekeeping / Guest Service Request Notification Banner */}
+      {pendingHousekeepingRooms.size > 0 && (
+        <div className="mb-4 p-3 rounded-2xl border border-cyan-500/40 bg-cyan-500/10 dark:bg-cyan-950/30 text-cyan-950 dark:text-cyan-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3">
+            <span className="h-9 w-9 rounded-xl bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 flex items-center justify-center shrink-0">
+              <Sparkles className="h-5 w-5 animate-pulse" />
+            </span>
+            <div>
+              <p className="text-xs sm:text-sm font-bold flex items-center gap-2">
+                <span>{pendingHousekeepingRooms.size} Housekeeping Request{pendingHousekeepingRooms.size > 1 ? "s" : ""} Active</span>
+                <Badge variant="neutral" size="sm" className="bg-cyan-500/20 text-cyan-800 dark:text-cyan-200 font-extrabold text-[9px] uppercase tracking-wider">
+                  Guest Dispatched
+                </Badge>
+              </p>
+              <p className="text-[11px] opacity-80 mt-0.5">
+                In-house guests have requested room refresh, amenities, or assistance. Check assigned housekeepers and workloads.
+              </p>
+            </div>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              const firstKey = Array.from(pendingHousekeepingRooms.keys())[0];
+              const matchingRoom = rooms.find(
+                (r) =>
+                  r.id === firstKey ||
+                  (r.roomNumber || "").toUpperCase().replace(/^(ROOM-|SUITE-)/, "").trim() === firstKey
+              );
+              if (matchingRoom) {
+                router.push(`/dashboard/rooms/${matchingRoom.id}`);
+              }
+            }}
+            className="border-cyan-500/40 text-cyan-700 dark:text-cyan-300 hover:bg-cyan-500/20 rounded-xl text-xs font-bold shrink-0 self-end sm:self-auto cursor-pointer"
+          >
+            View Tasks →
+          </Button>
+        </div>
+      )}
+
       {/* Hotel Rooms: Empty State OR Grid / List View */}
       {filteredRooms.length === 0 ? (
         <div className="py-8">
@@ -1322,6 +1452,22 @@ export default function RoomsDirectoryPage() {
                       >
                         <Clock className="h-3 w-3" />
                         <span>Extension Req</span>
+                      </span>
+                    )}
+
+                    {(pendingHousekeepingRooms.has(room.id) ||
+                      pendingHousekeepingRooms.has(room.roomNumber) ||
+                      pendingHousekeepingRooms.has((room.roomNumber || "").toUpperCase().replace(/^(ROOM-|SUITE-)/, "").trim())) && (
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(`/dashboard/rooms/${room.id}`);
+                        }}
+                        title="Click to view active housekeeping request"
+                        className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-cyan-500 hover:bg-cyan-600 text-white shadow-xs animate-pulse flex items-center gap-1 cursor-pointer transition-colors"
+                      >
+                        <Sparkles className="h-3 w-3" />
+                        <span>Service Req</span>
                       </span>
                     )}
                   </div>
@@ -1600,6 +1746,24 @@ export default function RoomsDirectoryPage() {
                     >
                       <Clock className="h-3 w-3 mr-1" />
                       Extension Req
+                    </Badge>
+                  )}
+
+                  {(pendingHousekeepingRooms.has(room.id) ||
+                    pendingHousekeepingRooms.has(room.roomNumber) ||
+                    pendingHousekeepingRooms.has((room.roomNumber || "").toUpperCase().replace(/^(ROOM-|SUITE-)/, "").trim())) && (
+                    <Badge
+                      variant="neutral"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/dashboard/rooms/${room.id}`);
+                      }}
+                      className="text-[10px] font-bold animate-pulse cursor-pointer bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border-cyan-500/30 hover:opacity-85 transition-opacity"
+                      title="Click to view active housekeeping request"
+                    >
+                      <Sparkles className="h-3 w-3 mr-1" />
+                      Service Req
                     </Badge>
                   )}
                 </div>

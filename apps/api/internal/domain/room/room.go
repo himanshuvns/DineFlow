@@ -205,8 +205,9 @@ type HousekeepingTask struct {
 	TaskType    TaskType      `bson:"taskType" json:"taskType"`
 	Title       string        `bson:"title" json:"title"`
 	Priority    string        `bson:"priority" json:"priority"` // "normal", "high", "urgent"
-	AssignedTo  string        `bson:"assignedTo,omitempty" json:"assignedTo,omitempty"`
-	Status      TaskStatus    `bson:"status" json:"status"`
+	AssignedTo     string        `bson:"assignedTo,omitempty" json:"assignedTo,omitempty"`
+	AssignedToName string        `bson:"assignedToName,omitempty" json:"assignedToName,omitempty"`
+	Status         TaskStatus    `bson:"status" json:"status"`
 	Notes          string        `bson:"notes,omitempty" json:"notes,omitempty"`
 	Source         string        `bson:"source,omitempty" json:"source,omitempty"`                 // "guest" | "staff"
 	IsGuestRequest bool          `bson:"isGuestRequest" json:"isGuestRequest"`                     // true if initiated by customer QR

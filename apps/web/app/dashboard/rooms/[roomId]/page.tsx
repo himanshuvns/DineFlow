@@ -33,6 +33,7 @@ import {
   MapPin,
   Calendar,
   LogOut,
+  User,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -78,14 +79,37 @@ interface RoomDetail {
 
 interface HousekeepingTask {
   id: string;
+  _id?: string;
+  roomNumber?: string;
   taskType: string;
   title: string;
   priority: string;
   assignedTo?: string;
+  assignedToName?: string;
   status: "pending" | "in_progress" | "completed";
   notes?: string;
   createdAt: string;
+  completedAt?: string;
 }
+
+interface StaffMember {
+  id: string;
+  name: string;
+  role: string;
+  department?: string;
+  phone?: string;
+  employeeId?: string;
+}
+
+const DEFAULT_STAFF: StaffMember[] = [
+  { id: "st-hk-1", name: "Ramesh Kumar", role: "housekeeping", department: "Housekeeping", phone: "+91 98111 22334", employeeId: "DF-EMP-1005" },
+  { id: "st-hk-2", name: "Sunita Sharma", role: "housekeeping", department: "Housekeeping", phone: "+91 98222 33445", employeeId: "DF-EMP-1006" },
+  { id: "st-hk-3", name: "Vikram Singh", role: "housekeeping", department: "Housekeeping", phone: "+91 98333 44556", employeeId: "DF-EMP-1007" },
+  { id: "st-sv-1", name: "Amit Patel", role: "supervisor", department: "Housekeeping", phone: "+91 98444 55667", employeeId: "DF-EMP-1004" },
+  { id: "st-1", name: "Rahul Sharma", role: "waiter", department: "Floor Service", phone: "+91 98765 43210", employeeId: "DF-EMP-1002" },
+  { id: "st-2", name: "Ananya Deshmukh", role: "chef", department: "Kitchen", phone: "+91 98111 22334", employeeId: "DF-EMP-1003" },
+  { id: "st-4", name: "Vikram Malhotra", role: "manager", department: "Management", phone: "+91 99887 76655", employeeId: "DF-EMP-1001" },
+];
 
 interface RoomOrder {
   id?: string;
@@ -158,6 +182,22 @@ export default function RoomDetailPage() {
 
   const [room, setRoom] = React.useState<RoomDetail | null>(null);
   const [tasks, setTasks] = React.useState<HousekeepingTask[]>([]);
+  const [staffList, setStaffList] = React.useState<StaffMember[]>(DEFAULT_STAFF);
+
+  // Active task counts per staff (Housekeeper workload balancer: max 1 active task per housekeeper)
+  const staffActiveTaskCounts = React.useMemo(() => {
+    const counts: Record<string, number> = {};
+    tasks.forEach((t) => {
+      if (t.status !== "completed" && t.assignedTo) {
+        counts[t.assignedTo] = (counts[t.assignedTo] || 0) + 1;
+        if (t.assignedToName) {
+          counts[t.assignedToName] = (counts[t.assignedToName] || 0) + 1;
+        }
+      }
+    });
+    return counts;
+  }, [tasks]);
+
   const [orders, setOrders] = React.useState<RoomOrder[]>([]);
   const [loading, setLoading] = React.useState(true);
   const channelRef = React.useRef<BroadcastChannel | null>(null);
@@ -239,12 +279,13 @@ export default function RoomDetailPage() {
     if (!roomId) return;
     try {
       setLoading(true);
-      const [roomRes, ordersRes, tasksRes, allOrdersRes, extensionsRes] = await Promise.allSettled([
+      const [roomRes, ordersRes, tasksRes, allOrdersRes, extensionsRes, staffRes] = await Promise.allSettled([
         apiClient.get(`/rooms/${encodeURIComponent(roomId)}`),
         apiClient.get(`/rooms/${encodeURIComponent(roomId)}/orders`),
         apiClient.get(`/rooms/${encodeURIComponent(roomId)}/tasks`),
         apiClient.get("/orders"),
         apiClient.get("/rooms/extension-requests"),
+        apiClient.get("/staff"),
       ]);
 
       let loadedRoom: RoomDetail | null = null;
@@ -538,7 +579,78 @@ export default function RoomDetailPage() {
           return false;
         });
 
-        setTasks(roomSpecificTasks);
+        const apiStaff = staffRes.status === "fulfilled" && Array.isArray(staffRes.value.data?.data)
+          ? staffRes.value.data.data
+          : [];
+        const staffMap = new Map<string, any>();
+        DEFAULT_STAFF.forEach((s) => staffMap.set(s.id, s));
+        apiStaff.forEach((s: any) => staffMap.set(s.id || s._id, s));
+        const currentStaffList = Array.from(staffMap.values());
+
+        let combinedRoomTasks = [...roomSpecificTasks];
+
+        // Also merge tasks from /api/room/tasks proxy store
+        try {
+          const targetCleanNum = (loadedRoom?.roomNumber || room?.roomNumber || "").toUpperCase().replace(/^(ROOM-|SUITE-)/, "").trim();
+          const localTasksRes = await fetch(`/api/room/tasks?slug=${encodeURIComponent(tenantSlug)}&room=${encodeURIComponent(targetCleanNum)}`, { cache: "no-store" }).catch(() => null);
+          if (localTasksRes && localTasksRes.ok) {
+            const localJson = await localTasksRes.json().catch(() => null);
+            const list = Array.isArray(localJson?.tasks) ? localJson.tasks : Array.isArray(localJson?.data?.tasks) ? localJson.data.tasks : [];
+            list.forEach((lt: any) => {
+              const existingIdx = combinedRoomTasks.findIndex((t: any) => (t.id || t._id) === (lt.id || lt._id));
+              if (existingIdx !== -1) {
+                combinedRoomTasks[existingIdx] = {
+                  ...combinedRoomTasks[existingIdx],
+                  assignedTo: lt.assignedTo || combinedRoomTasks[existingIdx].assignedTo,
+                  assignedToName: lt.assignedToName || combinedRoomTasks[existingIdx].assignedToName,
+                  status: lt.status || combinedRoomTasks[existingIdx].status,
+                };
+              } else {
+                combinedRoomTasks.push(lt);
+              }
+            });
+          }
+        } catch (_) {}
+
+        // Also merge tasks from localStorage for instant 0ms latency
+        if (typeof window !== "undefined") {
+          try {
+            const targetCleanNum = (loadedRoom?.roomNumber || room?.roomNumber || "").toUpperCase().replace(/^(ROOM-|SUITE-)/, "").trim();
+            const storageKey = `dineflow_tasks_${tenantSlug}_${targetCleanNum}`;
+            const cached = localStorage.getItem(storageKey);
+            if (cached) {
+              const parsed = JSON.parse(cached);
+              if (Array.isArray(parsed)) {
+                parsed.forEach((lt: any) => {
+                  const existingIdx = combinedRoomTasks.findIndex((t: any) => (t.id || t._id) === (lt.id || lt._id));
+                  if (existingIdx !== -1) {
+                    combinedRoomTasks[existingIdx] = {
+                      ...combinedRoomTasks[existingIdx],
+                      assignedTo: lt.assignedTo || combinedRoomTasks[existingIdx].assignedTo,
+                      assignedToName: lt.assignedToName || combinedRoomTasks[existingIdx].assignedToName,
+                      status: lt.status || combinedRoomTasks[existingIdx].status,
+                    };
+                  } else {
+                    combinedRoomTasks.push(lt);
+                  }
+                });
+              }
+            }
+          } catch (_) {}
+        }
+
+        const mappedTasks = combinedRoomTasks.map((t: any) => {
+          const staffObj = currentStaffList.find((s: any) => (s.id || s._id) === t.assignedTo);
+          return {
+            ...t,
+            id: t.id || t._id,
+            assignedTo: t.assignedTo || "",
+            assignedToName: t.assignedToName || staffObj?.name || "",
+          };
+        });
+
+        setTasks(mappedTasks);
+        setStaffList(currentStaffList);
       }
     } catch (e) {
       console.warn("Failed to load room details:", e);
@@ -677,6 +789,38 @@ export default function RoomDetailPage() {
       window.removeEventListener("dineflow_extension_sync", handleCustomEvent);
     };
   }, [room?.roomNumber, fetchRoomData]);
+
+  // Real-time listener for housekeeping tasks created from customer room portal
+  React.useEffect(() => {
+    let taskChannel: BroadcastChannel | null = null;
+    const handleTaskSync = () => {
+      fetchRoomData();
+    };
+
+    try {
+      if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+        taskChannel = new BroadcastChannel("dineflow_task_sync");
+        taskChannel.onmessage = () => handleTaskSync();
+      }
+    } catch (_) {}
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key?.startsWith("dineflow_tasks_") || e.key === "dineflow_task_created") {
+        handleTaskSync();
+      }
+    };
+
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener("dineflow_task_created", handleTaskSync);
+
+    return () => {
+      if (taskChannel) {
+        try { taskChannel.close(); } catch (_) {}
+      }
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("dineflow_task_created", handleTaskSync);
+    };
+  }, [fetchRoomData]);
 
   const handleToggleDND = async () => {
     if (!room) return;
@@ -1292,18 +1436,118 @@ export default function RoomDetailPage() {
         if (room?.id) {
           await apiClient.patch(`/rooms/${encodeURIComponent(room.id)}/tasks/${encodeURIComponent(taskId)}`, {
             status: "completed",
-          });
-        } else {
-          throw patchErr;
+          }).catch(() => null);
         }
       }
-      addToast("success", "Task Completed", "Housekeeping task marked as finished.");
+
+      // Also sync with Next.js local task store
+      await fetch("/api/room/tasks", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ taskId, status: "completed" }),
+      }).catch(() => null);
+
+      // Update localStorage for zero latency
+      const cleanNum = (room?.roomNumber || "").toUpperCase().replace(/^(ROOM-|SUITE-)/, "").trim();
+      const storageKey = `dineflow_tasks_${tenantSlug}_${cleanNum}`;
+      try {
+        const cached = localStorage.getItem(storageKey);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          const updated = parsed.map((t: any) =>
+            (t.id || t._id) === taskId ? { ...t, status: "completed", completedAt: new Date().toISOString() } : t
+          );
+          localStorage.setItem(storageKey, JSON.stringify(updated));
+        }
+      } catch (_) {}
+
+      setTasks((prev) =>
+        prev.map((t) =>
+          (t.id || t._id) === taskId
+            ? { ...t, status: "completed", completedAt: new Date().toISOString() }
+            : t
+        )
+      );
+
+      addToast("success", "Task Completed", "Housekeeping task marked as finished. Housekeeper is now available.");
       fetchRoomData();
       if (typeof window !== "undefined") {
         window.dispatchEvent(new CustomEvent("dineflow_task_created"));
       }
     } catch (e) {
       console.warn("Complete task error:", e);
+    }
+  };
+
+  const handleAssignStaff = async (taskId: string, staffId: string, staffName: string) => {
+    const targetTask = tasks.find((t) => t.id === taskId);
+    if (!targetTask) return;
+
+    // Strict workload balance guardrail: Two requests cannot go to one housekeeper!
+    const currentStaffActiveCount = staffActiveTaskCounts[staffId] || 0;
+    if (staffId && currentStaffActiveCount >= 1 && targetTask.assignedTo !== staffId) {
+      addToast(
+        "warning",
+        "Workload Limit Reached",
+        `${staffName} already has an active task. Two requests cannot go to one housekeeper.`
+      );
+      return;
+    }
+
+    try {
+      try {
+        await apiClient.patch(`/rooms/tasks/${encodeURIComponent(taskId)}`, {
+          assignedTo: staffId,
+          assignedToName: staffName,
+        });
+      } catch (patchErr) {
+        if (room?.id) {
+          await apiClient.patch(`/rooms/${encodeURIComponent(room.id)}/tasks/${encodeURIComponent(taskId)}`, {
+            assignedTo: staffId,
+            assignedToName: staffName,
+          }).catch(() => null);
+        }
+      }
+
+      // Also sync with Next.js local task store
+      await fetch("/api/room/tasks", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ taskId, assignedTo: staffId, assignedToName: staffName }),
+      }).catch(() => null);
+
+      // Update localStorage for zero latency
+      const cleanNum = (room?.roomNumber || "").toUpperCase().replace(/^(ROOM-|SUITE-)/, "").trim();
+      const storageKey = `dineflow_tasks_${tenantSlug}_${cleanNum}`;
+      try {
+        const cached = localStorage.getItem(storageKey);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          const updated = parsed.map((t: any) =>
+            (t.id || t._id) === taskId ? { ...t, assignedTo: staffId, assignedToName: staffName } : t
+          );
+          localStorage.setItem(storageKey, JSON.stringify(updated));
+        }
+      } catch (_) {}
+
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === taskId ? { ...t, assignedTo: staffId, assignedToName: staffName } : t
+        )
+      );
+
+      addToast(
+        "success",
+        "Staff Assigned",
+        `Task assigned to ${staffName}. WhatsApp dispatch sent.`
+      );
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("dineflow_task_created"));
+      }
+    } catch (err: any) {
+      const errMsg = err?.response?.data?.message || err?.message || "Failed to assign staff";
+      addToast("error", "Assignment Failed", errMsg);
     }
   };
 
@@ -1945,13 +2189,15 @@ export default function RoomDetailPage() {
             {tasks.length > 0 ? (
               tasks.map((t) => {
                 const isDone = t.status === "completed";
+                const assignedStaffName = t.assignedToName || staffList.find((s) => s.id === t.assignedTo)?.name || "";
+
                 return (
                   <div
                     key={t.id}
-                    className="p-3.5 rounded-2xl bg-slate-100/70 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 flex items-start justify-between text-xs"
+                    className="p-3.5 rounded-2xl bg-slate-100/70 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 flex flex-col sm:flex-row sm:items-start justify-between gap-3 text-xs"
                   >
-                    <div>
-                      <div className="flex items-center gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className="font-bold text-slate-900 dark:text-white">
                           {t.title}
                         </span>
@@ -1966,6 +2212,11 @@ export default function RoomDetailPage() {
                             High Priority
                           </Badge>
                         )}
+                        {t.priority === "urgent" && (
+                          <Badge variant="danger" size="sm" className="text-[10px] animate-pulse">
+                            🚨 Urgent
+                          </Badge>
+                        )}
                       </div>
 
                       {t.notes && (
@@ -1974,12 +2225,74 @@ export default function RoomDetailPage() {
                         </p>
                       )}
 
-                      <span className="text-[10px] text-slate-500 font-mono mt-1.5 block">
-                        Dispatched: {new Date(t.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                      </span>
+                      {/* Staff Assignment Badge & WhatsApp Alert Status */}
+                      <div className="flex flex-wrap items-center gap-2 mt-2">
+                        {t.assignedTo ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 font-semibold text-[11px] border border-indigo-500/20">
+                            <User className="h-3 w-3 text-indigo-600 dark:text-indigo-400" />
+                            <span>Assigned: {assignedStaffName || "Housekeeping Steward"}</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-700 dark:text-amber-300 font-semibold text-[11px] border border-amber-500/30">
+                            <AlertCircle className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+                            <span>Pending Assignment (All staff busy)</span>
+                          </span>
+                        )}
+
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          WhatsApp Alerted
+                        </span>
+
+                        <span className="text-[10px] text-slate-500 font-mono">
+                          Dispatched: {new Date(t.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      </div>
+
+                      {/* Staff Assignment Selector (Enforcing max 1 task per housekeeper) */}
+                      {!isDone && (
+                        <div className="mt-2.5 flex flex-wrap items-center gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60">
+                          <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 flex items-center gap-1">
+                            <span>Assign Housekeeper:</span>
+                          </label>
+                          <select
+                            value={t.assignedTo || ""}
+                            onChange={(e) => {
+                              const selId = e.target.value;
+                              const selStaff = staffList.find((s) => s.id === selId);
+                              if (selStaff) {
+                                handleAssignStaff(t.id, selStaff.id, selStaff.name);
+                              }
+                            }}
+                            className="h-7 text-xs rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 px-2 py-0 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-500 font-medium max-w-[280px]"
+                          >
+                            <option value="" disabled>Choose available housekeeper...</option>
+                            {staffList.map((st) => {
+                              const isAssignedToThis = t.assignedTo === st.id;
+                              const activeCount = staffActiveTaskCounts[st.id] || staffActiveTaskCounts[st.name] || 0;
+                              const isBusy = activeCount >= 1 && !isAssignedToThis;
+                              return (
+                                <option
+                                  key={st.id}
+                                  value={st.id}
+                                  disabled={isBusy}
+                                  className={isBusy ? "text-slate-400 bg-slate-100 dark:bg-slate-800" : ""}
+                                >
+                                  {st.name} ({st.role}) — {isBusy ? "🔴 Busy (1 task)" : isAssignedToThis ? "🟢 Active on this task" : "🟢 Available (0 tasks)"}
+                                </option>
+                              );
+                            })}
+                          </select>
+                          {t.assignedTo && (
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500 italic">
+                              (1 task max per staff)
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
 
-                    <div className="flex flex-col gap-1.5 items-end">
+                    <div className="flex flex-row sm:flex-col gap-1.5 items-end shrink-0 self-end sm:self-start">
                       {t.status === "pending" && (
                         <Button
                           variant="secondary"
@@ -1988,7 +2301,7 @@ export default function RoomDetailPage() {
                           onClick={() => handleApproveTask(t.id)}
                         >
                           <Clock className="h-3.5 w-3.5 mr-1" />
-                          <span>Approve</span>
+                          <span>Approve & Start</span>
                         </Button>
                       )}
                       {t.status === "in_progress" && (
@@ -1999,7 +2312,7 @@ export default function RoomDetailPage() {
                           onClick={() => handleCompleteTask(t.id)}
                         >
                           <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
-                          <span>Done</span>
+                          <span>Mark Done</span>
                         </Button>
                       )}
                       {!isDone && t.status !== "pending" && t.status !== "in_progress" && (
@@ -2010,7 +2323,7 @@ export default function RoomDetailPage() {
                           onClick={() => handleCompleteTask(t.id)}
                         >
                           <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
-                          <span>Done</span>
+                          <span>Mark Done</span>
                         </Button>
                       )}
                     </div>

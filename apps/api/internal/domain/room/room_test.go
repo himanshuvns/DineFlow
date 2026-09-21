@@ -234,3 +234,25 @@ func TestStayExtensionRequestValidation(t *testing.T) {
 	}
 }
 
+func TestHousekeepingTaskAssignedToName(t *testing.T) {
+	tenantID := bson.NewObjectID()
+	roomID := bson.NewObjectID()
+
+	task := &HousekeepingTask{
+		TenantID:       tenantID,
+		RoomID:         roomID,
+		RoomNumber:     "102",
+		Title:          "Fresh Towels",
+		AssignedTo:     "staff-123",
+		AssignedToName: "Ramesh Kumar",
+		Status:         TaskPending,
+	}
+	if err := task.Validate(); err != nil {
+		t.Fatalf("unexpected validation error: %v", err)
+	}
+	if task.AssignedTo != "staff-123" || task.AssignedToName != "Ramesh Kumar" {
+		t.Errorf("expected AssignedTo and AssignedToName to be preserved, got %s / %s", task.AssignedTo, task.AssignedToName)
+	}
+}
+
+

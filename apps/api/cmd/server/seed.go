@@ -217,6 +217,45 @@ func seedDefaultData(ctx context.Context, db *mongoinfra.Client, log *zap.Logger
 		})
 	}
 
+	// Ensure sample housekeeping staff exist for workload balance demonstration
+	hkCount, _ := usersColl.CountDocuments(ctx, bson.M{
+		"tenantId": tenantID,
+		"role":     user.RoleHousekeeping,
+	})
+	if hkCount == 0 {
+		nowHK := time.Now().UTC()
+		sampleHKs := []interface{}{
+			user.User{
+				ID:          bson.NewObjectID(),
+				TenantID:    tenantID,
+				Phone:       "+919876543201",
+				Email:       "ramesh.hk@dineflow.io",
+				Name:        "Ramesh Kumar",
+				Role:        user.RoleHousekeeping,
+				Department:  "Housekeeping",
+				Permissions: user.DefaultPermissionsForRole(user.RoleHousekeeping),
+				Status:      user.StatusActive,
+				CreatedAt:   nowHK,
+				UpdatedAt:   nowHK,
+			},
+			user.User{
+				ID:          bson.NewObjectID(),
+				TenantID:    tenantID,
+				Phone:       "+919876543202",
+				Email:       "sunita.hk@dineflow.io",
+				Name:        "Sunita Sharma",
+				Role:        user.RoleHousekeeping,
+				Department:  "Housekeeping",
+				Permissions: user.DefaultPermissionsForRole(user.RoleHousekeeping),
+				Status:      user.StatusActive,
+				CreatedAt:   nowHK,
+				UpdatedAt:   nowHK,
+			},
+		}
+		_, _ = usersColl.InsertMany(ctx, sampleHKs)
+		log.Info("🌱 Seeded housekeeping staff for demo tenant (Ramesh Kumar, Sunita Sharma)")
+	}
+
 	// 3. Seed Sample Categories and Menu Items if none exist for this tenant
 	itemCount, _ := itemsColl.CountDocuments(ctx, bson.M{"tenantId": tenantID})
 	if itemCount == 0 {

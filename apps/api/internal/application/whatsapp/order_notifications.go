@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	domainorder "github.com/dineflow/api/internal/domain/order"
+	domainroom "github.com/dineflow/api/internal/domain/room"
+	domainuser "github.com/dineflow/api/internal/domain/user"
 	domainwa "github.com/dineflow/api/internal/domain/whatsapp"
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
@@ -171,3 +173,72 @@ func (s *Service) NotifyAdminOrderCancelled(ctx context.Context, tenantID bson.O
 		_, _ = s.provider.SendText(ctx, adminPhone, alertText)
 	}
 }
+
+// NotifyStaffHousekeepingRequest alerts EVERY staff member with a registered phone number when a housekeeping request arrives.
+func (s *Service) NotifyStaffHousekeepingRequest(ctx context.Context, tenantID bson.ObjectID, task *domainroom.HousekeepingTask, staffList []domainuser.User) {
+	if s.provider == nil || len(staffList) == 0 {
+		return
+	}
+
+	assigned := "Pending Assignment (All staff busy)"
+	if task.AssignedToName != "" {
+		assigned = task.AssignedToName
+	}
+
+	priorityUpper := strings.ToUpper(task.Priority)
+	if priorityUpper == "" {
+		priorityUpper = "NORMAL"
+	}
+
+	roomLoc := fmt.Sprintf("Suite %s", task.RoomNumber)
+
+	body := fmt.Sprintf("🧹 *New Housekeeping Request*\n\n"+
+		"📍 Location: %s\n"+
+		"📋 Service: %s\n"+
+		"⚡ Priority: %s\n"+
+		"👤 Assigned To: %s\n", roomLoc, task.Title, priorityUpper, assigned)
+
+	if task.Notes != "" {
+		body += fmt.Sprintf("📝 Notes: %s\n", task.Notes)
+	}
+	body += fmt.Sprintf("⏰ Dispatched: %s\n\n"+
+		"Please check the staff dashboard to coordinate.", task.CreatedAt.Format("03:04 PM"))
+
+	for _, st := range staffList {
+		phone := strings.TrimSpace(st.Phone)
+		if phone == "" || s.IsOptedOut(phone) {
+			continue
+		}
+		extID, _ := s.provider.SendText(ctx, phone, body)
+		stName := st.Name
+		if stName == "" {
+			stName = "Staff Member"
+		}
+		_, _ = s.LogMessage(ctx, tenantID, phone, stName, domainwa.TemplateRoomService, body, roomLoc, domainwa.StatusDelivered, extID)
+	}
+}
+
+// NotifyStaffTaskAssigned alerts an individual housekeeper when they are assigned a request.
+func (s *Service) NotifyStaffTaskAssigned(ctx context.Context, tenantID bson.ObjectID, task *domainroom.HousekeepingTask, staffPhone, staffName string) {
+	phone := strings.TrimSpace(staffPhone)
+	if phone == "" || s.provider == nil || s.IsOptedOut(phone) {
+		return
+	}
+
+	roomLoc := fmt.Sprintf("Suite %s", task.RoomNumber)
+	body := fmt.Sprintf("🛎️ *Task Assigned to You*\n\n"+
+		"Hi %s,\n"+
+		"You have been assigned the following housekeeping service:\n\n"+
+		"📍 Location: %s\n"+
+		"📋 Service: %s\n"+
+		"⚡ Priority: %s\n", staffName, roomLoc, task.Title, strings.ToUpper(task.Priority))
+
+	if task.Notes != "" {
+		body += fmt.Sprintf("📝 Notes: %s\n", task.Notes)
+	}
+	body += "\nPlease attend to this guest request promptly."
+
+	extID, _ := s.provider.SendText(ctx, phone, body)
+	_, _ = s.LogMessage(ctx, tenantID, phone, staffName, domainwa.TemplateRoomService, body, roomLoc, domainwa.StatusDelivered, extID)
+}
+

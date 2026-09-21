@@ -11,7 +11,10 @@ import (
 
 	notifapp "github.com/dineflow/api/internal/application/notification"
 	roomapp "github.com/dineflow/api/internal/application/room"
+	staffapp "github.com/dineflow/api/internal/application/staff"
+	whatsappapp "github.com/dineflow/api/internal/application/whatsapp"
 	domainroom "github.com/dineflow/api/internal/domain/room"
+	domainuser "github.com/dineflow/api/internal/domain/user"
 	"github.com/dineflow/api/internal/interfaces/http/middleware"
 	"github.com/dineflow/api/pkg/response"
 	"github.com/gin-gonic/gin"
@@ -21,10 +24,20 @@ import (
 type RoomHandler struct {
 	roomService  *roomapp.Service
 	notifService *notifapp.Service
+	staffService *staffapp.Service
+	waService    *whatsappapp.Service
 }
 
 func NewRoomHandler(roomService *roomapp.Service, notifService *notifapp.Service) *RoomHandler {
 	return &RoomHandler{roomService: roomService, notifService: notifService}
+}
+
+func (h *RoomHandler) SetStaffService(ss *staffapp.Service) {
+	h.staffService = ss
+}
+
+func (h *RoomHandler) SetWhatsAppService(ws *whatsappapp.Service) {
+	h.waService = ws
 }
 
 // List returns rooms for the current tenant.
@@ -656,11 +669,13 @@ func (h *RoomHandler) CreateTask(c *gin.Context) {
 }
 
 type UpdateTaskRequest struct {
-	Status domainroom.TaskStatus `json:"status" binding:"required"`
-	Notes  string                `json:"notes"`
+	Status         domainroom.TaskStatus `json:"status"`
+	Notes          string                `json:"notes"`
+	AssignedTo     string                `json:"assignedTo"`
+	AssignedToName string                `json:"assignedToName"`
 }
 
-// UpdateTask updates a housekeeping task status.
+// UpdateTask updates a housekeeping task status and/or staff assignment.
 func (h *RoomHandler) UpdateTask(c *gin.Context) {
 	tenantID := middleware.GetTenantID(c)
 	if tenantID == "" {
@@ -682,7 +697,12 @@ func (h *RoomHandler) UpdateTask(c *gin.Context) {
 		return
 	}
 
-	updated, err := h.roomService.UpdateHousekeepingTask(c.Request.Context(), tOID, taskOID, req.Status, req.Notes)
+	var optAssign []string
+	if strings.TrimSpace(req.AssignedTo) != "" {
+		optAssign = append(optAssign, strings.TrimSpace(req.AssignedTo), strings.TrimSpace(req.AssignedToName))
+	}
+
+	updated, err := h.roomService.UpdateHousekeepingTask(c.Request.Context(), tOID, taskOID, req.Status, req.Notes, optAssign...)
 	if err != nil {
 		response.BadRequest(c, "TASK_UPDATE_FAILED", err.Error())
 		return
@@ -695,6 +715,22 @@ func (h *RoomHandler) UpdateTask(c *gin.Context) {
 				context.Background(), tOID,
 				updated.Title, updated.RoomNumber, updated.RoomID.Hex(),
 			)
+		}()
+	}
+
+	// If assigned to a staff member, notify that staff member via WhatsApp
+	if h.waService != nil && strings.TrimSpace(req.AssignedTo) != "" && h.staffService != nil {
+		assignedID := strings.TrimSpace(req.AssignedTo)
+		go func() {
+			staffList, err := h.staffService.ListStaff(context.Background(), tOID)
+			if err == nil {
+				for _, st := range staffList {
+					if st.ID.Hex() == assignedID && st.Phone != "" {
+						h.waService.NotifyStaffTaskAssigned(context.Background(), tOID, updated, st.Phone, st.Name)
+						break
+					}
+				}
+			}
 		}()
 	}
 
@@ -809,17 +845,42 @@ func (h *RoomHandler) RequestPublicAmenity(c *gin.Context) {
 		IsGuestRequest: true,
 	}
 
+	// 1. Fetch staff list to attempt balanced auto-assignment
+	var staffList []domainuser.User
+	if h.staffService != nil {
+		staffList, _ = h.staffService.ListStaff(c.Request.Context(), room.TenantID)
+	}
+
+	// 2. Auto-assign to an available housekeeper with 0 active tasks (strictly avoiding 2 tasks per housekeeper)
+	if len(staffList) > 0 {
+		availHK, _ := h.roomService.FindAvailableHousekeeper(c.Request.Context(), room.TenantID, staffList)
+		if availHK != nil {
+			task.AssignedTo = availHK.ID.Hex()
+			task.AssignedToName = availHK.Name
+		}
+	}
+
 	if err := h.roomService.CreateHousekeepingTask(c.Request.Context(), task); err != nil {
 		response.BadRequest(c, "REQUEST_FAILED", err.Error())
 		return
 	}
 
-	// Fire housekeeping notification asynchronously
+	// 3. Fire housekeeping notification to client dashboard asynchronously
 	if h.notifService != nil {
 		go func() {
 			_ = h.notifService.EmitHousekeepingRequested(
 				context.Background(), room.TenantID,
 				title, room.RoomNumber, room.ID.Hex(),
+			)
+		}()
+	}
+
+	// 4. Notify EVERY staff member with a registered phone number via WhatsApp
+	if h.waService != nil && len(staffList) > 0 {
+		go func() {
+			h.waService.NotifyStaffHousekeepingRequest(
+				context.Background(), room.TenantID,
+				task, staffList,
 			)
 		}()
 	}

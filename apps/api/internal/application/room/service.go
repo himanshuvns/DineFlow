@@ -11,6 +11,7 @@ import (
 
 	domainorder "github.com/dineflow/api/internal/domain/order"
 	domainroom "github.com/dineflow/api/internal/domain/room"
+	domainuser "github.com/dineflow/api/internal/domain/user"
 	mongoinfra "github.com/dineflow/api/internal/infrastructure/mongodb"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
@@ -1061,12 +1062,124 @@ func (s *Service) ListHousekeepingTasks(ctx context.Context, tenantID bson.Objec
 	return tasks, nil
 }
 
+// CountActiveTasksForStaff counts active (non-completed) housekeeping tasks assigned to a specific staff member.
+func (s *Service) CountActiveTasksForStaff(ctx context.Context, tenantID bson.ObjectID, staffID string, excludeTaskID ...bson.ObjectID) (int64, error) {
+	cleanStaffID := strings.TrimSpace(staffID)
+	if cleanStaffID == "" {
+		return 0, nil
+	}
+	coll := s.db.Collection("housekeeping_tasks")
+	filter := bson.M{
+		"tenantId":   tenantID,
+		"assignedTo": cleanStaffID,
+		"status": bson.M{
+			"$in": []domainroom.TaskStatus{
+				domainroom.TaskPending,
+				domainroom.TaskInProgress,
+			},
+		},
+	}
+	if len(excludeTaskID) > 0 && !excludeTaskID[0].IsZero() {
+		filter["_id"] = bson.M{"$ne": excludeTaskID[0]}
+	}
+	return coll.CountDocuments(ctx, filter)
+}
+
+// FindAvailableHousekeeper finds an available staff member who currently has 0 active tasks.
+// Priority is given to staff with RoleHousekeeping or department Housekeeping, followed by other staff.
+func (s *Service) FindAvailableHousekeeper(ctx context.Context, tenantID bson.ObjectID, staffList []domainuser.User) (*domainuser.User, error) {
+	if len(staffList) == 0 {
+		return nil, nil
+	}
+
+	var housekeepers []domainuser.User
+	var otherStaff []domainuser.User
+
+	for _, st := range staffList {
+		if st.Status != "" && st.Status != domainuser.StatusActive {
+			continue
+		}
+		deptLower := strings.ToLower(st.Department)
+		if st.Role == domainuser.RoleHousekeeping || deptLower == "housekeeping" {
+			housekeepers = append(housekeepers, st)
+		} else if st.Role == domainuser.RoleStaff || st.Role == domainuser.RoleWaiter {
+			otherStaff = append(otherStaff, st)
+		}
+	}
+
+	// 1. Check dedicated housekeepers with 0 active tasks
+	for _, hk := range housekeepers {
+		count, err := s.CountActiveTasksForStaff(ctx, tenantID, hk.ID.Hex())
+		if err != nil {
+			continue
+		}
+		if count == 0 {
+			chosen := hk
+			return &chosen, nil
+		}
+	}
+
+	// 2. Fallback to general staff with 0 active tasks
+	for _, st := range otherStaff {
+		count, err := s.CountActiveTasksForStaff(ctx, tenantID, st.ID.Hex())
+		if err != nil {
+			continue
+		}
+		if count == 0 {
+			chosen := st
+			return &chosen, nil
+		}
+	}
+
+	// All staff have at least 1 active task: cannot assign to prevent overburdening
+	return nil, nil
+}
+
+// AssignHousekeepingTask assigns a task to a staff member, strictly enforcing max 1 active task per housekeeper.
+func (s *Service) AssignHousekeepingTask(ctx context.Context, tenantID, taskID bson.ObjectID, staffID, staffName string) (*domainroom.HousekeepingTask, error) {
+	cleanStaffID := strings.TrimSpace(staffID)
+	cleanStaffName := strings.TrimSpace(staffName)
+
+	if cleanStaffID != "" {
+		activeCount, err := s.CountActiveTasksForStaff(ctx, tenantID, cleanStaffID, taskID)
+		if err != nil {
+			return nil, err
+		}
+		if activeCount >= 1 {
+			return nil, errors.New("Housekeeper already has an active task. Two requests cannot go to one housekeeper.")
+		}
+	}
+
+	coll := s.db.Collection("housekeeping_tasks")
+	now := time.Now().UTC()
+	update := bson.M{
+		"assignedTo":     cleanStaffID,
+		"assignedToName": cleanStaffName,
+		"updatedAt":      now,
+	}
+
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+	var updated domainroom.HousekeepingTask
+	err := coll.FindOneAndUpdate(ctx, bson.M{"_id": taskID, "tenantId": tenantID}, bson.M{"$set": update}, opts).Decode(&updated)
+	if err != nil {
+		return nil, err
+	}
+	return &updated, nil
+}
+
 // CreateHousekeepingTask creates a task.
 func (s *Service) CreateHousekeepingTask(ctx context.Context, t *domainroom.HousekeepingTask) error {
 	t.ID = bson.NewObjectID()
 	now := time.Now().UTC()
 	t.CreatedAt = now
 	t.UpdatedAt = now
+
+	if t.AssignedTo != "" {
+		count, err := s.CountActiveTasksForStaff(ctx, t.TenantID, t.AssignedTo)
+		if err == nil && count >= 1 {
+			return errors.New("Housekeeper already has an active task. Two requests cannot go to one housekeeper.")
+		}
+	}
 
 	if err := t.Validate(); err != nil {
 		return err
@@ -1078,19 +1191,36 @@ func (s *Service) CreateHousekeepingTask(ctx context.Context, t *domainroom.Hous
 }
 
 // UpdateHousekeepingTask updates status of a task; if cleaning is completed, room returns to vacant.
-func (s *Service) UpdateHousekeepingTask(ctx context.Context, tenantID bson.ObjectID, taskID bson.ObjectID, status domainroom.TaskStatus, notes string) (*domainroom.HousekeepingTask, error) {
+func (s *Service) UpdateHousekeepingTask(ctx context.Context, tenantID bson.ObjectID, taskID bson.ObjectID, status domainroom.TaskStatus, notes string, optAssign ...string) (*domainroom.HousekeepingTask, error) {
 	coll := s.db.Collection("housekeeping_tasks")
 	now := time.Now().UTC()
 
 	update := bson.M{
-		"status":    status,
 		"updatedAt": now,
+	}
+	if status != "" {
+		update["status"] = status
 	}
 	if notes != "" {
 		update["notes"] = notes
 	}
 	if status == domainroom.TaskCompleted {
 		update["completedAt"] = now
+	}
+
+	if len(optAssign) > 0 && strings.TrimSpace(optAssign[0]) != "" {
+		newStaffID := strings.TrimSpace(optAssign[0])
+		activeCount, err := s.CountActiveTasksForStaff(ctx, tenantID, newStaffID, taskID)
+		if err != nil {
+			return nil, err
+		}
+		if activeCount >= 1 {
+			return nil, errors.New("Housekeeper already has an active task. Two requests cannot go to one housekeeper.")
+		}
+		update["assignedTo"] = newStaffID
+		if len(optAssign) > 1 && strings.TrimSpace(optAssign[1]) != "" {
+			update["assignedToName"] = strings.TrimSpace(optAssign[1])
+		}
 	}
 
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)

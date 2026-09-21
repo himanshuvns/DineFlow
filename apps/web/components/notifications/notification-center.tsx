@@ -17,6 +17,7 @@ import {
   Users,
   Settings,
   Loader2,
+  CheckSquare,
 } from 'lucide-react'
 import { useNotificationStore, type Notification, type NotificationCategory } from '@/lib/stores/notification-store'
 import { useAuthStore } from '@/lib/stores/auth-store'
@@ -120,12 +121,30 @@ const CATEGORIES: Array<{ key: string; label: string }> = [
 ]
 
 // ── Notification Card ────────────────────────────────────────────────────────
-function NotifCard({ notif, onRead }: { notif: Notification; onRead: (id: string) => void }) {
+function NotifCard({
+  notif,
+  onRead,
+  onDelete,
+  selectMode,
+  isSelected,
+  onToggleSelect,
+}: {
+  notif: Notification
+  onRead: (id: string) => void
+  onDelete?: (id: string) => void
+  selectMode?: boolean
+  isSelected?: boolean
+  onToggleSelect?: (id: string) => void
+}) {
   const router = useRouter()
   const meta = CATEGORY_META[notif.category] || CATEGORY_META.system
   const { title: cleanTitle, message: cleanMessage } = sanitizeNotification(notif.title, notif.message)
 
   const handleClick = () => {
+    if (selectMode && onToggleSelect) {
+      onToggleSelect(notif.id)
+      return
+    }
     if (!notif.read) onRead(notif.id)
     if (notif.actionUrl) router.push(notif.actionUrl)
   }
@@ -133,12 +152,29 @@ function NotifCard({ notif, onRead }: { notif: Notification; onRead: (id: string
   const isHighPriority = notif.priority === 'high' || notif.priority === 'critical'
 
   return (
-    <button
+    <div
       onClick={handleClick}
       className={`w-full text-left p-3.5 border-b border-slate-100 dark:border-slate-800/80 hover:bg-slate-50/90 dark:hover:bg-slate-800/50 transition-all relative flex items-start gap-3 group cursor-pointer ${
-        !notif.read ? 'bg-emerald-50/30 dark:bg-emerald-950/15' : ''
+        isSelected
+          ? 'bg-emerald-50/40 dark:bg-emerald-950/25 ring-1 ring-inset ring-emerald-500/20'
+          : !notif.read
+          ? 'bg-emerald-50/30 dark:bg-emerald-950/15'
+          : ''
       }`}
     >
+      {/* Checkbox when selectMode is active */}
+      {selectMode && (
+        <div className="mt-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={() => onToggleSelect?.(notif.id)}
+            className="w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-emerald-600 focus:ring-emerald-500/30 cursor-pointer"
+            aria-label={`Select ${cleanTitle}`}
+          />
+        </div>
+      )}
+
       {/* Category icon avatar */}
       <div
         className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 shadow-2xs transition-transform group-hover:scale-105 ${meta.iconBg}`}
@@ -186,7 +222,21 @@ function NotifCard({ notif, onRead }: { notif: Notification; onRead: (id: string
           {cleanMessage}
         </p>
       </div>
-    </button>
+
+      {/* Action button: individual delete visible on hover when not in selectMode */}
+      {!selectMode && onDelete && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            onDelete(notif.id)
+          }}
+          title="Delete notification"
+          className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-rose-100 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-all shrink-0 mt-0.5 cursor-pointer"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+      )}
+    </div>
   )
 }
 
@@ -194,6 +244,8 @@ function NotifCard({ notif, onRead }: { notif: Notification; onRead: (id: string
 export function NotificationCenter() {
   const [open, setOpen] = useState(false)
   const [activeCategory, setActiveCategory] = useState('all')
+  const [selectMode, setSelectMode] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
   const panelRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
 
@@ -206,6 +258,8 @@ export function NotificationCenter() {
     markAsRead,
     markAllAsRead,
     clearRead,
+    deleteNotification,
+    deleteNotifications,
     connectSSE,
     disconnectSSE,
   } = useNotificationStore()
@@ -241,11 +295,15 @@ export function NotificationCenter() {
     const handleClickOutside = (e: MouseEvent) => {
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
         setOpen(false)
+        setSelectMode(false)
+        setSelectedIds([])
       }
     }
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setOpen(false)
+        setSelectMode(false)
+        setSelectedIds([])
       }
     }
     if (open) {
@@ -296,6 +354,22 @@ export function NotificationCenter() {
               )}
             </div>
             <div className="flex items-center gap-1">
+              {/* Select mode toggle button */}
+              <button
+                onClick={() => {
+                  setSelectMode((v) => !v)
+                  setSelectedIds([])
+                }}
+                title={selectMode ? "Exit multi-select" : "Select multiple notifications"}
+                className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                  selectMode
+                    ? 'bg-emerald-500 text-slate-950 font-bold'
+                    : 'hover:bg-slate-200/70 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400'
+                }`}
+              >
+                <CheckSquare className="w-4 h-4" />
+              </button>
+
               {unreadCount > 0 && (
                 <button
                   onClick={() => void markAllAsRead()}
@@ -323,7 +397,11 @@ export function NotificationCenter() {
                 View all
               </button>
               <button
-                onClick={() => setOpen(false)}
+                onClick={() => {
+                  setOpen(false)
+                  setSelectMode(false)
+                  setSelectedIds([])
+                }}
                 className="p-1.5 rounded-lg hover:bg-slate-200/70 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
                 aria-label="Close notifications"
               >
@@ -331,6 +409,50 @@ export function NotificationCenter() {
               </button>
             </div>
           </div>
+
+          {/* Bulk Selection Bar when selectMode is active */}
+          {selectMode && (
+            <div className="shrink-0 flex items-center justify-between px-3.5 py-2 border-b border-slate-100 dark:border-slate-800 bg-emerald-50/60 dark:bg-emerald-950/20 text-xs">
+              <label className="flex items-center gap-2 cursor-pointer select-none font-semibold text-slate-700 dark:text-slate-200">
+                <input
+                  type="checkbox"
+                  checked={filteredNotifs.length > 0 && filteredNotifs.every((n) => selectedIds.includes(n.id))}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedIds(filteredNotifs.map((n) => n.id))
+                    } else {
+                      setSelectedIds([])
+                    }
+                  }}
+                  className="w-3.5 h-3.5 rounded border-slate-300 dark:border-slate-700 text-emerald-600 focus:ring-emerald-500/30 cursor-pointer"
+                />
+                <span>{selectedIds.length > 0 ? `${selectedIds.length} selected` : 'Select all'}</span>
+              </label>
+              <div className="flex items-center gap-2">
+                {selectedIds.length > 0 && (
+                  <button
+                    onClick={async () => {
+                      await deleteNotifications(selectedIds)
+                      setSelectedIds([])
+                    }}
+                    className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-rose-600 hover:bg-rose-500 text-white transition-colors cursor-pointer"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    Delete ({selectedIds.length})
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    setSelectMode(false)
+                    setSelectedIds([])
+                  }}
+                  className="text-xs text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer font-medium"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Category filter tabs (shrink-0 + overflow-y-hidden prevents vertical cropping) */}
           <div className="shrink-0 flex items-center gap-1.5 px-3.5 py-2.5 border-b border-slate-100 dark:border-slate-800/80 overflow-x-auto overflow-y-hidden scrollbar-none bg-white dark:bg-slate-900">
@@ -368,7 +490,21 @@ export function NotificationCenter() {
                 <p className="text-xs text-slate-500 max-w-[240px]">No notifications in this category.</p>
               </div>
             ) : (
-              filteredNotifs.map((n) => <NotifCard key={n.id} notif={n} onRead={markAsRead} />)
+              filteredNotifs.map((n) => (
+                <NotifCard
+                  key={n.id}
+                  notif={n}
+                  onRead={markAsRead}
+                  onDelete={deleteNotification}
+                  selectMode={selectMode}
+                  isSelected={selectedIds.includes(n.id)}
+                  onToggleSelect={(id) => {
+                    setSelectedIds((prev) =>
+                      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+                    )
+                  }}
+                />
+              ))
             )}
           </div>
 

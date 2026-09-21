@@ -61,10 +61,37 @@ interface NotificationState {
   fetchUnreadCount: () => Promise<void>
   markAsRead: (id: string) => Promise<void>
   markAllAsRead: () => Promise<void>
+  markMultipleAsRead: (ids: string[]) => Promise<void>
+  deleteNotification: (id: string) => Promise<void>
+  deleteNotifications: (ids: string[]) => Promise<void>
   clearRead: () => Promise<void>
   pushNotification: (notif: Notification) => void
   connectSSE: () => void
   disconnectSSE: () => void
+}
+
+// Helper to manage locally deleted notification IDs so that refetches or local dev don't restore deleted items
+const getDeletedIds = (tenantId?: string): Set<string> => {
+  if (typeof window === 'undefined' || !tenantId) return new Set()
+  try {
+    const raw = localStorage.getItem(`dineflow_deleted_notifs_${tenantId}`)
+    return raw ? new Set(JSON.parse(raw)) : new Set()
+  } catch {
+    return new Set()
+  }
+}
+
+const addDeletedIds = (tenantId: string | undefined, ids: string[]) => {
+  if (typeof window === 'undefined' || !tenantId || ids.length === 0) return
+  try {
+    const current = getDeletedIds(tenantId)
+    ids.forEach((id) => current.add(id))
+    const arr = Array.from(current)
+    const trimmed = arr.length > 500 ? arr.slice(arr.length - 500) : arr
+    localStorage.setItem(`dineflow_deleted_notifs_${tenantId}`, JSON.stringify(trimmed))
+  } catch {
+    // silent
+  }
 }
 
 export const useNotificationStore = create<NotificationState>((set, get) => ({
@@ -87,10 +114,15 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
           ...(params.search ? { search: params.search } : {}),
         },
       })
+      const tenantId = useAuthStore.getState().tenant?.id
+      const deletedIds = getDeletedIds(tenantId)
+      const filtered = data.data.filter((n) => !deletedIds.has(n.id))
+      const deletedUnreadCount = data.data.filter((n) => deletedIds.has(n.id) && !n.read).length
+
       set({
-        notifications: data.data,
-        unreadCount: data.unreadCount,
-        total: data.total,
+        notifications: filtered,
+        unreadCount: Math.max(0, data.unreadCount - deletedUnreadCount),
+        total: Math.max(0, data.total - (data.data.length - filtered.length)),
         isLoading: false,
       })
     } catch {
@@ -133,18 +165,77 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     }
   },
 
+  markMultipleAsRead: async (ids: string[]) => {
+    if (!ids.length) return
+    const idSet = new Set(ids)
+    set((state) => {
+      const newlyReadCount = state.notifications.filter((n) => idSet.has(n.id) && !n.read).length
+      return {
+        notifications: state.notifications.map((n) =>
+          idSet.has(n.id) ? { ...n, read: true } : n
+        ),
+        unreadCount: Math.max(0, state.unreadCount - newlyReadCount),
+      }
+    })
+    try {
+      await Promise.allSettled(ids.map((id) => apiClient.patch(`/notifications/${id}/read`)))
+    } catch {
+      // silent
+    }
+  },
+
+  deleteNotifications: async (ids: string[]) => {
+    if (!ids.length) return
+    const tenantId = useAuthStore.getState().tenant?.id
+    addDeletedIds(tenantId, ids)
+    const idSet = new Set(ids)
+
+    set((state) => {
+      const deletedUnread = state.notifications.filter((n) => idSet.has(n.id) && !n.read).length
+      return {
+        notifications: state.notifications.filter((n) => !idSet.has(n.id)),
+        unreadCount: Math.max(0, state.unreadCount - deletedUnread),
+        total: Math.max(0, state.total - ids.length),
+      }
+    })
+
+    try {
+      await apiClient.post('/notifications/delete-batch', { ids })
+    } catch {
+      try {
+        await Promise.allSettled(ids.map((id) => apiClient.delete(`/notifications/${id}`)))
+      } catch {
+        // silent
+      }
+    }
+  },
+
+  deleteNotification: async (id: string) => {
+    await get().deleteNotifications([id])
+  },
+
   clearRead: async () => {
+    const tenantId = useAuthStore.getState().tenant?.id
+    const readIds = get().notifications.filter((n) => n.read).map((n) => n.id)
+    addDeletedIds(tenantId, readIds)
+
     try {
       await apiClient.delete('/notifications/clear-read')
       set((state) => ({
         notifications: state.notifications.filter((n) => !n.read),
       }))
     } catch {
-      // silent
+      set((state) => ({
+        notifications: state.notifications.filter((n) => !n.read),
+      }))
     }
   },
 
   pushNotification: (notif: Notification) => {
+    const tenantId = useAuthStore.getState().tenant?.id
+    const deletedIds = getDeletedIds(tenantId)
+    if (deletedIds.has(notif.id)) return
+
     set((state) => {
       const exists = state.notifications.some((n) => n.id === notif.id)
       if (exists) return state

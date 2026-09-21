@@ -223,7 +223,7 @@ export function CustomerHousekeepingSheet({
             const existing = localStorage.getItem(storageKey);
             const parsed = existing ? JSON.parse(existing) : [];
             const updated = parsed.map((t: any) =>
-              t.id === tempId ? { ...t, id: serverTask.id } : t
+              t.id === tempId ? { ...t, ...serverTask } : t
             );
             localStorage.setItem(storageKey, JSON.stringify(updated));
           } catch (e) {}

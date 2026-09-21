@@ -276,6 +276,53 @@ func (s *Service) ClearRead(ctx context.Context, tenantID bson.ObjectID) (int64,
 	return res.DeletedCount, nil
 }
 
+// DeleteNotification deletes a single notification by ID within the tenant scope.
+func (s *Service) DeleteNotification(ctx context.Context, tenantID bson.ObjectID, id string) error {
+	oid, err := bson.ObjectIDFromHex(id)
+	if err != nil {
+		return errors.New("invalid notification ID")
+	}
+
+	coll := s.db.Collection(CollNotifications)
+	res, err := coll.DeleteOne(
+		ctx,
+		bson.M{"_id": oid, "tenantId": tenantID},
+	)
+	if err != nil {
+		return err
+	}
+	if res.DeletedCount == 0 {
+		return errors.New("notification not found")
+	}
+	return nil
+}
+
+// DeleteNotifications deletes multiple notifications by their IDs within the tenant scope.
+func (s *Service) DeleteNotifications(ctx context.Context, tenantID bson.ObjectID, ids []string) (int64, error) {
+	var oids []bson.ObjectID
+	for _, id := range ids {
+		if oid, err := bson.ObjectIDFromHex(id); err == nil {
+			oids = append(oids, oid)
+		}
+	}
+	if len(oids) == 0 {
+		return 0, nil
+	}
+
+	coll := s.db.Collection(CollNotifications)
+	res, err := coll.DeleteMany(
+		ctx,
+		bson.M{
+			"tenantId": tenantID,
+			"_id":      bson.M{"$in": oids},
+		},
+	)
+	if err != nil {
+		return 0, err
+	}
+	return res.DeletedCount, nil
+}
+
 // ─── Domain Event Emitters ──────────────────────────────────────────────────
 
 func cleanOrderNumber(num string) string {

@@ -445,20 +445,61 @@ export default function WhatsAppPage() {
 
     try {
       // 2. Fetch Logs
-      const logsRes = await apiClient.get("/whatsapp/logs");
-      if (logsRes.data?.data && Array.isArray(logsRes.data.data) && logsRes.data.data.length > 0) {
-        setLogs(
-          logsRes.data.data.map((l: { id?: string; _id?: string; recipient?: string; customerName?: string; template?: string; status?: string; createdAt?: string; location?: string }) => ({
-            id: l.id || l._id || "log",
-            phone: l.recipient || "+91 98000 00000",
-            customerName: l.customerName || "Valued Guest",
-            template: l.template || "Order Confirmed",
-            status: (l.status as "delivered" | "read" | "queued" | "failed") || "delivered",
-            time: l.createdAt ? new Date(l.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Just now",
-            location: l.location || "Dine-in",
-          }))
-        );
+      let combinedLogs: MessageLogItem[] = [];
+      const logsRes = await apiClient.get("/whatsapp/logs").catch(() => null);
+      if (logsRes?.data?.data && Array.isArray(logsRes.data.data) && logsRes.data.data.length > 0) {
+        combinedLogs = logsRes.data.data.map((l: any) => ({
+          id: l.id || l._id || "log",
+          phone: l.recipient || l.phone || "+91 98000 00000",
+          customerName: l.customerName || "Valued Guest",
+          template: l.template || "Order Confirmed",
+          status: (l.status as "delivered" | "read" | "queued" | "failed") || "delivered",
+          time: l.createdAt ? new Date(l.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Just now",
+          location: l.location || "Dine-in",
+        }));
+      } else {
+        combinedLogs = [...INITIAL_LOGS];
       }
+
+      // Merge real-time staff dispatch alerts from /api/whatsapp/logs
+      try {
+        const localLogsRes = await fetch("/api/whatsapp/logs", { cache: "no-store" }).catch(() => null);
+        if (localLogsRes && localLogsRes.ok) {
+          const localData = await localLogsRes.json().catch(() => null);
+          if (Array.isArray(localData?.data)) {
+            const mappedStaffLogs: MessageLogItem[] = localData.data.map((l: any) => ({
+              id: l.id,
+              phone: l.phone,
+              customerName: l.customerName,
+              template: l.template,
+              status: l.status || "delivered",
+              time: l.time || "Just now",
+              location: l.location || "Suite",
+            }));
+            combinedLogs = [...mappedStaffLogs, ...combinedLogs];
+          }
+        }
+      } catch (_) {}
+
+      // Also merge any from localStorage
+      if (typeof window !== "undefined") {
+        try {
+          const cachedWa = localStorage.getItem("dineflow_whatsapp_logs");
+          if (cachedWa) {
+            const parsed = JSON.parse(cachedWa);
+            if (Array.isArray(parsed)) {
+              combinedLogs = [...parsed, ...combinedLogs];
+            }
+          }
+        } catch (_) {}
+      }
+
+      // Deduplicate by ID
+      const logMap = new Map<string, MessageLogItem>();
+      combinedLogs.forEach((item) => {
+        if (!logMap.has(item.id)) logMap.set(item.id, item);
+      });
+      setLogs(Array.from(logMap.values()));
     } catch {
       // Keep defaults
     }

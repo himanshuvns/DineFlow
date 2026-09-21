@@ -205,6 +205,8 @@ func main() {
 	waService.SetNotificationService(notifService)
 	waService.SetStaffService(staffService)
 	staffService.SetNotificationService(notifService)
+	roomHandler.SetStaffService(staffService)
+	roomHandler.SetWhatsAppService(waService)
 
 	// Inject ping functions for health endpoint
 	handlers.SetHealthDeps(

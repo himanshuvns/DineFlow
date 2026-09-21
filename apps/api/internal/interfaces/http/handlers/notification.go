@@ -171,6 +171,65 @@ func (h *NotificationHandler) ClearRead(c *gin.Context) {
 	response.OK(c, gin.H{"deletedCount": deleted})
 }
 
+// Delete removes a specific notification by ID.
+func (h *NotificationHandler) Delete(c *gin.Context) {
+	tenantID := middleware.GetTenantID(c)
+	if tenantID == "" {
+		response.Unauthorized(c, "tenant context missing")
+		return
+	}
+	tOID, err := bson.ObjectIDFromHex(tenantID)
+	if err != nil {
+		response.BadRequest(c, "INVALID_TENANT", "invalid tenant ID")
+		return
+	}
+
+	id := c.Param("id")
+	if id == "" {
+		response.BadRequest(c, "INVALID_ID", "notification ID required")
+		return
+	}
+
+	if err := h.notifService.DeleteNotification(c.Request.Context(), tOID, id); err != nil {
+		response.BadRequest(c, "DELETE_FAILED", err.Error())
+		return
+	}
+
+	response.OK(c, gin.H{"id": id, "deleted": true})
+}
+
+type DeleteBatchRequest struct {
+	IDs []string `json:"ids" binding:"required"`
+}
+
+// DeleteBatch removes multiple notifications by their IDs.
+func (h *NotificationHandler) DeleteBatch(c *gin.Context) {
+	tenantID := middleware.GetTenantID(c)
+	if tenantID == "" {
+		response.Unauthorized(c, "tenant context missing")
+		return
+	}
+	tOID, err := bson.ObjectIDFromHex(tenantID)
+	if err != nil {
+		response.BadRequest(c, "INVALID_TENANT", "invalid tenant ID")
+		return
+	}
+
+	var req DeleteBatchRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "INVALID_PAYLOAD", err.Error())
+		return
+	}
+
+	deleted, err := h.notifService.DeleteNotifications(c.Request.Context(), tOID, req.IDs)
+	if err != nil {
+		response.BadRequest(c, "DELETE_BATCH_FAILED", err.Error())
+		return
+	}
+
+	response.OK(c, gin.H{"deletedCount": deleted})
+}
+
 type CreateNotificationRequest struct {
 	Category  domainnotification.Category `json:"category" binding:"required"`
 	Title     string                      `json:"title" binding:"required"`

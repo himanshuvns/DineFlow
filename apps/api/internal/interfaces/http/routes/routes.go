@@ -374,6 +374,8 @@ func Setup(
 				notifGroup.PATCH("/:id/read", notifHandler.MarkAsRead)
 				notifGroup.POST("/mark-all-read", notifHandler.MarkAllAsRead)
 				notifGroup.DELETE("/clear-read", notifHandler.ClearRead)
+				notifGroup.POST("/delete-batch", notifHandler.DeleteBatch)
+				notifGroup.DELETE("/:id", notifHandler.Delete)
 				notifGroup.POST("", notifHandler.Create)
 				notifGroup.GET("/stream", notifHandler.Stream)
 			}
