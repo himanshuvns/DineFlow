@@ -16,6 +16,7 @@ import (
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type NotificationEmitter interface {
@@ -214,6 +215,7 @@ func (s *Service) InviteStaff(ctx context.Context, tenantID bson.ObjectID, input
 		empID := fmt.Sprintf("DF-EMP-%04d", count+1001)
 
 		now := time.Now().UTC()
+		defaultHash, _ := bcrypt.GenerateFromPassword([]byte("DineFlow@2026"), bcrypt.DefaultCost)
 		newUser := domainuser.User{
 			ID:             bson.NewObjectID(),
 			TenantID:       tenantID,
@@ -228,6 +230,10 @@ func (s *Service) InviteStaff(ctx context.Context, tenantID bson.ObjectID, input
 			EmploymentType: input.EmploymentType,
 			Salary:         input.Salary,
 			JoiningDate:    &now,
+			Auth: domainuser.Auth{
+				PasswordHash:  string(defaultHash),
+				PhoneVerified: true,
+			},
 			CreatedAt:      now,
 			UpdatedAt:      now,
 		}

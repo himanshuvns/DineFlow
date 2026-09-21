@@ -648,7 +648,7 @@ export default function StaffPage() {
       addToast(
         "success",
         "Staff Enrolled!",
-        `Enrolled ${inviteName.trim()} with WhatsApp access (${phone || email}).`
+        `Enrolled ${inviteName.trim()} with access (${phone || email}). Default login password: DineFlow@2026`
       );
       setIsInviteOpen(false);
       setInviteName("");
@@ -1692,6 +1692,10 @@ export default function StaffPage() {
               value={inviteSalary}
               onChange={(e) => setInviteSalary(e.target.value)}
             />
+          </div>
+
+          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-slate-700 dark:text-slate-300">
+            <span className="font-bold text-emerald-700 dark:text-emerald-400">Login Credentials:</span> Initial password will be <code className="px-1.5 py-0.5 rounded bg-white dark:bg-slate-900 border border-emerald-500/30 font-mono font-bold text-emerald-600 dark:text-emerald-400">DineFlow@2026</code>. The member can log in at <span className="font-semibold text-slate-900 dark:text-white">/login</span> using their mobile number and change their password anytime.
           </div>
 
           <div className="pt-2 flex justify-end gap-2">
