@@ -34,6 +34,7 @@ import {
   Calendar,
   LogOut,
   User,
+  UserCheck,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -100,16 +101,6 @@ interface StaffMember {
   phone?: string;
   employeeId?: string;
 }
-
-const DEFAULT_STAFF: StaffMember[] = [
-  { id: "st-hk-1", name: "Ramesh Kumar", role: "housekeeping", department: "Housekeeping", phone: "+91 98111 22334", employeeId: "DF-EMP-1005" },
-  { id: "st-hk-2", name: "Sunita Sharma", role: "housekeeping", department: "Housekeeping", phone: "+91 98222 33445", employeeId: "DF-EMP-1006" },
-  { id: "st-hk-3", name: "Vikram Singh", role: "housekeeping", department: "Housekeeping", phone: "+91 98333 44556", employeeId: "DF-EMP-1007" },
-  { id: "st-sv-1", name: "Amit Patel", role: "supervisor", department: "Housekeeping", phone: "+91 98444 55667", employeeId: "DF-EMP-1004" },
-  { id: "st-1", name: "Rahul Sharma", role: "waiter", department: "Floor Service", phone: "+91 98765 43210", employeeId: "DF-EMP-1002" },
-  { id: "st-2", name: "Ananya Deshmukh", role: "chef", department: "Kitchen", phone: "+91 98111 22334", employeeId: "DF-EMP-1003" },
-  { id: "st-4", name: "Vikram Malhotra", role: "manager", department: "Management", phone: "+91 99887 76655", employeeId: "DF-EMP-1001" },
-];
 
 interface RoomOrder {
   id?: string;
@@ -182,7 +173,8 @@ export default function RoomDetailPage() {
 
   const [room, setRoom] = React.useState<RoomDetail | null>(null);
   const [tasks, setTasks] = React.useState<HousekeepingTask[]>([]);
-  const [staffList, setStaffList] = React.useState<StaffMember[]>(DEFAULT_STAFF);
+  const [staffList, setStaffList] = React.useState<StaffMember[]>([]);
+  const [reassignTaskId, setReassignTaskId] = React.useState<string | null>(null);
 
   // Active task counts per staff (Housekeeper workload balancer: max 1 active task per housekeeper)
   const staffActiveTaskCounts = React.useMemo(() => {
@@ -582,10 +574,21 @@ export default function RoomDetailPage() {
         const apiStaff = staffRes.status === "fulfilled" && Array.isArray(staffRes.value.data?.data)
           ? staffRes.value.data.data
           : [];
-        const staffMap = new Map<string, any>();
-        DEFAULT_STAFF.forEach((s) => staffMap.set(s.id, s));
-        apiStaff.forEach((s: any) => staffMap.set(s.id || s._id, s));
-        const currentStaffList = Array.from(staffMap.values());
+        const staffMap = new Map<string, StaffMember>();
+        apiStaff.forEach((s: any) => {
+          const id = s.id || s._id;
+          if (id) {
+            staffMap.set(id, {
+              id,
+              name: s.name || s.fullName || s.email || "Staff Member",
+              role: s.role || "staff",
+              department: s.department || "",
+              phone: s.phone || "",
+              employeeId: s.employeeId || "",
+            });
+          }
+        });
+        const currentStaffList: StaffMember[] = Array.from(staffMap.values());
 
         let combinedRoomTasks = [...roomSpecificTasks];
 
@@ -1402,39 +1405,110 @@ export default function RoomDetailPage() {
   };
 
   const handleApproveTask = async (taskId: string) => {
+    const cleanTaskId = taskId || "";
+    const targetTask = tasks.find((t) => (t.id || t._id) === cleanTaskId);
+
+    let assignedStaffId = targetTask?.assignedTo || "";
+    let assignedStaffName = targetTask?.assignedToName || "";
+
+    // If task has no staff assigned yet, auto-assign first available housekeeper with 0 active tasks
+    if (!assignedStaffId && staffList.length > 0) {
+      const availStaff = staffList.find((s) => (staffActiveTaskCounts[s.id] || 0) === 0);
+      if (availStaff) {
+        assignedStaffId = availStaff.id;
+        assignedStaffName = availStaff.name;
+      }
+    }
+
+    // 1. Optimistic state update immediately for 0ms transition to "Service Started"
+    setTasks((prev) =>
+      prev.map((t) =>
+        (t.id || t._id) === cleanTaskId
+          ? {
+              ...t,
+              status: "in_progress",
+              assignedTo: assignedStaffId || t.assignedTo,
+              assignedToName: assignedStaffName || t.assignedToName,
+              updatedAt: new Date().toISOString(),
+            }
+          : t
+      )
+    );
+
+    // 2. Persist to localStorage for 0ms multi-tab and live tracker synchronization
+    const cleanNum = (room?.roomNumber || "").toUpperCase().replace(/^(ROOM-|SUITE-)/, "").trim();
+    const storageKey = `dineflow_tasks_${tenantSlug}_${cleanNum}`;
+    try {
+      const cached = localStorage.getItem(storageKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        const updated = parsed.map((t: any) =>
+          (t.id || t._id) === cleanTaskId
+            ? {
+                ...t,
+                status: "in_progress",
+                assignedTo: assignedStaffId || t.assignedTo,
+                assignedToName: assignedStaffName || t.assignedToName,
+                updatedAt: new Date().toISOString(),
+              }
+            : t
+        );
+        localStorage.setItem(storageKey, JSON.stringify(updated));
+      }
+    } catch (_) {}
+
+    // 3. Dispatch global event to notify customer suite tracker and all dashboard widgets
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("dineflow_task_created"));
+    }
+
+    addToast(
+      "success",
+      "Service Started",
+      assignedStaffName
+        ? `Housekeeping service started. ${assignedStaffName} is attending to the suite.`
+        : "Housekeeping service started. Steward is attending to the suite."
+    );
+
+    // 4. Remote API calls with graceful fallbacks
+    const patchPayload: any = { status: "in_progress" };
+    if (assignedStaffId) {
+      patchPayload.assignedTo = assignedStaffId;
+      patchPayload.assignedToName = assignedStaffName;
+    }
+
     try {
       try {
-        await apiClient.patch(`/rooms/tasks/${encodeURIComponent(taskId)}`, {
-          status: "in_progress",
-        });
+        await apiClient.patch(`/rooms/tasks/${encodeURIComponent(cleanTaskId)}`, patchPayload);
       } catch (patchErr) {
         if (room?.id) {
-          await apiClient.patch(`/rooms/${encodeURIComponent(room.id)}/tasks/${encodeURIComponent(taskId)}`, {
-            status: "in_progress",
-          });
-        } else {
-          throw patchErr;
+          await apiClient.patch(`/rooms/${encodeURIComponent(room.id)}/tasks/${encodeURIComponent(cleanTaskId)}`, patchPayload).catch(() => null);
         }
       }
-      addToast("success", "Task Approved", "Steward has been assigned and is attending to the suite.");
+
+      // Also sync with Next.js local task store
+      await fetch("/api/room/tasks", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ taskId: cleanTaskId, ...patchPayload }),
+      }).catch(() => null);
+
       fetchRoomData();
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent("dineflow_task_created"));
-      }
     } catch (e) {
       console.warn("Approve task error:", e);
     }
   };
 
   const handleCompleteTask = async (taskId: string) => {
+    const cleanTaskId = taskId || "";
     try {
       try {
-        await apiClient.patch(`/rooms/tasks/${encodeURIComponent(taskId)}`, {
+        await apiClient.patch(`/rooms/tasks/${encodeURIComponent(cleanTaskId)}`, {
           status: "completed",
         });
       } catch (patchErr) {
         if (room?.id) {
-          await apiClient.patch(`/rooms/${encodeURIComponent(room.id)}/tasks/${encodeURIComponent(taskId)}`, {
+          await apiClient.patch(`/rooms/${encodeURIComponent(room.id)}/tasks/${encodeURIComponent(cleanTaskId)}`, {
             status: "completed",
           }).catch(() => null);
         }
@@ -1444,7 +1518,7 @@ export default function RoomDetailPage() {
       await fetch("/api/room/tasks", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ taskId, status: "completed" }),
+        body: JSON.stringify({ taskId: cleanTaskId, status: "completed" }),
       }).catch(() => null);
 
       // Update localStorage for zero latency
@@ -1455,7 +1529,7 @@ export default function RoomDetailPage() {
         if (cached) {
           const parsed = JSON.parse(cached);
           const updated = parsed.map((t: any) =>
-            (t.id || t._id) === taskId ? { ...t, status: "completed", completedAt: new Date().toISOString() } : t
+            (t.id || t._id) === cleanTaskId ? { ...t, status: "completed", completedAt: new Date().toISOString() } : t
           );
           localStorage.setItem(storageKey, JSON.stringify(updated));
         }
@@ -1463,7 +1537,7 @@ export default function RoomDetailPage() {
 
       setTasks((prev) =>
         prev.map((t) =>
-          (t.id || t._id) === taskId
+          (t.id || t._id) === cleanTaskId
             ? { ...t, status: "completed", completedAt: new Date().toISOString() }
             : t
         )
@@ -1480,7 +1554,8 @@ export default function RoomDetailPage() {
   };
 
   const handleAssignStaff = async (taskId: string, staffId: string, staffName: string) => {
-    const targetTask = tasks.find((t) => t.id === taskId);
+    const cleanTaskId = taskId || "";
+    const targetTask = tasks.find((t) => (t.id || t._id) === cleanTaskId);
     if (!targetTask) return;
 
     // Strict workload balance guardrail: Two requests cannot go to one housekeeper!
@@ -1494,15 +1569,52 @@ export default function RoomDetailPage() {
       return;
     }
 
+    // 1. Optimistic state update immediately
+    setTasks((prev) =>
+      prev.map((t) =>
+        (t.id || t._id) === cleanTaskId
+          ? { ...t, assignedTo: staffId, assignedToName: staffName, updatedAt: new Date().toISOString() }
+          : t
+      )
+    );
+
+    // 2. Immediate localStorage update
+    const cleanNum = (room?.roomNumber || "").toUpperCase().replace(/^(ROOM-|SUITE-)/, "").trim();
+    const storageKey = `dineflow_tasks_${tenantSlug}_${cleanNum}`;
+    try {
+      const cached = localStorage.getItem(storageKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        const updated = parsed.map((t: any) =>
+          (t.id || t._id) === cleanTaskId
+            ? { ...t, assignedTo: staffId, assignedToName: staffName, updatedAt: new Date().toISOString() }
+            : t
+        );
+        localStorage.setItem(storageKey, JSON.stringify(updated));
+      }
+    } catch (_) {}
+
+    // 3. Dispatch global event immediately
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("dineflow_task_created"));
+    }
+
+    addToast(
+      "success",
+      "Staff Assigned",
+      `Task assigned to ${staffName}. WhatsApp dispatch sent.`
+    );
+
+    // 4. Remote API calls
     try {
       try {
-        await apiClient.patch(`/rooms/tasks/${encodeURIComponent(taskId)}`, {
+        await apiClient.patch(`/rooms/tasks/${encodeURIComponent(cleanTaskId)}`, {
           assignedTo: staffId,
           assignedToName: staffName,
         });
       } catch (patchErr) {
         if (room?.id) {
-          await apiClient.patch(`/rooms/${encodeURIComponent(room.id)}/tasks/${encodeURIComponent(taskId)}`, {
+          await apiClient.patch(`/rooms/${encodeURIComponent(room.id)}/tasks/${encodeURIComponent(cleanTaskId)}`, {
             assignedTo: staffId,
             assignedToName: staffName,
           }).catch(() => null);
@@ -1513,41 +1625,12 @@ export default function RoomDetailPage() {
       await fetch("/api/room/tasks", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ taskId, assignedTo: staffId, assignedToName: staffName }),
+        body: JSON.stringify({ taskId: cleanTaskId, assignedTo: staffId, assignedToName: staffName }),
       }).catch(() => null);
 
-      // Update localStorage for zero latency
-      const cleanNum = (room?.roomNumber || "").toUpperCase().replace(/^(ROOM-|SUITE-)/, "").trim();
-      const storageKey = `dineflow_tasks_${tenantSlug}_${cleanNum}`;
-      try {
-        const cached = localStorage.getItem(storageKey);
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          const updated = parsed.map((t: any) =>
-            (t.id || t._id) === taskId ? { ...t, assignedTo: staffId, assignedToName: staffName } : t
-          );
-          localStorage.setItem(storageKey, JSON.stringify(updated));
-        }
-      } catch (_) {}
-
-      setTasks((prev) =>
-        prev.map((t) =>
-          t.id === taskId ? { ...t, assignedTo: staffId, assignedToName: staffName } : t
-        )
-      );
-
-      addToast(
-        "success",
-        "Staff Assigned",
-        `Task assigned to ${staffName}. WhatsApp dispatch sent.`
-      );
-
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent("dineflow_task_created"));
-      }
+      fetchRoomData();
     } catch (err: any) {
-      const errMsg = err?.response?.data?.message || err?.message || "Failed to assign staff";
-      addToast("error", "Assignment Failed", errMsg);
+      console.warn("handleAssignStaff remote error:", err);
     }
   };
 
@@ -2189,11 +2272,16 @@ export default function RoomDetailPage() {
             {tasks.length > 0 ? (
               tasks.map((t) => {
                 const isDone = t.status === "completed";
-                const assignedStaffName = t.assignedToName || staffList.find((s) => s.id === t.assignedTo)?.name || "";
+                const cleanTaskId: string = String(t.id || (t as any)._id || "");
+                const isAssigned = Boolean(t.assignedTo && t.assignedTo.trim() !== "");
+                const assignedStaff = staffList.find(
+                  (s) => s.id === t.assignedTo || (s as any)._id === t.assignedTo || s.name === t.assignedToName || s.name === t.assignedTo
+                );
+                const assignedStaffName = t.assignedToName || assignedStaff?.name || (isAssigned ? "Housekeeping Steward" : "");
 
                 return (
                   <div
-                    key={t.id}
+                    key={cleanTaskId}
                     className="p-3.5 rounded-2xl bg-slate-100/70 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 flex flex-col sm:flex-row sm:items-start justify-between gap-3 text-xs"
                   >
                     <div className="flex-1 min-w-0">
@@ -2205,7 +2293,7 @@ export default function RoomDetailPage() {
                           variant={isDone ? "success" : t.status === "in_progress" ? "warning" : "neutral"}
                           size="sm"
                         >
-                          {t.status.replace("_", " ").toUpperCase()}
+                          {t.status === "in_progress" ? "⚡ SERVICE STARTED" : t.status.replace("_", " ").toUpperCase()}
                         </Badge>
                         {t.priority === "high" && (
                           <Badge variant="danger" size="sm" className="text-[10px]">
@@ -2227,15 +2315,21 @@ export default function RoomDetailPage() {
 
                       {/* Staff Assignment Badge & WhatsApp Alert Status */}
                       <div className="flex flex-wrap items-center gap-2 mt-2">
-                        {t.assignedTo ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 font-semibold text-[11px] border border-indigo-500/20">
-                            <User className="h-3 w-3 text-indigo-600 dark:text-indigo-400" />
-                            <span>Assigned: {assignedStaffName || "Housekeeping Steward"}</span>
+                        {isAssigned ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 font-bold text-[11px] border border-indigo-500/20 shadow-xs">
+                            <User className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+                            <span>Assigned: {assignedStaffName} {assignedStaff?.role ? `(${assignedStaff.role})` : ""}</span>
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-700 dark:text-amber-300 font-semibold text-[11px] border border-amber-500/30">
                             <AlertCircle className="h-3 w-3 text-amber-600 dark:text-amber-400" />
-                            <span>Pending Assignment (All staff busy)</span>
+                            <span>Pending Assignment (Choose staff below)</span>
+                          </span>
+                        )}
+
+                        {t.status === "in_progress" && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-700 dark:text-amber-400 font-bold text-[11px] border border-amber-500/30">
+                            ⚡ Service Started • Steward Attending
                           </span>
                         )}
 
@@ -2249,46 +2343,103 @@ export default function RoomDetailPage() {
                         </span>
                       </div>
 
-                      {/* Staff Assignment Selector (Enforcing max 1 task per housekeeper) */}
+                      {/* Staff Assignment Selector: Visible when unassigned; hidden once assigned with reassign option */}
                       {!isDone && (
-                        <div className="mt-2.5 flex flex-wrap items-center gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60">
-                          <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 flex items-center gap-1">
-                            <span>Assign Housekeeper:</span>
-                          </label>
-                          <select
-                            value={t.assignedTo || ""}
-                            onChange={(e) => {
-                              const selId = e.target.value;
-                              const selStaff = staffList.find((s) => s.id === selId);
-                              if (selStaff) {
-                                handleAssignStaff(t.id, selStaff.id, selStaff.name);
-                              }
-                            }}
-                            className="h-7 text-xs rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 px-2 py-0 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-500 font-medium max-w-[280px]"
-                          >
-                            <option value="" disabled>Choose available housekeeper...</option>
-                            {staffList.map((st) => {
-                              const isAssignedToThis = t.assignedTo === st.id;
-                              const activeCount = staffActiveTaskCounts[st.id] || staffActiveTaskCounts[st.name] || 0;
-                              const isBusy = activeCount >= 1 && !isAssignedToThis;
-                              return (
-                                <option
-                                  key={st.id}
-                                  value={st.id}
-                                  disabled={isBusy}
-                                  className={isBusy ? "text-slate-400 bg-slate-100 dark:bg-slate-800" : ""}
-                                >
-                                  {st.name} ({st.role}) — {isBusy ? "🔴 Busy (1 task)" : isAssignedToThis ? "🟢 Active on this task" : "🟢 Available (0 tasks)"}
-                                </option>
-                              );
-                            })}
-                          </select>
-                          {t.assignedTo && (
-                            <span className="text-[10px] text-slate-400 dark:text-slate-500 italic">
-                              (1 task max per staff)
-                            </span>
+                        <>
+                          {!isAssigned ? (
+                            <div className="mt-2.5 flex flex-wrap items-center gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60">
+                              <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 flex items-center gap-1">
+                                <span>Assign Housekeeper:</span>
+                              </label>
+                              <select
+                                value={t.assignedTo || ""}
+                                onChange={(e) => {
+                                  const selId = e.target.value;
+                                  const selStaff = staffList.find((s) => s.id === selId || (s as any)._id === selId);
+                                  if (selStaff) {
+                                    handleAssignStaff(cleanTaskId, selStaff.id, selStaff.name);
+                                  }
+                                }}
+                                className="h-7 text-xs rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 px-2 py-0 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-500 font-medium max-w-[280px]"
+                              >
+                                <option value="" disabled>Choose available hotel staff...</option>
+                                {staffList.length === 0 ? (
+                                  <option value="" disabled>No staff members found in this hotel</option>
+                                ) : (
+                                  staffList.map((st) => {
+                                    const isAssignedToThis = t.assignedTo === st.id;
+                                    const activeCount = staffActiveTaskCounts[st.id] || staffActiveTaskCounts[st.name] || 0;
+                                    const isBusy = activeCount >= 1 && !isAssignedToThis;
+                                    return (
+                                      <option
+                                        key={st.id}
+                                        value={st.id}
+                                        disabled={isBusy}
+                                        className={isBusy ? "text-slate-400 bg-slate-100 dark:bg-slate-800" : ""}
+                                      >
+                                        {st.name} ({st.role}) — {isBusy ? "🔴 Busy (1 task)" : isAssignedToThis ? "🟢 Active on this task" : "🟢 Available (0 tasks)"}
+                                      </option>
+                                    );
+                                  })
+                                )}
+                              </select>
+                            </div>
+                          ) : reassignTaskId === cleanTaskId ? (
+                            <div className="mt-2.5 flex flex-wrap items-center gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60">
+                              <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 flex items-center gap-1">
+                                <span>Reassign Housekeeper:</span>
+                              </label>
+                              <select
+                                value={t.assignedTo || ""}
+                                onChange={(e) => {
+                                  const selId = e.target.value;
+                                  const selStaff = staffList.find((s) => s.id === selId || (s as any)._id === selId);
+                                  if (selStaff) {
+                                    handleAssignStaff(cleanTaskId, selStaff.id, selStaff.name);
+                                    setReassignTaskId(null);
+                                  }
+                                }}
+                                className="h-7 text-xs rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 px-2 py-0 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-500 font-medium max-w-[280px]"
+                              >
+                                <option value="" disabled>Choose available hotel staff...</option>
+                                {staffList.map((st) => {
+                                  const isAssignedToThis = t.assignedTo === st.id;
+                                  const activeCount = staffActiveTaskCounts[st.id] || staffActiveTaskCounts[st.name] || 0;
+                                  const isBusy = activeCount >= 1 && !isAssignedToThis;
+                                  return (
+                                    <option
+                                      key={st.id}
+                                      value={st.id}
+                                      disabled={isBusy}
+                                      className={isBusy ? "text-slate-400 bg-slate-100 dark:bg-slate-800" : ""}
+                                    >
+                                      {st.name} ({st.role}) — {isBusy ? "🔴 Busy (1 task)" : isAssignedToThis ? "🟢 Active on this task" : "🟢 Available (0 tasks)"}
+                                    </option>
+                                  );
+                                })}
+                              </select>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 px-2 text-xs text-slate-500 hover:text-slate-900 dark:hover:text-slate-100"
+                                onClick={() => setReassignTaskId(null)}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="mt-1.5 flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setReassignTaskId(cleanTaskId)}
+                                className="text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 font-medium cursor-pointer"
+                              >
+                                <UserCheck className="h-3 w-3" />
+                                <span>Reassign staff</span>
+                              </button>
+                            </div>
                           )}
-                        </div>
+                        </>
                       )}
                     </div>
 
@@ -2298,7 +2449,7 @@ export default function RoomDetailPage() {
                           variant="secondary"
                           size="sm"
                           className="h-7 px-2.5 text-xs text-amber-600 dark:text-amber-400 border-amber-500/30"
-                          onClick={() => handleApproveTask(t.id)}
+                          onClick={() => handleApproveTask(cleanTaskId)}
                         >
                           <Clock className="h-3.5 w-3.5 mr-1" />
                           <span>Approve & Start</span>
@@ -2309,7 +2460,7 @@ export default function RoomDetailPage() {
                           variant="secondary"
                           size="sm"
                           className="h-7 px-2.5 text-xs text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
-                          onClick={() => handleCompleteTask(t.id)}
+                          onClick={() => handleCompleteTask(cleanTaskId)}
                         >
                           <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
                           <span>Mark Done</span>
@@ -2320,7 +2471,7 @@ export default function RoomDetailPage() {
                           variant="secondary"
                           size="sm"
                           className="h-7 px-2.5 text-xs text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
-                          onClick={() => handleCompleteTask(t.id)}
+                          onClick={() => handleCompleteTask(cleanTaskId)}
                         >
                           <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
                           <span>Mark Done</span>

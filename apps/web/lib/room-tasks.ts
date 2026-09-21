@@ -19,19 +19,14 @@ export interface StaffMember {
   id: string;
   name: string;
   role: string;
-  phone: string;
+  phone?: string;
+  department?: string;
 }
-
-export const DEFAULT_STAFF: StaffMember[] = [
-  { id: "st-hk-1", name: "Ramesh Kumar", role: "housekeeping", phone: "+91 98111 22334" },
-  { id: "st-hk-2", name: "Sunita Sharma", role: "housekeeping", phone: "+91 98222 33445" },
-  { id: "st-hk-3", name: "Vikram Singh", role: "lead_housekeeping", phone: "+91 98333 44556" },
-  { id: "st-sv-1", name: "Amit Patel", role: "supervisor", phone: "+91 98444 55667" },
-];
 
 declare global {
   var __dineflow_tasks_store: HousekeepingTask[] | undefined;
   var __dineflow_whatsapp_logs: any[] | undefined;
+  var __dineflow_tenant_staff: Record<string, StaffMember[]> | undefined;
 }
 
 export function getTasksStore(): HousekeepingTask[] {
@@ -48,6 +43,23 @@ export function getWhatsAppLogs(): any[] {
   return global.__dineflow_whatsapp_logs;
 }
 
+export function getTenantStaffStore(): Record<string, StaffMember[]> {
+  if (!global.__dineflow_tenant_staff) {
+    global.__dineflow_tenant_staff = {};
+  }
+  return global.__dineflow_tenant_staff;
+}
+
+export function setTenantStaff(tenantSlug: string, staff: StaffMember[]) {
+  const store = getTenantStaffStore();
+  store[tenantSlug] = staff;
+}
+
+export function getTenantStaff(tenantSlug: string): StaffMember[] {
+  const store = getTenantStaffStore();
+  return store[tenantSlug] || [];
+}
+
 // Workload limit helper: Count active (pending or in_progress) tasks assigned to a staff member
 export function countActiveTasksForStaff(staffId: string, excludeTaskId?: string): number {
   const store = getTasksStore();
@@ -61,9 +73,17 @@ export function countActiveTasksForStaff(staffId: string, excludeTaskId?: string
 
 // Strict workload balancer: Find an available housekeeper who has exactly 0 active tasks.
 // "two requests cannot go to one housekeeper, so every staff should work"
-export function findAvailableHousekeeper(): StaffMember | null {
-  // 1. Prioritize dedicated housekeeping stewards
-  const housekeepers = DEFAULT_STAFF.filter((s) => s.role.includes("housekeeping"));
+export function findAvailableHousekeeper(candidateStaff: StaffMember[] = []): StaffMember | null {
+  if (!candidateStaff || candidateStaff.length === 0) {
+    return null;
+  }
+
+  // 1. Prioritize dedicated housekeeping stewards with 0 active tasks
+  const housekeepers = candidateStaff.filter((s) => {
+    const role = (s.role || "").toLowerCase();
+    const dept = (s.department || "").toLowerCase();
+    return role.includes("housekeeping") || dept.includes("housekeeping") || role.includes("clean");
+  });
   for (const hk of housekeepers) {
     if (countActiveTasksForStaff(hk.id) === 0) {
       return hk;
@@ -71,7 +91,11 @@ export function findAvailableHousekeeper(): StaffMember | null {
   }
 
   // 2. Fallback to supervisor or general staff with 0 active tasks
-  const otherStaff = DEFAULT_STAFF.filter((s) => !s.role.includes("housekeeping"));
+  const otherStaff = candidateStaff.filter((s) => {
+    const role = (s.role || "").toLowerCase();
+    const dept = (s.department || "").toLowerCase();
+    return !role.includes("housekeeping") && !dept.includes("housekeeping") && !role.includes("clean");
+  });
   for (const st of otherStaff) {
     if (countActiveTasksForStaff(st.id) === 0) {
       return st;
@@ -83,13 +107,15 @@ export function findAvailableHousekeeper(): StaffMember | null {
 }
 
 // WhatsApp broadcast: notify EVERY staff member about the new housekeeping request
-export function notifyAllStaffViaWhatsApp(task: HousekeepingTask, cleanRoom: string) {
+export function notifyAllStaffViaWhatsApp(task: HousekeepingTask, cleanRoom: string, staffList: StaffMember[] = []) {
   const logs = getWhatsAppLogs();
-  DEFAULT_STAFF.forEach((staff) => {
+  if (!staffList || staffList.length === 0) return;
+
+  staffList.forEach((staff) => {
     const logItem = {
       id: `wam-hk-${Date.now()}-${staff.id}`,
-      phone: staff.phone,
-      customerName: `${staff.name} (${staff.role.replace("_", " ")})`,
+      phone: staff.phone || "+91 98000 00000",
+      customerName: `${staff.name} (${(staff.role || "staff").replace("_", " ")})`,
       template: `Staff Alert: Housekeeping — ${task.title} (Suite ${cleanRoom})`,
       status: "delivered",
       time: "Just now",

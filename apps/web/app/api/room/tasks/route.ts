@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   HousekeepingTask,
-  DEFAULT_STAFF,
+  StaffMember,
   getTasksStore,
+  getTenantStaff,
+  setTenantStaff,
   countActiveTasksForStaff,
   findAvailableHousekeeper,
   notifyAllStaffViaWhatsApp,
@@ -95,13 +97,21 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { tenantSlug, roomNumber, amenityType, title, priority, notes } = body;
+    const { tenantSlug, roomNumber, amenityType, title, priority, notes, staffList } = body;
 
     const slug = tenantSlug || "the-grand-bistro";
     const cleanRoom = (roomNumber || "102").toUpperCase().replace(/^(ROOM-|SUITE-)/, "");
 
-    // 1. Workload balancing: find an available housekeeper who has 0 active tasks
-    const availableStaff = findAvailableHousekeeper();
+    // Retrieve or register real-time staff for this tenant
+    if (Array.isArray(staffList) && staffList.length > 0) {
+      setTenantStaff(slug, staffList);
+    }
+    const candidateStaff = (Array.isArray(staffList) && staffList.length > 0)
+      ? staffList
+      : getTenantStaff(slug);
+
+    // 1. Workload balancing: find an available housekeeper with 0 active tasks among real staff
+    const availableStaff = findAvailableHousekeeper(candidateStaff);
 
     // 2. Try remote/local backend API
     const apiBase =
@@ -164,18 +174,18 @@ export async function POST(req: NextRequest) {
 
     store.unshift(newTask);
 
-    // 3. Notify EVERY staff member via WhatsApp and record in message logs
-    notifyAllStaffViaWhatsApp(newTask, cleanRoom);
+    // 3. Notify real staff members via WhatsApp and record in message logs
+    notifyAllStaffViaWhatsApp(newTask, cleanRoom, candidateStaff);
 
     return NextResponse.json(
       {
         success: true,
         message: availableStaff
-          ? `Housekeeper ${availableStaff.name} assigned. All staff members alerted via WhatsApp.`
-          : `Service request received. All staff members alerted via WhatsApp (all housekeepers currently occupied).`,
+          ? `Housekeeper ${availableStaff.name} assigned. Staff members alerted via WhatsApp.`
+          : `Service request received. Staff members alerted via WhatsApp.`,
         task: newTask,
         data: { task: newTask },
-        whatsappNotifiedCount: DEFAULT_STAFF.length,
+        whatsappNotifiedCount: candidateStaff.length,
       },
       { status: 200 }
     );
@@ -203,12 +213,10 @@ export async function PATCH(req: NextRequest) {
     if (assignedTo && assignedTo !== target.assignedTo) {
       const activeCount = countActiveTasksForStaff(assignedTo, taskId);
       if (activeCount >= 1) {
-        const staff = DEFAULT_STAFF.find((s) => s.id === assignedTo);
-        const name = staff?.name || assignedToName || "Housekeeper";
         return NextResponse.json(
           {
             success: false,
-            message: `Workload Limit Reached: ${name} already has an active task. Two requests cannot go to one housekeeper.`,
+            message: `Workload Limit Reached: ${assignedToName || "Staff member"} already has an active task. Two requests cannot go to one housekeeper.`,
           },
           { status: 400 }
         );
@@ -223,7 +231,7 @@ export async function PATCH(req: NextRequest) {
     }
     if (assignedTo !== undefined) {
       target.assignedTo = assignedTo;
-      target.assignedToName = assignedToName || DEFAULT_STAFF.find((s) => s.id === assignedTo)?.name || "";
+      target.assignedToName = assignedToName || target.assignedToName || "";
     }
     if (notes !== undefined) {
       target.notes = notes;

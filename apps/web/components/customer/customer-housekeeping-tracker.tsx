@@ -367,8 +367,8 @@ export function CustomerHousekeepingTracker({
     },
     {
       id: "in_progress",
-      label: "Steward Attending",
-      sublabel: "Housekeeping steward assigned & attending to your suite",
+      label: "Service Started",
+      sublabel: "Housekeeping steward is attending to your suite • In progress",
       icon: Sparkles,
     },
     {
@@ -548,7 +548,7 @@ export function CustomerHousekeepingTracker({
                         className="capitalize text-[10px] font-bold"
                       >
                         {task.status === "in_progress"
-                          ? "In Progress"
+                          ? "⚡ Service Started"
                           : task.status === "completed"
                           ? "Completed"
                           : "Requested"}
