@@ -37,11 +37,11 @@ interface TabDef {
 
 const TABS: TabDef[] = [
   { key: "overview", label: "Overview", icon: LayoutDashboard },
-  { key: "orders", label: "Orders (KDS)", icon: ShoppingBag },
+  { key: "orders", label: "Live KDS", icon: ShoppingBag },
   { key: "menu", label: "Menu", icon: UtensilsCrossed },
   { key: "tables", label: "Tables & QR", icon: Grid },
-  { key: "rooms", label: "Rooms & In-Dining", icon: Hotel },
-  { key: "staff", label: "Staff & Attendance", icon: Users },
+  { key: "rooms", label: "Rooms & Suites", icon: Hotel },
+  { key: "staff", label: "Staff & HR", icon: Users },
   { key: "analytics", label: "Analytics", icon: BarChart3 },
 ];
 
@@ -68,7 +68,7 @@ export function LandingInteractivePreview() {
       </div>
 
       {/* Interactive Tabs Bar */}
-      <div className="flex items-center justify-start sm:justify-center overflow-x-auto pb-3 gap-2 no-scrollbar">
+      <div className="flex items-center justify-start lg:justify-center overflow-x-auto lg:overflow-visible flex-nowrap lg:flex-wrap gap-2 pb-2 px-1 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {TABS.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.key;
@@ -77,13 +77,13 @@ export function LandingInteractivePreview() {
               key={tab.key}
               type="button"
               onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap shrink-0 cursor-pointer ${
+              className={`flex items-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap shrink-0 cursor-pointer ${
                 isActive
                   ? "bg-emerald-600 text-white shadow-md shadow-emerald-500/25 ring-2 ring-emerald-500/30"
                   : "bg-white dark:bg-slate-900/80 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-800/80"
               }`}
             >
-              <Icon className={`h-4 w-4 ${isActive ? "text-white" : "text-emerald-500"}`} />
+              <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-white" : "text-emerald-500"}`} />
               <span>{tab.label}</span>
             </button>
           );
