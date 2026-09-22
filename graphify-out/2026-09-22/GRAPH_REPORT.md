@@ -1,9 +1,9 @@
 # Graph Report - DineFlow  (2026-09-22)
 
 ## Corpus Check
-- 326 files · ~658,502 words
+- 326 files · ~658,683 words
 - Verdict: corpus is large enough that graph structure adds value.
-- Unclassified: 11 file(s) not represented in the graph (top: (none) 6, .example 2, .toml 1)
+- Unclassified: 12 file(s) not represented in the graph (top: (none) 6, .example 2, .toml 1)
 
 ## Summary
 - 2707 nodes · 7577 edges · 143 communities (106 shown, 37 thin omitted)
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `bba9cb01`
+- Built from commit: `d52d89af`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -610,11 +610,11 @@ Nodes (3): nextConfig, securityHeaders, next
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `react` connect `react` to `spotlight-cursor.tsx`, `lucide-react`, `toast.tsx`, `TubesCursor`, `video/page.tsx`, `label.tsx`, `staff/page.tsx`, `utils.ts`, `landing-workflow.tsx`, `useToast`, `app/pricing/page.tsx`, `web/package.json`, `notification-center.tsx`, `useAuthStore`, `app/layout.tsx`?**
-  _High betweenness centrality (0.019) - this node is a cross-community bridge._
+  _High betweenness centrality (0.020) - this node is a cross-community bridge._
 - **Why does `RoomHandler` connect `OK` to `go.mongodb.org/mongo-driver/v2/bson.ObjectID`, `context.Context`, `Service`, `Service`, `Setup`, `BadRequest`, `server/main.go`, `AuthHandler`?**
   _High betweenness centrality (0.018) - this node is a cross-community bridge._
 - **Why does `main()` connect `main` to `Service`, `context.Context`, `search/service.go`, `ai/service.go`, `Service`, `Setup`, `tenant/tenant.go`, `testing.T`, `config.go`, `redisKey`, `Service`, `OpenWAProvider`, `server/main.go`, `Hub`, `github.com/gin-gonic/gin.HandlerFunc`, `storage/storage.go`, `Service`, `Maker`?**
-  _High betweenness centrality (0.013) - this node is a cross-community bridge._
+  _High betweenness centrality (0.014) - this node is a cross-community bridge._
 - **What connects `TestResult`, `github.com/dineflow/api`, `geminiRequest` to the rest of the system?**
   _776 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `InternalError` be split into smaller, more focused modules?**

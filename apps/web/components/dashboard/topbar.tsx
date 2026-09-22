@@ -9,6 +9,7 @@ import {
   User as UserIcon,
   HelpCircle,
   Sparkles,
+  Search,
 } from "lucide-react";
 import { useUIStore } from "@/lib/stores/ui-store";
 import { useAuthStore } from "@/lib/stores/auth-store";
@@ -42,7 +43,7 @@ const ROUTE_TITLES: Record<string, string> = {
 export function TopBar() {
   const router = useRouter();
   const pathname = usePathname();
-  const { setMobileMenuOpen } = useUIStore();
+  const { setMobileMenuOpen, setSearchOpen } = useUIStore();
   const { user, tenant, clearAuth } = useAuthStore();
   const { addToast } = useToast();
 
@@ -110,16 +111,16 @@ export function TopBar() {
     <header className="h-14 border-b border-slate-200/80 dark:border-slate-800/80 bg-white/95 dark:bg-[#090D16]/95 backdrop-blur-md sticky top-0 z-40 flex items-center px-3 sm:px-5 gap-3 transition-colors duration-200">
 
       {/* Left: Mobile menu trigger + Breadcrumbs */}
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-2 min-w-0 flex-1 md:flex-initial">
         <button
           onClick={() => setMobileMenuOpen(true)}
-          className="md:hidden p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 transition-colors cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
+          className="md:hidden p-2 -ml-1 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 transition-colors cursor-pointer min-h-[40px] min-w-[40px] flex items-center justify-center shrink-0"
           aria-label="Open navigation drawer"
         >
           <Menu className="h-5 w-5" />
         </button>
 
-        <div className="flex items-center gap-1.5 text-xs">
+        <div className="flex items-center gap-1.5 text-xs min-w-0">
           {(tenant?.logoUrl || tenant?.logo) && (
             <div className="hidden md:flex h-6 w-6 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0A0F1D] items-center justify-center p-0.5 shrink-0 shadow-xs">
               <img
@@ -133,7 +134,7 @@ export function TopBar() {
             {tenant?.name || "Your Restaurant"}
           </span>
           <span className="hidden md:inline text-slate-300 dark:text-slate-600">/</span>
-          <span className="text-emerald-600 dark:text-emerald-400 font-bold truncate max-w-[160px] sm:max-w-[220px] md:max-w-[260px] text-base md:text-xs">
+          <span className="text-emerald-600 dark:text-emerald-400 font-bold truncate text-sm sm:text-base md:text-xs">
             {currentTitle}
           </span>
         </div>
@@ -147,7 +148,17 @@ export function TopBar() {
       </div>
 
       {/* Right: Actions */}
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+        {/* Mobile Search Button */}
+        <button
+          onClick={() => setSearchOpen(true)}
+          className="md:hidden p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 transition-colors cursor-pointer min-h-[40px] min-w-[40px] flex items-center justify-center"
+          aria-label="Open global search"
+          title="Search (⌘K)"
+        >
+          <Search className="h-5 w-5" />
+        </button>
+
         {/* Live KDS status - visible at xl+ so 1024px has plenty of space */}
         <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[11px] font-semibold whitespace-nowrap">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping shrink-0" />

@@ -29,6 +29,8 @@ import {
 import { apiClient } from "@/lib/api";
 import { useTenantData } from "@/lib/stores/tenant-data-store";
 import { useAuthStore } from "@/lib/stores/auth-store";
+import { useUIStore } from "@/lib/stores/ui-store";
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 
 export interface SearchResultItem {
@@ -272,6 +274,12 @@ export function GlobalSearch() {
 
   const { tenant, user } = useAuthStore();
   const { menuItems, orders, tables, categories } = useTenantData();
+  const { searchOpen, setSearchOpen } = useUIStore();
+
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // State
   const [query, setQuery] = React.useState("");
@@ -279,6 +287,8 @@ export function GlobalSearch() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = React.useState(false);
   const [activeChip, setActiveChip] = React.useState<string>("all");
+
+  const isModalOpen = searchOpen || mobileSearchOpen;
 
   // Advanced Filters State
   const [isFilterPanelOpen, setIsFilterPanelOpen] = React.useState(false);
@@ -414,6 +424,7 @@ export function GlobalSearch() {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
         setIsOpen(true);
+        setSearchOpen(true);
         setMobileSearchOpen(true);
         setTimeout(() => {
           searchInputRef.current?.focus();
@@ -423,7 +434,7 @@ export function GlobalSearch() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [setSearchOpen]);
 
   // Click outside to dismiss dropdown
   React.useEffect(() => {
@@ -743,6 +754,7 @@ export function GlobalSearch() {
     saveRecentSearch(item.title, item.category);
     setIsOpen(false);
     setMobileSearchOpen(false);
+    setSearchOpen(false);
     setQuery("");
     router.push(item.actionUrl);
   };
@@ -750,6 +762,7 @@ export function GlobalSearch() {
   const handleSelectQuickAction = (qa: QuickActionItem) => {
     setIsOpen(false);
     setMobileSearchOpen(false);
+    setSearchOpen(false);
     setQuery("");
     router.push(qa.actionUrl);
   };
@@ -790,11 +803,13 @@ export function GlobalSearch() {
         router.push(`/dashboard/menu?search=${encodeURIComponent(query.trim())}`);
         setIsOpen(false);
         setMobileSearchOpen(false);
+        setSearchOpen(false);
       }
     } else if (e.key === "Escape") {
       e.preventDefault();
       setIsOpen(false);
       setMobileSearchOpen(false);
+      setSearchOpen(false);
       setIsFilterPanelOpen(false);
       searchInputRef.current?.blur();
     }
@@ -803,23 +818,9 @@ export function GlobalSearch() {
   let cumulativeIndex = 0;
 
   return (
-    <div ref={containerRef} className="relative flex items-center">
-      {/* Mobile / Tablet search trigger button */}
-      <button
-        onClick={() => {
-          setMobileSearchOpen(true);
-          setIsOpen(true);
-          setTimeout(() => searchInputRef.current?.focus(), 50);
-        }}
-        className="lg:hidden p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 transition-colors cursor-pointer"
-        aria-label="Open global search"
-        title="Search (⌘K)"
-      >
-        <Search className="h-5 w-5" />
-      </button>
-
-      {/* Desktop Search Input Form */}
-      <div className="hidden lg:flex items-center w-full">
+    <div ref={containerRef} className="relative flex items-center w-full">
+      {/* Search Input Form */}
+      <div className="flex items-center w-full">
         <div className="relative w-full">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
           <input
@@ -889,10 +890,19 @@ export function GlobalSearch() {
         </div>
       </div>
 
-      {/* Mobile Search Modal Overlay */}
-      {mobileSearchOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden bg-black/60 backdrop-blur-sm flex flex-col p-3 sm:p-4">
-          <div className="bg-white dark:bg-[#0B0F19] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh]">
+      {/* Mobile Search Modal Overlay — Rendered to document.body via portal so it is never clipped or hidden */}
+      {isModalOpen && mounted && createPortal(
+        <div className="fixed inset-0 z-50 lg:hidden bg-black/60 backdrop-blur-sm flex flex-col p-3 sm:p-4 animate-in fade-in duration-150">
+          <div
+            className="fixed inset-0"
+            onClick={() => {
+              setMobileSearchOpen(false);
+              setSearchOpen(false);
+              setIsOpen(false);
+              setIsFilterPanelOpen(false);
+            }}
+          />
+          <div className="relative bg-white dark:bg-[#0B0F19] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh] z-10">
             <div className="p-3 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2">
               <Search className="h-4 w-4 text-emerald-500 shrink-0" />
               <input
@@ -930,10 +940,11 @@ export function GlobalSearch() {
               <button
                 onClick={() => {
                   setMobileSearchOpen(false);
+                  setSearchOpen(false);
                   setIsOpen(false);
                   setIsFilterPanelOpen(false);
                 }}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white"
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -949,7 +960,8 @@ export function GlobalSearch() {
               {renderDropdownContent()}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Desktop Dropdown Popover */}

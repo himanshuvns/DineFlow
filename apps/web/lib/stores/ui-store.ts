@@ -6,6 +6,8 @@ interface UIState {
   setSidebarCollapsed: (collapsed: boolean) => void;
   mobileMenuOpen: boolean;
   setMobileMenuOpen: (open: boolean) => void;
+  searchOpen: boolean;
+  setSearchOpen: (open: boolean) => void;
   activeModal: string | null;
   openModal: (modalId: string) => void;
   closeModal: () => void;
@@ -17,6 +19,8 @@ export const useUIStore = create<UIState>((set) => ({
   setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
   mobileMenuOpen: false,
   setMobileMenuOpen: (open) => set({ mobileMenuOpen: open }),
+  searchOpen: false,
+  setSearchOpen: (open) => set({ searchOpen: open }),
   activeModal: null,
   openModal: (modalId) => set({ activeModal: modalId }),
   closeModal: () => set({ activeModal: null }),

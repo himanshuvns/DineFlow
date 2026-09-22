@@ -846,7 +846,7 @@
       "file_type": "code",
       "norm_label": "apierrorresponse",
       "source_file": "apps/web/lib/api.ts",
-      "source_location": "L199"
+      "source_location": "L203"
     },
     {
       "id": "apps_web_lib_validation_confirmpasswordresult",
@@ -2556,7 +2556,7 @@
       "file_type": "code",
       "norm_label": "post()",
       "source_file": "apps/web/app/api/room/dnd/route.ts",
-      "source_location": "L172"
+      "source_location": "L173"
     },
     {
       "id": "apps_web_app_api_whatsapp_logs_route_get",
@@ -2616,7 +2616,7 @@
       "file_type": "code",
       "norm_label": "post()",
       "source_file": "apps/web/app/api/room/extend-stay/route.ts",
-      "source_location": "L171"
+      "source_location": "L172"
     },
     {
       "id": "apps_web_app_api_menu_public_route_get",
@@ -3420,7 +3420,7 @@
       "file_type": "code",
       "norm_label": "geterrormessage()",
       "source_file": "apps/web/lib/api.ts",
-      "source_location": "L204"
+      "source_location": "L208"
     },
     {
       "id": "apps_web_lib_api_processqueue",
@@ -3432,7 +3432,7 @@
       "file_type": "code",
       "norm_label": "processqueue()",
       "source_file": "apps/web/lib/api.ts",
-      "source_location": "L52"
+      "source_location": "L56"
     },
     {
       "id": "apps_web_lib_validation_formatindianphoneinput",
@@ -4488,7 +4488,7 @@
       "file_type": "code",
       "norm_label": "patch()",
       "source_file": "apps/web/app/api/room/tasks/route.ts",
-      "source_location": "L201"
+      "source_location": "L203"
     },
     {
       "id": "apps_web_app_api_room_tasks_route_post",
@@ -4500,7 +4500,7 @@
       "file_type": "code",
       "norm_label": "post()",
       "source_file": "apps/web/app/api/room/tasks/route.ts",
-      "source_location": "L97"
+      "source_location": "L98"
     },
     {
       "id": "apps_web_lib_room_tasks_countactivetasksforstaff",
@@ -15418,7 +15418,7 @@
       "file_type": "code",
       "norm_label": "apiclient",
       "source_file": "apps/web/lib/api.ts",
-      "source_location": "L16"
+      "source_location": "L20"
     },
     {
       "id": "apps_web_lib_api_baseurl",
@@ -15429,7 +15429,7 @@
       "file_type": "code",
       "norm_label": "baseurl",
       "source_file": "apps/web/lib/api.ts",
-      "source_location": "L14"
+      "source_location": "L18"
     },
     {
       "id": "apps_web_lib_api_failedqueue",
@@ -15440,7 +15440,7 @@
       "file_type": "code",
       "norm_label": "failedqueue",
       "source_file": "apps/web/lib/api.ts",
-      "source_location": "L47"
+      "source_location": "L51"
     },
     {
       "id": "apps_web_lib_validation",
@@ -32882,7 +32882,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/app/api/room/dnd/route.ts",
-      "source_location": "L182",
+      "source_location": "L183",
       "weight": 1.0
     },
     {
@@ -32906,7 +32906,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/app/api/room/extend-stay/route.ts",
-      "source_location": "L180",
+      "source_location": "L181",
       "weight": 1.0
     },
     {
@@ -32930,7 +32930,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/app/api/room/tasks/route.ts",
-      "source_location": "L206",
+      "source_location": "L208",
       "weight": 1.0
     },
     {
@@ -32942,7 +32942,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/app/api/room/tasks/route.ts",
-      "source_location": "L214",
+      "source_location": "L216",
       "weight": 1.0
     },
     {
@@ -32954,7 +32954,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/app/api/room/tasks/route.ts",
-      "source_location": "L107",
+      "source_location": "L108",
       "weight": 1.0
     },
     {
@@ -32966,7 +32966,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/app/api/room/tasks/route.ts",
-      "source_location": "L111",
+      "source_location": "L112",
       "weight": 1.0
     },
     {
@@ -32978,7 +32978,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/app/api/room/tasks/route.ts",
-      "source_location": "L114",
+      "source_location": "L115",
       "weight": 1.0
     },
     {
@@ -32990,7 +32990,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/app/api/room/tasks/route.ts",
-      "source_location": "L153",
+      "source_location": "L155",
       "weight": 1.0
     },
     {
@@ -33002,7 +33002,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/app/api/room/tasks/route.ts",
-      "source_location": "L178",
+      "source_location": "L180",
       "weight": 1.0
     },
     {
@@ -34130,7 +34130,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/app/m/[tenantSlug]/[tableId]/page.tsx",
-      "source_location": "L261",
+      "source_location": "L262",
       "weight": 1.0
     },
     {
@@ -34142,7 +34142,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/app/m/[tenantSlug]/[tableId]/page.tsx",
-      "source_location": "L442",
+      "source_location": "L444",
       "weight": 1.0
     },
     {
@@ -34190,7 +34190,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/app/m/[tenantSlug]/[tableId]/page.tsx",
-      "source_location": "L871",
+      "source_location": "L873",
       "weight": 1.0
     },
     {
@@ -48746,7 +48746,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/lib/api.ts",
-      "source_location": "L16",
+      "source_location": "L20",
       "weight": 1.0
     },
     {
@@ -48758,7 +48758,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/lib/api.ts",
-      "source_location": "L52",
+      "source_location": "L56",
       "weight": 1.0
     },
     {
@@ -101640,7 +101640,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/web/app/api/room/dnd/route.ts",
-      "source_location": "L172",
+      "source_location": "L173",
       "weight": 1.0
     },
     {
@@ -101706,7 +101706,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/web/app/api/room/extend-stay/route.ts",
-      "source_location": "L171",
+      "source_location": "L172",
       "weight": 1.0
     },
     {
@@ -101838,7 +101838,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/web/app/api/room/tasks/route.ts",
-      "source_location": "L201",
+      "source_location": "L203",
       "weight": 1.0
     },
     {
@@ -101849,7 +101849,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/web/app/api/room/tasks/route.ts",
-      "source_location": "L97",
+      "source_location": "L98",
       "weight": 1.0
     },
     {
@@ -105864,7 +105864,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/web/lib/api.ts",
-      "source_location": "L14",
+      "source_location": "L18",
       "weight": 1.0
     },
     {
@@ -105875,7 +105875,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/web/lib/api.ts",
-      "source_location": "L199",
+      "source_location": "L203",
       "weight": 1.0
     },
     {
@@ -105886,7 +105886,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/web/lib/api.ts",
-      "source_location": "L204",
+      "source_location": "L208",
       "weight": 1.0
     },
     {
@@ -105908,7 +105908,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/web/lib/api.ts",
-      "source_location": "L47",
+      "source_location": "L51",
       "weight": 1.0
     },
     {
@@ -119826,5 +119826,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "bba9cb01865ee14422efdc304da763c8a4d6671c"
+  "built_at_commit": "d52d89af63898c7b673b24620f9dda0b6ff125df"
 }

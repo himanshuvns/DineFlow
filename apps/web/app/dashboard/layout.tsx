@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Sidebar, NAV_ITEMS } from "@/components/dashboard/sidebar";
+import { Sidebar, NAV_SECTIONS } from "@/components/dashboard/sidebar";
 import { TopBar } from "@/components/dashboard/topbar";
 import { ImpersonationBanner } from "@/components/dashboard/impersonation-banner";
 import { BroadcastBanner } from "@/components/dashboard/broadcast-banner";
@@ -85,6 +85,7 @@ export default function DashboardLayout({
       <Sidebar />
 
       {/* Mobile Drawer */}
+      {/* Mobile Drawer */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 md:hidden flex">
           <div
@@ -92,8 +93,8 @@ export default function DashboardLayout({
             onClick={() => setMobileMenuOpen(false)}
           />
           <div className="relative w-72 max-w-[85vw] h-full bg-white dark:bg-[#0B0F19] border-r border-slate-200 dark:border-slate-800 p-5 flex flex-col justify-between z-10 animate-in slide-in-from-left duration-200 shadow-2xl overflow-y-auto pb-safe pt-safe">
-            <div>
-              <div className="flex items-center justify-between pb-5 border-b border-slate-200 dark:border-slate-800/80">
+            <div className="flex-1 overflow-y-auto scrollbar-none flex flex-col min-h-0">
+              <div className="flex items-center justify-between pb-5 border-b border-slate-200 dark:border-slate-800/80 shrink-0">
                 <div className="flex items-center gap-2.5 overflow-hidden">
                   {tenant?.logoUrl || tenant?.logo ? (
                     <div className="h-8 w-8 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0A0F1D] flex items-center justify-center p-0.5 shrink-0 shadow-sm">
@@ -114,7 +115,8 @@ export default function DashboardLayout({
                     <span className="text-base font-extrabold text-slate-900 dark:text-white truncate">
                       {tenant?.name || "DineFlow"}
                     </span>
-                    <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 truncate">
+                    <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 truncate flex items-center gap-1">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                       {tenant?.type
                         ? `${tenant.type.charAt(0).toUpperCase() + tenant.type.slice(1).replace("_", " ")} OS`
                         : "Restaurant OS"}
@@ -130,62 +132,84 @@ export default function DashboardLayout({
                 </button>
               </div>
 
-              <nav className="mt-4 space-y-1">
-                {NAV_ITEMS.filter((item) => isRouteAllowed(item.href, user?.role)).map((item) => {
-                  const isActive = pathname === item.href;
-                  const Icon = item.icon;
-                  const displayLabel = item.href === "/dashboard/settings" && user?.role === "manager" ? "Settings" : item.label;
+              {/* Navigation grouped by section matching desktop sidebar */}
+              <nav className="mt-4 space-y-3">
+                {NAV_SECTIONS.map((section) => {
+                  const visibleItems = section.items.filter((item) => isRouteAllowed(item.href, user?.role));
+                  if (visibleItems.length === 0) return null;
+
                   return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className={cn(
-                        "flex items-center justify-between px-3 py-2.5 min-h-[42px] rounded-xl text-xs font-medium transition-colors cursor-pointer",
-                        isActive
-                          ? "bg-emerald-500/10 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300 font-semibold border border-emerald-500/25 dark:border-emerald-500/30 shadow-xs"
-                          : "text-slate-700 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-800/60"
-                      )}
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <Icon
-                          className={cn(
-                            "h-4 w-4 shrink-0",
-                            isActive
-                              ? "text-emerald-600 dark:text-emerald-400"
-                              : "text-slate-400 dark:text-slate-400"
-                          )}
-                        />
-                        <span className="truncate">{displayLabel}</span>
+                    <div key={section.title} className="space-y-1">
+                      <div className="px-3 pt-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 select-none">
+                        {section.title}
                       </div>
-                      {item.badge && (
-                        <span
-                          className={cn(
-                            "px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase shrink-0",
-                            item.badge === "Live"
-                              ? "bg-rose-500/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400 border border-rose-500/30 animate-pulse"
-                              : "bg-emerald-500/10 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-500/30"
-                          )}
-                        >
-                          {item.badge}
-                        </span>
-                      )}
-                    </Link>
+                      {visibleItems.map((item) => {
+                        const isActive = pathname === item.href;
+                        const Icon = item.icon;
+                        const displayLabel = item.href === "/dashboard/settings" && user?.role === "manager" ? "Settings" : item.label;
+
+                        return (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            onClick={() => setMobileMenuOpen(false)}
+                            className={cn(
+                              "flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all duration-150 relative cursor-pointer",
+                              isActive
+                                ? "bg-emerald-500/10 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300 font-semibold border border-emerald-500/25 dark:border-emerald-500/30 shadow-xs"
+                                : "text-slate-700 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-800/60"
+                            )}
+                          >
+                            {isActive && (
+                              <span className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+                            )}
+                            <div className="flex items-center gap-3 min-w-0">
+                              <Icon
+                                className={cn(
+                                  "h-4 w-4 shrink-0 transition-colors",
+                                  isActive
+                                    ? "text-emerald-600 dark:text-emerald-400"
+                                    : "text-slate-400 dark:text-slate-400"
+                                )}
+                              />
+                              <span className="truncate">{displayLabel}</span>
+                            </div>
+                            {item.badge && (
+                              <span
+                                className={cn(
+                                  "px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase shrink-0",
+                                  item.badge === "Live"
+                                    ? "bg-rose-500/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400 border border-rose-500/30 animate-pulse"
+                                    : "bg-emerald-500/10 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-500/30"
+                                )}
+                              >
+                                {item.badge}
+                              </span>
+                            )}
+                          </Link>
+                        );
+                      })}
+                    </div>
                   );
                 })}
               </nav>
             </div>
 
             {/* Plan Footer in Mobile Drawer */}
-            <div className="pt-4 mt-4 border-t border-slate-200/80 dark:border-slate-800/60">
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/60 flex items-center justify-between">
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <Sparkles className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400 shrink-0" />
-                  <span className="text-xs font-bold text-slate-900 dark:text-white capitalize truncate">
-                    {tenant?.plan || "Growth"} Plan
-                  </span>
+            <div className="pt-4 mt-4 border-t border-slate-200/80 dark:border-slate-800/60 shrink-0">
+              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200/80 dark:border-slate-800/60">
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <Sparkles className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400 shrink-0" />
+                    <span className="text-xs font-bold text-slate-900 dark:text-white capitalize truncate">
+                      {tenant?.plan || "Growth"} Plan
+                    </span>
+                  </div>
+                  <Badge variant="success" size="sm">Active</Badge>
                 </div>
-                <Badge variant="success" size="sm">Active</Badge>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
+                  Unlimited QR scans & 3 KDS display screens active.
+                </p>
               </div>
             </div>
           </div>
