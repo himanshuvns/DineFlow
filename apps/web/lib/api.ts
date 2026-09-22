@@ -2,6 +2,10 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { useAuthStore } from "./stores/auth-store";
 
 export const getBaseURL = () => {
+  // If running on the server (SSR, Route Handlers), prioritize internal Docker network URL
+  if (typeof window === "undefined" && process.env.INTERNAL_API_URL) {
+    return process.env.INTERNAL_API_URL;
+  }
   if (process.env.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL;
   }

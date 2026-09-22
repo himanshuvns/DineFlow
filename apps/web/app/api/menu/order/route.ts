@@ -7,6 +7,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
 
     const apiBase =
+      process.env.INTERNAL_API_URL ||
       process.env.NEXT_PUBLIC_API_URL ||
       (process.env.NODE_ENV === "production"
         ? "https://api-production-f170.up.railway.app/api/v1"

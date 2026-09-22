@@ -34,6 +34,7 @@ NEXT_PUBLIC_APP_URL=https://${DOMAIN}
 NEXT_PUBLIC_API_URL=https://${DOMAIN}/api/v1
 NEXT_PUBLIC_WS_URL=wss://${DOMAIN}
 NEXT_PUBLIC_ORDERING_URL=https://${DOMAIN}/order
+INTERNAL_API_URL=http://api:8080/api/v1
 ALLOWED_ORIGINS=https://${DOMAIN},http://localhost:3000
 
 # Auth Secrets (Generated)

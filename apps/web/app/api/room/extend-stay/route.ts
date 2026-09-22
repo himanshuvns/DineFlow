@@ -80,6 +80,7 @@ export async function GET(req: NextRequest) {
 
     // 2. Fetch specific room extension status for guest room portal
     const apiBase =
+      process.env.INTERNAL_API_URL ||
       process.env.NEXT_PUBLIC_API_URL ||
       (process.env.NODE_ENV === "production"
         ? "https://api-production-f170.up.railway.app/api/v1"
@@ -209,6 +210,7 @@ export async function POST(req: NextRequest) {
 
       // Forward to backend if available
       const apiBase =
+        process.env.INTERNAL_API_URL ||
         process.env.NEXT_PUBLIC_API_URL ||
         (process.env.NODE_ENV === "production"
           ? "https://api-production-f170.up.railway.app/api/v1"
@@ -314,6 +316,7 @@ export async function POST(req: NextRequest) {
 
     // Forward to Go backend if reachable (non-blocking with timeout)
     const apiBase =
+      process.env.INTERNAL_API_URL ||
       process.env.NEXT_PUBLIC_API_URL ||
       (process.env.NODE_ENV === "production"
         ? "https://api-production-f170.up.railway.app/api/v1"
