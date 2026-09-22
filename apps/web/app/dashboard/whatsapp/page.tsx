@@ -1074,10 +1074,10 @@ export default function WhatsAppPage() {
   });
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12">
+    <div className="space-y-6 max-w-7xl w-full min-w-0 mx-auto pb-12 overflow-x-hidden">
       {/* ── Page Header ─────────────────────────────────────────────────────── */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div>
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 min-w-0">
+        <div className="min-w-0">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold mb-2">
             <Sparkles className="h-3.5 w-3.5" />
             <span>Meta Cloud API (WABA) Integration</span>
@@ -1167,7 +1167,7 @@ export default function WhatsAppPage() {
       </div>
 
       {/* ── Navigation Tabs ─────────────────────────────────────────────────── */}
-      <div className="overflow-x-auto scrollbar-none [-webkit-overflow-scrolling:touch] bg-slate-100 dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-800 p-1.5">
+      <div className="w-full max-w-full min-w-0 overflow-x-auto scrollbar-none [-webkit-overflow-scrolling:touch] bg-slate-100 dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-800 p-1.5">
         <div className="flex items-center gap-2 min-w-max">
         {[
           { id: "overview", label: "Overview & WABA", icon: PhoneCall },
@@ -1211,25 +1211,25 @@ export default function WhatsAppPage() {
 
       {/* ── TAB 1: OVERVIEW & WABA CONNECTION ─────────────────────────────────── */}
       {activeTab === "overview" && (
-        <div className="space-y-6 animate-in fade-in duration-200">
+        <div className="space-y-6 animate-in fade-in duration-200 min-w-0">
           {/* Account Status Card */}
-          <Card variant="glass" className="border-emerald-500/30 bg-emerald-500/5">
+          <Card variant="glass" className="border-emerald-500/30 bg-emerald-50/5">
             <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
-              <div className="flex items-center gap-3.5">
-                <div className="p-3 rounded-2xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+              <div className="flex items-center gap-3.5 min-w-0">
+                <div className="p-3 rounded-2xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 shrink-0">
                   <PhoneCall className="h-6 w-6" />
                 </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-extrabold text-slate-900 dark:text-white text-base">{config.phoneNumber}</span>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-extrabold text-slate-900 dark:text-white text-base truncate">{config.phoneNumber}</span>
                     <span className="text-emerald-700 dark:text-emerald-400 font-semibold">• Official Business Account (Green Tick)</span>
                   </div>
-                  <p className="text-slate-600 dark:text-slate-400 text-xs mt-0.5">
+                  <p className="text-slate-600 dark:text-slate-400 text-xs mt-0.5 truncate">
                     WABA ID: <code className="text-slate-800 dark:text-slate-200 font-mono font-medium">{config.wabaAccountId}</code> • Quality: <strong className="text-emerald-700 dark:text-emerald-400">{config.qualityRating}</strong>
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 <Button
                   variant="outline"
                   size="sm"
@@ -1244,9 +1244,9 @@ export default function WhatsAppPage() {
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 min-w-0">
             {/* Left: Automated Rule Triggers */}
-            <div className="lg:col-span-7 space-y-6">
+            <div className="lg:col-span-7 space-y-6 min-w-0">
               <Card variant="glass">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base font-bold text-slate-900 dark:text-white">
@@ -1266,16 +1266,16 @@ export default function WhatsAppPage() {
                   ].map((feat, idx) => (
                     <div
                       key={idx}
-                      className="flex items-center justify-between p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800"
+                      className="flex items-center justify-between p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 gap-3"
                     >
-                      <div className="space-y-0.5 pr-4">
-                        <div className="flex items-center gap-2">
+                      <div className="space-y-0.5 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <h4 className="text-xs font-bold text-slate-900 dark:text-white">{feat.title}</h4>
                           <Badge variant="neutral" size="sm">{feat.tag}</Badge>
                         </div>
                         <p className="text-[11px] text-slate-500 dark:text-slate-400">{feat.desc}</p>
                       </div>
-                      <Badge variant={feat.active ? "success" : "neutral"} size="sm">
+                      <Badge variant={feat.active ? "success" : "neutral"} size="sm" className="shrink-0">
                         {feat.active ? "Active" : "Paused"}
                       </Badge>
                     </div>
@@ -1285,7 +1285,7 @@ export default function WhatsAppPage() {
             </div>
 
             {/* Right: Test Sender Form */}
-            <div className="lg:col-span-5 space-y-6">
+            <div className="lg:col-span-5 space-y-6 min-w-0">
               <Card variant="glass">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base font-bold text-slate-900 dark:text-white">
@@ -1346,15 +1346,15 @@ export default function WhatsAppPage() {
 
       {/* ── TAB 1.5: OPENWA LOCAL DEVELOPMENT GATEWAY ───────────────────────── */}
       {activeTab === "gateway" && (
-        <div className="space-y-6 animate-in fade-in duration-200">
+        <div className="space-y-6 animate-in fade-in duration-200 min-w-0">
           {/* ⚠️ Production vs Dev Architecture Notice */}
-          <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-start sm:items-center gap-2.5">
+          <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs space-y-3 min-w-0">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-w-0">
+              <div className="flex items-start sm:items-center gap-2.5 min-w-0">
                 <div className="p-2 rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-400 shrink-0 mt-0.5 sm:mt-0">
                   <AlertTriangle className="h-5 w-5" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <h4 className="font-bold text-slate-900 dark:text-white text-sm">
                     OpenWA is a Local Development Gateway — Not for Real Customers
                   </h4>
@@ -1387,14 +1387,14 @@ export default function WhatsAppPage() {
           </div>
 
           {/* Top Status Card */}
-          <Card variant="glass" className="border-cyan-500/30 bg-cyan-500/5">
-            <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
-              <div className="flex items-center gap-3.5">
-                <div className="p-3 rounded-2xl bg-cyan-500/20 text-cyan-600 dark:text-cyan-400">
+          <Card variant="glass" className="border-cyan-500/30 bg-cyan-500/5 min-w-0">
+            <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs min-w-0">
+              <div className="flex items-center gap-3.5 min-w-0">
+                <div className="p-3 rounded-2xl bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 shrink-0">
                   <Smartphone className="h-6 w-6" />
                 </div>
-                <div>
-                  <div className="flex items-center gap-2">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-extrabold text-slate-900 dark:text-white text-base">
                       OpenWA Local Gateway
                     </span>
@@ -1570,9 +1570,9 @@ export default function WhatsAppPage() {
           </Card>
 
           {/* Main 2-Column Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 min-w-0">
             {/* Left 7 cols: QR Code & Connection Status */}
-            <div className="lg:col-span-7 space-y-6">
+            <div className="lg:col-span-7 space-y-6 min-w-0">
               <Card variant="glass">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
@@ -1889,7 +1889,7 @@ export default function WhatsAppPage() {
             </div>
 
             {/* Right 5 cols: Test Dispatcher & Endpoints Info */}
-            <div className="lg:col-span-5 space-y-6">
+            <div className="lg:col-span-5 space-y-6 min-w-0">
               {/* Test Message Dispatcher */}
               <Card variant="glass">
                 <CardHeader className="pb-3">
@@ -1987,10 +1987,10 @@ export default function WhatsAppPage() {
 
       {/* ── TAB 2: REAL-TIME AI CHATBOT STUDIO ────────────────────────────────── */}
       {activeTab === "chatbot" && (
-        <div className="space-y-6 animate-in fade-in duration-200">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="space-y-6 animate-in fade-in duration-200 min-w-0">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 min-w-0">
             {/* Left: Chatbot Capabilities & Escalation Queue (5 cols) */}
-            <div className="lg:col-span-5 space-y-6">
+            <div className="lg:col-span-5 space-y-6 min-w-0">
               <Card variant="glass" className="border-violet-500/20">
                 <CardHeader className="pb-3 flex flex-row items-center justify-between">
                   <div>
@@ -2064,8 +2064,8 @@ export default function WhatsAppPage() {
             </div>
 
             {/* Right: Live Interactive Simulator (7 cols) */}
-            <div className="lg:col-span-7 space-y-4">
-              <div className="bg-slate-50 dark:bg-[#0a0d14] border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xs">
+            <div className="lg:col-span-7 space-y-4 min-w-0">
+              <div className="bg-slate-50 dark:bg-[#0a0d14] border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xs w-full min-w-0">
                 {/* Simulator Header */}
                 <div className="flex items-center justify-between p-3.5 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80">
                   <div className="flex items-center gap-3">
@@ -2165,82 +2165,82 @@ export default function WhatsAppPage() {
 
       {/* ── TAB: WORKFORCE ASSISTANT (ATTENDANCE, LEAVES, SHIFTS & PAYSLIPS) ──── */}
       {activeTab === "workforce" && (
-        <div className="space-y-6 animate-in fade-in duration-200">
+        <div className="space-y-6 animate-in fade-in duration-200 min-w-0">
           {/* Top Status & KPI Banner */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-950/20">
-              <CardContent className="p-4 flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-emerald-500 text-white shadow-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 min-w-0">
+            <Card className="border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-950/20 min-w-0">
+              <CardContent className="p-4 flex items-center gap-3 min-w-0">
+                <div className="p-2.5 rounded-xl bg-emerald-500 text-white shadow-sm shrink-0">
                   <ShieldCheck className="h-5 w-5" />
                 </div>
-                <div>
-                  <p className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">
+                <div className="min-w-0">
+                  <p className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider truncate">
                     Workforce Assistant Status
                   </p>
-                  <p className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
-                    Live & Automated <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <p className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5 truncate">
+                    Live & Automated <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
                   </p>
-                  <p className="text-[10px] text-slate-500">24/7 WhatsApp Cloud Webhook</p>
+                  <p className="text-[10px] text-slate-500 truncate">24/7 WhatsApp Cloud Webhook</p>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="border-slate-200 dark:border-slate-800">
-              <CardContent className="p-4 flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-blue-500 text-white shadow-sm">
+            <Card className="border-slate-200 dark:border-slate-800 min-w-0">
+              <CardContent className="p-4 flex items-center gap-3 min-w-0">
+                <div className="p-2.5 rounded-xl bg-blue-500 text-white shadow-sm shrink-0">
                   <Navigation className="h-5 w-5" />
                 </div>
-                <div>
-                  <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                <div className="min-w-0">
+                  <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">
                     GPS Geofence Policy
                   </p>
-                  <p className="text-base font-extrabold text-slate-900 dark:text-white">
+                  <p className="text-base font-extrabold text-slate-900 dark:text-white truncate">
                     100m Radius Enforced
                   </p>
-                  <p className="text-[10px] text-slate-500">Haversine spherical distance</p>
+                  <p className="text-[10px] text-slate-500 truncate">Haversine spherical distance</p>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="border-slate-200 dark:border-slate-800">
-              <CardContent className="p-4 flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-purple-500 text-white shadow-sm">
+            <Card className="border-slate-200 dark:border-slate-800 min-w-0">
+              <CardContent className="p-4 flex items-center gap-3 min-w-0">
+                <div className="p-2.5 rounded-xl bg-purple-500 text-white shadow-sm shrink-0">
                   <Users className="h-5 w-5" />
                 </div>
-                <div>
-                  <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                <div className="min-w-0">
+                  <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">
                     Enrolled Staff Directory
                   </p>
-                  <p className="text-base font-extrabold text-slate-900 dark:text-white">
+                  <p className="text-base font-extrabold text-slate-900 dark:text-white truncate">
                     {enrolledStaff.length} Team Members
                   </p>
-                  <p className="text-[10px] text-slate-500">Phone numbers WhatsApp-linked</p>
+                  <p className="text-[10px] text-slate-500 truncate">Phone numbers WhatsApp-linked</p>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="border-slate-200 dark:border-slate-800">
-              <CardContent className="p-4 flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-amber-500 text-white shadow-sm">
+            <Card className="border-slate-200 dark:border-slate-800 min-w-0">
+              <CardContent className="p-4 flex items-center gap-3 min-w-0">
+                <div className="p-2.5 rounded-xl bg-amber-500 text-white shadow-sm shrink-0">
                   <Clock className="h-5 w-5" />
                 </div>
-                <div>
-                  <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                <div className="min-w-0">
+                  <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">
                     Security Token Expiry
                   </p>
-                  <p className="text-base font-extrabold text-slate-900 dark:text-white">
+                  <p className="text-base font-extrabold text-slate-900 dark:text-white truncate">
                     15-Minute HMAC
                   </p>
-                  <p className="text-[10px] text-slate-500">Anti-tamper signed URLs</p>
+                  <p className="text-[10px] text-slate-500 truncate">Anti-tamper signed URLs</p>
                 </div>
               </CardContent>
             </Card>
           </div>
 
           {/* Main 2-Column Grid: Left Phone Simulator, Right Directory & Policies */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Left Column: Interactive Phone Simulator (5 Cols) */}
-            <div className="lg:col-span-6 space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 min-w-0">
+            {/* Left Column: Interactive Phone Simulator (6 Cols) */}
+            <div className="lg:col-span-6 space-y-4 min-w-0">
               <Card className="border-slate-200 dark:border-slate-800 shadow-md">
                 <CardHeader className="pb-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -2439,31 +2439,31 @@ export default function WhatsAppPage() {
                   </a>
                 </CardHeader>
                 <CardContent className="p-0">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
-                      <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 uppercase tracking-wider font-semibold">
-                        <tr>
-                          <th className="p-3">Employee</th>
-                          <th className="p-3">Department</th>
-                          <th className="p-3">WhatsApp Phone</th>
-                          <th className="p-3 text-right">Quick GPS Link</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  <div className="w-full max-w-full min-w-0 overflow-x-auto">
+                    <Table className="w-full min-w-[500px] text-left text-xs">
+                      <TableHeader className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 uppercase tracking-wider font-semibold">
+                        <TableRow>
+                          <TableHead className="p-3">Employee</TableHead>
+                          <TableHead className="p-3">Department</TableHead>
+                          <TableHead className="p-3">WhatsApp Phone</TableHead>
+                          <TableHead className="p-3 text-right">Quick GPS Link</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody className="divide-y divide-slate-100 dark:divide-slate-800">
                         {enrolledStaff.map((staff) => (
-                          <tr key={staff.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition">
-                            <td className="p-3 font-medium text-slate-900 dark:text-white">
+                          <TableRow key={staff.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition">
+                            <TableCell className="p-3 font-medium text-slate-900 dark:text-white">
                               <div>{staff.name}</div>
                               <span className="text-[10px] font-mono text-slate-400">
                                 {staff.employeeId || "DF-EMP-AUTO"}
                               </span>
-                            </td>
-                            <td className="p-3">
+                            </TableCell>
+                            <TableCell className="p-3">
                               <Badge variant="neutral" size="sm" className="capitalize">
                                 {staff.role}
                               </Badge>
-                            </td>
-                            <td className="p-3 font-mono text-[11px] text-slate-600 dark:text-slate-300">
+                            </TableCell>
+                            <TableCell className="p-3 font-mono text-[11px] text-slate-600 dark:text-slate-300">
                               <a
                                 href={`https://wa.me/${staff.phone?.replace(/[^0-9]/g, "")}`}
                                 target="_blank"
@@ -2473,8 +2473,8 @@ export default function WhatsAppPage() {
                                 {staff.phone || "No Phone"}
                                 <ExternalLink className="w-2.5 h-2.5" />
                               </a>
-                            </td>
-                            <td className="p-3 text-right">
+                            </TableCell>
+                            <TableCell className="p-3 text-right">
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -2484,11 +2484,11 @@ export default function WhatsAppPage() {
                               >
                                 Generate Link
                               </Button>
-                            </td>
-                          </tr>
+                            </TableCell>
+                          </TableRow>
                         ))}
-                      </tbody>
-                    </table>
+                      </TableBody>
+                    </Table>
                   </div>
                 </CardContent>
               </Card>
@@ -2599,8 +2599,8 @@ export default function WhatsAppPage() {
           {/* Campaigns Table */}
           <Card variant="glass">
             <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <Table className="min-w-[700px]">
+              <div className="w-full max-w-full min-w-0 overflow-x-auto">
+                <Table className="w-full min-w-[700px]">
                   <TableHeader>
                     <TableRow className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold bg-slate-50/70 dark:bg-slate-950/40">
                       <TableHead className="p-3.5">Campaign Name</TableHead>
@@ -2701,8 +2701,8 @@ export default function WhatsAppPage() {
           {/* Invoices Table */}
           <Card variant="glass">
             <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <Table className="min-w-[760px]">
+              <div className="w-full max-w-full min-w-0 overflow-x-auto">
+                <Table className="w-full min-w-[760px]">
                   <TableHeader>
                     <TableRow className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold bg-slate-50/70 dark:bg-slate-950/40">
                       <TableHead className="p-3.5">Invoice #</TableHead>
@@ -2810,8 +2810,8 @@ export default function WhatsAppPage() {
 
           <Card variant="glass">
             <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <Table className="min-w-[620px]">
+              <div className="w-full max-w-full min-w-0 overflow-x-auto">
+                <Table className="w-full min-w-[620px]">
                   <TableHeader>
                     <TableRow className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold bg-slate-50/70 dark:bg-slate-950/40">
                       <TableHead className="p-3.5">Guest Name</TableHead>

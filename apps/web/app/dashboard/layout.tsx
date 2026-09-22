@@ -197,7 +197,7 @@ export default function DashboardLayout({
         <ImpersonationBanner />
         <BroadcastBanner />
         <TopBar />
-        <main className="flex-1 p-3 sm:p-5 lg:p-6 max-w-7xl w-full mx-auto pb-safe flex flex-col min-h-0 overflow-y-auto">
+        <main className="flex-1 p-3 sm:p-5 lg:p-6 max-w-7xl w-full min-w-0 mx-auto pb-safe flex flex-col min-h-0 overflow-y-auto overflow-x-hidden">
           {children}
         </main>
       </div>
