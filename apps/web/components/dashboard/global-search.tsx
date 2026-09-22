@@ -824,6 +824,8 @@ export function GlobalSearch() {
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
           <input
             ref={searchInputRef}
+            id="dashboard-global-search"
+            name="globalSearch"
             type="text"
             value={query}
             onChange={(e) => {
@@ -838,6 +840,7 @@ export function GlobalSearch() {
             }}
             onKeyDown={handleKeyDown}
             placeholder="Search orders, rooms, menu... (⌘K)"
+            aria-label="Search orders, rooms, and menu"
             className="w-full pl-9 pr-14 py-1.5 text-xs bg-slate-100/90 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/30 transition-all"
             aria-expanded={isOpen}
             aria-autocomplete="list"
@@ -894,6 +897,8 @@ export function GlobalSearch() {
               <Search className="h-4 w-4 text-emerald-500 shrink-0" />
               <input
                 autoFocus
+                id="mobile-global-search"
+                name="mobileGlobalSearch"
                 type="text"
                 value={query}
                 onChange={(e) => {
@@ -902,6 +907,7 @@ export function GlobalSearch() {
                 }}
                 onKeyDown={handleKeyDown}
                 placeholder="Search orders, rooms, menu, guests..."
+                aria-label="Search orders, rooms, menu, guests"
                 className="flex-1 text-sm bg-transparent border-none text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none"
               />
 

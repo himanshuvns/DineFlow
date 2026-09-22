@@ -318,9 +318,11 @@ export default function PlatformDashboardPage() {
                             >
                               {client.name}
                             </Link>
-                            <span className="text-[11px] text-slate-400 font-mono">
-                              {client.city}, {client.state}
-                            </span>
+                            {(client.city || client.state) && (
+                              <span className="text-[11px] text-slate-400 font-mono">
+                                {[client.city, client.state].filter(Boolean).join(", ")}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </td>

@@ -55,7 +55,14 @@ export default function OrderTrackingPage() {
   const { addToast } = useToast();
 
   const tenantSlug = (params?.tenantSlug as string) || "the-grand-bistro";
-  const orderId = (params?.orderId as string) || "ORD-9421";
+  const rawOrderId = (params?.orderId as string) || "ORD-9421";
+  const orderId = React.useMemo(() => {
+    try {
+      return decodeURIComponent(rawOrderId);
+    } catch {
+      return rawOrderId;
+    }
+  }, [rawOrderId]);
   const urlTable = searchParams.get("table");
 
   const [order, setOrder] = React.useState<TrackingOrder | null>(null);

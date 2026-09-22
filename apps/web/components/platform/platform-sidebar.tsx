@@ -58,7 +58,7 @@ export function PlatformSidebar() {
     <aside
       className={cn(
         "hidden md:flex flex-col justify-between border-r border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-[#070B14] transition-all duration-300 z-30 sticky top-0 h-screen overflow-hidden",
-        collapsed ? "w-20" : "w-64"
+        collapsed ? "w-20" : "w-64 lg:w-72"
       )}
     >
       <div className="flex-1 overflow-y-auto scrollbar-none flex flex-col min-h-0">

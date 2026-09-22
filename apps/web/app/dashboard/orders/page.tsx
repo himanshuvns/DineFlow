@@ -201,6 +201,16 @@ export default function KDSOrdersPage() {
   const formatTimer = (secs: number) => {
     const mins = Math.floor(secs / 60);
     const remainder = secs % 60;
+    if (mins >= 1440) {
+      const days = Math.floor(mins / 1440);
+      const hours = Math.floor((mins % 1440) / 60);
+      return `${days}d ${hours}h`;
+    }
+    if (mins >= 60) {
+      const hours = Math.floor(mins / 60);
+      const m = mins % 60;
+      return `${hours}h ${m}m`;
+    }
     return `${mins}m ${remainder < 10 ? "0" : ""}${remainder}s`;
   };
 

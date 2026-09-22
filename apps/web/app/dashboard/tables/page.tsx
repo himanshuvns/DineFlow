@@ -375,7 +375,7 @@ export default function TablesManagementPage() {
         </div>
       ) : viewMode === "grid" ? (
         /* Grid of Tables */
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
           {filteredTables.map((table) => {
             const statusColors = {
               occupied: "border-amber-500/40 bg-amber-500/5",
@@ -392,7 +392,7 @@ export default function TablesManagementPage() {
                 onClick={() => setSelectedTable(table)}
               >
                 <div className="flex items-start justify-between gap-2 min-w-0">
-                  <div className="min-w-0 flex-1">
+                  <div className="min-w-0 flex-1 pr-1">
                     <h3 className="text-base font-bold text-slate-900 dark:text-white truncate" title={table.name}>
                       {table.name}
                     </h3>
