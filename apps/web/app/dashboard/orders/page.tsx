@@ -23,6 +23,8 @@ import {
   Hotel,
   Wine,
   Printer,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -31,7 +33,7 @@ import { Tabs } from "@/components/ui/tabs";
 import { Modal } from "@/components/ui/modal";
 import { ThermalPrintModal } from "@/components/orders/thermal-receipt-modal";
 import { useToast } from "@/components/ui/toast";
-import { formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { useTenantData } from "@/lib/stores/tenant-data-store";
 import { EmptyState } from "@/components/ui/empty-state";
 import NumberFlow from "@number-flow/react";
@@ -102,6 +104,7 @@ export default function KDSOrdersPage() {
   const [soundEnabled, setSoundEnabled] = React.useState(true);
   const [isFullscreen, setIsFullscreen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
+  const [showMobileStats, setShowMobileStats] = React.useState(false);
 
   const activeCount = React.useMemo(() => orders.filter((o) => o.status !== "served" && o.status !== "cancelled" && o.status !== "paid").length, [orders]);
   const pendingCount = React.useMemo(() => orders.filter((o) => o.status === "pending").length, [orders]);
@@ -392,7 +395,7 @@ export default function KDSOrdersPage() {
           <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
             Live Kitchen Display
           </h1>
-          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 hidden sm:block">
             Real-time station routing for Main Kitchen, In-Room Dining (Room Service), and Bar.
           </p>
         </div>
@@ -420,16 +423,17 @@ export default function KDSOrdersPage() {
                 ? "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400"
                 : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500"
             }`}
+            title={soundEnabled ? "Chime On" : "Muted"}
           >
             {soundEnabled ? (
               <>
                 <Volume2 className="h-4 w-4" />
-                <span>Chime On</span>
+                <span className="hidden sm:inline">Chime On</span>
               </>
             ) : (
               <>
                 <VolumeX className="h-4 w-4" />
-                <span>Muted</span>
+                <span className="hidden sm:inline">Muted</span>
               </>
             )}
           </button>
@@ -471,8 +475,27 @@ export default function KDSOrdersPage() {
         </div>
       )}
 
+      {/* Mobile Collapsible Stats Pill */}
+      <div className="sm:hidden flex items-center justify-between px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xs text-xs">
+        <div className="flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-300">
+          <span className="text-slate-900 dark:text-white">{activeCount} Active</span>
+          <span>•</span>
+          <span className="text-amber-600 dark:text-amber-400">{pendingCount} Pending</span>
+          <span>•</span>
+          <span className="text-rose-600 dark:text-rose-400">{cookingCount} Cooking</span>
+          <span>•</span>
+          <span className="text-blue-600 dark:text-blue-400">{readyCount} Ready</span>
+        </div>
+        <button
+          onClick={() => setShowMobileStats(!showMobileStats)}
+          className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5 cursor-pointer"
+        >
+          Stats {showMobileStats ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+        </button>
+      </div>
+
       {/* Sleek KDS KPI Metrics Strip */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+      <div className={cn("grid grid-cols-2 sm:grid-cols-4 gap-2.5", !showMobileStats && "hidden sm:grid")}>
         <div className="p-3 rounded-2xl bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 shadow-2xs">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Active Queue</span>

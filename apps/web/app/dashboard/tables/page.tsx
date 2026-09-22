@@ -20,6 +20,8 @@ import {
   Coffee,
   Flame,
   Wine,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,6 +29,7 @@ import { Badge } from "@/components/ui/badge";
 import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
 import { QRCodeImage } from "@/components/ui/qr-code-image";
+import { cn } from "@/lib/utils";
 import { useTenantData, TableItem, STARTER_TEMPLATES } from "@/lib/stores/tenant-data-store";
 import { ViewToggle, useViewMode } from "@/components/ui/view-toggle";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
@@ -52,6 +55,7 @@ export default function TablesManagementPage() {
   const [filterZone, setFilterZone] = React.useState("all");
   const [filterStatus, setFilterStatus] = React.useState<"all" | "available" | "occupied" | "reserved">("all");
   const [searchQuery, setSearchQuery] = React.useState("");
+  const [showMobileStats, setShowMobileStats] = React.useState(false);
 
   const kpiStats = React.useMemo(() => {
     const total = tables.length;
@@ -225,7 +229,7 @@ export default function TablesManagementPage() {
                 <span className="truncate max-w-[120px]">{tenantName}</span>
               </div>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate max-w-xl">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate max-w-xl hidden sm:block">
               Generate and manage instant digital menu QR codes for each table and zone in {tenantName}.
             </p>
           </div>
@@ -238,8 +242,9 @@ export default function TablesManagementPage() {
                 leftIcon={<Download className="h-3.5 w-3.5" />}
                 onClick={handleDownloadAll}
                 className="h-8 text-xs px-2.5"
+                title="Download All QRs"
               >
-                Download All QRs
+                <span className="hidden sm:inline">Download All QRs</span>
               </Button>
             )}
             <Button
@@ -254,8 +259,25 @@ export default function TablesManagementPage() {
           </div>
         </div>
 
+        {/* Mobile Collapsible Stats Pill */}
+        <div className="sm:hidden flex items-center justify-between px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xs text-xs">
+          <div className="flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-300">
+            <span>{kpiStats.total} Tables</span>
+            <span>•</span>
+            <span className="text-emerald-600 dark:text-emerald-400">{kpiStats.available} Avail</span>
+            <span>•</span>
+            <span className="text-amber-600 dark:text-amber-400">{kpiStats.occupied} Occ</span>
+          </div>
+          <button
+            onClick={() => setShowMobileStats(!showMobileStats)}
+            className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5 cursor-pointer"
+          >
+            Stats {showMobileStats ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+          </button>
+        </div>
+
         {/* Sleek Compact KPI Metrics Strip */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pb-0.5">
+        <div className={cn("grid grid-cols-2 sm:grid-cols-4 gap-2 pb-0.5", !showMobileStats && "hidden sm:grid")}>
           <div className="p-2 sm:p-2.5 rounded-xl bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 shadow-2xs">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total Tables</span>

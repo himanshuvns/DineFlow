@@ -35,6 +35,8 @@ import {
   Eye,
   RefreshCw,
   X,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -45,7 +47,7 @@ import { QRCodeImage } from "@/components/ui/qr-code-image";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { EmptyState } from "@/components/ui/empty-state";
 import { apiClient } from "@/lib/api";
-import { formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { validateIndianPhone, formatIndianPhoneInput } from "@/lib/validation";
 import { ViewToggle, useViewMode } from "@/components/ui/view-toggle";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
@@ -143,6 +145,7 @@ export default function RoomsDirectoryPage() {
   const [wingFilter, setWingFilter] = React.useState("all");
   const [statusFilter, setStatusFilter] = React.useState("all");
   const [searchQuery, setSearchQuery] = React.useState("");
+  const [showMobileStats, setShowMobileStats] = React.useState(false);
   const [pendingExtensionRooms, setPendingExtensionRooms] = React.useState<Map<string, any>>(new Map());
   const [pendingHousekeepingRooms, setPendingHousekeepingRooms] = React.useState<Map<string, any>>(new Map());
 
@@ -1011,8 +1014,9 @@ export default function RoomsDirectoryPage() {
               className="h-8 text-xs font-semibold px-2.5"
               leftIcon={<Printer className="h-3.5 w-3.5" />}
               onClick={() => setIsPrintAllOpen(true)}
+              title="Print In-Room Stands"
             >
-              Print In-Room Stands
+              <span className="hidden sm:inline">Print Stands</span>
             </Button>
 
             <Button
@@ -1021,8 +1025,9 @@ export default function RoomsDirectoryPage() {
               className="h-8 text-xs font-semibold px-2.5"
               leftIcon={<Layers className="h-3.5 w-3.5" />}
               onClick={() => setIsBulkOpen(true)}
+              title="Bulk Generator"
             >
-              Bulk Generator
+              <span className="hidden sm:inline">Bulk Gen</span>
             </Button>
 
             <Button
@@ -1032,13 +1037,36 @@ export default function RoomsDirectoryPage() {
               leftIcon={<Plus className="h-3.5 w-3.5" />}
               onClick={() => setIsAddRoomOpen(true)}
             >
-              Add Room / Suite
+              Add Room
             </Button>
           </div>
         </div>
 
+        {/* Mobile Collapsible Stats Pill */}
+        <div className="sm:hidden flex items-center justify-between px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xs text-xs">
+          <div className="flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-300">
+            <span className="text-amber-600 dark:text-amber-400">
+              {stats.occupiedRooms || rooms.filter((r) => r.status === "occupied").length} Occ ({Math.round(stats.occupancyRate || 0)}%)
+            </span>
+            <span>•</span>
+            <span className="text-emerald-600 dark:text-emerald-400">
+              {stats.vacantRooms || rooms.filter((r) => r.status === "vacant").length} Clean
+            </span>
+            <span>•</span>
+            <span className="text-rose-600 dark:text-rose-400">
+              {stats.cleaningRooms || rooms.filter((r) => r.status === "cleaning").length} HK
+            </span>
+          </div>
+          <button
+            onClick={() => setShowMobileStats(!showMobileStats)}
+            className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5 cursor-pointer"
+          >
+            Stats {showMobileStats ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+          </button>
+        </div>
+
         {/* Hotel PMS KPI Strip */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2 pb-0.5 shrink-0">
+        <div className={cn("grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2 pb-0.5 shrink-0", !showMobileStats && "hidden sm:grid")}>
           <Card variant="glass" className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 shrink-0 min-w-[140px] sm:min-w-0">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 block">
               Occupied Rooms

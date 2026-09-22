@@ -18,6 +18,8 @@ import {
   ArrowUpRight,
   Filter,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,6 +36,7 @@ import NumberFlow from "@number-flow/react";
 import { useToast } from "@/components/ui/toast";
 import { apiClient } from "@/lib/api";
 import { useAuthStore } from "@/lib/stores/auth-store";
+import { cn } from "@/lib/utils";
 
 export default function AnalyticsPage() {
   const user = useAuthStore((s) => s.user);
@@ -44,6 +47,7 @@ export default function AnalyticsPage() {
   const [hourlyData, setHourlyData] = React.useState<any[]>([]);
   const [topItems, setTopItems] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [showMobileStats, setShowMobileStats] = React.useState(false);
 
   React.useEffect(() => {
     let isMounted = true;
@@ -151,7 +155,7 @@ export default function AnalyticsPage() {
           <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
             {isManager ? "Kitchen & Service Analytics" : "Sales & Operational Analytics"}
           </h1>
-          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 hidden sm:block">
             {isManager
               ? "Real-time kitchen turnaround, order throughput, channel velocity, and customer satisfaction."
               : "Real-time revenue metrics, average order value (AOV), channel velocity, and customer satisfaction."}
@@ -186,8 +190,10 @@ export default function AnalyticsPage() {
             size="sm"
             onClick={handleExportCSV}
             leftIcon={<Download className="h-3.5 w-3.5" />}
+            title="Export CSV"
           >
-            Export CSV
+            <span className="hidden sm:inline">Export CSV</span>
+            <span className="sm:hidden">Export</span>
           </Button>
 
           <Button
@@ -195,14 +201,32 @@ export default function AnalyticsPage() {
             size="sm"
             onClick={handlePrintSummary}
             leftIcon={<Printer className="h-3.5 w-3.5" />}
+            title="Print Summary"
           >
-            Print
+            <span className="hidden sm:inline">Print</span>
           </Button>
         </div>
       </div>
 
+      {/* Mobile Collapsible Stats Pill */}
+      <div className="sm:hidden flex items-center justify-between px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xs text-xs">
+        <div className="flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-300">
+          <span className="text-emerald-600 dark:text-emerald-400 font-bold">{data.gross}</span>
+          <span>•</span>
+          <span>{ordersNum} Orders</span>
+          <span>•</span>
+          <span className="text-teal-600 dark:text-teal-400">{data.turnTime}</span>
+        </div>
+        <button
+          onClick={() => setShowMobileStats(!showMobileStats)}
+          className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5 cursor-pointer"
+        >
+          Stats {showMobileStats ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+        </button>
+      </div>
+
       {/* Primary Financial / Operational KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className={cn("grid grid-cols-2 lg:grid-cols-4 gap-4", !showMobileStats && "hidden sm:grid")}>
         {isManager ? (
           <Card variant="glass" padding="none" className="border-emerald-500/30 bg-emerald-500/5">
             <CardContent className="p-5">

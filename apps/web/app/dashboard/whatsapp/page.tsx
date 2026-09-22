@@ -44,6 +44,8 @@ import {
   Power,
   Copy,
   Check,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -62,6 +64,7 @@ import {
 import NumberFlow from "@number-flow/react";
 import { apiClient } from "@/lib/api";
 import { useAuthStore } from "@/lib/stores/auth-store";
+import { cn } from "@/lib/utils";
 import { validateIndianPhone, formatIndianPhoneInput } from "@/lib/validation";
 
 // ── Interfaces ────────────────────────────────────────────────────────────────
@@ -296,6 +299,7 @@ export default function WhatsAppPage() {
 
   // Active Tab: overview | gateway | chatbot | workforce | campaigns | invoices | logs
   const [activeTab, setActiveTab] = React.useState<"overview" | "gateway" | "chatbot" | "workforce" | "campaigns" | "invoices" | "logs">("overview");
+  const [showMobileStats, setShowMobileStats] = React.useState(false);
 
   // OpenWA Gateway State
   const [openwaStatus, setOpenwaStatus] = React.useState<{
@@ -1085,16 +1089,16 @@ export default function WhatsAppPage() {
           <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
             WhatsApp Marketing & Invoicing
           </h1>
-          <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mt-1 max-w-2xl">
+          <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mt-1 max-w-2xl hidden sm:block">
             Meta Cloud API, Real-Time AI Chatbot, Audience Segmentation, and Compliant Indian GST Invoicing.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 shrink-0">
           <Button variant="outline" size="sm" onClick={() => setIsConfigModalOpen(true)}>
-            <Sliders className="h-3.5 w-3.5 mr-1.5" /> Meta WABA Settings
+            <Sliders className="h-3.5 w-3.5 mr-1.5" /> <span className="hidden sm:inline">Meta WABA Settings</span><span className="sm:hidden">WABA</span>
           </Button>
-          <Badge variant="success" size="md" dot>
+          <Badge variant="success" size="md" dot className="hidden sm:inline-flex">
             Meta Cloud API Connected
           </Badge>
           <Badge variant="glow" size="sm">
@@ -1103,8 +1107,27 @@ export default function WhatsAppPage() {
         </div>
       </div>
 
+      {/* Mobile Collapsible Stats Pill */}
+      <div className="sm:hidden flex items-center justify-between px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xs text-xs">
+        <div className="flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-300">
+          <span className="text-slate-900 dark:text-white">{logs.length} Msgs</span>
+          <span>•</span>
+          <span className="text-emerald-600 dark:text-emerald-400">
+            {logs.filter((l) => l.status === "delivered" || l.status === "read").length} Confirmed
+          </span>
+          <span>•</span>
+          <span className="text-purple-600 dark:text-purple-400">{campaigns.length} Campaigns</span>
+        </div>
+        <button
+          onClick={() => setShowMobileStats(!showMobileStats)}
+          className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5 cursor-pointer"
+        >
+          Stats {showMobileStats ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+        </button>
+      </div>
+
       {/* ── KPI Metric Strip ─────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className={cn("grid grid-cols-2 sm:grid-cols-4 gap-3", !showMobileStats && "hidden sm:grid")}>
         <Card variant="glass" hoverEffect className="min-w-0 p-4">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Total Messages</span>
