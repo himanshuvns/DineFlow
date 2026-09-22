@@ -23,6 +23,7 @@ import {
   Hotel,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Modal } from "@/components/ui/modal";
@@ -566,17 +567,17 @@ export default function DashboardOverviewPage() {
                 </div>
               </div>
             ) : (
-              <table className="w-full min-w-[540px] text-left text-xs">
-                <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold uppercase tracking-wider text-[10px] bg-slate-50/60 dark:bg-transparent">
-                    <th className="py-2.5 pl-2">Order ID</th>
-                    <th className="py-2.5">Location</th>
-                    <th className="py-2.5">Items Summary</th>
-                    <th className="py-2.5">Amount</th>
-                    <th className="py-2.5 text-right pr-2">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
+              <Table className="min-w-[540px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="pl-4">Order ID</TableHead>
+                    <TableHead>Location</TableHead>
+                    <TableHead>Items Summary</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead className="text-right pr-4">Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {safeOrders.slice(0, 6).map((order) => {
                     const statusBadges = {
                       pending: <Badge variant="warning" dot size="sm">Pending</Badge>,
@@ -597,8 +598,8 @@ export default function DashboardOverviewPage() {
                         : "Special Order";
 
                     return (
-                      <tr key={order.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                        <td className="py-3 pl-2 font-medium">
+                      <TableRow key={order.id}>
+                        <TableCell className="pl-4 font-medium">
                           <div className="text-slate-900 dark:text-white font-bold">{order.id}</div>
                           <div className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
                             <span className="font-medium">{order.destination === "room_service" ? "Room QR" : "Table QR"}</span>
@@ -607,24 +608,24 @@ export default function DashboardOverviewPage() {
                               <Clock className="h-2.5 w-2.5" /> {order.time || "Recent"}
                             </span>
                           </div>
-                        </td>
-                        <td className="py-3 font-bold text-emerald-700 dark:text-emerald-300">{order.table}</td>
-                        <td className="py-3 text-slate-700 dark:text-slate-300 max-w-[200px] truncate font-medium">
+                        </TableCell>
+                        <TableCell className="font-bold text-emerald-700 dark:text-emerald-300">{order.table}</TableCell>
+                        <TableCell className="text-slate-700 dark:text-slate-300 max-w-[200px] truncate font-medium">
                           {itemsSummary}
-                        </td>
-                        <td className="py-3 font-bold text-slate-900 dark:text-white font-mono">
+                        </TableCell>
+                        <TableCell className="font-bold text-slate-900 dark:text-white font-mono">
                           {formatCurrency(order?.total, tenant?.currency || "INR")}
-                        </td>
-                        <td className="py-3 text-right pr-2">
+                        </TableCell>
+                        <TableCell className="text-right pr-4">
                           {statusBadges[order.status as keyof typeof statusBadges] || (
                             <Badge variant="neutral" size="sm">{order.status}</Badge>
                           )}
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     );
                   })}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             )}
           </CardContent>
         </Card>

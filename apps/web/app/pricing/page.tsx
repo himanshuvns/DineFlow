@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Modal } from "@/components/ui/modal";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Pricing, PricingPlan } from "@/components/ui/pricing";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { useToast } from "@/components/ui/toast";
@@ -275,24 +276,24 @@ export default function PricingPage() {
         </div>
 
         <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40">
-          <table className="w-full min-w-[620px] text-left text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/70">
-                <th className="p-4 text-slate-700 dark:text-slate-400 font-semibold w-1/3">Feature</th>
-                <th className="p-4 text-center font-bold text-slate-900 dark:text-white">Free</th>
-                <th className="p-4 text-center font-bold text-slate-900 dark:text-white">Starter</th>
-                <th className="p-4 text-center font-bold text-emerald-700 dark:text-emerald-400">Growth</th>
-                <th className="p-4 text-center font-bold text-amber-700 dark:text-amber-400">Hotel Pro</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
+          <Table className="w-full min-w-[620px] text-left text-xs border-collapse">
+            <TableHeader>
+              <TableRow className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/70">
+                <TableHead className="p-4 text-slate-700 dark:text-slate-400 font-semibold w-1/3">Feature</TableHead>
+                <TableHead className="p-4 text-center font-bold text-slate-900 dark:text-white">Free</TableHead>
+                <TableHead className="p-4 text-center font-bold text-slate-900 dark:text-white">Starter</TableHead>
+                <TableHead className="p-4 text-center font-bold text-emerald-700 dark:text-emerald-400">Growth</TableHead>
+                <TableHead className="p-4 text-center font-bold text-amber-700 dark:text-amber-400">Hotel Pro</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody className="divide-y divide-slate-200 dark:divide-slate-800/60">
               {COMPARISON_ROWS.map((row, idx) => (
-                <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                  <td className="p-4 text-slate-800 dark:text-slate-200 font-medium">{row.feature}</td>
+                <TableRow key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                  <TableCell className="p-4 text-slate-800 dark:text-slate-200 font-medium">{row.feature}</TableCell>
                   {["free", "starter", "growth", "hotel_pro"].map((tier) => {
                     const val = row[tier as keyof typeof row];
                     return (
-                      <td key={tier} className="p-4 text-center text-slate-700 dark:text-slate-300">
+                      <TableCell key={tier} className="p-4 text-center text-slate-700 dark:text-slate-300">
                         {typeof val === "boolean" ? (
                           val ? (
                             <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mx-auto" />
@@ -302,13 +303,13 @@ export default function PricingPage() {
                         ) : (
                           <span className="font-semibold text-slate-900 dark:text-white">{val}</span>
                         )}
-                      </td>
+                      </TableCell>
                     );
                   })}
-                </tr>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       </section>
 

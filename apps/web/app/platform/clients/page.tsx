@@ -27,6 +27,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { usePlatformStore, PlatformClient, PlanTier, ClientStatus } from "@/lib/stores/platform-store";
 
@@ -309,10 +310,10 @@ export default function PlatformClientsPage() {
       <div className="flex-1 min-h-0 overflow-y-auto pr-1 pb-16 scrollbar-thin">
         <div className="rounded-2xl bg-white dark:bg-slate-900/40 border border-slate-200/80 dark:border-slate-800/80 overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50/95 dark:bg-[#090D16]/95 backdrop-blur-md text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider text-[10px] sticky top-0 z-10">
-                <tr>
-                  <th className="p-3 w-10 text-center">
+            <Table className="w-full text-left text-xs">
+              <TableHeader className="bg-slate-50/95 dark:bg-[#090D16]/95 backdrop-blur-md text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider text-[10px] sticky top-0 z-10">
+                <TableRow>
+                  <TableHead className="p-3 w-10 text-center">
                     <input
                       id="select-all-clients"
                       name="selectAllClients"
@@ -322,36 +323,36 @@ export default function PlatformClientsPage() {
                       onChange={(e) => handleSelectAll(e.target.checked)}
                       className="rounded border-slate-300 dark:border-slate-700 text-rose-600 focus:ring-rose-500 cursor-pointer"
                     />
-                  </th>
-                  <th className="px-4 py-3">Business & City</th>
-                  <th className="px-4 py-3">Owner & Contact</th>
-                  <th className="px-4 py-3">Type</th>
-                  <th className="px-4 py-3">Plan</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Health Score</th>
-                  <th className="px-4 py-3">Scale</th>
-                  <th className="px-4 py-3 text-right">MRR</th>
-                  <th className="px-4 py-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
+                  </TableHead>
+                  <TableHead className="px-4 py-3">Business & City</TableHead>
+                  <TableHead className="px-4 py-3">Owner & Contact</TableHead>
+                  <TableHead className="px-4 py-3">Type</TableHead>
+                  <TableHead className="px-4 py-3">Plan</TableHead>
+                  <TableHead className="px-4 py-3">Status</TableHead>
+                  <TableHead className="px-4 py-3">Health Score</TableHead>
+                  <TableHead className="px-4 py-3">Scale</TableHead>
+                  <TableHead className="px-4 py-3 text-right">MRR</TableHead>
+                  <TableHead className="px-4 py-3 text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
                 {filteredClients.length === 0 ? (
-                  <tr>
-                    <td colSpan={10} className="p-8 text-center text-slate-500">
+                  <TableRow>
+                    <TableCell colSpan={10} className="p-8 text-center text-slate-500">
                       No client workspaces match the selected search or filter criteria.
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ) : (
                   filteredClients.map((client) => {
                     const isSelected = selectedIds.includes(client.id);
                     return (
-                      <tr
+                      <TableRow
                         key={client.id}
                         className={`hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors ${
                           isSelected ? "bg-rose-500/5 dark:bg-rose-500/10" : ""
                         }`}
                       >
-                        <td className="p-3 text-center">
+                        <TableCell className="p-3 text-center">
                           <input
                             id={`select-client-${client.id}`}
                             name={`selectClient-${client.id}`}
@@ -361,8 +362,8 @@ export default function PlatformClientsPage() {
                             onChange={() => handleToggleSelect(client.id)}
                             className="rounded border-slate-300 dark:border-slate-700 text-rose-600 focus:ring-rose-500 cursor-pointer"
                           />
-                        </td>
-                        <td className="px-4 py-3.5">
+                        </TableCell>
+                        <TableCell className="px-4 py-3.5">
                           <div className="flex items-center gap-2.5">
                             <div className="h-8 w-8 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center font-bold text-xs shrink-0">
                               {client.name.substring(0, 2).toUpperCase()}
@@ -381,17 +382,17 @@ export default function PlatformClientsPage() {
                               )}
                             </div>
                           </div>
-                        </td>
-                        <td className="px-4 py-3.5">
+                        </TableCell>
+                        <TableCell className="px-4 py-3.5">
                           <div>
                             <span className="text-slate-900 dark:text-slate-200 block font-semibold">{client.ownerName}</span>
                             <span className="text-[11px] text-slate-400 font-mono">{client.ownerPhone}</span>
                           </div>
-                        </td>
-                        <td className="px-4 py-3.5 capitalize text-slate-600 dark:text-slate-400">
+                        </TableCell>
+                        <TableCell className="px-4 py-3.5 capitalize text-slate-600 dark:text-slate-400">
                           {client.businessType.replace("_", " ")}
-                        </td>
-                        <td className="px-4 py-3.5">
+                        </TableCell>
+                        <TableCell className="px-4 py-3.5">
                           <button
                             type="button"
                             onClick={() => {
@@ -405,8 +406,8 @@ export default function PlatformClientsPage() {
                             <span>{client.plan.replace("_", " ")}</span>
                             <span className="text-[9px] opacity-75">({client.billingCycle})</span>
                           </button>
-                        </td>
-                        <td className="px-4 py-3.5">
+                        </TableCell>
+                        <TableCell className="px-4 py-3.5">
                           <span
                             className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase ${
                               client.status === "active"
@@ -420,8 +421,8 @@ export default function PlatformClientsPage() {
                           >
                             {client.status.replace("_", " ")}
                           </span>
-                        </td>
-                        <td className="px-4 py-3.5">
+                        </TableCell>
+                        <TableCell className="px-4 py-3.5">
                           <div className="flex items-center gap-1.5">
                             <div className="w-12 h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
                               <div
@@ -439,14 +440,14 @@ export default function PlatformClientsPage() {
                               {client.healthScore}%
                             </span>
                           </div>
-                        </td>
-                        <td className="px-4 py-3.5 text-slate-500 dark:text-slate-400">
+                        </TableCell>
+                        <TableCell className="px-4 py-3.5 text-slate-500 dark:text-slate-400">
                           {client.tablesCount} Tables {client.roomsCount > 0 && `• ${client.roomsCount} Rooms`}
-                        </td>
-                        <td className="px-4 py-3.5 text-right font-mono font-bold text-slate-900 dark:text-white">
+                        </TableCell>
+                        <TableCell className="px-4 py-3.5 text-right font-mono font-bold text-slate-900 dark:text-white">
                           ₹{client.mrr.toLocaleString("en-IN")}
-                        </td>
-                        <td className="px-4 py-3.5 text-right">
+                        </TableCell>
+                        <TableCell className="px-4 py-3.5 text-right">
                           <div className="flex items-center justify-end gap-1">
                             <button
                               type="button"
@@ -467,13 +468,13 @@ export default function PlatformClientsPage() {
                               Details
                             </Button>
                           </div>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     );
                   })
                 )}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         </div>
       </div>

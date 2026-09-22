@@ -26,6 +26,8 @@ import {
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import NumberFlow from "@number-flow/react";
 import { usePlatformStore } from "@/lib/stores/platform-store";
 
 export default function PlatformDashboardPage() {
@@ -138,15 +140,15 @@ export default function PlatformDashboardPage() {
             </div>
           </div>
           <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-2xl sm:text-3xl font-black font-mono text-slate-900 dark:text-white tracking-tight">
-              ₹{totalMRR.toLocaleString("en-IN")}
+            <span className="text-2xl sm:text-3xl font-black font-mono text-slate-900 dark:text-white tracking-tight flex items-center">
+              ₹<NumberFlow value={totalMRR} />
             </span>
             <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5">
               <TrendingUp className="h-3 w-3" /> +18.4% MoM
             </span>
           </div>
-          <span className="text-[11px] text-slate-400 font-mono mt-1 block">
-            ARR: ₹{totalARR.toLocaleString("en-IN")}
+          <span className="text-[11px] text-slate-400 font-mono mt-1 flex items-center gap-1">
+            ARR: ₹<NumberFlow value={totalARR} />
           </span>
         </Card>
 
@@ -160,8 +162,8 @@ export default function PlatformDashboardPage() {
             </div>
           </div>
           <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-2xl sm:text-3xl font-black font-mono text-slate-900 dark:text-white tracking-tight">
-              {activeClients}
+            <span className="text-2xl sm:text-3xl font-black font-mono text-slate-900 dark:text-white tracking-tight flex items-baseline">
+              <NumberFlow value={activeClients} />
               <span className="text-sm font-medium text-slate-400">/{totalClients}</span>
             </span>
             <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
@@ -186,7 +188,7 @@ export default function PlatformDashboardPage() {
           </div>
           <div className="mt-2 flex items-baseline justify-between">
             <span className="text-2xl sm:text-3xl font-black font-mono text-slate-900 dark:text-white tracking-tight">
-              {totalOrders.toLocaleString()}
+              <NumberFlow value={totalOrders} />
             </span>
             <span className="text-[11px] font-bold text-cyan-600 dark:text-cyan-400">
               Across all tenants
@@ -286,27 +288,27 @@ export default function PlatformDashboardPage() {
 
         <div className="rounded-2xl bg-white dark:bg-slate-900/40 border border-slate-200/80 dark:border-slate-800/80 overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50/80 dark:bg-slate-900/80 text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider text-[10px]">
-                <tr>
-                  <th className="px-4 py-3">Client / Business</th>
-                  <th className="px-4 py-3">Owner / Contact</th>
-                  <th className="px-4 py-3">Type</th>
-                  <th className="px-4 py-3">Plan</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Health</th>
-                  <th className="px-4 py-3 text-right">MRR</th>
-                  <th className="px-4 py-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
+            <Table className="w-full text-left text-xs">
+              <TableHeader className="bg-slate-50/80 dark:bg-slate-900/80 text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider text-[10px]">
+                <TableRow>
+                  <TableHead className="px-4 py-3">Client / Business</TableHead>
+                  <TableHead className="px-4 py-3">Owner / Contact</TableHead>
+                  <TableHead className="px-4 py-3">Type</TableHead>
+                  <TableHead className="px-4 py-3">Plan</TableHead>
+                  <TableHead className="px-4 py-3">Status</TableHead>
+                  <TableHead className="px-4 py-3">Health</TableHead>
+                  <TableHead className="px-4 py-3 text-right">MRR</TableHead>
+                  <TableHead className="px-4 py-3 text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
                 {clients.slice(0, 5).map((client) => {
                   return (
-                    <tr
+                    <TableRow
                       key={client.id}
                       className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors"
                     >
-                      <td className="px-4 py-3">
+                      <TableCell className="px-4 py-3">
                         <div className="flex items-center gap-2.5">
                           <div className="h-8 w-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-xs text-slate-700 dark:text-slate-300">
                             {client.name.substring(0, 2).toUpperCase()}
@@ -325,22 +327,22 @@ export default function PlatformDashboardPage() {
                             )}
                           </div>
                         </div>
-                      </td>
-                      <td className="px-4 py-3">
+                      </TableCell>
+                      <TableCell className="px-4 py-3">
                         <div>
                           <span className="text-slate-900 dark:text-slate-200 block">{client.ownerName}</span>
                           <span className="text-[11px] text-slate-400 font-mono">{client.ownerPhone}</span>
                         </div>
-                      </td>
-                      <td className="px-4 py-3 capitalize text-slate-600 dark:text-slate-400">
+                      </TableCell>
+                      <TableCell className="px-4 py-3 capitalize text-slate-600 dark:text-slate-400">
                         {client.businessType.replace("_", " ")}
-                      </td>
-                      <td className="px-4 py-3">
+                      </TableCell>
+                      <TableCell className="px-4 py-3">
                         <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
                           {client.plan.replace("_", " ")}
                         </span>
-                      </td>
-                      <td className="px-4 py-3">
+                      </TableCell>
+                      <TableCell className="px-4 py-3">
                         <span
                           className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase ${
                             client.status === "active"
@@ -354,8 +356,8 @@ export default function PlatformDashboardPage() {
                         >
                           {client.status.replace("_", " ")}
                         </span>
-                      </td>
-                      <td className="px-4 py-3">
+                      </TableCell>
+                      <TableCell className="px-4 py-3">
                         <div className="flex items-center gap-1.5">
                           <div className="w-12 h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
                             <div
@@ -373,11 +375,11 @@ export default function PlatformDashboardPage() {
                             {client.healthScore}%
                           </span>
                         </div>
-                      </td>
-                      <td className="px-4 py-3 text-right font-mono font-bold text-slate-900 dark:text-white">
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-right font-mono font-bold text-slate-900 dark:text-white">
                         ₹{client.mrr.toLocaleString("en-IN")}
-                      </td>
-                      <td className="px-4 py-3 text-right">
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-right">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -386,12 +388,12 @@ export default function PlatformDashboardPage() {
                         >
                           Details →
                         </Button>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   );
                 })}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         </div>
       </div>

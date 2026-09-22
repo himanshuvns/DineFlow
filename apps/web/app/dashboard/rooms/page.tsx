@@ -48,6 +48,8 @@ import { apiClient } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
 import { validateIndianPhone, formatIndianPhoneInput } from "@/lib/validation";
 import { ViewToggle, useViewMode } from "@/components/ui/view-toggle";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import NumberFlow from "@number-flow/react";
 
 interface RoomItem {
   id: string;
@@ -1043,10 +1045,10 @@ export default function RoomsDirectoryPage() {
             </span>
             <div className="flex items-baseline justify-between mt-0.5">
               <span className="text-lg sm:text-xl font-black text-amber-600 dark:text-amber-400 font-mono">
-                {loading && rooms.length === 0 ? "—" : (stats.occupiedRooms || rooms.filter((r) => r.status === "occupied").length)}
+                {loading && rooms.length === 0 ? "—" : <NumberFlow value={stats.occupiedRooms || rooms.filter((r) => r.status === "occupied").length} />}
               </span>
               <span className="text-[10px] text-slate-500 font-mono">
-                {loading && rooms.length === 0 ? "—" : `${Math.round(stats.occupancyRate || 0)}% Occ`}
+                {loading && rooms.length === 0 ? "—" : <><NumberFlow value={Math.round(stats.occupancyRate || 0)} />% Occ</>}
               </span>
             </div>
           </Card>
@@ -1057,7 +1059,7 @@ export default function RoomsDirectoryPage() {
             </span>
             <div className="flex items-baseline justify-between mt-0.5">
               <span className="text-lg sm:text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
-                {loading && rooms.length === 0 ? "—" : (stats.vacantRooms || rooms.filter((r) => r.status === "vacant").length)}
+                {loading && rooms.length === 0 ? "—" : <NumberFlow value={stats.vacantRooms || rooms.filter((r) => r.status === "vacant").length} />}
               </span>
               <span className="text-[10px] text-slate-500 font-mono">Vacant</span>
             </div>
@@ -1069,7 +1071,7 @@ export default function RoomsDirectoryPage() {
             </span>
             <div className="flex items-baseline justify-between mt-0.5">
               <span className="text-lg sm:text-xl font-black text-rose-600 dark:text-rose-400 font-mono">
-                {loading && rooms.length === 0 ? "—" : (stats.cleaningRooms || rooms.filter((r) => r.status === "cleaning").length)}
+                {loading && rooms.length === 0 ? "—" : <NumberFlow value={stats.cleaningRooms || rooms.filter((r) => r.status === "cleaning").length} />}
               </span>
               <span className="text-[10px] text-slate-500 font-mono">Cleaning</span>
             </div>
@@ -1081,7 +1083,7 @@ export default function RoomsDirectoryPage() {
             </span>
             <div className="flex items-baseline justify-between mt-0.5">
               <span className="text-lg sm:text-xl font-black text-rose-600 dark:text-rose-400 font-mono">
-                {loading && rooms.length === 0 ? "—" : rooms.filter((r) => r.doNotDisturb).length}
+                {loading && rooms.length === 0 ? "—" : <NumberFlow value={rooms.filter((r) => r.doNotDisturb).length} />}
               </span>
               <span className="text-[10px] text-rose-500 font-mono font-bold">🔴 Active</span>
             </div>
@@ -1093,7 +1095,7 @@ export default function RoomsDirectoryPage() {
             </span>
             <div className="flex items-baseline justify-between mt-0.5">
               <span className="text-lg sm:text-xl font-black text-cyan-600 dark:text-cyan-400 font-mono">
-                {loading && rooms.length === 0 ? "—" : (stats.checkInsToday || 0)}
+                {loading && rooms.length === 0 ? "—" : <NumberFlow value={stats.checkInsToday || 0} />}
               </span>
               <span className="text-[10px] text-slate-500 font-mono">Arrivals</span>
             </div>
@@ -1105,7 +1107,7 @@ export default function RoomsDirectoryPage() {
             </span>
             <div className="flex items-baseline justify-between mt-0.5">
               <span className="text-lg sm:text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
-                {loading && rooms.length === 0 ? "—" : (stats.pendingRoomService || 0)}
+                {loading && rooms.length === 0 ? "—" : <NumberFlow value={stats.pendingRoomService || 0} />}
               </span>
               <span className="text-[10px] text-slate-500 font-mono">Active</span>
             </div>
@@ -1533,222 +1535,233 @@ export default function RoomsDirectoryPage() {
         })}
       </div>
       ) : (
-        /* ─── ENTERPRISE ROOMS LIST VIEW ─── */
-        <div className="space-y-1.5">
-          {/* Column headers — desktop only */}
-          <div className="hidden lg:grid lg:grid-cols-12 gap-4 px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 bg-slate-50/95 dark:bg-[#090D16]/95 backdrop-blur-md">
-            <div className="col-span-3">Room</div>
-            <div className="col-span-2">Type / Floor</div>
-            <div className="col-span-3">Guest &amp; Stay</div>
-            <div className="col-span-2">Status</div>
-            <div className="col-span-2 text-right">Actions</div>
-          </div>
+        <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white/70 dark:bg-slate-900/60 backdrop-blur-md overflow-hidden shadow-2xs">
+          <div className="overflow-x-auto scrollbar-none [-webkit-overflow-scrolling:touch]">
+            <Table className="min-w-[850px]">
+              <TableHeader>
+                <TableRow className="hover:bg-transparent border-b border-slate-200/80 dark:border-slate-800/80">
+                  <TableHead className="pl-4">Room</TableHead>
+                  <TableHead>Type / Floor</TableHead>
+                  <TableHead>Guest & Stay</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right pr-4">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredRooms.map((room) => {
+                  const isOccupied = room.status === "occupied";
+                  const isCleaning = room.status === "cleaning";
+                  const isMaintenance = room.status === "maintenance";
+                  const metrics = getStayMetrics(room.currentGuestCheckIn, room.currentGuestExpectedCheckOut);
 
-          {filteredRooms.map((room) => {
-            const isOccupied = room.status === "occupied";
-            const isCleaning = room.status === "cleaning";
-            const isMaintenance = room.status === "maintenance";
-            const metrics = getStayMetrics(room.currentGuestCheckIn, room.currentGuestExpectedCheckOut);
+                  return (
+                    <TableRow
+                      key={room.id}
+                      className={`transition-colors ${
+                        room.doNotDisturb
+                          ? "bg-rose-500/5 dark:bg-rose-500/10"
+                          : isOccupied
+                          ? "bg-amber-500/5 dark:bg-amber-500/10"
+                          : ""
+                      }`}
+                    >
+                      {/* Room */}
+                      <TableCell className="pl-4">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className={`h-9 w-9 rounded-xl flex items-center justify-center shrink-0 ${
+                            isOccupied ? "bg-amber-500/10 text-amber-500" : isCleaning ? "bg-cyan-500/10 text-cyan-500" : "bg-emerald-500/10 text-emerald-500"
+                          }`}>
+                            <Hotel className="h-4 w-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-bold text-sm text-slate-900 dark:text-white truncate">{room.name}</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{room.floor} · {room.wing}</p>
+                          </div>
+                        </div>
+                      </TableCell>
 
-            return (
-              <div
-                key={room.id}
-                className={`group relative flex flex-col lg:grid lg:grid-cols-12 gap-3 lg:gap-4 items-start lg:items-center px-4 py-3.5 rounded-xl border transition-all bg-white dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-900/70 ${
-                  room.doNotDisturb
-                    ? "border-rose-500/40"
-                    : isOccupied
-                    ? "border-amber-500/30"
-                    : isCleaning
-                    ? "border-cyan-500/30"
-                    : "border-slate-200 dark:border-slate-800"
-                }`}
-              >
-                {/* Room name + floor + wing */}
-                <div className="col-span-3 flex items-center gap-3 min-w-0">
-                  <div className={`h-9 w-9 rounded-xl flex items-center justify-center shrink-0 ${
-                    isOccupied ? "bg-amber-500/10 text-amber-500" : isCleaning ? "bg-cyan-500/10 text-cyan-500" : "bg-emerald-500/10 text-emerald-500"
-                  }`}>
-                    <Hotel className="h-4 w-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-bold text-sm text-slate-900 dark:text-white truncate">{room.name}</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{room.floor} · {room.wing}</p>
-                  </div>
-                </div>
-
-                {/* Type / Capacity */}
-                <div className="col-span-2 flex flex-wrap gap-1.5 lg:flex-col">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[11px] font-medium text-slate-700 dark:text-slate-300 capitalize">
-                    {room.type || "Standard"}
-                  </span>
-                  {room.capacity && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[11px] text-slate-500 dark:text-slate-400">
-                      <Users className="h-3 w-3" />
-                      {room.capacity} guests
-                    </span>
-                  )}
-                </div>
-
-                {/* Guest & Stay info */}
-                <div className="col-span-3 min-w-0">
-                  {isOccupied && (room.activeGuest || room.currentGuestName) ? (
-                    <div className="space-y-0.5">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <Users className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-                        <span className="text-sm font-semibold text-slate-900 dark:text-white truncate max-w-full">
-                          {room.activeGuest || room.currentGuestName}
-                        </span>
-                        {room.currentGuestCount && room.currentGuestCount > 1 && (
-                          <span className="text-xs text-slate-500">+{room.currentGuestCount - 1}</span>
-                        )}
-                      </div>
-                      {metrics && (
-                        <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
-                          <span>{metrics.checkInDate} → {metrics.checkOutDate}</span>
-                          <span className="font-mono bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded font-semibold">
-                            {metrics.nights}N
+                      {/* Type / Floor */}
+                      <TableCell>
+                        <div className="flex flex-col gap-1">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[11px] font-medium text-slate-700 dark:text-slate-300 capitalize w-fit">
+                            {room.type || "Standard"}
                           </span>
-                          {room.folioEnabled && (
-                            <span className="flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400 font-semibold">
-                              <FileCheck className="h-3 w-3" />Folio OK
+                          {room.capacity && (
+                            <span className="inline-flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400">
+                              <Users className="h-3 w-3" />
+                              {room.capacity} guests
                             </span>
                           )}
                         </div>
-                      )}
-                    </div>
-                  ) : (
-                    <span className={`text-xs ${isCleaning ? "text-cyan-600 dark:text-cyan-400" : isMaintenance ? "text-orange-500" : "text-slate-400 dark:text-slate-500"}`}>
-                      {isCleaning ? "Housekeeping in progress" : isMaintenance ? "Under maintenance" : "Suite vacant & ready"}
-                    </span>
-                  )}
-                </div>
+                      </TableCell>
 
-                {/* Status badges */}
-                <div className="col-span-2 flex flex-wrap gap-1.5">
-                  <Badge
-                    variant={isOccupied ? "warning" : isCleaning ? "danger" : "success"}
-                    size="sm"
-                    dot
-                  >
-                    {isOccupied ? "Guest In-House" : isCleaning ? "Cleaning" : isMaintenance ? "Maintenance" : "Clean & Ready"}
-                  </Badge>
-                  {room.doNotDisturb && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-rose-500 text-white shadow-xs animate-pulse">
-                      🔴 DND
-                    </span>
-                  )}
+                      {/* Guest & Stay */}
+                      <TableCell>
+                        {isOccupied && (room.activeGuest || room.currentGuestName) ? (
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <Users className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                              <span className="text-sm font-semibold text-slate-900 dark:text-white truncate max-w-full">
+                                {room.activeGuest || room.currentGuestName}
+                              </span>
+                              {room.currentGuestCount && room.currentGuestCount > 1 && (
+                                <span className="text-xs text-slate-500">+{room.currentGuestCount - 1}</span>
+                              )}
+                            </div>
+                            {metrics && (
+                              <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
+                                <span>{metrics.checkInDate} → {metrics.checkOutDate}</span>
+                                <span className="font-mono bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded font-semibold">
+                                  {metrics.nights}N
+                                </span>
+                                {room.folioEnabled && (
+                                  <span className="flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400 font-semibold">
+                                    <FileCheck className="h-3 w-3" />Folio OK
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className={`text-xs ${isCleaning ? "text-cyan-600 dark:text-cyan-400" : isMaintenance ? "text-orange-500" : "text-slate-400 dark:text-slate-500"}`}>
+                            {isCleaning ? "Housekeeping in progress" : isMaintenance ? "Under maintenance" : "Suite vacant & ready"}
+                          </span>
+                        )}
+                      </TableCell>
 
-                  {(pendingExtensionRooms.has(room.id) ||
-                    pendingExtensionRooms.has(room.roomNumber) ||
-                    pendingExtensionRooms.has((room.roomNumber || "").toUpperCase().replace(/^(ROOM-|SUITE-)/, "").trim())) && (
-                    <Badge
-                      variant="warning"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        router.push(`/dashboard/rooms/${room.id}`);
-                      }}
-                      className="text-[10px] font-bold animate-pulse cursor-pointer hover:opacity-85 transition-opacity"
-                      title="Click to review stay extension request"
-                    >
-                      <Clock className="h-3 w-3 mr-1" />
-                      Extension Req
-                    </Badge>
-                  )}
+                      {/* Status */}
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1.5 items-center">
+                          <Badge
+                            variant={isOccupied ? "warning" : isCleaning ? "danger" : "success"}
+                            size="sm"
+                            dot
+                          >
+                            {isOccupied ? "Guest In-House" : isCleaning ? "Cleaning" : isMaintenance ? "Maintenance" : "Clean & Ready"}
+                          </Badge>
+                          {room.doNotDisturb && (
+                            <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-rose-500 text-white shadow-xs animate-pulse">
+                              🔴 DND
+                            </span>
+                          )}
 
-                  {(pendingHousekeepingRooms.has(room.id) ||
-                    pendingHousekeepingRooms.has(room.roomNumber) ||
-                    pendingHousekeepingRooms.has((room.roomNumber || "").toUpperCase().replace(/^(ROOM-|SUITE-)/, "").trim())) && (
-                    <Badge
-                      variant="neutral"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        router.push(`/dashboard/rooms/${room.id}`);
-                      }}
-                      className="text-[10px] font-bold animate-pulse cursor-pointer bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border-cyan-500/30 hover:opacity-85 transition-opacity"
-                      title="Click to view active housekeeping request"
-                    >
-                      <Sparkles className="h-3 w-3 mr-1" />
-                      Service Req
-                    </Badge>
-                  )}
-                </div>
+                          {(pendingExtensionRooms.has(room.id) ||
+                            pendingExtensionRooms.has(room.roomNumber) ||
+                            pendingExtensionRooms.has((room.roomNumber || "").toUpperCase().replace(/^(ROOM-|SUITE-)/, "").trim())) && (
+                            <Badge
+                              variant="warning"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                router.push(`/dashboard/rooms/${room.id}`);
+                              }}
+                              className="text-[10px] font-bold animate-pulse cursor-pointer hover:opacity-85 transition-opacity"
+                              title="Click to review stay extension request"
+                            >
+                              <Clock className="h-3 w-3 mr-1" />
+                              Extension Req
+                            </Badge>
+                          )}
 
-                {/* Quick Actions */}
-                <div className="col-span-2 flex flex-wrap items-center gap-1.5 lg:justify-end w-full lg:w-auto border-t border-slate-100 dark:border-slate-800 lg:border-0 pt-2 lg:pt-0">
-                  {isOccupied ? (
-                    <>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 text-[11px] px-2 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"
-                        onClick={() => handleOpenExtendStay(room)}
-                      >
-                        <Calendar className="h-3 w-3 mr-1" />Extend
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 text-[11px] px-2 text-rose-600 dark:text-rose-400 border-rose-500/30 hover:bg-rose-500/10"
-                        onClick={() => handleInitiateCheckOut(room)}
-                      >
-                        Check-Out
-                      </Button>
-                    </>
-                  ) : isCleaning ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-7 text-[11px] px-2 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"
-                      onClick={() => handleMarkClean(room.id, room.name)}
-                    >
-                      <CheckCircle className="h-3 w-3 mr-1" />Mark Ready
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-7 text-[11px] px-2 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"
-                      onClick={() => handleStartCheckIn(room)}
-                    >
-                      Check-In
-                    </Button>
-                  )}
+                          {(pendingHousekeepingRooms.has(room.id) ||
+                            pendingHousekeepingRooms.has(room.roomNumber) ||
+                            pendingHousekeepingRooms.has((room.roomNumber || "").toUpperCase().replace(/^(ROOM-|SUITE-)/, "").trim())) && (
+                            <Badge
+                              variant="neutral"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                router.push(`/dashboard/rooms/${room.id}`);
+                              }}
+                              className="text-[10px] font-bold animate-pulse cursor-pointer bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border-cyan-500/30 hover:opacity-85 transition-opacity"
+                              title="Click to view active housekeeping request"
+                            >
+                              <Sparkles className="h-3 w-3 mr-1" />
+                              Service Req
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
 
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 w-7 p-0 text-slate-500 hover:text-slate-900 dark:hover:text-white"
-                    title={room.doNotDisturb ? "Cancel DND" : "Set DND"}
-                    onClick={() => handleToggleDND(room.id, room.doNotDisturb)}
-                  >
-                    <BellOff className={`h-3.5 w-3.5 ${room.doNotDisturb ? "text-rose-500" : ""}`} />
-                  </Button>
+                      {/* Actions */}
+                      <TableCell className="text-right pr-4">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {isOccupied ? (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 text-[11px] px-2 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"
+                                onClick={() => handleOpenExtendStay(room)}
+                              >
+                                <Calendar className="h-3 w-3 mr-1" />Extend
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 text-[11px] px-2 text-rose-600 dark:text-rose-400 border-rose-500/30 hover:bg-rose-500/10"
+                                onClick={() => handleInitiateCheckOut(room)}
+                              >
+                                Check-Out
+                              </Button>
+                            </>
+                          ) : isCleaning ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-[11px] px-2 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"
+                              onClick={() => handleMarkClean(room.id, room.name)}
+                            >
+                              <CheckCircle className="h-3 w-3 mr-1" />Mark Ready
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-[11px] px-2 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"
+                              onClick={() => handleStartCheckIn(room)}
+                            >
+                              Check-In
+                            </Button>
+                          )}
 
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 w-7 p-0 text-slate-500 hover:text-slate-900 dark:hover:text-white"
-                    title="Tent QR"
-                    onClick={() => setSelectedRoom(room)}
-                  >
-                    <QrCode className="h-3.5 w-3.5" />
-                  </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0 text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                            title={room.doNotDisturb ? "Cancel DND" : "Set DND"}
+                            onClick={() => handleToggleDND(room.id, room.doNotDisturb)}
+                          >
+                            <BellOff className={`h-3.5 w-3.5 ${room.doNotDisturb ? "text-rose-500" : ""}`} />
+                          </Button>
 
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 w-7 p-0 text-slate-500 hover:text-slate-900 dark:hover:text-white"
-                    title="Manage Room"
-                    onClick={() => router.push(`/dashboard/rooms/${room.id}`)}
-                  >
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </div>
-            );
-          })}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0 text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                            title="Tent QR"
+                            onClick={() => setSelectedRoom(room)}
+                          >
+                            <QrCode className="h-3.5 w-3.5" />
+                          </Button>
+
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0 text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                            title="Manage Room"
+                            onClick={() => router.push(`/dashboard/rooms/${room.id}`)}
+                          >
+                            <ArrowRight className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       )}
       </div>

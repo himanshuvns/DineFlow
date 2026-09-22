@@ -38,6 +38,15 @@ import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { EmptyState } from "@/components/ui/empty-state";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
+import NumberFlow from "@number-flow/react";
 import { apiClient } from "@/lib/api";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import {
@@ -821,6 +830,69 @@ export default function StaffPage() {
         </div>
       </div>
 
+      {/* ── KPI Metric Strip ─────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <Card variant="glass" hoverEffect className="min-w-0 p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Total Workforce</span>
+            <div className="h-8 w-8 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400">
+              <Shield className="h-4 w-4" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+              <NumberFlow value={displayStaff.length} />
+            </span>
+            <span className="text-[11px] text-slate-400">enrolled</span>
+          </div>
+        </Card>
+
+        <Card variant="glass" hoverEffect className="min-w-0 p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Clocked In Today</span>
+            <div className="h-8 w-8 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+              <Clock className="h-4 w-4" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-2xl font-black tracking-tight text-emerald-600 dark:text-emerald-400">
+              <NumberFlow value={todayAttendance.filter((a) => a.checkInTime).length} />
+            </span>
+            <span className="text-[11px] text-slate-400">active</span>
+          </div>
+        </Card>
+
+        <Card variant="glass" hoverEffect className="min-w-0 p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Pending Leaves</span>
+            <div className="h-8 w-8 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400">
+              <CalendarCheck className="h-4 w-4" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-2xl font-black tracking-tight text-amber-600 dark:text-amber-400">
+              <NumberFlow value={leaves.filter((l) => l.status === "pending").length} />
+            </span>
+            <span className="text-[11px] text-slate-400">requests</span>
+          </div>
+        </Card>
+
+        <Card variant="glass" hoverEffect className="min-w-0 p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Late Arrivals</span>
+            <div className="h-8 w-8 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-600 dark:text-rose-400">
+              <AlertCircle className="h-4 w-4" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-2xl font-black tracking-tight text-rose-600 dark:text-rose-400">
+              <NumberFlow value={todayAttendance.filter((a) => a.status === "late").length} />
+            </span>
+            <span className="text-[11px] text-slate-400">today</span>
+          </div>
+        </Card>
+      </div>
+
       {/* ── Tab Navigation ────────────────────────────────────────────────────── */}
       <div className="overflow-x-auto scrollbar-none [-webkit-overflow-scrolling:touch] border-b border-slate-200 dark:border-slate-800">
         <div className="flex items-center gap-2 min-w-max pb-1">
@@ -879,23 +951,23 @@ export default function StaffPage() {
               </Button>
             </CardHeader>
             <CardContent className="p-0 overflow-x-auto">
-              <table className="w-full min-w-[750px] text-left text-xs">
-                <thead className="sticky top-0 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm z-10">
-                  <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
-                    <th className="py-3.5 pl-6">Employee</th>
-                    <th className="py-3.5">Department</th>
-                    <th className="py-3.5">Role</th>
-                    <th className="py-3.5 hidden md:table-cell">Shift</th>
-                    <th className="py-3.5 hidden md:table-cell">Basic CTC</th>
-                    <th className="py-3.5">Status</th>
-                    <th className="py-3.5 text-right pr-6">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
+              <Table className="min-w-[750px]">
+                <TableHeader className="sticky top-0 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm z-10">
+                  <TableRow className="text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
+                    <TableHead className="py-3.5 pl-6">Employee</TableHead>
+                    <TableHead className="py-3.5">Department</TableHead>
+                    <TableHead className="py-3.5">Role</TableHead>
+                    <TableHead className="py-3.5 hidden md:table-cell">Shift</TableHead>
+                    <TableHead className="py-3.5 hidden md:table-cell">Basic CTC</TableHead>
+                    <TableHead className="py-3.5">Status</TableHead>
+                    <TableHead className="py-3.5 text-right pr-6">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="divide-y divide-slate-200 dark:divide-slate-800/60">
                   {loading && staffList.length === 0 ? (
                     Array.from({ length: 4 }).map((_, i) => (
-                      <tr key={`staff-skel-${i}`} className="animate-pulse">
-                        <td className="py-3.5 pl-6">
+                      <TableRow key={`staff-skel-${i}`} className="animate-pulse">
+                        <TableCell className="py-3.5 pl-6">
                           <div className="flex items-center gap-3">
                             <div className="h-8 w-8 rounded-full bg-slate-200 dark:bg-slate-800" />
                             <div className="space-y-1.5">
@@ -903,18 +975,18 @@ export default function StaffPage() {
                               <div className="h-3 w-36 bg-slate-100 dark:bg-slate-800/60 rounded" />
                             </div>
                           </div>
-                        </td>
-                        <td className="py-3.5"><div className="h-5 w-16 bg-slate-200 dark:bg-slate-800 rounded-full" /></td>
-                        <td className="py-3.5"><div className="h-4 w-20 bg-slate-200 dark:bg-slate-800 rounded" /></td>
-                        <td className="py-3.5 hidden md:table-cell"><div className="h-4 w-24 bg-slate-200 dark:bg-slate-800 rounded" /></td>
-                        <td className="py-3.5 hidden md:table-cell"><div className="h-4 w-16 bg-slate-200 dark:bg-slate-800 rounded" /></td>
-                        <td className="py-3.5"><div className="h-5 w-14 bg-slate-200 dark:bg-slate-800 rounded-full" /></td>
-                        <td className="py-3.5 text-right pr-6"><div className="h-7 w-16 bg-slate-200 dark:bg-slate-800 rounded ml-auto" /></td>
-                      </tr>
+                        </TableCell>
+                        <TableCell className="py-3.5"><div className="h-5 w-16 bg-slate-200 dark:bg-slate-800 rounded-full" /></TableCell>
+                        <TableCell className="py-3.5"><div className="h-4 w-20 bg-slate-200 dark:bg-slate-800 rounded" /></TableCell>
+                        <TableCell className="py-3.5 hidden md:table-cell"><div className="h-4 w-24 bg-slate-200 dark:bg-slate-800 rounded" /></TableCell>
+                        <TableCell className="py-3.5 hidden md:table-cell"><div className="h-4 w-16 bg-slate-200 dark:bg-slate-800 rounded" /></TableCell>
+                        <TableCell className="py-3.5"><div className="h-5 w-14 bg-slate-200 dark:bg-slate-800 rounded-full" /></TableCell>
+                        <TableCell className="py-3.5 text-right pr-6"><div className="h-7 w-16 bg-slate-200 dark:bg-slate-800 rounded ml-auto" /></TableCell>
+                      </TableRow>
                     ))
                   ) : displayStaff.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="py-12">
+                    <TableRow>
+                      <TableCell colSpan={7} className="py-12">
                         <EmptyState
                           compact
                           icon={<Briefcase className="h-6 w-6 text-slate-400" />}
@@ -926,12 +998,12 @@ export default function StaffPage() {
                             onClick: () => setIsInviteOpen(true),
                           }}
                         />
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ) : (
                     displayStaff.map((member) => (
-                    <tr key={member.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                      <td className="py-3.5 pl-6">
+                    <TableRow key={member.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                      <TableCell className="py-3.5 pl-6">
                         <div className="flex items-center gap-3">
                           <Avatar fallback={member.name} size="sm" />
                           <div>
@@ -967,31 +1039,31 @@ export default function StaffPage() {
                             </div>
                           </div>
                         </div>
-                      </td>
-                      <td className="py-3.5">
+                      </TableCell>
+                      <TableCell className="py-3.5">
                         <span className="font-medium text-slate-700 dark:text-slate-300">
                           {member.department || (member.role === "owner" || member.role === "manager" ? "Management" : "Floor Service")}
                         </span>
-                      </td>
-                      <td className="py-3.5">
+                      </TableCell>
+                      <TableCell className="py-3.5">
                         <span className="capitalize font-medium text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700/60">
                           {member.role}
                         </span>
-                      </td>
-                      <td className="py-3.5 hidden md:table-cell text-slate-600 dark:text-slate-400">
+                      </TableCell>
+                      <TableCell className="py-3.5 hidden md:table-cell text-slate-600 dark:text-slate-400">
                         {member.shiftName || "Morning (09:00 - 18:00)"}
-                      </td>
-                      <td className="py-3.5 hidden md:table-cell font-semibold text-slate-900 dark:text-white">
+                      </TableCell>
+                      <TableCell className="py-3.5 hidden md:table-cell font-semibold text-slate-900 dark:text-white">
                         {currentUser?.role !== "manager" || (member.role !== "owner" && member.role !== "manager")
                           ? `₹${(member.salary?.basic || 25000).toLocaleString("en-IN")}/mo`
                           : "Confidential"}
-                      </td>
-                      <td className="py-3.5">
+                      </TableCell>
+                      <TableCell className="py-3.5">
                         <Badge variant={member.status === "active" ? "success" : "warning"} dot size="sm">
                           {member.status === "active" ? "Active" : "Invited"}
                         </Badge>
-                      </td>
-                      <td className="py-3.5 text-right pr-6">
+                      </TableCell>
+                      <TableCell className="py-3.5 text-right pr-6">
                         <div className="flex items-center justify-end gap-1.5">
                           {(currentUser?.role !== "manager" || (member.role !== "owner" && member.role !== "manager")) && (
                             <Button
@@ -1014,11 +1086,11 @@ export default function StaffPage() {
                             </Button>
                           )}
                         </div>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   )))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </div>
@@ -1126,7 +1198,13 @@ export default function StaffPage() {
               <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
                 <p className="text-xs text-slate-500 dark:text-slate-400">Total Clocked In Today</p>
                 <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
-                  {loading && staffList.length === 0 ? "—" : `${todayAttendance.filter((a) => a.checkInTime).length} / ${displayStaff.length}`}
+                  {loading && staffList.length === 0 ? (
+                    "—"
+                  ) : (
+                    <>
+                      <NumberFlow value={todayAttendance.filter((a) => a.checkInTime).length} /> / {displayStaff.length}
+                    </>
+                  )}
                 </p>
                 <div className="mt-2 text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                   <CheckCircle2 className="h-3 w-3" /> Real-time active workforce
@@ -1136,7 +1214,7 @@ export default function StaffPage() {
               <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
                 <p className="text-xs text-slate-500 dark:text-slate-400">Late Arrivals Today</p>
                 <p className="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-1">
-                  {todayAttendance.filter((a) => a.status === "late").length}
+                  <NumberFlow value={todayAttendance.filter((a) => a.status === "late").length} />
                 </p>
                 <p className="text-[11px] text-slate-400 mt-1">Grace period: 15 mins</p>
               </div>
@@ -1157,34 +1235,34 @@ export default function StaffPage() {
               </Button>
             </CardHeader>
             <CardContent className="p-0 overflow-x-auto">
-              <table className="w-full min-w-[700px] text-left text-xs">
-                <thead className="sticky top-0 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm z-10">
-                  <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
-                    <th className="py-3.5 pl-6">Staff Member</th>
-                    <th className="py-3.5">Department</th>
-                    <th className="py-3.5">Check-In</th>
-                    <th className="py-3.5">Check-Out</th>
-                    <th className="py-3.5">Working Hours</th>
-                    <th className="py-3.5">Status</th>
-                    <th className="py-3.5 text-right pr-6">GPS Distance</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
+              <Table className="min-w-[700px]">
+                <TableHeader className="sticky top-0 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm z-10">
+                  <TableRow className="text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
+                    <TableHead className="py-3.5 pl-6">Staff Member</TableHead>
+                    <TableHead className="py-3.5">Department</TableHead>
+                    <TableHead className="py-3.5">Check-In</TableHead>
+                    <TableHead className="py-3.5">Check-Out</TableHead>
+                    <TableHead className="py-3.5">Working Hours</TableHead>
+                    <TableHead className="py-3.5">Status</TableHead>
+                    <TableHead className="py-3.5 text-right pr-6">GPS Distance</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="divide-y divide-slate-200 dark:divide-slate-800/60">
                   {todayAttendance.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="py-12">
+                    <TableRow>
+                      <TableCell colSpan={7} className="py-12">
                         <EmptyState
                           compact
                           icon={<Clock className="h-6 w-6 text-slate-400" />}
                           title="No check-ins recorded yet today"
                           description="Staff members can clock in using GPS or the WhatsApp Workforce Assistant."
                         />
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ) : (
                     todayAttendance.map((rec) => (
-                      <tr key={rec.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                        <td className="py-3.5 pl-6">
+                      <TableRow key={rec.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                        <TableCell className="py-3.5 pl-6">
                           <div className="flex items-center gap-2.5">
                             <Avatar fallback={rec.employeeName} size="sm" />
                             <div>
@@ -1192,19 +1270,19 @@ export default function StaffPage() {
                               <p className="text-[10px] text-slate-400 font-mono">{rec.employeeId}</p>
                             </div>
                           </div>
-                        </td>
-                        <td className="py-3.5 text-slate-600 dark:text-slate-400">{rec.department || "Operations"}</td>
-                        <td className="py-3.5 font-mono text-slate-800 dark:text-slate-200">
+                        </TableCell>
+                        <TableCell className="py-3.5 text-slate-600 dark:text-slate-400">{rec.department || "Operations"}</TableCell>
+                        <TableCell className="py-3.5 font-mono text-slate-800 dark:text-slate-200">
                           {rec.checkInTime ? new Date(rec.checkInTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—"}
-                        </td>
-                        <td className="py-3.5 font-mono text-slate-800 dark:text-slate-200">
+                        </TableCell>
+                        <TableCell className="py-3.5 font-mono text-slate-800 dark:text-slate-200">
                           {rec.checkOutTime ? new Date(rec.checkOutTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : (rec.isOnBreak ? "On Break ☕" : "In Progress")}
-                        </td>
-                        <td className="py-3.5 font-semibold text-slate-900 dark:text-white">
+                        </TableCell>
+                        <TableCell className="py-3.5 font-semibold text-slate-900 dark:text-white">
                           {rec.workingHours ? `${rec.workingHours} hrs` : "—"}
                           {rec.overtimeHours > 0 && <span className="text-[10px] text-emerald-500 ml-1">(+{rec.overtimeHours} OT)</span>}
-                        </td>
-                        <td className="py-3.5">
+                        </TableCell>
+                        <TableCell className="py-3.5">
                           <Badge
                             variant={rec.status === "present" ? "success" : rec.status === "late" ? "warning" : "neutral"}
                             dot
@@ -1212,15 +1290,15 @@ export default function StaffPage() {
                           >
                             {rec.status === "late" ? "Late" : "Present"}
                           </Badge>
-                        </td>
-                        <td className="py-3.5 text-right pr-6 font-mono text-[11px] text-slate-500">
+                        </TableCell>
+                        <TableCell className="py-3.5 text-right pr-6 font-mono text-[11px] text-slate-500">
                           {rec.checkInDistance ? `${rec.checkInDistance.toFixed(0)}m` : "—"}
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))
                   )}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </div>
@@ -1328,21 +1406,21 @@ export default function StaffPage() {
               </Button>
             </CardHeader>
             <CardContent className="p-0 overflow-x-auto">
-              <table className="w-full min-w-[700px] text-left text-xs">
-                <thead className="sticky top-0 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm z-10">
-                  <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
-                    <th className="py-3.5 pl-6">Employee</th>
-                    <th className="py-3.5">Leave Type</th>
-                    <th className="py-3.5">Duration</th>
-                    <th className="py-3.5">Reason</th>
-                    <th className="py-3.5">Status</th>
-                    <th className="py-3.5 text-right pr-6">Manager Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
+              <Table className="min-w-[700px]">
+                <TableHeader className="sticky top-0 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm z-10">
+                  <TableRow className="text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
+                    <TableHead className="py-3.5 pl-6">Employee</TableHead>
+                    <TableHead className="py-3.5">Leave Type</TableHead>
+                    <TableHead className="py-3.5">Duration</TableHead>
+                    <TableHead className="py-3.5">Reason</TableHead>
+                    <TableHead className="py-3.5">Status</TableHead>
+                    <TableHead className="py-3.5 text-right pr-6">Manager Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="divide-y divide-slate-200 dark:divide-slate-800/60">
                   {leaves.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="py-12">
+                    <TableRow>
+                      <TableCell colSpan={6} className="py-12">
                         <EmptyState
                           compact
                           icon={<CalendarCheck className="h-6 w-6 text-slate-400" />}
@@ -1354,26 +1432,26 @@ export default function StaffPage() {
                             onClick: () => setIsApplyLeaveOpen(true),
                           }}
                         />
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ) : (
                     leaves.map((lv) => (
-                      <tr key={lv.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                        <td className="py-3.5 pl-6">
+                      <TableRow key={lv.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                        <TableCell className="py-3.5 pl-6">
                           <p className="font-semibold text-slate-900 dark:text-white">{lv.employeeName || "Employee"}</p>
                           <p className="text-[10px] text-slate-400 font-mono">{lv.employeeId || "DF-EMP"}</p>
-                        </td>
-                        <td className="py-3.5 capitalize font-medium text-slate-700 dark:text-slate-300">
+                        </TableCell>
+                        <TableCell className="py-3.5 capitalize font-medium text-slate-700 dark:text-slate-300">
                           {lv.leaveType} {lv.isHalfDay && "(Half-Day)"}
-                        </td>
-                        <td className="py-3.5 text-slate-800 dark:text-slate-200">
+                        </TableCell>
+                        <TableCell className="py-3.5 text-slate-800 dark:text-slate-200">
                           <span className="font-medium">{lv.startDate}</span> to <span className="font-medium">{lv.endDate}</span>
                           <span className="text-slate-400 text-[11px] block">{lv.daysCount} days</span>
-                        </td>
-                        <td className="py-3.5 max-w-[200px] truncate text-slate-600 dark:text-slate-400">
+                        </TableCell>
+                        <TableCell className="py-3.5 max-w-[200px] truncate text-slate-600 dark:text-slate-400">
                           {lv.reason || "Personal"}
-                        </td>
-                        <td className="py-3.5">
+                        </TableCell>
+                        <TableCell className="py-3.5">
                           <Badge
                             variant={lv.status === "approved" ? "success" : lv.status === "rejected" ? "danger" : "warning"}
                             dot
@@ -1381,8 +1459,8 @@ export default function StaffPage() {
                           >
                             {lv.status}
                           </Badge>
-                        </td>
-                        <td className="py-3.5 text-right pr-6">
+                        </TableCell>
+                        <TableCell className="py-3.5 text-right pr-6">
                           {lv.status === "pending" ? (
                             <div className="flex items-center justify-end gap-1.5">
                               <Button
@@ -1410,12 +1488,12 @@ export default function StaffPage() {
                               {lv.approvedBy ? `By ${lv.approvedBy}` : "Completed"}
                             </span>
                           )}
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))
                   )}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </div>
@@ -1470,23 +1548,23 @@ export default function StaffPage() {
               </div>
             </CardHeader>
             <CardContent className="p-0 overflow-x-auto">
-              <table className="w-full min-w-[800px] text-left text-xs">
-                <thead className="sticky top-0 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm z-10">
-                  <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
-                    <th className="py-3.5 pl-6">Employee</th>
-                    <th className="py-3.5">Designation</th>
-                    <th className="py-3.5">Days / OT</th>
-                    <th className="py-3.5">Gross Pay</th>
-                    <th className="py-3.5">Deductions (PF+PT)</th>
-                    <th className="py-3.5">Net Pay (INR)</th>
-                    <th className="py-3.5">Status</th>
-                    <th className="py-3.5 text-right pr-6">Payslip</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
+              <Table className="min-w-[800px]">
+                <TableHeader className="sticky top-0 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm z-10">
+                  <TableRow className="text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
+                    <TableHead className="py-3.5 pl-6">Employee</TableHead>
+                    <TableHead className="py-3.5">Designation</TableHead>
+                    <TableHead className="py-3.5">Days / OT</TableHead>
+                    <TableHead className="py-3.5">Gross Pay</TableHead>
+                    <TableHead className="py-3.5">Deductions (PF+PT)</TableHead>
+                    <TableHead className="py-3.5">Net Pay (INR)</TableHead>
+                    <TableHead className="py-3.5">Status</TableHead>
+                    <TableHead className="py-3.5 text-right pr-6">Payslip</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="divide-y divide-slate-200 dark:divide-slate-800/60">
                   {payrollRecords.length === 0 ? (
-                    <tr>
-                      <td colSpan={8} className="py-12">
+                    <TableRow>
+                      <TableCell colSpan={8} className="py-12">
                         <EmptyState
                           compact
                           icon={<CreditCard className="h-6 w-6 text-slate-400" />}
@@ -1498,35 +1576,35 @@ export default function StaffPage() {
                             onClick: handleRunPayroll,
                           }}
                         />
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ) : (
                     payrollRecords.map((pay) => (
-                      <tr key={pay.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                        <td className="py-3.5 pl-6">
+                      <TableRow key={pay.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                        <TableCell className="py-3.5 pl-6">
                           <p className="font-semibold text-slate-900 dark:text-white">{pay.employeeName}</p>
                           <p className="text-[10px] text-slate-400 font-mono">{pay.employeeId}</p>
-                        </td>
-                        <td className="py-3.5 capitalize text-slate-600 dark:text-slate-400">{pay.role}</td>
-                        <td className="py-3.5 text-slate-800 dark:text-slate-200">
+                        </TableCell>
+                        <TableCell className="py-3.5 capitalize text-slate-600 dark:text-slate-400">{pay.role}</TableCell>
+                        <TableCell className="py-3.5 text-slate-800 dark:text-slate-200">
                           {pay.presentDays} days
                           {pay.overtimeHours > 0 && <span className="text-[10px] text-emerald-500 block">+{pay.overtimeHours}h OT</span>}
-                        </td>
-                        <td className="py-3.5 font-medium text-slate-900 dark:text-white">
+                        </TableCell>
+                        <TableCell className="py-3.5 font-medium text-slate-900 dark:text-white">
                           ₹{pay.grossEarnings.toLocaleString("en-IN")}
-                        </td>
-                        <td className="py-3.5 text-rose-500 font-medium">
+                        </TableCell>
+                        <TableCell className="py-3.5 text-rose-500 font-medium">
                           -₹{pay.deductions.toLocaleString("en-IN")}
-                        </td>
-                        <td className="py-3.5 font-bold text-emerald-600 dark:text-emerald-400 text-sm">
+                        </TableCell>
+                        <TableCell className="py-3.5 font-bold text-emerald-600 dark:text-emerald-400 text-sm">
                           ₹{pay.netPay.toLocaleString("en-IN")}
-                        </td>
-                        <td className="py-3.5">
+                        </TableCell>
+                        <TableCell className="py-3.5">
                           <Badge variant="success" dot size="sm">
                             {pay.paymentStatus}
                           </Badge>
-                        </td>
-                        <td className="py-3.5 text-right pr-6">
+                        </TableCell>
+                        <TableCell className="py-3.5 text-right pr-6">
                           <Button
                             variant="outline"
                             size="sm"
@@ -1539,12 +1617,12 @@ export default function StaffPage() {
                           >
                             View Payslip
                           </Button>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))
                   )}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </div>
@@ -1561,32 +1639,32 @@ export default function StaffPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="p-0 overflow-x-auto">
-              <table className="w-full min-w-[600px] text-left text-xs">
-                <thead className="sticky top-0 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm z-10">
-                  <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
-                    <th className="py-3.5 pl-6">Holiday Name</th>
-                    <th className="py-3.5">Date</th>
-                    <th className="py-3.5">Type</th>
-                    <th className="py-3.5 text-right pr-6">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
+              <Table className="min-w-[600px]">
+                <TableHeader className="sticky top-0 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm z-10">
+                  <TableRow className="text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
+                    <TableHead className="py-3.5 pl-6">Holiday Name</TableHead>
+                    <TableHead className="py-3.5">Date</TableHead>
+                    <TableHead className="py-3.5">Type</TableHead>
+                    <TableHead className="py-3.5 text-right pr-6">Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="divide-y divide-slate-200 dark:divide-slate-800/60">
                   {holidays.map((h) => (
-                    <tr key={h.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                      <td className="py-3.5 pl-6 font-semibold text-slate-900 dark:text-white">{h.name}</td>
-                      <td className="py-3.5 font-mono text-slate-700 dark:text-slate-300">{h.date}</td>
-                      <td className="py-3.5 capitalize">
+                    <TableRow key={h.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                      <TableCell className="py-3.5 pl-6 font-semibold text-slate-900 dark:text-white">{h.name}</TableCell>
+                      <TableCell className="py-3.5 font-mono text-slate-700 dark:text-slate-300">{h.date}</TableCell>
+                      <TableCell className="py-3.5 capitalize">
                         <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[10px] font-medium">
                           {h.type}
                         </span>
-                      </td>
-                      <td className="py-3.5 text-right pr-6">
+                      </TableCell>
+                      <TableCell className="py-3.5 text-right pr-6">
                         <Badge variant="info" size="sm">Scheduled</Badge>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </div>

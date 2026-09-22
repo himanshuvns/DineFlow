@@ -51,6 +51,15 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
+import NumberFlow from "@number-flow/react";
 import { apiClient } from "@/lib/api";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { validateIndianPhone, formatIndianPhoneInput } from "@/lib/validation";
@@ -1092,6 +1101,69 @@ export default function WhatsAppPage() {
             {config.tierLimit}
           </Badge>
         </div>
+      </div>
+
+      {/* ── KPI Metric Strip ─────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <Card variant="glass" hoverEffect className="min-w-0 p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Total Messages</span>
+            <div className="h-8 w-8 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400">
+              <MessageSquareShare className="h-4 w-4" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+              <NumberFlow value={logs.length} />
+            </span>
+            <span className="text-[11px] text-slate-400">dispatches</span>
+          </div>
+        </Card>
+
+        <Card variant="glass" hoverEffect className="min-w-0 p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Delivered & Read</span>
+            <div className="h-8 w-8 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+              <CheckCircle2 className="h-4 w-4" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-2xl font-black tracking-tight text-emerald-600 dark:text-emerald-400">
+              <NumberFlow value={logs.filter((l) => l.status === "delivered" || l.status === "read").length} />
+            </span>
+            <span className="text-[11px] text-slate-400">confirmed</span>
+          </div>
+        </Card>
+
+        <Card variant="glass" hoverEffect className="min-w-0 p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Active Campaigns</span>
+            <div className="h-8 w-8 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-600 dark:text-purple-400">
+              <Layers className="h-4 w-4" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-2xl font-black tracking-tight text-purple-600 dark:text-purple-400">
+              <NumberFlow value={campaigns.length} />
+            </span>
+            <span className="text-[11px] text-slate-400">broadcasts</span>
+          </div>
+        </Card>
+
+        <Card variant="glass" hoverEffect className="min-w-0 p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">GST Tax Invoices</span>
+            <div className="h-8 w-8 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400">
+              <Receipt className="h-4 w-4" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-2xl font-black tracking-tight text-amber-600 dark:text-amber-400">
+              <NumberFlow value={invoices.length} />
+            </span>
+            <span className="text-[11px] text-slate-400">generated</span>
+          </div>
+        </Card>
       </div>
 
       {/* ── Navigation Tabs ─────────────────────────────────────────────────── */}
@@ -2528,34 +2600,34 @@ export default function WhatsAppPage() {
           <Card variant="glass">
             <CardContent className="p-0">
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[700px] text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold bg-slate-50/70 dark:bg-slate-950/40">
-                      <th className="p-3.5">Campaign Name</th>
-                      <th className="p-3.5">Type</th>
-                      <th className="p-3.5">Audience Segment</th>
-                      <th className="p-3.5">Dispatch / Status</th>
-                      <th className="p-3.5 text-center">Recipients</th>
-                      <th className="p-3.5 text-center">Delivered</th>
-                      <th className="p-3.5 text-center">Read</th>
-                      <th className="p-3.5 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
+                <Table className="min-w-[700px]">
+                  <TableHeader>
+                    <TableRow className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold bg-slate-50/70 dark:bg-slate-950/40">
+                      <TableHead className="p-3.5">Campaign Name</TableHead>
+                      <TableHead className="p-3.5">Type</TableHead>
+                      <TableHead className="p-3.5">Audience Segment</TableHead>
+                      <TableHead className="p-3.5">Dispatch / Status</TableHead>
+                      <TableHead className="p-3.5 text-center">Recipients</TableHead>
+                      <TableHead className="p-3.5 text-center">Delivered</TableHead>
+                      <TableHead className="p-3.5 text-center">Read</TableHead>
+                      <TableHead className="p-3.5 text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody className="divide-y divide-slate-200 dark:divide-slate-800/60">
                     {campaigns.map((camp) => (
-                      <tr key={camp.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                        <td className="p-3.5 font-semibold text-slate-900 dark:text-white">{camp.name}</td>
-                        <td className="p-3.5">
+                      <TableRow key={camp.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                        <TableCell className="p-3.5 font-semibold text-slate-900 dark:text-white">{camp.name}</TableCell>
+                        <TableCell className="p-3.5">
                           <Badge variant="neutral" size="sm" className="uppercase font-mono text-[10px]">
                             {camp.type}
                           </Badge>
-                        </td>
-                        <td className="p-3.5">
+                        </TableCell>
+                        <TableCell className="p-3.5">
                           <span className="capitalize font-medium text-emerald-700 dark:text-emerald-400">
                             {camp.targetSegment.replace("_", " ")}
                           </span>
-                        </td>
-                        <td className="p-3.5">
+                        </TableCell>
+                        <TableCell className="p-3.5">
                           <div className="flex items-center gap-1.5">
                             <Badge
                               variant={
@@ -2573,15 +2645,15 @@ export default function WhatsAppPage() {
                               <span className="text-[10px] text-slate-400 font-medium">({camp.sentAt})</span>
                             )}
                           </div>
-                        </td>
-                        <td className="p-3.5 text-center font-mono font-medium">{camp.stats?.totalRecipients || 0}</td>
-                        <td className="p-3.5 text-center font-mono text-emerald-600 dark:text-emerald-400 font-semibold">
+                        </TableCell>
+                        <TableCell className="p-3.5 text-center font-mono font-medium">{camp.stats?.totalRecipients || 0}</TableCell>
+                        <TableCell className="p-3.5 text-center font-mono text-emerald-600 dark:text-emerald-400 font-semibold">
                           {camp.stats?.deliveredCount || 0}
-                        </td>
-                        <td className="p-3.5 text-center font-mono text-blue-600 dark:text-blue-400 font-semibold">
+                        </TableCell>
+                        <TableCell className="p-3.5 text-center font-mono text-blue-600 dark:text-blue-400 font-semibold">
                           {camp.stats?.readCount || 0}
-                        </td>
-                        <td className="p-3.5 text-right">
+                        </TableCell>
+                        <TableCell className="p-3.5 text-right">
                           {camp.status === "draft" ? (
                             <Button
                               variant="outline"
@@ -2593,11 +2665,11 @@ export default function WhatsAppPage() {
                           ) : (
                             <Badge variant="neutral" size="sm">Completed</Badge>
                           )}
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             </CardContent>
           </Card>
@@ -2630,38 +2702,38 @@ export default function WhatsAppPage() {
           <Card variant="glass">
             <CardContent className="p-0">
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[760px] text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold bg-slate-50/70 dark:bg-slate-950/40">
-                      <th className="p-3.5">Invoice #</th>
-                      <th className="p-3.5">Order Ref</th>
-                      <th className="p-3.5">Customer & Phone</th>
-                      <th className="p-3.5">Table / Room</th>
-                      <th className="p-3.5 text-right">Subtotal</th>
-                      <th className="p-3.5 text-right">GST (5%)</th>
-                      <th className="p-3.5 text-right">Grand Total</th>
-                      <th className="p-3.5 text-center">WhatsApp Delivery</th>
-                      <th className="p-3.5 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
+                <Table className="min-w-[760px]">
+                  <TableHeader>
+                    <TableRow className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold bg-slate-50/70 dark:bg-slate-950/40">
+                      <TableHead className="p-3.5">Invoice #</TableHead>
+                      <TableHead className="p-3.5">Order Ref</TableHead>
+                      <TableHead className="p-3.5">Customer & Phone</TableHead>
+                      <TableHead className="p-3.5">Table / Room</TableHead>
+                      <TableHead className="p-3.5 text-right">Subtotal</TableHead>
+                      <TableHead className="p-3.5 text-right">GST (5%)</TableHead>
+                      <TableHead className="p-3.5 text-right">Grand Total</TableHead>
+                      <TableHead className="p-3.5 text-center">WhatsApp Delivery</TableHead>
+                      <TableHead className="p-3.5 text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody className="divide-y divide-slate-200 dark:divide-slate-800/60">
                     {invoices.map((inv) => (
-                      <tr key={inv.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                        <td className="p-3.5 font-mono font-bold text-slate-900 dark:text-white">{inv.invoiceNumber}</td>
-                        <td className="p-3.5 font-mono text-slate-600 dark:text-slate-400">{inv.orderNumber}</td>
-                        <td className="p-3.5">
+                      <TableRow key={inv.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                        <TableCell className="p-3.5 font-mono font-bold text-slate-900 dark:text-white">{inv.invoiceNumber}</TableCell>
+                        <TableCell className="p-3.5 font-mono text-slate-600 dark:text-slate-400">{inv.orderNumber}</TableCell>
+                        <TableCell className="p-3.5">
                           <p className="font-semibold text-slate-900 dark:text-white">{inv.customerName}</p>
                           <p className="text-[10px] font-mono text-slate-500">{inv.customerPhone}</p>
-                        </td>
-                        <td className="p-3.5 text-slate-600 dark:text-slate-400">{inv.location}</td>
-                        <td className="p-3.5 text-right font-mono">₹{inv.subtotal.toFixed(2)}</td>
-                        <td className="p-3.5 text-right font-mono text-slate-500">
+                        </TableCell>
+                        <TableCell className="p-3.5 text-slate-600 dark:text-slate-400">{inv.location}</TableCell>
+                        <TableCell className="p-3.5 text-right font-mono">₹{inv.subtotal.toFixed(2)}</TableCell>
+                        <TableCell className="p-3.5 text-right font-mono text-slate-500">
                           ₹{(inv.cgst + inv.sgst).toFixed(2)}
-                        </td>
-                        <td className="p-3.5 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                        </TableCell>
+                        <TableCell className="p-3.5 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
                           ₹{inv.grandTotal.toFixed(2)}
-                        </td>
-                        <td className="p-3.5 text-center">
+                        </TableCell>
+                        <TableCell className="p-3.5 text-center">
                           <Badge
                             variant={
                               inv.whatsappDeliveryStatus === "read"
@@ -2674,8 +2746,8 @@ export default function WhatsAppPage() {
                           >
                             {inv.whatsappDeliveryStatus.toUpperCase()}
                           </Badge>
-                        </td>
-                        <td className="p-3.5 text-right space-x-1.5">
+                        </TableCell>
+                        <TableCell className="p-3.5 text-right space-x-1.5">
                           <Button
                             variant="outline"
                             size="sm"
@@ -2694,11 +2766,11 @@ export default function WhatsAppPage() {
                           >
                             Send
                           </Button>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             </CardContent>
           </Card>
@@ -2739,25 +2811,25 @@ export default function WhatsAppPage() {
           <Card variant="glass">
             <CardContent className="p-0">
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[620px] text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold bg-slate-50/70 dark:bg-slate-950/40">
-                      <th className="p-3.5">Guest Name</th>
-                      <th className="p-3.5">Recipient Phone</th>
-                      <th className="p-3.5">Location</th>
-                      <th className="p-3.5">Template Type</th>
-                      <th className="p-3.5">Status</th>
-                      <th className="p-3.5 text-right">Time</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
+                <Table className="min-w-[620px]">
+                  <TableHeader>
+                    <TableRow className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold bg-slate-50/70 dark:bg-slate-950/40">
+                      <TableHead className="p-3.5">Guest Name</TableHead>
+                      <TableHead className="p-3.5">Recipient Phone</TableHead>
+                      <TableHead className="p-3.5">Location</TableHead>
+                      <TableHead className="p-3.5">Template Type</TableHead>
+                      <TableHead className="p-3.5">Status</TableHead>
+                      <TableHead className="p-3.5 text-right">Time</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody className="divide-y divide-slate-200 dark:divide-slate-800/60">
                     {filteredLogs.map((log) => (
-                      <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                        <td className="p-3.5 font-semibold text-slate-900 dark:text-white">{log.customerName}</td>
-                        <td className="p-3.5 font-mono text-slate-700 dark:text-slate-300">{log.phone}</td>
-                        <td className="p-3.5 text-slate-600 dark:text-slate-400">{log.location}</td>
-                        <td className="p-3.5 text-slate-800 dark:text-slate-200 font-medium">{log.template}</td>
-                        <td className="p-3.5">
+                      <TableRow key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                        <TableCell className="p-3.5 font-semibold text-slate-900 dark:text-white">{log.customerName}</TableCell>
+                        <TableCell className="p-3.5 font-mono text-slate-700 dark:text-slate-300">{log.phone}</TableCell>
+                        <TableCell className="p-3.5 text-slate-600 dark:text-slate-400">{log.location}</TableCell>
+                        <TableCell className="p-3.5 text-slate-800 dark:text-slate-200 font-medium">{log.template}</TableCell>
+                        <TableCell className="p-3.5">
                           <Badge
                             variant={
                               log.status === "read"
@@ -2770,12 +2842,12 @@ export default function WhatsAppPage() {
                           >
                             {log.status.toUpperCase()}
                           </Badge>
-                        </td>
-                        <td className="p-3.5 text-right text-slate-500 font-medium">{log.time}</td>
-                      </tr>
+                        </TableCell>
+                        <TableCell className="p-3.5 text-right text-slate-500 font-medium">{log.time}</TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             </CardContent>
           </Card>

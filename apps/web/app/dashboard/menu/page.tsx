@@ -48,6 +48,8 @@ import { MenuUploadModal } from "@/components/menu/menu-upload-modal";
 import { MenuStagingPreviewModal } from "@/components/menu/menu-staging-preview-modal";
 import { MenuBulkToolbar } from "@/components/menu/menu-bulk-toolbar";
 import { ViewToggle, useViewMode } from "@/components/ui/view-toggle";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import NumberFlow from "@number-flow/react";
 
 const IMAGE_PRESETS = [
   { label: "Paneer Butter Masala", url: "https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=600&q=80" },
@@ -688,7 +690,7 @@ export default function MenuManagementPage() {
             </div>
             <div className="mt-1 flex items-baseline gap-1.5">
               <span className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight">
-                {isLoading && menuItems.length === 0 ? "—" : kpiStats.total}
+                {isLoading && menuItems.length === 0 ? "—" : <NumberFlow value={kpiStats.total} />}
               </span>
               <span className="text-[10px] text-slate-400 font-medium">
                 {isLoading && menuItems.length === 0 ? "loading..." : `in ${kpiStats.categoriesCount} cats`}
@@ -705,7 +707,7 @@ export default function MenuManagementPage() {
             </div>
             <div className="mt-1 flex items-baseline gap-1.5">
               <span className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight">
-                {isLoading && menuItems.length === 0 ? "—" : kpiStats.categoriesCount}
+                {isLoading && menuItems.length === 0 ? "—" : <NumberFlow value={kpiStats.categoriesCount} />}
               </span>
               <span className="text-[10px] text-slate-400 font-medium">sections</span>
             </div>
@@ -720,7 +722,7 @@ export default function MenuManagementPage() {
             </div>
             <div className="mt-1 flex items-baseline gap-1.5">
               <span className="text-base sm:text-lg font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
-                {isLoading && menuItems.length === 0 ? "—" : kpiStats.inStock}
+                {isLoading && menuItems.length === 0 ? "—" : <NumberFlow value={kpiStats.inStock} />}
               </span>
               <span className="text-[10px] text-slate-400 font-medium">
                 {isLoading && menuItems.length === 0 ? "—" : (kpiStats.outOfStock > 0 ? `${kpiStats.outOfStock} 86'd` : "100% In Stock")}
@@ -737,11 +739,11 @@ export default function MenuManagementPage() {
             </div>
             <div className="mt-1 flex items-baseline gap-1">
               <span className="text-sm sm:text-base font-black text-emerald-600 dark:text-emerald-400">
-                {isLoading && menuItems.length === 0 ? "—" : `${kpiStats.veg}V`}
+                {isLoading && menuItems.length === 0 ? "—" : <><NumberFlow value={kpiStats.veg} />V</>}
               </span>
               <span className="text-xs text-slate-300 dark:text-slate-700">/</span>
               <span className="text-sm sm:text-base font-black text-rose-600 dark:text-rose-400">
-                {isLoading && menuItems.length === 0 ? "—" : `${kpiStats.nonVeg}NV`}
+                {isLoading && menuItems.length === 0 ? "—" : <><NumberFlow value={kpiStats.nonVeg} />NV</>}
               </span>
               <span className="text-[10px] text-slate-400 font-medium ml-1">
                 {isLoading && menuItems.length === 0 ? "" : `(${kpiStats.total > 0 ? Math.round((kpiStats.veg / kpiStats.total) * 100) : 0}% Veg)`}
@@ -758,7 +760,7 @@ export default function MenuManagementPage() {
             </div>
             <div className="mt-1 flex items-baseline gap-1">
               <span className="text-base sm:text-lg font-black text-slate-900 dark:text-white font-mono tracking-tight">
-                {isLoading && menuItems.length === 0 ? "—" : `₹${kpiStats.avg}`}
+                {isLoading && menuItems.length === 0 ? "—" : <>₹<NumberFlow value={kpiStats.avg} /></>}
               </span>
               <span className="text-[10px] text-slate-400 font-medium">avg</span>
             </div>
@@ -1010,16 +1012,16 @@ export default function MenuManagementPage() {
 
                 {/* Thumbnail banner if available */}
                 {item.imageUrl ? (
-                  <div className="h-36 -mx-4 -mt-4 sm:-mx-6 sm:-mt-6 mb-4 relative overflow-hidden bg-slate-100 dark:bg-slate-950">
+                  <div className="h-40 -mx-4 -mt-4 sm:-mx-6 sm:-mt-6 mb-4 relative overflow-hidden bg-slate-100 dark:bg-slate-950">
                     <img
                       src={item.imageUrl}
                       alt={item.name}
                       onError={(e) => {
                         (e.currentTarget as HTMLElement).style.display = "none";
                       }}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent dark:from-slate-900" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-slate-950/20 to-transparent" />
                   </div>
                 ) : null}
 
@@ -1170,216 +1172,228 @@ export default function MenuManagementPage() {
         /* ======================================================== */
         /* ENTERPRISE MENU LIST VIEW                                */
         /* ======================================================== */
-        <div className="overflow-x-auto scrollbar-none [-webkit-overflow-scrolling:touch]">
-          <div className="space-y-2 min-w-[600px]">
-            {/* Table Column Headers (Desktop) */}
-          <div className="sticky top-0 z-10 bg-slate-50/95 dark:bg-[#090D16]/95 backdrop-blur-md hidden lg:grid grid-cols-12 gap-3 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-slate-200/80 dark:border-slate-800/80 select-none">
-            <div className="col-span-5 flex items-center gap-2.5">
-              <button
-                type="button"
-                onClick={selectedIds.length === filteredItems.length ? handleDeselectAll : handleSelectAll}
-                className="text-slate-400 hover:text-emerald-500 transition-colors cursor-pointer"
-                title={selectedIds.length === filteredItems.length ? "Deselect All" : "Select All"}
-              >
-                {selectedIds.length > 0 && selectedIds.length === filteredItems.length ? (
-                  <CheckSquare className="h-4 w-4 text-emerald-500" />
-                ) : (
-                  <Square className="h-4 w-4" />
-                )}
-              </button>
-              <span>Dish & Culinary Details</span>
-            </div>
-            <div className="col-span-2">Category</div>
-            <div className="col-span-2">Price</div>
-            <div className="col-span-2">Status</div>
-            <div className="col-span-2 text-right">Quick Actions</div>
-          </div>
-
-          {/* List Rows */}
-          {filteredItems.map((item) => {
-            const isSelected = selectedIds.includes(item.id);
-
-            return (
-              <div
-                key={item.id}
-                className={`group flex flex-col lg:grid lg:grid-cols-12 gap-3 items-start lg:items-center px-3.5 py-2.5 rounded-2xl border transition-all duration-150 ${
-                  isSelected
-                    ? "ring-2 ring-emerald-500/40 border-emerald-500 bg-emerald-500/5 dark:bg-emerald-500/10"
-                    : !item.available
-                    ? "bg-slate-50/60 dark:bg-slate-900/30 border-rose-200/60 dark:border-rose-900/30 opacity-75"
-                    : "bg-white dark:bg-slate-900/70 border-slate-200/80 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-xs"
-                }`}
-              >
-                {/* Col 1 (Span 4): Multi-select + Thumbnail + Veg Dot + Name & Highlights */}
-                <div className="col-span-4 flex items-center gap-3 min-w-0 w-full">
-                  <button
-                    type="button"
-                    onClick={() => handleToggleSelectDish(item.id)}
-                    className="shrink-0 h-5 w-5 rounded flex items-center justify-center text-slate-400 hover:text-emerald-500 transition-colors cursor-pointer"
-                    title={isSelected ? "Deselect" : "Select"}
-                  >
-                    {isSelected ? (
-                      <CheckSquare className="h-4 w-4 text-emerald-500" />
-                    ) : (
-                      <Square className="h-4 w-4" />
-                    )}
-                  </button>
-
-                  {/* Thumbnail */}
-                  <div className="h-11 w-11 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0 border border-slate-200/80 dark:border-slate-700/60 relative">
-                    {item.imageUrl ? (
-                      <img
-                        src={item.imageUrl}
-                        alt={item.name}
-                        onError={(e) => {
-                          (e.currentTarget as HTMLElement).style.display = "none";
-                        }}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="h-full w-full flex items-center justify-center text-slate-400">
-                        <Utensils className="h-4 w-4" />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Veg / Non-Veg Dot Box */}
-                  <span
-                    className={`inline-flex items-center justify-center h-4 w-4 rounded border shrink-0 ${
-                      item.isVeg
-                        ? "border-emerald-500 text-emerald-600 dark:text-emerald-400"
-                        : "border-rose-500 text-rose-600 dark:text-rose-400"
-                    }`}
-                    title={item.isVeg ? "Pure Vegetarian" : "Non-Vegetarian"}
-                  >
-                    <span
-                      className={`h-1.5 w-1.5 rounded-full ${
-                        item.isVeg ? "bg-emerald-500" : "bg-rose-500"
+        <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white/70 dark:bg-slate-900/60 backdrop-blur-md overflow-hidden shadow-2xs">
+          <div className="overflow-x-auto scrollbar-none [-webkit-overflow-scrolling:touch]">
+            <Table className="min-w-[700px]">
+              <TableHeader>
+                <TableRow className="hover:bg-transparent border-b border-slate-200/80 dark:border-slate-800/80">
+                  <TableHead className="w-12 pl-4">
+                    <button
+                      type="button"
+                      onClick={selectedIds.length === filteredItems.length && filteredItems.length > 0 ? handleDeselectAll : handleSelectAll}
+                      className="text-slate-400 hover:text-emerald-500 transition-colors cursor-pointer"
+                      title={selectedIds.length === filteredItems.length ? "Deselect All" : "Select All"}
+                    >
+                      {selectedIds.length > 0 && selectedIds.length === filteredItems.length ? (
+                        <CheckSquare className="h-4 w-4 text-emerald-500" />
+                      ) : (
+                        <Square className="h-4 w-4" />
+                      )}
+                    </button>
+                  </TableHead>
+                  <TableHead>Dish & Culinary Details</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Price</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right pr-4">Quick Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredItems.map((item) => {
+                  const isSelected = selectedIds.includes(item.id);
+                  return (
+                    <TableRow
+                      key={item.id}
+                      className={`transition-colors ${
+                        isSelected
+                          ? "bg-emerald-500/5 dark:bg-emerald-500/10"
+                          : !item.available
+                          ? "opacity-75 bg-slate-50/40 dark:bg-slate-900/20"
+                          : ""
                       }`}
-                    />
-                  </span>
+                    >
+                      {/* Checkbox */}
+                      <TableCell className="pl-4">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleSelectDish(item.id)}
+                          className="h-5 w-5 rounded flex items-center justify-center text-slate-400 hover:text-emerald-500 transition-colors cursor-pointer"
+                          title={isSelected ? "Deselect" : "Select"}
+                        >
+                          {isSelected ? (
+                            <CheckSquare className="h-4 w-4 text-emerald-500" />
+                          ) : (
+                            <Square className="h-4 w-4" />
+                          )}
+                        </button>
+                      </TableCell>
 
-                  {/* Titles & Highlights */}
-                  <div
-                    className="min-w-0 flex-1 cursor-pointer"
-                    onClick={() => handleOpenEditDish(item)}
-                    title="Click to edit dish"
-                  >
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-sm font-bold text-slate-900 dark:text-white truncate group-hover:text-emerald-600 dark:group-hover:text-[#14F1C7] transition-colors">
-                        {item.name}
-                      </span>
-                      {item.bestseller && (
-                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-amber-500/15 text-[10px] font-bold text-amber-600 dark:text-amber-400 border border-amber-500/30">
-                          <Star className="h-2.5 w-2.5 fill-amber-500" /> Bestseller
-                        </span>
-                      )}
-                      {item.recommended && (
-                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-                          <Sparkles className="h-2.5 w-2.5" /> Chef Pick
-                        </span>
-                      )}
-                      {item.spicyLevel && item.spicyLevel > 0 ? (
-                        <span className="text-[10px]" title={`Spicy Level: ${item.spicyLevel}`}>
-                          {"🌶️".repeat(item.spicyLevel)}
-                        </span>
-                      ) : null}
-                    </div>
+                      {/* Dish details */}
+                      <TableCell>
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="h-11 w-11 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0 border border-slate-200/80 dark:border-slate-700/60 relative">
+                            {item.imageUrl ? (
+                              <img
+                                src={item.imageUrl}
+                                alt={item.name}
+                                onError={(e) => {
+                                  (e.currentTarget as HTMLElement).style.display = "none";
+                                }}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="h-full w-full flex items-center justify-center text-slate-400">
+                                <Utensils className="h-4 w-4" />
+                              </div>
+                            )}
+                          </div>
 
-                    {item.hindiName ? (
-                      <span className="text-[11px] text-slate-400 block truncate">
-                        {item.hindiName}
-                      </span>
-                    ) : null}
+                          {/* Veg dot */}
+                          <span
+                            className={`inline-flex items-center justify-center h-4 w-4 rounded border shrink-0 ${
+                              item.isVeg
+                                ? "border-emerald-500 text-emerald-600 dark:text-emerald-400"
+                                : "border-rose-500 text-rose-600 dark:text-rose-400"
+                            }`}
+                            title={item.isVeg ? "Pure Vegetarian" : "Non-Vegetarian"}
+                          >
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full ${
+                                item.isVeg ? "bg-emerald-500" : "bg-rose-500"
+                              }`}
+                            />
+                          </span>
 
-                    {item.desc ? (
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400 max-w-[140px] sm:max-w-[200px] truncate block">
-                        {item.desc}
-                      </span>
-                    ) : null}
-                  </div>
-                </div>
+                          {/* Titles & Highlights */}
+                          <div
+                            className="min-w-0 flex-1 cursor-pointer"
+                            onClick={() => handleOpenEditDish(item)}
+                            title="Click to edit dish"
+                          >
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-sm font-bold text-slate-900 dark:text-white truncate hover:text-emerald-600 dark:hover:text-[#14F1C7] transition-colors">
+                                {item.name}
+                              </span>
+                              {item.bestseller && (
+                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-amber-500/15 text-[10px] font-bold text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                                  <Star className="h-2.5 w-2.5 fill-amber-500" /> Bestseller
+                                </span>
+                              )}
+                              {item.recommended && (
+                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                                  <Sparkles className="h-2.5 w-2.5" /> Chef Pick
+                                </span>
+                              )}
+                              {item.spicyLevel && item.spicyLevel > 0 ? (
+                                <span className="text-[10px]" title={`Spicy Level: ${item.spicyLevel}`}>
+                                  {"🌶️".repeat(item.spicyLevel)}
+                                </span>
+                              ) : null}
+                            </div>
 
-                {/* Col 2 (Span 2): Category Pill & Prep Time */}
-                <div className="col-span-2 hidden lg:flex items-center gap-1.5 min-w-0">
-                  <span className="px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 text-xs font-semibold text-slate-700 dark:text-slate-300 truncate">
-                    {item.category}
-                  </span>
-                  {item.prepTimeMinutes ? (
-                    <span className="text-[10px] text-slate-500 shrink-0 flex items-center gap-0.5">
-                      <Clock className="h-2.5 w-2.5" /> {item.prepTimeMinutes}m
-                    </span>
-                  ) : null}
-                </div>
+                            {item.hindiName ? (
+                              <span className="text-[11px] text-slate-400 block truncate">
+                                {item.hindiName}
+                              </span>
+                            ) : null}
 
-                {/* Col 3 (Span 2): Price & Variants */}
-                <div className="col-span-2 flex items-center justify-between lg:justify-start gap-2 w-full lg:w-auto">
-                  <span className="text-sm font-bold font-mono text-slate-900 dark:text-white">
-                    {formatCurrency(item.price, tenant?.currency || "INR")}
-                  </span>
-                  {item.variantsCount && item.variantsCount > 0 ? (
-                    <Badge variant="neutral" size="sm" className="text-[10px] py-0 px-1.5">
-                      {item.variantsCount} sizes
-                    </Badge>
-                  ) : null}
-                </div>
+                            {item.desc ? (
+                              <span className="text-[11px] text-slate-500 dark:text-slate-400 max-w-[240px] truncate block">
+                                {item.desc}
+                              </span>
+                            ) : null}
+                          </div>
+                        </div>
+                      </TableCell>
 
-                {/* Col 4 (Span 2): Availability Badge */}
-                <div className="col-span-2 flex items-center">
-                  <button
-                    type="button"
-                    onClick={() => handleToggleAvailability(item.id, item.available)}
-                    className="cursor-pointer"
-                    title={`Click to mark as ${item.available ? "86'd" : "In Stock"}`}
-                  >
-                    <Badge variant={item.available ? "success" : "danger"} size="sm" dot className="whitespace-nowrap">
-                      {item.available ? "In Stock" : "86'd"}
-                    </Badge>
-                  </button>
-                </div>
+                      {/* Category */}
+                      <TableCell>
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 text-xs font-semibold text-slate-700 dark:text-slate-300 truncate">
+                            {item.category}
+                          </span>
+                          {item.prepTimeMinutes ? (
+                            <span className="text-[10px] text-slate-500 shrink-0 flex items-center gap-0.5">
+                              <Clock className="h-2.5 w-2.5" /> {item.prepTimeMinutes}m
+                            </span>
+                          ) : null}
+                        </div>
+                      </TableCell>
 
-                {/* Col 5 (Span 2): Quick Actions */}
-                <div className="col-span-2 flex items-center justify-end gap-1 w-full lg:w-auto pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-200/60 dark:border-slate-800/60">
-                  <button
-                    type="button"
-                    onClick={() => handleOpenEditDish(item)}
-                    className="h-8 px-2.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-semibold text-xs flex items-center gap-1 transition-colors cursor-pointer"
-                    title="Edit dish details"
-                  >
-                    <Edit2 className="h-3.5 w-3.5" />
-                    <span>Edit</span>
-                  </button>
+                      {/* Price */}
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold font-mono text-slate-900 dark:text-white">
+                            {formatCurrency(item.price, tenant?.currency || "INR")}
+                          </span>
+                          {item.variantsCount && item.variantsCount > 0 ? (
+                            <Badge variant="neutral" size="sm" className="text-[10px] py-0 px-1.5">
+                              {item.variantsCount} sizes
+                            </Badge>
+                          ) : null}
+                        </div>
+                      </TableCell>
 
-                  <button
-                    type="button"
-                    onClick={() => handleDuplicateDish(item)}
-                    className="h-8 w-8 rounded-lg text-slate-500 hover:text-emerald-600 hover:bg-emerald-500/10 flex items-center justify-center transition-colors cursor-pointer"
-                    title="Duplicate dish"
-                  >
-                    <Copy className="h-3.5 w-3.5" />
-                  </button>
+                      {/* Status */}
+                      <TableCell>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleAvailability(item.id, item.available)}
+                          className="cursor-pointer"
+                          title={`Click to mark as ${item.available ? "86'd" : "In Stock"}`}
+                        >
+                          <Badge variant={item.available ? "success" : "danger"} size="sm" dot className="whitespace-nowrap">
+                            {item.available ? "In Stock" : "86'd"}
+                          </Badge>
+                        </button>
+                      </TableCell>
 
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 text-xs text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white font-medium px-2"
-                    onClick={() => handleToggleAvailability(item.id, item.available)}
-                  >
-                    {item.available ? "86" : "Restock"}
-                  </Button>
+                      {/* Actions */}
+                      <TableCell className="text-right pr-4">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditDish(item)}
+                            className="h-8 px-2.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-semibold text-xs flex items-center gap-1 transition-colors cursor-pointer"
+                            title="Edit dish details"
+                          >
+                            <Edit2 className="h-3.5 w-3.5" />
+                            <span>Edit</span>
+                          </button>
 
-                  <button
-                    type="button"
-                    onClick={() => setDishToDelete({ id: item.id, name: item.name })}
-                    className="h-8 w-8 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-500/10 flex items-center justify-center transition-colors cursor-pointer"
-                    title="Delete dish"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+                          <button
+                            type="button"
+                            onClick={() => handleDuplicateDish(item)}
+                            className="h-8 w-8 rounded-lg text-slate-500 hover:text-emerald-600 hover:bg-emerald-500/10 flex items-center justify-center transition-colors cursor-pointer"
+                            title="Duplicate dish"
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </button>
+
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 text-xs text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white font-medium px-2"
+                            onClick={() => handleToggleAvailability(item.id, item.available)}
+                          >
+                            {item.available ? "86" : "Restock"}
+                          </Button>
+
+                          <button
+                            type="button"
+                            onClick={() => setDishToDelete({ id: item.id, name: item.name })}
+                            className="h-8 w-8 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-500/10 flex items-center justify-center transition-colors cursor-pointer"
+                            title="Delete dish"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
           </div>
         </div>
       )}

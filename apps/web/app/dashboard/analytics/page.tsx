@@ -22,6 +22,15 @@ import {
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
+import NumberFlow from "@number-flow/react";
 import { useToast } from "@/components/ui/toast";
 import { apiClient } from "@/lib/api";
 import { useAuthStore } from "@/lib/stores/auth-store";
@@ -204,7 +213,7 @@ export default function AnalyticsPage() {
                 </span>
               </div>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mt-2">
-                {ordersNum} Orders
+                <NumberFlow value={ordersNum} /> Orders
               </h2>
               <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium mt-1 flex items-center gap-1">
                 <TrendingUp className="h-3 w-3" /> Real-time kitchen & dining throughput
@@ -420,18 +429,18 @@ export default function AnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[500px] text-left text-xs border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-semibold bg-slate-100/70 dark:bg-slate-950/40">
-                    <th className="p-3">Dish / Culinary Item</th>
-                    <th className="p-3">Category</th>
-                    <th className="p-3">Units Sold</th>
-                    {!isManager && <th className="p-3">Gross Revenue</th>}
-                    {!isManager && <th className="p-3">Profit Margin</th>}
-                    <th className="p-3 text-right">Classification</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
+              <Table className="min-w-[500px]">
+                <TableHeader>
+                  <TableRow className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-semibold bg-slate-100/70 dark:bg-slate-950/40">
+                    <TableHead className="p-3">Dish / Culinary Item</TableHead>
+                    <TableHead className="p-3">Category</TableHead>
+                    <TableHead className="p-3">Units Sold</TableHead>
+                    {!isManager && <TableHead className="p-3">Gross Revenue</TableHead>}
+                    {!isManager && <TableHead className="p-3">Profit Margin</TableHead>}
+                    <TableHead className="p-3 text-right">Classification</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="divide-y divide-slate-200 dark:divide-slate-800/60">
                   {[
                     { name: "Truffle Mushroom Risotto", cat: "Mains", qty: 248, rev: "₹2,10,800", margin: "72.5%", tag: "Star", tagVariant: "success" as const },
                     { name: "Grand Club Sandwich", cat: "In-Room Dining", qty: 192, rev: "₹1,24,800", margin: "68.0%", tag: "Plowhorse", tagVariant: "info" as const },
@@ -439,19 +448,19 @@ export default function AnalyticsPage() {
                     { name: "Smoked Burrata & Heirloom", cat: "Starters", qty: 185, rev: "₹1,14,700", margin: "76.0%", tag: "High Margin", tagVariant: "purple" as const },
                     { name: "Cold Brew Tonic & Citrus", cat: "Beverages", qty: 310, rev: "₹99,200", margin: "84.5%", tag: "High Margin", tagVariant: "purple" as const },
                   ].map((row, idx) => (
-                    <tr key={idx} className="hover:bg-slate-100/80 dark:hover:bg-slate-800/30 transition-colors">
-                      <td className="p-3 font-semibold text-slate-900 dark:text-white">{row.name}</td>
-                      <td className="p-3 text-slate-500 dark:text-slate-400">{row.cat}</td>
-                      <td className="p-3 font-mono text-slate-700 dark:text-slate-200">{row.qty}</td>
-                      {!isManager && <td className="p-3 font-mono font-semibold text-slate-900 dark:text-white">{row.rev}</td>}
-                      {!isManager && <td className="p-3 font-mono text-emerald-600 dark:text-emerald-400 font-bold">{row.margin}</td>}
-                      <td className="p-3 text-right">
+                    <TableRow key={idx} className="hover:bg-slate-100/80 dark:hover:bg-slate-800/30 transition-colors">
+                      <TableCell className="p-3 font-semibold text-slate-900 dark:text-white">{row.name}</TableCell>
+                      <TableCell className="p-3 text-slate-500 dark:text-slate-400">{row.cat}</TableCell>
+                      <TableCell className="p-3 font-mono text-slate-700 dark:text-slate-200">{row.qty}</TableCell>
+                      {!isManager && <TableCell className="p-3 font-mono font-semibold text-slate-900 dark:text-white">{row.rev}</TableCell>}
+                      {!isManager && <TableCell className="p-3 font-mono text-emerald-600 dark:text-emerald-400 font-bold">{row.margin}</TableCell>}
+                      <TableCell className="p-3 text-right">
                         <Badge variant={row.tagVariant} size="sm">{row.tag}</Badge>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </CardContent>
         </Card>

@@ -34,6 +34,7 @@ import { useToast } from "@/components/ui/toast";
 import { formatCurrency } from "@/lib/utils";
 import { useTenantData } from "@/lib/stores/tenant-data-store";
 import { EmptyState } from "@/components/ui/empty-state";
+import NumberFlow from "@number-flow/react";
 
 interface KdsItem {
   name: string;
@@ -101,6 +102,11 @@ export default function KDSOrdersPage() {
   const [soundEnabled, setSoundEnabled] = React.useState(true);
   const [isFullscreen, setIsFullscreen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
+
+  const activeCount = React.useMemo(() => orders.filter((o) => o.status !== "served" && o.status !== "cancelled" && o.status !== "paid").length, [orders]);
+  const pendingCount = React.useMemo(() => orders.filter((o) => o.status === "pending").length, [orders]);
+  const cookingCount = React.useMemo(() => orders.filter((o) => o.status === "preparing").length, [orders]);
+  const readyCount = React.useMemo(() => orders.filter((o) => o.status === "ready").length, [orders]);
 
   React.useEffect(() => {
     if (typeof window !== "undefined") {
@@ -464,6 +470,69 @@ export default function KDSOrdersPage() {
           </button>
         </div>
       )}
+
+      {/* Sleek KDS KPI Metrics Strip */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        <div className="p-3 rounded-2xl bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Active Queue</span>
+            <div className="h-5 w-5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+              <ChefHat className="h-3 w-3" />
+            </div>
+          </div>
+          <div className="mt-1 flex items-baseline gap-1.5">
+            <span className="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-tight">
+              <NumberFlow value={activeCount} />
+            </span>
+            <span className="text-[10px] text-slate-400 font-medium">tickets</span>
+          </div>
+        </div>
+
+        <div className="p-3 rounded-2xl bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">New / Pending</span>
+            <div className="h-5 w-5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+              <BellRing className="h-3 w-3" />
+            </div>
+          </div>
+          <div className="mt-1 flex items-baseline gap-1.5">
+            <span className="text-lg sm:text-xl font-black text-amber-600 dark:text-amber-400 tracking-tight">
+              <NumberFlow value={pendingCount} />
+            </span>
+            <span className="text-[10px] text-slate-400 font-medium">awaiting start</span>
+          </div>
+        </div>
+
+        <div className="p-3 rounded-2xl bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Cooking</span>
+            <div className="h-5 w-5 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center">
+              <Flame className="h-3 w-3" />
+            </div>
+          </div>
+          <div className="mt-1 flex items-baseline gap-1.5">
+            <span className="text-lg sm:text-xl font-black text-rose-600 dark:text-rose-400 tracking-tight">
+              <NumberFlow value={cookingCount} />
+            </span>
+            <span className="text-[10px] text-slate-400 font-medium">on station</span>
+          </div>
+        </div>
+
+        <div className="p-3 rounded-2xl bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Ready for Dispatch</span>
+            <div className="h-5 w-5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+              <CheckCircle className="h-3 w-3" />
+            </div>
+          </div>
+          <div className="mt-1 flex items-baseline gap-1.5">
+            <span className="text-lg sm:text-xl font-black text-blue-600 dark:text-blue-400 tracking-tight">
+              <NumberFlow value={readyCount} />
+            </span>
+            <span className="text-[10px] text-slate-400 font-medium">ready</span>
+          </div>
+        </div>
+      </div>
 
       {/* Station Filter Pills */}
       <div className="overflow-x-auto scrollbar-none [-webkit-overflow-scrolling:touch]">

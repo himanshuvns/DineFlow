@@ -25,20 +25,37 @@ import { isRouteAllowed, isOwner } from "@/lib/rbac/roles";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 
-export const NAV_ITEMS = [
-  { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
-  { href: "/dashboard/orders", label: "Live KDS & Orders", icon: ChefHat, badge: "Live" },
-  { href: "/dashboard/menu", label: "Menu Management", icon: UtensilsCrossed },
-  { href: "/dashboard/tables", label: "Tables & QR Codes", icon: QrCode },
-  { href: "/dashboard/rooms", label: "Rooms & Suites", icon: Hotel, badge: "Hotel" },
-  { href: "/dashboard/whatsapp", label: "WhatsApp Connect", icon: MessageSquareShare, badge: "AI" },
-  { href: "/dashboard/video", label: "Video Studio", icon: Video, badge: "Remotion" },
-  { href: "/dashboard/staff", label: "Staff & Permissions", icon: Users },
-  { href: "/dashboard/analytics", label: "Analytics & Sales", icon: BarChart3 },
-  { href: "/dashboard/ai", label: "AI Studio", icon: BrainCircuit, badge: "New" },
-  { href: "/pricing", label: "Subscription Plans", icon: Sparkles, badge: "SaaS", ownerOnly: true },
-  { href: "/dashboard/settings", label: "Settings & Billing", icon: Settings },
+export const NAV_SECTIONS = [
+  {
+    title: "Operations",
+    items: [
+      { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
+      { href: "/dashboard/orders", label: "Live KDS & Orders", icon: ChefHat, badge: "Live" },
+      { href: "/dashboard/menu", label: "Menu Management", icon: UtensilsCrossed },
+      { href: "/dashboard/tables", label: "Tables & QR Codes", icon: QrCode },
+    ],
+  },
+  {
+    title: "Hospitality & Guest",
+    items: [
+      { href: "/dashboard/rooms", label: "Rooms & Suites", icon: Hotel, badge: "Hotel" },
+      { href: "/dashboard/whatsapp", label: "WhatsApp Connect", icon: MessageSquareShare, badge: "AI" },
+      { href: "/dashboard/video", label: "Video Studio", icon: Video, badge: "Remotion" },
+    ],
+  },
+  {
+    title: "Management & Growth",
+    items: [
+      { href: "/dashboard/staff", label: "Staff & Permissions", icon: Users },
+      { href: "/dashboard/analytics", label: "Analytics & Sales", icon: BarChart3 },
+      { href: "/dashboard/ai", label: "AI Studio", icon: BrainCircuit, badge: "New" },
+      { href: "/pricing", label: "Subscription Plans", icon: Sparkles, badge: "SaaS", ownerOnly: true },
+      { href: "/dashboard/settings", label: "Settings & Billing", icon: Settings },
+    ],
+  },
 ];
+
+export const NAV_ITEMS = NAV_SECTIONS.flatMap((s) => s.items);
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -46,10 +63,6 @@ export function Sidebar() {
   const tenant = useAuthStore((state) => state.tenant);
   const user = useAuthStore((state) => state.user);
   const isOwnerUser = isOwner(user?.role);
-
-  const visibleNavItems = NAV_ITEMS.filter((item) => {
-    return isRouteAllowed(item.href, user?.role);
-  });
 
   return (
     <aside
@@ -100,51 +113,69 @@ export function Sidebar() {
           </button>
         </div>
 
-        {/* Navigation list */}
-        <nav className="p-3 space-y-1.5">
-          {visibleNavItems.map((item) => {
-            const isActive = pathname === item.href;
-            const Icon = item.icon;
-            const displayLabel = item.href === "/dashboard/settings" && !isOwnerUser ? "Settings" : item.label;
+        {/* Navigation grouped by section */}
+        <nav className="p-3 space-y-3">
+          {NAV_SECTIONS.map((section) => {
+            const visibleItems = section.items.filter((item) => isRouteAllowed(item.href, user?.role));
+            if (visibleItems.length === 0) return null;
+
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all duration-150 group relative cursor-pointer",
-                  isActive
-                    ? "bg-emerald-500/10 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300 font-semibold border border-emerald-500/25 dark:border-emerald-500/30 shadow-sm"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800/60"
-                )}
-                title={sidebarCollapsed ? displayLabel : undefined}
-              >
-                {isActive && (
-                  <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
-                )}
-                <Icon
-                  className={cn(
-                    "h-4 w-4 shrink-0 transition-colors",
-                    isActive
-                      ? "text-emerald-600 dark:text-emerald-400"
-                      : "text-slate-400 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200"
-                  )}
-                />
+              <div key={section.title} className="space-y-1">
                 {!sidebarCollapsed && (
-                  <span className="hidden lg:inline flex-1 truncate">{displayLabel}</span>
+                  <div className="hidden lg:block px-3 pt-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 select-none">
+                    {section.title}
+                  </div>
                 )}
-                {!sidebarCollapsed && item.badge && (
-                  <span
-                    className={cn(
-                      "hidden lg:inline-block px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase",
-                      item.badge === "Live"
-                        ? "bg-rose-500/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400 border border-rose-500/30 animate-pulse"
-                        : "bg-emerald-500/10 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-500/30"
-                    )}
-                  >
-                    {item.badge}
-                  </span>
+                {sidebarCollapsed && (
+                  <div className="my-1 border-t border-slate-200/50 dark:border-slate-800/50" />
                 )}
-              </Link>
+                {visibleItems.map((item) => {
+                  const isActive = pathname === item.href;
+                  const Icon = item.icon;
+                  const displayLabel = item.href === "/dashboard/settings" && !isOwnerUser ? "Settings" : item.label;
+
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all duration-150 group relative cursor-pointer",
+                        isActive
+                          ? "bg-emerald-500/10 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300 font-semibold border border-emerald-500/25 dark:border-emerald-500/30 shadow-xs"
+                          : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800/60"
+                      )}
+                      title={sidebarCollapsed ? displayLabel : undefined}
+                    >
+                      {isActive && (
+                        <span className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+                      )}
+                      <Icon
+                        className={cn(
+                          "h-4 w-4 shrink-0 transition-colors",
+                          isActive
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : "text-slate-400 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200"
+                        )}
+                      />
+                      {!sidebarCollapsed && (
+                        <span className="hidden lg:inline flex-1 truncate">{displayLabel}</span>
+                      )}
+                      {!sidebarCollapsed && item.badge && (
+                        <span
+                          className={cn(
+                            "hidden lg:inline-block px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase",
+                            item.badge === "Live"
+                              ? "bg-rose-500/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400 border border-rose-500/30 animate-pulse"
+                              : "bg-emerald-500/10 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-500/30"
+                          )}
+                        >
+                          {item.badge}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
             );
           })}
         </nav>
