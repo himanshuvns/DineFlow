@@ -1,17 +1,17 @@
 # Graph Report - DineFlow  (2026-09-22)
 
 ## Corpus Check
-- 326 files · ~658,874 words
+- 326 files · ~659,154 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 12 file(s) not represented in the graph (top: (none) 6, .example 2, .toml 1)
 
 ## Summary
-- 2707 nodes · 7581 edges · 139 communities (102 shown, 37 thin omitted)
+- 2707 nodes · 7583 edges · 140 communities (103 shown, 37 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 55 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `a288ff71`
+- Built from commit: `6c6bc5ab`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -39,7 +39,7 @@
 - BadRequest
 - Subscription
 - Order
-- staff/page.tsx
+- [roomId]/page.tsx
 - web/package.json
 - Scope
 - react
@@ -82,7 +82,7 @@
 - DineFlow — Feature Roadmap
 - DineFlow — Product Vision
 - spotlight-cursor.tsx
-- DineFlow
+- README.md
 - Audit Scope & Checklist
 - Responsive Verification Checklist
 - Security Checklist
@@ -104,7 +104,7 @@
 - web/README.md
 - handlers/menu.go
 - server/main.go
-- README.md
+- staff/page.tsx
 - Graphify Knowledge Graph Query
 - Graphify Knowledge Graph Generation
 - Graphify Incremental Update
@@ -119,12 +119,13 @@
 - workflows/graphify.md
 - web/AGENTS.md
 - TubesCursor
-- Phase 1 — Foundation & Infrastructure
+- Phase 2 — Restaurant MVP
 - SubscriptionHandler
 - menu-nlp-engine.ts
 - Service
 - Hub
 - github.com/gin-gonic/gin.HandlerFunc
+- Grace Period & Downgrade Automation
 - dnd/route.ts
 - remotion.config.ts
 - AuthHandler
@@ -152,7 +153,7 @@
 5. `Unauthorized()` - 109 edges
 6. `lucide-react` - 95 edges
 7. `useToast()` - 91 edges
-8. `cn()` - 89 edges
+8. `cn()` - 91 edges
 9. `InternalError()` - 88 edges
 10. `Button` - 63 edges
 
@@ -171,7 +172,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (139 total, 37 thin omitted)
+## Communities (140 total, 37 thin omitted)
 
 ### Community 0 - "InternalError"
 Cohesion: 0.12
@@ -265,9 +266,9 @@ Nodes (11): FormatPlanName(), GetLimits(), AdminOverrideRequest, CheckoutRequest
 Cohesion: 0.13
 Nodes (11): Service, Order, UpdateOrderStatusRequest, DestinationType, OrderItem, OrderItemModifier, OrderSource, OrderStatus (+3 more)
 
-### Community 23 - "staff/page.tsx"
-Cohesion: 0.05
-Nodes (59): ForgotPasswordContent(), Step, LoginPage(), RegisterPage(), ResetPasswordContent(), DEFAULT_FALLBACK_ROOMS, getStayMetrics(), HousekeepingTask (+51 more)
+### Community 23 - "[roomId]/page.tsx"
+Cohesion: 0.06
+Nodes (45): ForgotPasswordContent(), Step, LoginPage(), RegisterPage(), ResetPasswordContent(), DEFAULT_FALLBACK_ROOMS, getStayMetrics(), HousekeepingTask (+37 more)
 
 ### Community 24 - "web/package.json"
 Cohesion: 0.08
@@ -326,8 +327,8 @@ Cohesion: 0.11
 Nodes (5): AIHandler, WhatsAppHandler, PlanLimitMiddleware(), PlanLimitExceeded(), github.com/gin-gonic/gin.Context
 
 ### Community 38 - "DineFlow — Development Plan"
-Cohesion: 0.09
-Nodes (22): 2.1 — Onboarding, 2.2 — Menu Management, 2.3 — Table & QR Code Management, 2.4 — Customer Ordering Experience, 2.5 — WebSocket / Real-Time, 2.6 — Order Management (Staff Dashboard), 2.7 — Kitchen Display System, 2.8 — Basic Analytics (+14 more)
+Cohesion: 0.07
+Nodes (30): 1.1 — Monorepo Setup, 1.2 — Backend Foundation (Go), 1.3 — Authentication Service, 1.4 — Multi-Tenancy Middleware, 1.5 — Frontend Foundation (Next.js), 1.6 — File Storage, 1.7 — Email Service, 2.1 — Onboarding (+22 more)
 
 ### Community 39 - "video/page.tsx"
 Cohesion: 0.12
@@ -394,8 +395,8 @@ Cohesion: 0.08
 Nodes (56): IMAGE_PRESETS, MenuManagementPage(), HotelStats, RoomItem, TablesManagementPage(), CampaignItem, CustomerInvoice, CustomerInvoiceItem (+48 more)
 
 ### Community 57 - "DineFlow — Subscription Model"
-Cohesion: 0.07
-Nodes (27): Billing Cycle Options, Billing Mechanics, DineFlow — Subscription Model, Downgrade Execution (Day 14), Enforcement Layers, Feature Flag System, 🆓 Free — "Just Getting Started", Future: Platform License (+19 more)
+Cohesion: 0.09
+Nodes (22): Billing Cycle Options, Billing Mechanics, DineFlow — Subscription Model, Enforcement Layers, Feature Flag System, 🆓 Free — "Just Getting Started", Future: Platform License, 📈 Growth — "Scaling Up" — ₹2,999/month (+14 more)
 
 ### Community 58 - "Visual Regression & Before/After Comparison"
 Cohesion: 0.29
@@ -406,20 +407,20 @@ Cohesion: 0.29
 Nodes (14): dynamic, GET(), PATCH(), POST(), revalidate, countActiveTasksForStaff(), findAvailableHousekeeper(), getTasksStore() (+6 more)
 
 ### Community 60 - "Collections"
-Cohesion: 0.13
-Nodes (15): Collection: `audit_logs`, Collection: `categories`, Collection: `locations`, Collection: `menu_items`, Collection: `menus`, Collection: `modifier_groups`, Collection: `notifications`, Collection: `orders` (+7 more)
+Cohesion: 0.10
+Nodes (20): Collection: `audit_logs`, Collection: `categories`, Collection: `locations`, Collection: `menu_items`, Collection: `menus`, Collection: `modifier_groups`, Collection: `notifications`, Collection: `orders` (+12 more)
 
 ### Community 61 - "useAuthStore"
-Cohesion: 0.06
-Nodes (52): AnalyticsPage(), DashboardLayout(), DashboardOverviewPage(), RootLoading(), PlatformLayout(), CATEGORY_CONFIG, FILTER_CHIPS, QUICK_ACTIONS (+44 more)
+Cohesion: 0.07
+Nodes (49): AnalyticsPage(), DashboardLayout(), DashboardOverviewPage(), RootLoading(), PlatformLayout(), CATEGORY_CONFIG, FILTER_CHIPS, QUICK_ACTIONS (+41 more)
 
 ### Community 62 - "Service"
 Cohesion: 0.24
 Nodes (6): CategoryShare, HourlyPoint, OverviewMetrics, Service, TopItemMetric, NewAnalyticsHandler()
 
 ### Community 63 - "DineFlow — Feature Roadmap"
-Cohesion: 0.10
-Nodes (21): 2A — Business Onboarding, 2B — Menu Management, 2C — QR Code System, 2D — Customer Ordering Experience, 2E — Order Management (Staff Dashboard), 2F — Kitchen Display System, 2G — Basic Analytics, Cross-Phase Dependencies Map (+13 more)
+Cohesion: 0.15
+Nodes (13): Cross-Phase Dependencies Map, Deliverables, Deliverables, DineFlow — Feature Roadmap, Overview, Phase 0 — Planning & Architecture, Phase 1 — Foundation & Infrastructure, Phase 3 — Hotel Module (+5 more)
 
 ### Community 64 - "DineFlow — Product Vision"
 Cohesion: 0.14
@@ -429,8 +430,8 @@ Nodes (13): Business Metrics (12-Month Targets), Competitive Landscape, Customer
 Cohesion: 0.32
 Nodes (5): Component(), ComponentProps, SpotlightConfig, SpotlightCursor, useSpotlightEffect()
 
-### Community 66 - "DineFlow"
-Cohesion: 0.18
+### Community 66 - "README.md"
+Cohesion: 0.12
 Nodes (11): 1. Clone & Install, 2. Configure Environment, 3. Run Development Servers, 4. Health Check, Development Status, DineFlow, Documentation, Getting Started (+3 more)
 
 ### Community 67 - "Audit Scope & Checklist"
@@ -513,13 +514,13 @@ Nodes (13): go_pkg_github_com_dineflow_api_internal_application_ai, go_pkg_githu
 Cohesion: 0.05
 Nodes (52): NewRoomHandler(), ByIP(), ByIPAndRoute(), go_pkg_encoding_base64, go_pkg_github_com_dineflow_api_internal_application_analytics, go_pkg_github_com_dineflow_api_internal_application_auth, go_pkg_github_com_dineflow_api_internal_application_notification, go_pkg_github_com_dineflow_api_internal_application_platform (+44 more)
 
-### Community 88 - "README.md"
-Cohesion: 0.18
-Nodes (5): Data Retention Policy, Design Principles, DineFlow — Database Design, Entity Relationship Overview, Index Strategy Summary
+### Community 88 - "staff/page.tsx"
+Cohesion: 0.13
+Nodes (17): AttendanceRecord, BankDetails, calculateDistanceM(), EmergencyContact, GeofenceConfig, Holiday, LeaveBalance, LeaveRequest (+9 more)
 
-### Community 115 - "Phase 1 — Foundation & Infrastructure"
+### Community 115 - "Phase 2 — Restaurant MVP"
 Cohesion: 0.25
-Nodes (8): 1.1 — Monorepo Setup, 1.2 — Backend Foundation (Go), 1.3 — Authentication Service, 1.4 — Multi-Tenancy Middleware, 1.5 — Frontend Foundation (Next.js), 1.6 — File Storage, 1.7 — Email Service, Phase 1 — Foundation & Infrastructure
+Nodes (8): 2A — Business Onboarding, 2B — Menu Management, 2C — QR Code System, 2D — Customer Ordering Experience, 2E — Order Management (Staff Dashboard), 2F — Kitchen Display System, 2G — Basic Analytics, Phase 2 — Restaurant MVP
 
 ### Community 117 - "menu-nlp-engine.ts"
 Cohesion: 0.12
@@ -532,6 +533,10 @@ Nodes (10): NewService(), NewService(), GetHub(), Hub, NewNotificationHandler(),
 ### Community 120 - "github.com/gin-gonic/gin.HandlerFunc"
 Cohesion: 0.36
 Nodes (13): corsMiddleware(), ChefOrAbove(), FinanceAdminOrAbove(), OwnerOnly(), OwnerOrManager(), PlatformAdminOrAbove(), RequireAnyRole(), RequirePlatformRole() (+5 more)
+
+### Community 121 - "Grace Period & Downgrade Automation"
+Cohesion: 0.40
+Nodes (5): Downgrade Execution (Day 14), Grace Period & Downgrade Automation, Grace Period Flow, Grace Period Timeline, Reactivation after Downgrade
 
 ### Community 122 - "dnd/route.ts"
 Cohesion: 0.38
@@ -589,7 +594,7 @@ Nodes (3): nextConfig, securityHeaders, next
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `react` connect `react` to `spotlight-cursor.tsx`, `lucide-react`, `orders/page.tsx`, `TubesCursor`, `video/page.tsx`, `useToast`, `landing-workflow.tsx`, `staff/page.tsx`, `menu/page.tsx`, `web/package.json`, `notification-center.tsx`, `useAuthStore`, `app/layout.tsx`?**
+- **Why does `react` connect `react` to `spotlight-cursor.tsx`, `lucide-react`, `orders/page.tsx`, `TubesCursor`, `video/page.tsx`, `notification-center.tsx`, `useToast`, `landing-workflow.tsx`, `[roomId]/page.tsx`, `menu/page.tsx`, `web/package.json`, `staff/page.tsx`, `useAuthStore`, `app/layout.tsx`?**
   _High betweenness centrality (0.020) - this node is a cross-community bridge._
 - **Why does `RoomHandler` connect `OK` to `go.mongodb.org/mongo-driver/v2/bson.ObjectID`, `context.Context`, `Service`, `Service`, `Setup`, `BadRequest`, `server/main.go`, `AuthHandler`?**
   _High betweenness centrality (0.018) - this node is a cross-community bridge._

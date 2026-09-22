@@ -39,7 +39,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs } from "@/components/ui/tabs";
 import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
-import { formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { useTenantData, STARTER_TEMPLATES, MenuItem } from "@/lib/stores/tenant-data-store";
 import { formatCategoryName, deduplicateCategories, isCategoryMatch } from "@/lib/utils/category-utils";
 import { ParsedMenuItem } from "@/lib/utils/menu-nlp-engine";
@@ -109,6 +109,19 @@ export default function MenuManagementPage() {
 
   // Multi-Select State
   const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
+
+  // Mobile Collapse State for Header & Toolbar
+  const [showMobileStats, setShowMobileStats] = React.useState(false);
+  const [showMobileFilters, setShowMobileFilters] = React.useState(false);
+
+  const activeFilterCount = React.useMemo(() => {
+    let count = 0;
+    if (dietaryFilter !== "all") count++;
+    if (availabilityFilter !== "all") count++;
+    if (highlightFilter !== "all") count++;
+    if (priceSort !== "none") count++;
+    return count;
+  }, [dietaryFilter, availabilityFilter, highlightFilter, priceSort]);
 
   // AI Scanner & Upload Modals
   const [isScannerOpen, setIsScannerOpen] = React.useState(false);
@@ -619,68 +632,97 @@ export default function MenuManagementPage() {
       {/* ======================================================== */}
       <div className="shrink-0 space-y-2">
         {/* 1. Header & Creation Methods */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+        <div className="flex items-center justify-between gap-2">
           <div className="min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+              <h1 className="text-lg sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
                 Menu Management
               </h1>
-              <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-[#14F1C7] text-[11px] font-semibold">
-                <Sparkles className="h-3 w-3" />
-                <span className="truncate max-w-[120px]">{tenantName}</span>
+              <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-[#14F1C7] text-[10px] sm:text-[11px] font-semibold">
+                <Sparkles className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                <span className="truncate max-w-[100px] sm:max-w-[120px]">{tenantName}</span>
               </div>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 max-w-xl">
+            <p className="hidden sm:block text-xs text-slate-500 dark:text-slate-400 mt-0.5 max-w-xl">
               Scan menus, upload PDFs, or build signature dishes manually. Live QR menus update instantaneously.
             </p>
           </div>
 
           {/* Action Group: 3 Creation Options + Add Category */}
-          <div className="flex items-center gap-2 flex-wrap shrink-0">
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             <Button
               variant="outline"
               size="sm"
-              leftIcon={<Camera className="h-3.5 w-3.5 text-emerald-500" />}
               onClick={() => setIsScannerOpen(true)}
-              className="h-8 text-xs px-2.5 border-emerald-500/40 hover:bg-emerald-500/10 text-slate-800 dark:text-white"
+              className="h-8 text-xs px-2 sm:px-2.5 border-emerald-500/40 hover:bg-emerald-500/10 text-slate-800 dark:text-white"
+              title="Scan printed menu"
             >
-              Scan
+              <Camera className="h-3.5 w-3.5 text-emerald-500 sm:mr-1" />
+              <span className="hidden sm:inline">Scan</span>
             </Button>
 
             <Button
               variant="outline"
               size="sm"
-              leftIcon={<UploadCloud className="h-3.5 w-3.5 text-teal-500" />}
               onClick={() => setIsUploadOpen(true)}
-              className="h-8 text-xs px-2.5 border-teal-500/40 hover:bg-teal-500/10 text-slate-800 dark:text-white"
+              className="h-8 text-xs px-2 sm:px-2.5 border-teal-500/40 hover:bg-teal-500/10 text-slate-800 dark:text-white"
+              title="Upload PDF or CSV"
             >
-              Upload
+              <UploadCloud className="h-3.5 w-3.5 text-teal-500 sm:mr-1" />
+              <span className="hidden sm:inline">Upload</span>
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsCategoryManagerOpen(true)}
+              className="h-8 text-xs px-2 sm:px-2.5 border-indigo-500/30 hover:bg-indigo-500/10 text-slate-800 dark:text-white"
+              title="Manage Categories"
+            >
+              <Layers className="h-3.5 w-3.5 text-indigo-500 sm:mr-1" />
+              <span className="hidden sm:inline">Categories</span>
             </Button>
 
             <Button
               variant="glow"
               size="sm"
-              leftIcon={<Plus className="h-3.5 w-3.5" />}
               onClick={() => setIsAddModalOpen(true)}
-              className="h-8 text-xs px-3 font-bold"
+              className="h-8 text-xs px-2.5 sm:px-3 font-bold"
             >
-              Add Dish
-            </Button>
-
-            <Button
-              variant="outline"
-              size="sm"
-              leftIcon={<Layers className="h-3.5 w-3.5 text-indigo-500" />}
-              onClick={() => setIsCategoryManagerOpen(true)}
-              className="h-8 text-xs px-2.5 border-indigo-500/30 hover:bg-indigo-500/10 text-slate-800 dark:text-white"
-            >
-              Categories
+              <Plus className="h-3.5 w-3.5 sm:mr-1" />
+              <span>Add Dish</span>
             </Button>
           </div>
         </div>
 
-        {/* 1.5. Sleek Compact KPI Metrics Strip */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 pb-0.5">
+        {/* 1.5. Mobile Compact Stats Bar vs Desktop KPI Cards */}
+        {/* A. Mobile Compact Summary Bar (Saves ~200px on mobile) */}
+        <div className="sm:hidden flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 text-[11px] shadow-2xs">
+          <div className="flex items-center gap-2 truncate">
+            <span className="font-bold text-slate-900 dark:text-white">
+              {isLoading && menuItems.length === 0 ? "—" : `${kpiStats.total} Dishes`}
+            </span>
+            <span className="text-slate-300 dark:text-slate-700">•</span>
+            <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+              {isLoading && menuItems.length === 0 ? "—" : `${kpiStats.inStock} In Stock`}
+            </span>
+            <span className="text-slate-300 dark:text-slate-700">•</span>
+            <span className="text-slate-500 dark:text-slate-400">
+              {kpiStats.categoriesCount} cats
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowMobileStats(!showMobileStats)}
+            className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-0.5 text-[10px] shrink-0 cursor-pointer ml-1"
+          >
+            {showMobileStats ? "Hide" : "Stats"}
+            <ChevronDown className={cn("h-3 w-3 transition-transform", showMobileStats && "rotate-180")} />
+          </button>
+        </div>
+
+        {/* B. KPI Cards: Visible always on sm+, toggled on mobile */}
+        <div className={cn("grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 pb-0.5", !showMobileStats && "hidden sm:grid")}>
           <div className="p-2 sm:p-2.5 rounded-xl bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 shadow-2xs min-w-[130px] sm:min-w-0">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total Dishes</span>
@@ -770,24 +812,44 @@ export default function MenuManagementPage() {
         {/* 2. Unified Toolbar: Category Tabs + Search + Multi-Filter Chips + ViewToggle */}
         <div className="bg-white/80 dark:bg-slate-900/60 backdrop-blur-md rounded-2xl border border-slate-200/80 dark:border-slate-800/80 p-2 sm:p-2.5 space-y-2 shadow-2xs">
           {/* Top Row: Category Tabs + Search Bar + View Toggle */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div className="min-w-0 flex-1 overflow-x-auto scrollbar-none [-webkit-overflow-scrolling:touch]">
               <div className="min-w-max">
                 <Tabs tabs={categoriesTabs} activeTab={activeCategory} onChange={setActiveCategory} />
               </div>
             </div>
 
-            <div className="flex items-center gap-2 shrink-0">
-              <div className="relative w-full sm:w-56">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              <div className="relative flex-1 sm:w-56">
                 <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="Search dishes or Hindi name..."
+                  placeholder="Search dishes..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-8 pr-2.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 shadow-xs"
                 />
               </div>
+
+              {/* Mobile Filter Toggle Button */}
+              <button
+                type="button"
+                onClick={() => setShowMobileFilters(!showMobileFilters)}
+                className={cn(
+                  "sm:hidden flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition-colors shrink-0 cursor-pointer",
+                  showMobileFilters || activeFilterCount > 0
+                    ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-600 dark:text-emerald-400"
+                    : "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400"
+                )}
+                title="Filters"
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+                {activeFilterCount > 0 && (
+                  <span className="h-4 w-4 rounded-full bg-emerald-500 text-slate-950 text-[10px] font-bold flex items-center justify-center">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </button>
 
               {/* Linear / Notion style Grid & List view toggle */}
               <ViewToggle view={viewMode} onViewChange={setViewMode} />
@@ -795,7 +857,7 @@ export default function MenuManagementPage() {
           </div>
 
           {/* Bottom Row: Dietary Chips + Stock Chips + Bestseller Chips + Sorter */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/80">
+          <div className={cn("flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/80", !showMobileFilters && "hidden sm:flex")}>
             {/* Left: Filter Chips Group */}
             <div className="flex-1 overflow-x-auto scrollbar-none [-webkit-overflow-scrolling:touch]">
               <div className="flex items-center gap-1.5 min-w-max pb-0.5">

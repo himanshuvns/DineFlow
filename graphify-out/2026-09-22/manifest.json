@@ -552,9 +552,9 @@
     "semantic_hash": "d29c43e8a5e05a6ca7c60f0a84efd176"
   },
   "apps/web/app/dashboard/layout.tsx": {
-    "mtime": 1790084246.2095652,
-    "seen": 1790084439.2250528,
-    "ast_hash": "bf27fd9d4344220d3783adaa815fef5f",
+    "mtime": 1790096476.919449,
+    "seen": 1790096656.535599,
+    "ast_hash": "00a887f7ed3fcc004a6d0f120659f3a3",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/loading.tsx": {
@@ -774,9 +774,9 @@
     "semantic_hash": ""
   },
   "apps/web/components/dashboard/topbar.tsx": {
-    "mtime": 1790019705.025319,
-    "seen": 1790069809.277455,
-    "ast_hash": "7ee11493f627838061fa0291832511a4",
+    "mtime": 1790096591.202562,
+    "seen": 1790096656.535635,
+    "ast_hash": "3bb6f25d79af45e28439ca9471785291",
     "semantic_hash": ""
   },
   "apps/web/components/menu/camera-menu-scanner-modal.tsx": {
@@ -1002,10 +1002,10 @@
     "semantic_hash": ""
   },
   "apps/web/lib/stores/ui-store.ts": {
-    "mtime": 1789158197.9909306,
-    "seen": 1789625093.701035,
-    "ast_hash": "66d047bd91946b8d9c4533bbd3ffb728",
-    "semantic_hash": "66d047bd91946b8d9c4533bbd3ffb728"
+    "mtime": 1790096453.1307664,
+    "seen": 1790096656.535674,
+    "ast_hash": "0e5f93bf9bb0c4481436bfa7aa8d4e5b",
+    "semantic_hash": ""
   },
   "apps/web/lib/utils.ts": {
     "mtime": 1789282203.9531596,
@@ -1656,9 +1656,9 @@
     "semantic_hash": ""
   },
   "apps/web/components/dashboard/global-search.tsx": {
-    "mtime": 1790069742.6208606,
-    "seen": 1790069809.277452,
-    "ast_hash": "fd0bb15018d3b14dfcd6ff80e823d7f6",
+    "mtime": 1790096577.1954284,
+    "seen": 1790096656.5356328,
+    "ast_hash": "513573769ff72e34208b17daa3362ef4",
     "semantic_hash": ""
   },
   "apps/api/internal/application/staff/service_test.go": {
