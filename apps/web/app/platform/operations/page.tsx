@@ -263,10 +263,13 @@ export default function PlatformOperationsPage() {
           {/* Form */}
           <div className="grid gap-4 sm:grid-cols-12">
             <div className="sm:col-span-8">
-              <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+              <label htmlFor="announcement-message" className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                 Announcement Message
               </label>
               <Input
+                id="announcement-message"
+                name="announcementMessage"
+                aria-label="Announcement Message"
                 value={announcementMessage}
                 onChange={(e) => setAnnouncementMessage(e.target.value)}
                 placeholder="e.g. Scheduled database maintenance this Sunday between 02:00 and 04:00 AM IST."
@@ -275,10 +278,13 @@ export default function PlatformOperationsPage() {
             </div>
 
             <div className="sm:col-span-4">
-              <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+              <label htmlFor="notice-severity" className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                 Notice Severity
               </label>
               <select
+                id="notice-severity"
+                name="noticeSeverity"
+                aria-label="Notice Severity"
                 value={announcementType}
                 onChange={(e) => setAnnouncementType(e.target.value as any)}
                 className="mt-1 w-full rounded-lg border border-neutral-300 bg-white p-2 text-xs text-neutral-800 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200"
@@ -291,8 +297,11 @@ export default function PlatformOperationsPage() {
           </div>
 
           <div className="flex items-center justify-between border-t border-neutral-100 dark:border-neutral-800/80 pt-4">
-            <label className="flex items-center gap-2 text-xs font-semibold text-neutral-700 dark:text-neutral-300 cursor-pointer">
+            <label htmlFor="publish-broadcast-banner" className="flex items-center gap-2 text-xs font-semibold text-neutral-700 dark:text-neutral-300 cursor-pointer">
               <input
+                id="publish-broadcast-banner"
+                name="publishBroadcastBanner"
+                aria-label="Publish Broadcast Banner to All Client Dashboards"
                 type="checkbox"
                 checked={announcementActive}
                 onChange={(e) => setAnnouncementActive(e.target.checked)}
@@ -326,6 +335,9 @@ export default function PlatformOperationsPage() {
             <div className="flex items-center gap-3">
               <div className="w-32">
                 <Input
+                  id="trial-days-input"
+                  name="trialDaysInput"
+                  aria-label="Complimentary Trial Duration in Days"
                   type="number"
                   value={trialDaysInput}
                   onChange={(e) => setTrialDaysInput(Number(e.target.value))}

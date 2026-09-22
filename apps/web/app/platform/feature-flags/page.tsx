@@ -211,6 +211,9 @@ export default function PlatformFeatureFlagsPage() {
             <div className="relative w-64">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-neutral-400" />
               <Input
+                id="flag-tenant-search"
+                name="tenantSearch"
+                aria-label="Search tenant"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search tenant..."

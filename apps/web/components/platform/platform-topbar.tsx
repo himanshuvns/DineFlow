@@ -106,6 +106,9 @@ export function PlatformTopbar({ onMenuClick }: PlatformTopbarProps = {}) {
         <div className="relative">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
           <input
+            id="platform-global-search"
+            name="platformGlobalSearch"
+            aria-label="Search clients across platform (name, owner, city)"
             type="text"
             placeholder="Search clients across platform (name, owner, city)..."
             value={searchQuery}

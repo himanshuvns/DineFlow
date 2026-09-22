@@ -250,6 +250,9 @@ export default function PlatformSupportPage() {
               <div className="relative flex-1">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-neutral-400" />
                 <Input
+                  id="support-search"
+                  name="supportSearch"
+                  aria-label="Search tickets by ID, subject, tenant"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search tickets by ID, subject, tenant..."
@@ -259,6 +262,9 @@ export default function PlatformSupportPage() {
 
               <div className="flex items-center gap-2">
                 <select
+                  id="support-status-filter"
+                  name="statusFilter"
+                  aria-label="Filter by ticket status"
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
                   className="h-8 rounded-lg border border-neutral-200 bg-white px-2 text-xs text-neutral-800 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-200"
@@ -451,6 +457,9 @@ export default function PlatformSupportPage() {
                   {/* Add note */}
                   <div className="mt-3 flex gap-2">
                     <Input
+                      id="new-note-input"
+                      name="newNote"
+                      aria-label="Add private staff note"
                       value={newNote}
                       onChange={(e) => setNewNote(e.target.value)}
                       placeholder="Add private staff note..."
@@ -540,10 +549,13 @@ export default function PlatformSupportPage() {
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+            <label htmlFor="new-ticket-subject" className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
               Subject
             </label>
             <Input
+              id="new-ticket-subject"
+              name="newSubject"
+              aria-label="Ticket Subject"
               value={newSubject}
               onChange={(e) => setNewSubject(e.target.value)}
               placeholder="e.g. Inbound WhatsApp orders failing delivery"
@@ -552,10 +564,13 @@ export default function PlatformSupportPage() {
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+            <label htmlFor="new-ticket-desc" className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
               Description & Reproduction Steps
             </label>
             <textarea
+              id="new-ticket-desc"
+              name="newDescription"
+              aria-label="Ticket Description and Reproduction Steps"
               value={newDescription}
               onChange={(e) => setNewDescription(e.target.value)}
               rows={3}

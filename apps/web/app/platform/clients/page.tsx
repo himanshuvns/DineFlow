@@ -199,6 +199,9 @@ export default function PlatformClientsPage() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
               <input
+                id="client-search"
+                name="clientSearch"
+                aria-label="Instant search by business, owner, phone, email, city"
                 type="text"
                 placeholder="Instant search by business, owner, phone, email, city..."
                 value={searchQuery}
@@ -210,6 +213,9 @@ export default function PlatformClientsPage() {
             {/* Filter Dropdowns */}
             <div className="flex flex-wrap items-center gap-2 shrink-0">
               <select
+                id="client-status-filter"
+                name="statusFilter"
+                aria-label="Filter by client status"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="px-2.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-200 cursor-pointer"
@@ -222,6 +228,9 @@ export default function PlatformClientsPage() {
               </select>
 
               <select
+                id="client-plan-filter"
+                name="planFilter"
+                aria-label="Filter by subscription plan"
                 value={planFilter}
                 onChange={(e) => setPlanFilter(e.target.value)}
                 className="px-2.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-200 cursor-pointer"
@@ -235,6 +244,9 @@ export default function PlatformClientsPage() {
               </select>
 
               <select
+                id="client-type-filter"
+                name="typeFilter"
+                aria-label="Filter by establishment type"
                 value={typeFilter}
                 onChange={(e) => setTypeFilter(e.target.value)}
                 className="px-2.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-200 cursor-pointer"
@@ -302,6 +314,9 @@ export default function PlatformClientsPage() {
                 <tr>
                   <th className="p-3 w-10 text-center">
                     <input
+                      id="select-all-clients"
+                      name="selectAllClients"
+                      aria-label="Select all clients"
                       type="checkbox"
                       checked={selectedIds.length > 0 && selectedIds.length === filteredClients.length}
                       onChange={(e) => handleSelectAll(e.target.checked)}
@@ -338,6 +353,9 @@ export default function PlatformClientsPage() {
                       >
                         <td className="p-3 text-center">
                           <input
+                            id={`select-client-${client.id}`}
+                            name={`selectClient-${client.id}`}
+                            aria-label={`Select client ${client.name}`}
                             type="checkbox"
                             checked={isSelected}
                             onChange={() => handleToggleSelect(client.id)}

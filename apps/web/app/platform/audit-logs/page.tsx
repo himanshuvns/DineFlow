@@ -115,6 +115,9 @@ export default function PlatformAuditLogsPage() {
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-neutral-400" />
               <Input
+                id="audit-search"
+                name="auditSearch"
+                aria-label="Search by action, actor, target tenant, IP, or details"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search by action, actor, target tenant, IP, or details..."
@@ -124,6 +127,9 @@ export default function PlatformAuditLogsPage() {
 
             <div className="flex items-center gap-2">
               <select
+                id="audit-category-filter"
+                name="auditCategoryFilter"
+                aria-label="Filter audit logs by category"
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
                 className="h-8 rounded-lg border border-neutral-200 bg-white px-2.5 text-xs text-neutral-800 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-200"

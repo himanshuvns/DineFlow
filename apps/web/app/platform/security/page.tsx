@@ -360,10 +360,13 @@ export default function PlatformSecurityCenterPage() {
             {/* Block IP Form */}
             <form onSubmit={handleBlockIP} className="space-y-3">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                <label htmlFor="ip-to-block" className="text-xs font-bold text-slate-700 dark:text-slate-300">
                   Block IP Address
                 </label>
                 <input
+                  id="ip-to-block"
+                  name="ipToBlock"
+                  aria-label="Block IP Address"
                   type="text"
                   placeholder="e.g. 194.26.29.112"
                   value={ipToBlock}
@@ -372,10 +375,13 @@ export default function PlatformSecurityCenterPage() {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                <label htmlFor="block-reason" className="text-xs font-bold text-slate-700 dark:text-slate-300">
                   Block Reason
                 </label>
                 <input
+                  id="block-reason"
+                  name="blockReason"
+                  aria-label="Block Reason"
                   type="text"
                   placeholder="e.g. Repeated SQL/NoSQL injection probe"
                   value={blockReason}
@@ -397,11 +403,14 @@ export default function PlatformSecurityCenterPage() {
               {/* Revoke User Sessions Form */}
               <form onSubmit={handleRevokeSessions} className="space-y-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                  <label htmlFor="user-id-to-revoke" className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                     <UserX className="h-3.5 w-3.5 text-amber-500" />
                     Revoke All Sessions for User
                   </label>
                   <input
+                    id="user-id-to-revoke"
+                    name="userIdToRevoke"
+                    aria-label="Revoke All Sessions for User ID"
                     type="text"
                     placeholder="Enter User ID (ObjectID hex or UUID)"
                     value={userIdToRevoke}
@@ -514,6 +523,9 @@ export default function PlatformSecurityCenterPage() {
             <div className="relative">
               <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-400" />
               <input
+                id="security-event-search"
+                name="securityEventSearch"
+                aria-label="Search security events"
                 type="text"
                 placeholder="Search events..."
                 value={eventSearch}
@@ -522,6 +534,9 @@ export default function PlatformSecurityCenterPage() {
               />
             </div>
             <select
+              id="security-severity-filter"
+              name="securitySeverityFilter"
+              aria-label="Filter by event severity"
               value={severityFilter}
               onChange={(e) => setSeverityFilter(e.target.value)}
               className="px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none"
