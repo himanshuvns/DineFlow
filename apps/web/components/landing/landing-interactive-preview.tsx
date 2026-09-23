@@ -26,7 +26,6 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ParallaxFloatingOrb } from "@/components/landing/section-decorations";
 
 type TabKey = "overview" | "orders" | "menu" | "tables" | "rooms" | "staff" | "analytics";
 
@@ -52,17 +51,8 @@ export function LandingInteractivePreview() {
   return (
     <section
       id="interactive-demo"
-      className="relative w-full py-16 sm:py-24 bg-white/70 dark:bg-slate-900/50 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 scroll-mt-32 overflow-hidden"
+      className="relative w-full py-16 sm:py-24 bg-transparent scroll-mt-32 overflow-hidden"
     >
-      {/* Background Dot-Matrix Texture */}
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] dark:bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:24px_24px] opacity-40 pointer-events-none"
-      />
-      {/* Parallax Floating Ambient Light Orbs */}
-      <ParallaxFloatingOrb color="emerald" speed={50} className="-top-32 -left-32 w-96 h-96" />
-      <ParallaxFloatingOrb color="teal" speed={40} className="-bottom-32 -right-32 w-96 h-96" />
-
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
       {/* Section Header */}
       <div className="text-center max-w-3xl mx-auto mb-6 sm:mb-8 space-y-3">

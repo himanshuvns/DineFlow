@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { Pricing, PricingPlan } from "@/components/ui/pricing";
-import { ParallaxFloatingOrb } from "@/components/landing/section-decorations";
 
 const CANONICAL_PLANS: PricingPlan[] = [
   {
@@ -103,12 +102,8 @@ export function LandingPricing() {
   return (
     <section
       id="pricing"
-      className="relative w-full py-12 sm:py-16 bg-emerald-50/15 dark:bg-[#090D16]/60 backdrop-blur-md scroll-mt-32 overflow-hidden"
+      className="relative w-full py-12 sm:py-16 bg-transparent scroll-mt-32 overflow-hidden"
     >
-      {/* Parallax Floating Ambient Emerald Glows */}
-      <ParallaxFloatingOrb color="emerald" speed={50} className="top-1/3 -left-48 w-96 h-96" />
-      <ParallaxFloatingOrb color="teal" speed={40} className="bottom-1/4 -right-48 w-96 h-96" />
-
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <Pricing
           plans={CANONICAL_PLANS}

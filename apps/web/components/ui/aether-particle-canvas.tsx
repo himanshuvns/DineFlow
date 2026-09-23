@@ -5,18 +5,12 @@ import { useTheme } from "@/components/theme-provider";
 
 export interface AetherParticleCanvasProps {
   className?: string;
-  particleColor?: string;
-  lineColor?: string;
-  cursorAuraColor?: string;
   particleDensityDivider?: number;
 }
 
 export function AetherParticleCanvas({
   className = "w-full h-full",
-  particleColor = "rgba(16, 185, 129, 0.85)",
-  lineColor = "rgba(20, 184, 166, ",
-  cursorAuraColor = "rgba(16, 185, 129, ",
-  particleDensityDivider = 11000,
+  particleDensityDivider = 10000,
 }: AetherParticleCanvasProps) {
   const canvasRef = React.useRef<HTMLCanvasElement | null>(null);
   const { resolvedTheme } = useTheme();
@@ -39,7 +33,7 @@ export function AetherParticleCanvas({
     const mouse: { x: number | null; y: number | null; radius: number } = {
       x: null,
       y: null,
-      radius: 170,
+      radius: 180,
     };
 
     class Particle {
@@ -85,11 +79,15 @@ export function AetherParticleCanvas({
           false
         );
         if (isNearMouse) {
+          // Highlight particle near cursor: pure white in dark mode, vibrant deep emerald in light mode
           ctx.fillStyle = currentDark
             ? "rgba(255, 255, 255, 0.95)"
-            : "rgba(15, 23, 42, 0.9)";
+            : "rgba(4, 120, 87, 1)";
         } else {
-          ctx.fillStyle = currentDark ? particleColor : "rgba(16, 185, 129, 0.75)";
+          // Ambient particle: signature DineFlow emerald
+          ctx.fillStyle = currentDark
+            ? "rgba(16, 185, 129, 0.85)"
+            : "rgba(5, 150, 105, 0.85)";
         }
         ctx.fill();
       }
@@ -103,7 +101,7 @@ export function AetherParticleCanvas({
           this.directionY = -this.directionY;
         }
 
-        // Mouse collision repulsion
+        // Mouse collision repulsion with smooth physics
         if (mouse.x !== null && mouse.y !== null) {
           const dx = mouse.x - this.x;
           const dy = mouse.y - this.y;
@@ -112,8 +110,8 @@ export function AetherParticleCanvas({
             const forceDirectionX = dx / distance;
             const forceDirectionY = dy / distance;
             const force = (mouse.radius - distance) / mouse.radius;
-            this.x -= forceDirectionX * force * 3.2;
-            this.y -= forceDirectionY * force * 3.2;
+            this.x -= forceDirectionX * force * 3.5;
+            this.y -= forceDirectionY * force * 3.5;
           }
         }
 
@@ -133,28 +131,20 @@ export function AetherParticleCanvas({
         const size = Math.random() * 2 + 1;
         const x = Math.random() * (canvas.width - size * 4) + size * 2;
         const y = Math.random() * (canvas.height - size * 4) + size * 2;
-        const directionX = Math.random() * 0.35 - 0.175;
-        const directionY = Math.random() * 0.35 - 0.175;
+        const directionX = Math.random() * 0.4 - 0.2;
+        const directionY = Math.random() * 0.4 - 0.2;
         particles.push(new Particle(x, y, directionX, directionY, size));
       }
     }
 
     const resizeCanvas = () => {
       if (!canvas) return;
-      const rect = canvas.parentElement?.getBoundingClientRect();
-      canvas.width = rect && rect.width > 0 ? Math.floor(rect.width) : window.innerWidth;
-      canvas.height = rect && rect.height > 0 ? Math.floor(rect.height) : window.innerHeight;
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
       init();
     };
 
     window.addEventListener("resize", resizeCanvas);
-    let resizeObserver: ResizeObserver | null = null;
-    if (typeof ResizeObserver !== "undefined" && canvas.parentElement) {
-      resizeObserver = new ResizeObserver(() => {
-        resizeCanvas();
-      });
-      resizeObserver.observe(canvas.parentElement);
-    }
     resizeCanvas();
 
     const connect = () => {
@@ -171,9 +161,15 @@ export function AetherParticleCanvas({
           mouse.y,
           mouse.radius
         );
-        aura.addColorStop(0, `${cursorAuraColor}0.14)`);
-        aura.addColorStop(0.5, `${cursorAuraColor}0.04)`);
-        aura.addColorStop(1, `${cursorAuraColor}0)`);
+        if (currentDark) {
+          aura.addColorStop(0, "rgba(16, 185, 129, 0.16)");
+          aura.addColorStop(0.5, "rgba(20, 184, 166, 0.05)");
+          aura.addColorStop(1, "rgba(16, 185, 129, 0)");
+        } else {
+          aura.addColorStop(0, "rgba(16, 185, 129, 0.16)");
+          aura.addColorStop(0.5, "rgba(13, 148, 136, 0.05)");
+          aura.addColorStop(1, "rgba(16, 185, 129, 0)");
+        }
         ctx.beginPath();
         ctx.arc(mouse.x, mouse.y, mouse.radius, 0, Math.PI * 2);
         ctx.fillStyle = aura;
@@ -201,15 +197,17 @@ export function AetherParticleCanvas({
             }
 
             if (isNearMouse) {
+              // Radiant white/emerald in dark mode, deep vibrant emerald-700 in light mode
               ctx.strokeStyle = currentDark
                 ? `rgba(255, 255, 255, ${opacityValue * 0.85})`
-                : `rgba(15, 23, 42, ${opacityValue * 0.75})`;
-              ctx.lineWidth = 1.25;
+                : `rgba(4, 120, 87, ${opacityValue * 0.85})`;
+              ctx.lineWidth = 1.35;
             } else {
+              // Ambient constellation lines: teal base
               ctx.strokeStyle = currentDark
-                ? `${lineColor}${opacityValue * 0.35})`
-                : `rgba(16, 185, 129, ${opacityValue * 0.3})`;
-              ctx.lineWidth = 0.75;
+                ? `rgba(20, 184, 166, ${opacityValue * 0.4})`
+                : `rgba(13, 148, 136, ${opacityValue * 0.35})`;
+              ctx.lineWidth = 0.8;
             }
 
             ctx.beginPath();
@@ -249,13 +247,12 @@ export function AetherParticleCanvas({
     animate();
 
     return () => {
-      if (resizeObserver) resizeObserver.disconnect();
       window.removeEventListener("resize", resizeCanvas);
       window.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseleave", handleMouseLeave);
       cancelAnimationFrame(animationFrameId);
     };
-  }, [particleColor, lineColor, cursorAuraColor, particleDensityDivider]);
+  }, [particleDensityDivider]);
 
   return (
     <canvas

@@ -311,12 +311,6 @@ export function LandingHero() {
         </div>
       </div>
       </div>
-
-      {/* Bottom seamless transition fade into Section 2 */}
-      <div 
-        aria-hidden="true" 
-        className="pointer-events-none absolute bottom-0 inset-x-0 h-20 bg-gradient-to-t from-slate-50 via-slate-50/50 to-transparent dark:from-[#090D16] dark:via-[#090D16]/50 z-10" 
-      />
     </section>
   );
 }

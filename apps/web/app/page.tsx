@@ -11,23 +11,15 @@ import { LandingSolutions } from "@/components/landing/landing-solutions";
 import { LandingCustomerJourney } from "@/components/landing/landing-customer-journey";
 import { LandingPricing } from "@/components/landing/landing-pricing";
 import { LandingFooter } from "@/components/landing/landing-footer";
-import { SectionDivider } from "@/components/landing/section-decorations";
 import { PeekingChef } from "@/components/ui/peeking-chef";
 import { AetherParticleCanvas } from "@/components/ui/aether-particle-canvas";
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-slate-50/70 text-slate-900 dark:bg-[#090D16]/80 dark:text-slate-100 flex flex-col relative transition-colors duration-200 selection:bg-emerald-500/20 selection:text-emerald-600">
-      {/* Global Fixed Parallax Background Canvas - Always Pinned to Viewport */}
+    <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-[#090D16] dark:text-slate-100 flex flex-col relative transition-colors duration-200 selection:bg-emerald-500/20 selection:text-emerald-600">
+      {/* Global Fixed Parallax Background Canvas - Single Pristine Mouse Hovering Effect */}
       <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden" aria-hidden="true">
         <AetherParticleCanvas className="w-full h-full" />
-      </div>
-
-      {/* Fixed Ambient Glows - Anchored in space across the entire experience */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10" aria-hidden="true">
-        <div className="absolute -top-48 left-1/2 -translate-x-1/2 w-[900px] h-[550px] bg-gradient-to-b from-emerald-500/15 via-amber-500/10 to-transparent rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute top-1/3 -right-48 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute top-2/3 -left-48 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
       </div>
 
       {/* Modern Sticky Navigation */}
@@ -35,32 +27,20 @@ export default function HomePage() {
 
       {/* Main Content Flow */}
       <main className="flex-1 flex flex-col items-center w-full">
-        {/* 1. Hero with Interactive AetherFlow Cursor Particles & Layered Hospitality Mockup */}
+        {/* 1. Hero with Layered Hospitality Mockup */}
         <LandingHero />
 
-        {/* 2. Interactive Multi-Surface Dashboard ("Everything you need to run your hospitality business") */}
+        {/* 2. Interactive Multi-Surface Dashboard */}
         <LandingInteractivePreview />
 
-        {/* Glowing Gradient Hairline Divider */}
-        <SectionDivider />
-
-        {/* 3. Tailored Hospitality Solutions (Fine Dining, Cafés, Hotels, Cloud Kitchens) */}
+        {/* 3. Tailored Hospitality Solutions */}
         <LandingSolutions />
 
-        {/* Glowing Gradient Hairline Divider */}
-        <SectionDivider />
-
-        {/* 4. The Modern Customer Journey (Dine-in Table QR vs. Hotel In-Room Dining) */}
+        {/* 4. The Modern Customer Journey */}
         <LandingCustomerJourney />
 
-        {/* Glowing Gradient Hairline Divider */}
-        <SectionDivider />
-
-        {/* 5. Transparent Pricing with Animated NumberFlow & Confetti Poppers */}
+        {/* 5. Transparent Pricing */}
         <LandingPricing />
-
-        {/* Glowing Gradient Hairline Divider */}
-        <SectionDivider />
 
         {/* 6. Pre-Footer Hospitality Conversion Banner with Interactive Peeking Chef */}
         <section className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full relative">

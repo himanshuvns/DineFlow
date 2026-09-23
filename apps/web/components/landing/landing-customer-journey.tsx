@@ -31,7 +31,7 @@ import {
   Volume2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { ParallaxFloatingOrb, ParallaxFloat } from "@/components/landing/section-decorations";
+import { ParallaxFloat } from "@/components/landing/section-decorations";
 
 type JourneyType = "restaurant" | "hotel";
 
@@ -162,16 +162,8 @@ export function LandingCustomerJourney() {
   return (
     <section
       id="customer-journey"
-      className="relative w-full pt-20 pb-16 sm:pt-24 sm:pb-24 bg-white/70 dark:bg-slate-900/50 backdrop-blur-md border-y border-slate-200/80 dark:border-slate-800/80 scroll-mt-32 overflow-hidden"
+      className="relative w-full pt-20 pb-16 sm:pt-24 sm:pb-24 bg-transparent scroll-mt-32 overflow-hidden"
     >
-      {/* Radial Spotlight Aura behind the phone stage */}
-      <div 
-        aria-hidden="true" 
-        className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_45%,rgba(16,185,129,0.07),rgba(255,255,255,0))] dark:bg-[radial-gradient(ellipse_80%_60%_at_50%_45%,rgba(16,185,129,0.14),rgba(9,13,22,0))] pointer-events-none" 
-      />
-      <ParallaxFloatingOrb color="emerald" speed={55} className="-top-24 right-1/4 w-80 h-80" />
-      <ParallaxFloatingOrb color="teal" speed={40} className="bottom-12 -left-20 w-80 h-80" />
-
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
       {/* Header */}
       <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16 space-y-3">

@@ -20,7 +20,6 @@ import { Card, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ParallaxFloatingOrb } from "@/components/landing/section-decorations";
 
 interface SolutionItem {
   id: string;
@@ -158,12 +157,8 @@ export function LandingSolutions() {
   return (
     <section
       id="solutions"
-      className="relative w-full pt-24 pb-20 sm:pt-28 sm:pb-24 bg-slate-50/60 dark:bg-[#090D16]/60 backdrop-blur-md scroll-mt-32 overflow-hidden"
+      className="relative w-full pt-24 pb-20 sm:pt-28 sm:pb-24 bg-transparent scroll-mt-32 overflow-hidden"
     >
-      {/* Parallax Floating Warm Hospitality Glows */}
-      <ParallaxFloatingOrb color="amber" speed={45} className="top-1/4 -right-40 w-96 h-96" />
-      <ParallaxFloatingOrb color="emerald" speed={35} className="bottom-10 -left-40 w-96 h-96" />
-
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
       {/* Section Header */}
       <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-14 space-y-3">
