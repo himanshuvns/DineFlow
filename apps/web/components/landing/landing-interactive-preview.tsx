@@ -2,6 +2,13 @@
 
 import * as React from "react";
 import {
+  motion,
+  AnimatePresence,
+  useScroll,
+  useMotionValueEvent,
+  useReducedMotion,
+} from "framer-motion";
+import {
   LayoutDashboard,
   ShoppingBag,
   UtensilsCrossed,
@@ -46,53 +53,147 @@ const TABS: TabDef[] = [
 ];
 
 export function LandingInteractivePreview() {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const tabButtonRefs = React.useRef<(HTMLButtonElement | null)[]>([]);
+  const isManualClickRef = React.useRef(false);
+  const manualTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  const shouldReduceMotion = useReducedMotion();
+
   const [activeTab, setActiveTab] = React.useState<TabKey>("overview");
+  const [progressPercent, setProgressPercent] = React.useState(0);
+
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "end end"],
+  });
+
+  useMotionValueEvent(scrollYProgress, "change", (latest) => {
+    setProgressPercent(Math.min(100, Math.max(0, latest * 100)));
+    if (isManualClickRef.current) return;
+
+    // 7 tabs mapped sequentially across the scroll travel distance
+    const segment = 1 / TABS.length;
+    const index = Math.min(TABS.length - 1, Math.max(0, Math.floor(latest / segment)));
+    const nextTab = TABS[index].key;
+    if (nextTab !== activeTab) {
+      setActiveTab(nextTab);
+    }
+  });
+
+  // Ensure active tab button is scrolled into view in horizontal tabs bar (mobile/tablet)
+  React.useEffect(() => {
+    const activeIndex = TABS.findIndex((t) => t.key === activeTab);
+    if (activeIndex >= 0 && tabButtonRefs.current[activeIndex]) {
+      tabButtonRefs.current[activeIndex]?.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+        inline: "center",
+      });
+    }
+  }, [activeTab]);
+
+  const handleTabClick = (tabKey: TabKey, index: number) => {
+    setActiveTab(tabKey);
+    isManualClickRef.current = true;
+    if (manualTimeoutRef.current) clearTimeout(manualTimeoutRef.current);
+    manualTimeoutRef.current = setTimeout(() => {
+      isManualClickRef.current = false;
+    }, 900);
+
+    if (containerRef.current && typeof window !== "undefined") {
+      const rect = containerRef.current.getBoundingClientRect();
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      const containerTop = rect.top + scrollTop;
+      const containerHeight = containerRef.current.offsetHeight;
+      const windowHeight = window.innerHeight;
+      const totalScrollDistance = containerHeight - windowHeight;
+      if (totalScrollDistance > 0) {
+        const segment = 1 / TABS.length;
+        const targetProgress = (index + 0.5) * segment;
+        const targetScrollY = containerTop + targetProgress * totalScrollDistance;
+        window.scrollTo({
+          top: targetScrollY,
+          behavior: shouldReduceMotion ? "auto" : "smooth",
+        });
+      }
+    }
+  };
+
+  const activeIndex = TABS.findIndex((t) => t.key === activeTab);
 
   return (
     <section
       id="interactive-demo"
-      className="relative w-full py-16 sm:py-24 bg-white dark:bg-slate-900 border-y border-slate-200/80 dark:border-slate-800/80 shadow-xs scroll-mt-32 overflow-hidden"
+      ref={containerRef}
+      className="relative w-full h-[350vh] scroll-mt-24"
     >
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-      {/* Section Header */}
-      <div className="text-center max-w-3xl mx-auto mb-6 sm:mb-8 space-y-3">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-semibold shadow-xs">
-          <Sparkles className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-          <span>Interactive Product Exploration</span>
-        </div>
-        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-          Everything you need to run your hospitality business
-        </h2>
-        <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400">
-          Switch between operational surfaces to see how DineFlow streamlines front-of-house, kitchen, rooms, and back-office management.
-        </p>
-      </div>
+      {/* Sticky Viewport Stage: Pinned while scrolling through all 7 operational modules */}
+      <div className="sticky top-14 sm:top-16 lg:top-20 min-h-[calc(100vh-3.5rem)] sm:min-h-[calc(100vh-4rem)] flex flex-col justify-center py-4 sm:py-6 bg-white dark:bg-slate-900 border-y border-slate-200/80 dark:border-slate-800/80 shadow-xs overflow-hidden">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+          {/* Section Header */}
+          <div className="text-center max-w-3xl mx-auto mb-3 sm:mb-4 space-y-1.5">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-semibold shadow-xs">
+              <Sparkles className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span>Interactive Product Exploration</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+              Everything you need to run your hospitality business
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+              Scroll down to explore each operational module sequentially, or click any tab to jump directly.
+            </p>
+          </div>
 
-      {/* Interactive Tabs Bar */}
-      <div className="flex items-center justify-start lg:justify-center overflow-x-auto lg:overflow-visible flex-nowrap lg:flex-wrap gap-2 pb-2 px-1 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {TABS.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.key;
-          return (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap shrink-0 cursor-pointer border ${
-                isActive
-                  ? "bg-emerald-600 border-emerald-600 text-white shadow-md shadow-emerald-500/25 ring-2 ring-emerald-500/30"
-                  : "bg-white dark:bg-slate-900/80 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border-slate-200/80 dark:border-slate-800/80"
-              }`}
-            >
-              <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-white" : "text-emerald-500"}`} />
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
-      </div>
+          {/* Module Step Indicator & Subtle Progress Bar */}
+          <div className="max-w-2xl mx-auto mb-2 px-1">
+            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+              <div className="flex items-center gap-1.5 font-medium">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>
+                  Module {activeIndex + 1} of {TABS.length}:{" "}
+                  <strong className="text-slate-900 dark:text-white">{TABS[activeIndex]?.label}</strong>
+                </span>
+              </div>
+              <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hidden sm:inline">
+                {activeIndex === TABS.length - 1 ? "Module Tour Complete • Scroll down to continue" : "Scroll to advance module"}
+              </span>
+            </div>
+            <div className="w-full h-1 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden mt-1">
+              <div
+                className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-600 rounded-full transition-all duration-150"
+                style={{ width: `${Math.max(5, progressPercent)}%` }}
+              />
+            </div>
+          </div>
 
-      {/* Preview Container */}
-      <div className="mt-3 rounded-2xl border border-slate-200/80 dark:border-slate-800/90 bg-white/95 dark:bg-[#0B0F19]/95 backdrop-blur-xl shadow-xl overflow-hidden transition-all duration-300">
+          {/* Interactive Tabs Bar */}
+          <div className="flex items-center justify-start lg:justify-center overflow-x-auto lg:overflow-visible flex-nowrap lg:flex-wrap gap-2 pb-2 px-1 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {TABS.map((tab, idx) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  ref={(el) => {
+                    tabButtonRefs.current[idx] = el;
+                  }}
+                  type="button"
+                  onClick={() => handleTabClick(tab.key, idx)}
+                  className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap shrink-0 cursor-pointer border ${
+                    isActive
+                      ? "bg-emerald-600 border-emerald-600 text-white shadow-md shadow-emerald-500/25 ring-2 ring-emerald-500/30 scale-[1.02]"
+                      : "bg-white dark:bg-slate-900/80 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border-slate-200/80 dark:border-slate-800/80"
+                  }`}
+                >
+                  <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-white" : "text-emerald-500"}`} />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Preview Container */}
+          <div className="mt-2 rounded-2xl border border-slate-200/80 dark:border-slate-800/90 bg-white/95 dark:bg-[#0B0F19]/95 backdrop-blur-xl shadow-xl overflow-hidden transition-all duration-300">
         {/* Mock Window Header */}
         <div className="px-4 sm:px-6 lg:px-8 py-3 border-b border-slate-200/70 dark:border-slate-800/70 bg-slate-50 dark:bg-slate-900/60 flex items-center justify-between text-xs">
           <div className="flex items-center gap-2">
@@ -117,7 +218,15 @@ export function LandingInteractivePreview() {
 
         {/* Tab Specific Content Panels */}
         <div className="p-4 sm:p-6 lg:p-8 min-h-[420px] flex flex-col justify-center">
-          {/* TAB 1: OVERVIEW */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+            >
+              {/* TAB 1: OVERVIEW */}
           {activeTab === "overview" && (
             <div className="space-y-6 animate-in fade-in duration-300">
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -550,7 +659,10 @@ export function LandingInteractivePreview() {
               </div>
             </div>
           )}
+            </motion.div>
+          </AnimatePresence>
         </div>
+      </div>
       </div>
       </div>
     </section>
