@@ -22,6 +22,8 @@ import {
   Wine,
   ChevronDown,
   ChevronUp,
+  CreditCard,
+  Receipt,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,8 +31,9 @@ import { Badge } from "@/components/ui/badge";
 import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
 import { QRCodeImage } from "@/components/ui/qr-code-image";
-import { cn } from "@/lib/utils";
-import { useTenantData, TableItem, STARTER_TEMPLATES } from "@/lib/stores/tenant-data-store";
+import { cn, formatCurrency } from "@/lib/utils";
+import { useTenantData, TableItem, KdsOrder, STARTER_TEMPLATES } from "@/lib/stores/tenant-data-store";
+import { SettleBillModal } from "@/components/orders/settle-bill-modal";
 import { ViewToggle, useViewMode } from "@/components/ui/view-toggle";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import NumberFlow from "@number-flow/react";
@@ -56,6 +59,15 @@ export default function TablesManagementPage() {
   const [filterStatus, setFilterStatus] = React.useState<"all" | "available" | "occupied" | "reserved">("all");
   const [searchQuery, setSearchQuery] = React.useState("");
   const [showMobileStats, setShowMobileStats] = React.useState(false);
+  const [settleOrderModal, setSettleOrderModal] = React.useState<{
+    isOpen: boolean;
+    order: KdsOrder | null;
+    table: TableItem | null;
+  }>({
+    isOpen: false,
+    order: null,
+    table: null,
+  });
 
   const kpiStats = React.useMemo(() => {
     const total = tables.length;
@@ -475,8 +487,27 @@ export default function TablesManagementPage() {
         /* Grid of Tables */
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
           {filteredTables.map((table) => {
+            const tableClean = table.name.toLowerCase().trim();
+            const tableIdClean = table.id.toLowerCase().trim();
+            const numOnly = tableClean.replace(/\D/g, "");
+
+            const currentOrder = orders.find((o) => {
+              if (o.status === "paid" || o.status === "cancelled") return false;
+              const oTable = (o.table || "").toLowerCase().trim();
+              const oNum = oTable.replace(/\D/g, "");
+              return (
+                oTable === tableClean ||
+                oTable === tableIdClean ||
+                (numOnly !== "" && (oTable === `table ${numOnly}` || oTable === `t-${numOnly}` || oNum === numOnly))
+              );
+            });
+
+            const isServedAwaitingBill = currentOrder && currentOrder.status === "served";
+
             const statusColors = {
-              occupied: "border-amber-500/40 bg-amber-500/5",
+              occupied: isServedAwaitingBill
+                ? "border-amber-500/60 bg-amber-500/10 ring-1 ring-amber-500/30"
+                : "border-amber-500/40 bg-amber-500/5",
               available: "border-emerald-500/40 bg-emerald-500/5",
               reserved: "border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40",
             };
@@ -500,7 +531,9 @@ export default function TablesManagementPage() {
                   </div>
                   <Badge
                     variant={
-                      table.status === "occupied"
+                      isServedAwaitingBill
+                        ? "warning"
+                        : table.status === "occupied"
                         ? "warning"
                         : table.status === "available"
                         ? "success"
@@ -508,9 +541,12 @@ export default function TablesManagementPage() {
                     }
                     size="sm"
                     dot
-                    className="shrink-0"
+                    className={cn(
+                      "shrink-0",
+                      isServedAwaitingBill && "bg-amber-500/20 text-amber-800 dark:text-amber-200 border-amber-500/50 font-bold"
+                    )}
                   >
-                    {table.status}
+                    {isServedAwaitingBill ? "Served • Settle Bill" : table.status}
                   </Badge>
                 </div>
 
@@ -523,6 +559,55 @@ export default function TablesManagementPage() {
                     {table.id}
                   </span>
                 </div>
+
+                {/* Active Order Summary */}
+                {currentOrder && (
+                  <div
+                    className={cn(
+                      "mt-3 p-2.5 rounded-xl border text-xs flex items-center justify-between transition-colors",
+                      isServedAwaitingBill
+                        ? "bg-amber-500/15 border-amber-500/30 text-amber-900 dark:text-amber-100"
+                        : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300"
+                    )}
+                  >
+                    <div className="min-w-0 pr-2">
+                      <div className="flex items-center gap-1.5 font-bold truncate">
+                        <span>#{currentOrder.id.slice(-4).toUpperCase()}</span>
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-700 dark:text-amber-300">
+                          {currentOrder.status}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                        {currentOrder.customerName || "Dine-in"} • {currentOrder.items?.length || 0} items
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="text-[10px] text-slate-400 block font-medium">Bill Due</span>
+                      <span className="font-mono font-black text-slate-900 dark:text-white">
+                        {formatCurrency(currentOrder.total)}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Settle Bill Action Button for Served Tickets */}
+                {isServedAwaitingBill && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSettleOrderModal({
+                        isOpen: true,
+                        order: currentOrder,
+                        table,
+                      });
+                    }}
+                    className="w-full mt-3 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer hover:shadow-emerald-600/25"
+                  >
+                    <CreditCard className="h-3.5 w-3.5" />
+                    <span>Settle Bill ({formatCurrency(currentOrder.total)})</span>
+                  </button>
+                )}
 
                 {/* Mini Preview Box */}
                 <div className="mt-4 pt-3 border-t border-slate-200/80 dark:border-slate-800/80 flex items-center justify-between">
@@ -565,9 +650,22 @@ export default function TablesManagementPage() {
               </TableHeader>
               <TableBody>
                 {filteredTables.map((table) => {
-                  const currentOrder = orders.find(
-                    (o) => o.table === table.name || o.table === table.id
-                  );
+                  const tableClean = table.name.toLowerCase().trim();
+                  const tableIdClean = table.id.toLowerCase().trim();
+                  const numOnly = tableClean.replace(/\D/g, "");
+
+                  const currentOrder = orders.find((o) => {
+                    if (o.status === "paid" || o.status === "cancelled") return false;
+                    const oTable = (o.table || "").toLowerCase().trim();
+                    const oNum = oTable.replace(/\D/g, "");
+                    return (
+                      oTable === tableClean ||
+                      oTable === tableIdClean ||
+                      (numOnly !== "" && (oTable === `table ${numOnly}` || oTable === `t-${numOnly}` || oNum === numOnly))
+                    );
+                  });
+
+                  const isServedAwaitingBill = currentOrder && currentOrder.status === "served";
 
                   return (
                     <TableRow key={table.id} className="hover:bg-slate-500/5 transition-colors">
@@ -623,11 +721,26 @@ export default function TablesManagementPage() {
                       {/* Live Order & QR */}
                       <TableCell>
                         {currentOrder ? (
-                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-700 dark:text-amber-300 min-w-0">
-                            <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
+                          <div
+                            className={cn(
+                              "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-xs min-w-0",
+                              isServedAwaitingBill
+                                ? "bg-amber-500/20 border-amber-500/40 text-amber-900 dark:text-amber-200"
+                                : "bg-amber-500/10 border-amber-500/20 text-amber-700 dark:text-amber-300"
+                            )}
+                          >
+                            <span
+                              className={cn(
+                                "h-2 w-2 rounded-full shrink-0",
+                                isServedAwaitingBill ? "bg-amber-600 animate-ping" : "bg-amber-500 animate-pulse"
+                              )}
+                            />
                             <span className="font-bold truncate">#{currentOrder.id.slice(-4).toUpperCase()}</span>
-                            <span className="text-[11px] text-amber-600/80 dark:text-amber-400/80">
+                            <span className="text-[11px] opacity-80">
                               • {currentOrder.status}
+                            </span>
+                            <span className="font-mono font-bold text-slate-900 dark:text-white ml-1">
+                              {formatCurrency(currentOrder.total)}
                             </span>
                           </div>
                         ) : (
@@ -640,6 +753,18 @@ export default function TablesManagementPage() {
                       {/* Actions */}
                       <TableCell className="text-right pr-4">
                         <div className="flex items-center justify-end gap-1.5">
+                          {isServedAwaitingBill && (
+                            <button
+                              type="button"
+                              onClick={() => setSettleOrderModal({ isOpen: true, order: currentOrder, table })}
+                              className="h-8 px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                              title="Settle Bill and Release Table"
+                            >
+                              <CreditCard className="h-3.5 w-3.5" />
+                              <span>Settle Bill</span>
+                            </button>
+                          )}
+
                           <button
                             type="button"
                             onClick={() => setSelectedTable(table)}
@@ -924,6 +1049,17 @@ export default function TablesManagementPage() {
           </div>
         </Modal>
       )}
+
+      {/* Reception / Manager Bill Settlement Modal */}
+      <SettleBillModal
+        isOpen={settleOrderModal.isOpen}
+        onClose={() => setSettleOrderModal({ isOpen: false, order: null, table: null })}
+        order={settleOrderModal.order}
+        table={settleOrderModal.table}
+        onSuccess={() => {
+          fetchTables?.();
+        }}
+      />
     </div>
   );
 }

@@ -22,9 +22,11 @@ import {
   Eye,
   Hotel,
   Wine,
-  Printer,
   ChevronDown,
   ChevronUp,
+  Printer,
+  CreditCard,
+  Receipt,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +34,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs } from "@/components/ui/tabs";
 import { Modal } from "@/components/ui/modal";
 import { ThermalPrintModal } from "@/components/orders/thermal-receipt-modal";
+import { SettleBillModal } from "@/components/orders/settle-bill-modal";
 import { useToast } from "@/components/ui/toast";
 import { cn, formatCurrency } from "@/lib/utils";
 import { useTenantData } from "@/lib/stores/tenant-data-store";
@@ -105,6 +108,7 @@ export default function KDSOrdersPage() {
   const [isFullscreen, setIsFullscreen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [showMobileStats, setShowMobileStats] = React.useState(false);
+  const [settleModalOrder, setSettleModalOrder] = React.useState<KdsOrder | null>(null);
 
   const activeCount = React.useMemo(() => orders.filter((o) => o.status !== "served" && o.status !== "cancelled" && o.status !== "paid").length, [orders]);
   const pendingCount = React.useMemo(() => orders.filter((o) => o.status === "pending").length, [orders]);
@@ -586,7 +590,8 @@ export default function KDSOrdersPage() {
               { id: "pending", label: "New / Pending", badge: orders.filter((o) => o.status === "pending").length },
               { id: "preparing", label: "Cooking / Plating", badge: orders.filter((o) => o.status === "preparing").length },
               { id: "ready", label: "Ready to Dispatch", badge: orders.filter((o) => o.status === "ready").length },
-              { id: "served", label: "Served History", badge: orders.filter((o) => o.status === "served").length },
+              { id: "served", label: "Served / Awaiting Bill", badge: orders.filter((o) => o.status === "served").length },
+              { id: "paid", label: "Paid & Settled", badge: orders.filter((o) => o.status === "paid").length },
               { id: "cancelled", label: "Rejected / Cancelled", badge: orders.filter((o) => o.status === "cancelled").length },
             ]}
             activeTab={activeTab}
@@ -781,7 +786,21 @@ export default function KDSOrdersPage() {
                       <span className="text-xs font-semibold text-rose-500 flex items-center gap-1">
                         <XCircle className="h-3.5 w-3.5" /> Rejected
                       </span>
-                    ) : order.status !== "served" ? (
+                    ) : order.status === "paid" ? (
+                      <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                        <CheckCircle className="h-3.5 w-3.5" /> Paid {order.billingMethod ? `(${order.billingMethod})` : ""}
+                      </span>
+                    ) : order.status === "served" ? (
+                      <Button
+                        variant="glow"
+                        size="sm"
+                        className="text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center gap-1.5"
+                        onClick={() => setSettleModalOrder(order)}
+                      >
+                        <CreditCard className="h-3.5 w-3.5" />
+                        <span>Settle Bill</span>
+                      </Button>
+                    ) : (
                       <Button
                         variant={
                           order.status === "pending"
@@ -798,10 +817,6 @@ export default function KDSOrdersPage() {
                         {order.status === "preparing" && (isRoomService ? "Plated for Tray" : "Mark Ready")}
                         {order.status === "ready" && (isRoomService ? "Deliver to Suite" : "Dispatch")}
                       </Button>
-                    ) : (
-                      <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                        <Check className="h-3.5 w-3.5" /> Done
-                      </span>
                     )}
                   </div>
                 </div>
@@ -995,6 +1010,19 @@ export default function KDSOrdersPage() {
           type={thermalType}
           restaurantName={tenantName}
           order={thermalOrder}
+        />
+      )}
+
+      {/* Reception / Manager Bill Settlement Modal */}
+      {settleModalOrder && (
+        <SettleBillModal
+          isOpen={!!settleModalOrder}
+          onClose={() => setSettleModalOrder(null)}
+          order={settleModalOrder}
+          table={tables.find((t) => t.name === settleModalOrder.table || t.id === settleModalOrder.table) || null}
+          onSuccess={() => {
+            refreshOrders?.();
+          }}
         />
       )}
     </div>

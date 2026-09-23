@@ -168,6 +168,9 @@ func (o *Order) TransitionTo(next OrderStatus, note string) error {
 	}
 
 	o.Status = next
+	if next == StatusPaid {
+		o.PaymentStatus = PaymentPaid
+	}
 	o.Timeline = append(o.Timeline, OrderTimeline{
 		Status:    next,
 		Timestamp: time.Now().UTC(),

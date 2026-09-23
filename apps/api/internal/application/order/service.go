@@ -590,7 +590,7 @@ func (s *Service) ListOrders(ctx context.Context, tenantID bson.ObjectID, status
 	return orders, nil
 }
 
-func (s *Service) UpdateOrderStatus(ctx context.Context, tenantID bson.ObjectID, orderIDStr string, nextStatus domainorder.OrderStatus, note string) (*domainorder.Order, error) {
+func (s *Service) UpdateOrderStatus(ctx context.Context, tenantID bson.ObjectID, orderIDStr string, nextStatus domainorder.OrderStatus, note string, billingMethod ...string) (*domainorder.Order, error) {
 	orderColl := s.db.Collection("orders")
 	cleanID := strings.TrimSpace(orderIDStr)
 
@@ -634,13 +634,23 @@ func (s *Service) UpdateOrderStatus(ctx context.Context, tenantID bson.ObjectID,
 		return nil, err
 	}
 
+	if len(billingMethod) > 0 && strings.TrimSpace(billingMethod[0]) != "" {
+		ord.BillingMethod = strings.TrimSpace(billingMethod[0])
+	}
+
 	now := time.Now().UTC()
+	setFields := bson.M{
+		"status":        ord.Status,
+		"paymentStatus": ord.PaymentStatus,
+		"timeline":      ord.Timeline,
+		"updatedAt":     now,
+	}
+	if ord.BillingMethod != "" {
+		setFields["billingMethod"] = ord.BillingMethod
+	}
+
 	update := bson.M{
-		"$set": bson.M{
-			"status":    ord.Status,
-			"timeline":  ord.Timeline,
-			"updatedAt": now,
-		},
+		"$set": setFields,
 	}
 	if _, err := orderColl.UpdateOne(ctx, bson.M{"_id": ord.ID}, update); err != nil {
 		return nil, err
@@ -658,17 +668,28 @@ func (s *Service) UpdateOrderStatus(ctx context.Context, tenantID bson.ObjectID,
 		)
 	}
 
-	// If served, completed, or cancelled, release the table
-	if ord.TableID != nil && (nextStatus == domainorder.StatusServed || nextStatus == domainorder.StatusPaid || nextStatus == domainorder.StatusCancelled) {
+	// If paid or cancelled, release the table (keep occupied while served so guests dine until bill is settled)
+	if nextStatus == domainorder.StatusPaid || nextStatus == domainorder.StatusCancelled {
 		tableColl := s.db.Collection("tables")
-		_, _ = tableColl.UpdateOne(ctx,
-			bson.M{"_id": *ord.TableID, "activeOrderId": ord.ID},
-			bson.M{"$set": bson.M{
-				"status":        domaintable.StatusAvailable,
-				"activeOrderId": nil,
-				"updatedAt":     time.Now().UTC(),
-			}},
-		)
+		tableFilter := bson.M{"tenantId": tenantID}
+		if ord.TableID != nil && !ord.TableID.IsZero() {
+			tableFilter["_id"] = *ord.TableID
+		} else if strings.TrimSpace(ord.TableName) != "" {
+			tableFilter["name"] = strings.TrimSpace(ord.TableName)
+		} else {
+			tableFilter = nil
+		}
+
+		if tableFilter != nil {
+			_, _ = tableColl.UpdateOne(ctx,
+				tableFilter,
+				bson.M{"$set": bson.M{
+					"status":        domaintable.StatusAvailable,
+					"activeOrderId": nil,
+					"updatedAt":     now,
+				}},
+			)
+		}
 	}
 
 	// Broadcast update to KDS and Customer tracking screens

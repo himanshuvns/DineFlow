@@ -50,6 +50,7 @@ export interface KdsOrder {
   station: "main_kitchen" | "bar" | "room_service";
   destination: "dine_in" | "room_service" | "takeaway";
   status: "pending" | "preparing" | "ready" | "served" | "cancelled" | "paid";
+  paymentStatus?: "pending" | "paid" | "failed" | "refunded";
   items: KdsOrderItem[];
   total: number;
   time?: string;
@@ -350,7 +351,8 @@ interface TenantDataState {
   deleteTable: (id: string) => Promise<void>;
   fetchTables: () => Promise<void>;
   addOrder: (order: Partial<KdsOrder>) => Promise<KdsOrder>;
-  updateOrderStatus: (id: string, status: KdsOrder["status"], note?: string) => Promise<void>;
+  updateOrderStatus: (id: string, status: KdsOrder["status"], note?: string, billingMethod?: string) => Promise<void>;
+  settleOrderBill: (id: string, paymentMethod: string, amountReceived?: number, notes?: string) => Promise<void>;
   refreshOrders: () => Promise<void>;
   toggleOnboardingStep: (id: number) => void;
   applyStarterTemplate: (templateKey: keyof typeof STARTER_TEMPLATES) => Promise<void> | void;
@@ -1468,28 +1470,42 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
     return newOrder;
   },
 
-  updateOrderStatus: async (id, status, note) => {
+  updateOrderStatus: async (id, status, note, billingMethod) => {
     const state = get();
     try {
-      await apiClient.patch(`/orders/${encodeURIComponent(id)}/status`, { status, note });
+      await apiClient.patch(`/orders/${encodeURIComponent(id)}/status`, { status, note, billingMethod });
     } catch (e) {
       console.warn("Backend order status update failed:", e);
     }
 
     const updatedOrders = state.orders.map((o) =>
-      o.id === id ? { ...o, status } : o
+      o.id === id
+        ? {
+            ...o,
+            status,
+            ...(status === "paid" ? { paymentStatus: "paid" as const } : {}),
+            ...(billingMethod ? { billingMethod } : {}),
+          }
+        : o
     );
 
-    // If order is served or cancelled, free up table occupancy
+    // If order is paid or cancelled, free up table occupancy (keep table occupied while served so guests dine until bill is settled)
     let updatedTables = state.tables;
-    if (status === "served" || status === "cancelled") {
+    if (status === "paid" || status === "cancelled") {
       const order = state.orders.find((o) => o.id === id);
       if (order && order.table) {
-        updatedTables = state.tables.map((t) =>
-          t.name === order.table || t.id === order.table
-            ? { ...t, status: "available" }
-            : t
-        );
+        const orderTableClean = (order.table || "").toLowerCase().trim();
+        const orderNumOnly = orderTableClean.replace(/\D/g, "");
+        updatedTables = state.tables.map((t) => {
+          const tName = t.name.toLowerCase().trim();
+          const tId = t.id.toLowerCase().trim();
+          const matches =
+            tName === orderTableClean ||
+            tId === orderTableClean ||
+            (orderNumOnly !== "" &&
+              (tName === `table ${orderNumOnly}` || tId === `t-${orderNumOnly}`));
+          return matches ? { ...t, status: "available" as const, orderId: undefined } : t;
+        });
       }
     }
 
@@ -1510,16 +1526,21 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
       apiClient.post("/notifications", {
         category: status === "paid" ? "payments" : (isRoom ? "room_service" : "orders"),
         title: titleMap[status] || `Order ${status} — #${cleanId}`,
-        message: `${cleanTable} order marked as ${status}.`,
+        message: `${cleanTable} order marked as ${status}.${billingMethod ? ` Settled via ${billingMethod}.` : ""}`,
         priority: status === "cancelled" ? "high" : "medium",
         actionUrl: isRoom ? "/dashboard/rooms" : "/dashboard/orders",
-        metadata: { orderId: cleanId, status },
+        metadata: { orderId: cleanId, status, billingMethod },
       }).catch(() => {});
     }
 
     persistTenantState(state.tenantId, { orders: updatedOrders, tables: updatedTables });
 
     set({ orders: updatedOrders, tables: updatedTables });
+  },
+
+  settleOrderBill: async (id, paymentMethod, amountReceived, notes) => {
+    const formattedNote = notes || `Settled via ${paymentMethod}${amountReceived ? ` (Tendered: ₹${amountReceived})` : ""}`;
+    await get().updateOrderStatus(id, "paid", formattedNote, paymentMethod);
   },
 
   refreshOrders: async () => {

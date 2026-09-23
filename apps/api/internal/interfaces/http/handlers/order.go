@@ -83,8 +83,9 @@ func (h *OrderHandler) List(c *gin.Context) {
 }
 
 type UpdateOrderStatusRequest struct {
-	Status domainorder.OrderStatus `json:"status" binding:"required"`
-	Note   string                  `json:"note"`
+	Status        domainorder.OrderStatus `json:"status" binding:"required"`
+	Note          string                  `json:"note"`
+	BillingMethod string                  `json:"billingMethod,omitempty"`
 }
 
 func (h *OrderHandler) UpdateStatus(c *gin.Context) {
@@ -107,7 +108,7 @@ func (h *OrderHandler) UpdateStatus(c *gin.Context) {
 		return
 	}
 
-	ord, err := h.orderService.UpdateOrderStatus(c.Request.Context(), tOID, orderID, req.Status, req.Note)
+	ord, err := h.orderService.UpdateOrderStatus(c.Request.Context(), tOID, orderID, req.Status, req.Note, req.BillingMethod)
 	if err != nil {
 		response.BadRequest(c, "STATUS_UPDATE_FAILED", err.Error())
 		return

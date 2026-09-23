@@ -78,6 +78,9 @@ func TestOrderStatusTransitions(t *testing.T) {
 	if err := ord.TransitionTo(order.StatusPaid, "Cash payment"); err != nil {
 		t.Fatalf("expected valid transition, got: %v", err)
 	}
+	if ord.PaymentStatus != order.PaymentPaid {
+		t.Errorf("expected payment status paid, got %s", ord.PaymentStatus)
+	}
 
 	// Paid is terminal -> cannot go to Preparing
 	if ord.CanTransitionTo(order.StatusPreparing) {
