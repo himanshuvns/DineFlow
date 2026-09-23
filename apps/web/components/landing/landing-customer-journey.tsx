@@ -1,6 +1,8 @@
 "use client";
 
 import * as React from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import confetti from "canvas-confetti";
 import {
   QrCode,
   UtensilsCrossed,
@@ -15,20 +17,18 @@ import {
   Bell,
   Smartphone,
   Wifi,
-  Battery,
   ChevronRight,
   ChevronLeft,
   Plus,
   Minus,
   Search,
   FileText,
-  Star,
   Flame,
   RotateCcw,
   Check,
   CreditCard,
-  MessageSquare,
   ShieldCheck,
+  Volume2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -58,19 +58,103 @@ const HOTEL_STEPS: JourneyStep[] = [
   { title: "Folio Settlement", desc: "Order total automatically posted to guest room folio at check-out.", icon: Receipt },
 ];
 
+const RESTAURANT_LOADING_MESSAGES = [
+  "Connecting to camera & pairing Table 04…",
+  "Loading Grand Bistro digital menu & daily specials…",
+  "Opening item customizer & kitchen notes…",
+  "Reviewing cart & calculating 5% GST taxes…",
+  "Firing order ticket to Kitchen Display Station #2…",
+  "Verifying UPI payment & generating tax invoice…",
+];
+
+const HOTEL_LOADING_MESSAGES = [
+  "Initializing room key scanner & pairing Suite 302…",
+  "Loading 24/7 In-Room dining & beverage menu…",
+  "Saving room delivery preferences & notes…",
+  "Routing ticket to Floor 3 service pantry line…",
+  "Tracking service cart en route to Suite 302…",
+  "Posting bill to Room 302 master folio…",
+];
+
 export function LandingCustomerJourney() {
   const [journeyType, setJourneyType] = React.useState<JourneyType>("restaurant");
   const [activeStep, setActiveStep] = React.useState(0);
+  const [isScreenLoading, setIsScreenLoading] = React.useState(false);
+  const [loadingMessage, setLoadingMessage] = React.useState("");
+  const [iosNotification, setIosNotification] = React.useState<string | null>(null);
+
+  // Interactive in-screen states
+  const [selectedCategory, setSelectedCategory] = React.useState<"popular" | "pizza" | "pasta" | "drinks">("popular");
+  const [hasExtraCheese, setHasExtraCheese] = React.useState(true);
+  const [hasGarlicDip, setHasGarlicDip] = React.useState(true);
+  const [quantity, setQuantity] = React.useState(1);
+  const [paymentMethod, setPaymentMethod] = React.useState<"upi" | "card" | "cash">("upi");
+  const [kdsSecondsRemaining, setKdsSecondsRemaining] = React.useState(372); // ~6 mins
 
   const steps = journeyType === "restaurant" ? RESTAURANT_STEPS : HOTEL_STEPS;
-  const currentStep = steps[activeStep] || steps[0];
+  const loadingMessages = journeyType === "restaurant" ? RESTAURANT_LOADING_MESSAGES : HOTEL_LOADING_MESSAGES;
+
+  // Countdown timer for Step 5 (KDS)
+  React.useEffect(() => {
+    if (activeStep !== 4) return;
+    const interval = setInterval(() => {
+      setKdsSecondsRemaining((prev) => (prev > 10 ? prev - 1 : 360));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [activeStep]);
+
+  // Dynamic price calculation
+  const basePizzaPrice = 550;
+  const cheeseModifierPrice = hasExtraCheese ? 120 : 0;
+  const dipModifierPrice = hasGarlicDip ? 60 : 0;
+  const itemUnitPrice = basePizzaPrice + cheeseModifierPrice + dipModifierPrice;
+  const itemTotalPrice = itemUnitPrice * quantity;
+  const risottoPrice = 680;
+  const subtotalPrice = itemTotalPrice + risottoPrice;
+  const gstAmount = subtotalPrice * 0.05;
+  const grandTotal = subtotalPrice + gstAmount;
+
+  // Notification helper
+  const triggerIosNotification = (msg: string) => {
+    setIosNotification(msg);
+    setTimeout(() => {
+      setIosNotification(null);
+    }, 2800);
+  };
+
+  // Step transition with realistic mobile delay & loader
+  const goToStep = (targetStep: number, customMessage?: string) => {
+    if (isScreenLoading) return;
+    const nextIdx = (targetStep + steps.length) % steps.length;
+    setIsScreenLoading(true);
+    setLoadingMessage(customMessage || loadingMessages[nextIdx] || "Loading…");
+
+    // Confetti celebration on Step 6
+    if (nextIdx === 5) {
+      setTimeout(() => {
+        try {
+          confetti({
+            particleCount: 45,
+            spread: 65,
+            origin: { y: 0.62 },
+            colors: ["#10b981", "#3b82f6", "#f59e0b", "#a855f7"],
+          });
+        } catch {}
+      }, 550);
+    }
+
+    setTimeout(() => {
+      setActiveStep(nextIdx);
+      setIsScreenLoading(false);
+    }, 580);
+  };
 
   const handleNextStep = () => {
-    setActiveStep((prev) => (prev + 1) % steps.length);
+    goToStep(activeStep + 1);
   };
 
   const handlePrevStep = () => {
-    setActiveStep((prev) => (prev - 1 + steps.length) % steps.length);
+    goToStep(activeStep - 1);
   };
 
   return (
@@ -94,7 +178,7 @@ export function LandingCustomerJourney() {
             type="button"
             onClick={() => {
               setJourneyType("restaurant");
-              setActiveStep(0);
+              goToStep(0, "Switching to Restaurant Table Dining…");
             }}
             className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer ${
               journeyType === "restaurant"
@@ -108,7 +192,7 @@ export function LandingCustomerJourney() {
             type="button"
             onClick={() => {
               setJourneyType("hotel");
-              setActiveStep(0);
+              goToStep(0, "Switching to Hotel In-Room Dining…");
             }}
             className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer ${
               journeyType === "hotel"
@@ -131,7 +215,7 @@ export function LandingCustomerJourney() {
             return (
               <div
                 key={step.title}
-                onClick={() => setActiveStep(idx)}
+                onClick={() => goToStep(idx)}
                 className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-start gap-4 ${
                   isCurrent
                     ? "bg-emerald-500/10 border-emerald-500/40 shadow-md ring-1 ring-emerald-500/40 scale-[1.01]"
@@ -180,13 +264,9 @@ export function LandingCustomerJourney() {
             <div className="relative w-[305px] sm:w-[325px] h-[635px] sm:h-[655px] rounded-[50px] p-[10px] bg-gradient-to-b from-slate-700 via-slate-800 to-slate-900 shadow-2xl shadow-black/60 border border-slate-600/60 ring-1 ring-white/15">
               
               {/* Hardware Side Buttons */}
-              {/* Left Side: Action Button */}
               <div className="absolute -left-[4.5px] top-[102px] w-[4px] h-[24px] bg-slate-700 rounded-l-sm border-y border-l border-slate-600 shadow-xs" />
-              {/* Left Side: Volume Up */}
               <div className="absolute -left-[4.5px] top-[140px] w-[4px] h-[46px] bg-slate-700 rounded-l-sm border-y border-l border-slate-600 shadow-xs" />
-              {/* Left Side: Volume Down */}
               <div className="absolute -left-[4.5px] top-[198px] w-[4px] h-[46px] bg-slate-700 rounded-l-sm border-y border-l border-slate-600 shadow-xs" />
-              {/* Right Side: Power / Side Button */}
               <div className="absolute -right-[4.5px] top-[155px] w-[4px] h-[64px] bg-slate-700 rounded-r-sm border-y border-r border-slate-600 shadow-xs" />
 
               {/* iPhone Inner Screen Display Bezel */}
@@ -195,15 +275,75 @@ export function LandingCustomerJourney() {
                 {/* Screen Glass Corner Reflection Highlight */}
                 <div className="absolute top-0 right-0 w-36 h-36 bg-gradient-to-bl from-white/10 via-white/2 to-transparent pointer-events-none rounded-tr-[40px] z-30" />
 
-                {/* Dynamic Island Pill */}
-                <div className="absolute top-2.5 left-1/2 -translate-x-1/2 z-40 w-24 h-[22px] bg-black rounded-full flex items-center justify-between px-2.5 shadow-md border border-slate-900/60">
-                  {/* Camera lens */}
-                  <div className="w-2.5 h-2.5 rounded-full bg-slate-950 ring-1 ring-slate-800 flex items-center justify-center">
-                    <div className="w-1 h-1 rounded-full bg-indigo-900/80" />
-                  </div>
-                  {/* Subtle sensor / audio activity dot */}
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/90 animate-pulse" />
-                </div>
+                {/* 21st.dev Style Dynamic Island with Live Activity Expansion */}
+                {activeStep === 4 ? (
+                  // Live Activity: Kitchen Cooking
+                  <motion.div
+                    key="island-cooking"
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1, width: 180, height: 26 }}
+                    transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                    className="absolute top-2 left-1/2 -translate-x-1/2 z-40 bg-black rounded-full flex items-center justify-between px-3 shadow-md border border-slate-900/60 text-[10px]"
+                  >
+                    <div className="flex items-center gap-1.5 text-amber-400 font-bold">
+                      <Flame className="h-3 w-3 animate-pulse" />
+                      <span>Station 2</span>
+                    </div>
+                    <div className="flex items-center gap-1 font-mono text-emerald-400 font-semibold text-[10px]">
+                      <span>{Math.floor(kdsSecondsRemaining / 60)}m left</span>
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                    </div>
+                  </motion.div>
+                ) : activeStep === 5 ? (
+                  // Live Activity: Payment Verified
+                  <motion.div
+                    key="island-paid"
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1, width: 165, height: 26 }}
+                    transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                    className="absolute top-2 left-1/2 -translate-x-1/2 z-40 bg-black rounded-full flex items-center justify-between px-3 shadow-md border border-slate-900/60 text-[10px]"
+                  >
+                    <div className="flex items-center gap-1 text-emerald-400 font-bold">
+                      <Check className="h-3 w-3 stroke-[3]" />
+                      <span>Paid UPI</span>
+                    </div>
+                    <span className="font-mono text-white text-[10px] font-bold">
+                      ₹{grandTotal.toFixed(2)}
+                    </span>
+                  </motion.div>
+                ) : (
+                  // Default Compact Dynamic Island
+                  <motion.div
+                    key="island-default"
+                    animate={{ width: 96, height: 22 }}
+                    className="absolute top-2.5 left-1/2 -translate-x-1/2 z-40 bg-black rounded-full flex items-center justify-between px-2.5 shadow-md border border-slate-900/60"
+                  >
+                    <div className="w-2.5 h-2.5 rounded-full bg-slate-950 ring-1 ring-slate-800 flex items-center justify-center">
+                      <div className="w-1 h-1 rounded-full bg-indigo-900/80" />
+                    </div>
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/90 animate-pulse" />
+                  </motion.div>
+                )}
+
+                {/* Simulated iOS Notification Banner */}
+                <AnimatePresence>
+                  {iosNotification && (
+                    <motion.div
+                      initial={{ y: -45, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      exit={{ y: -45, opacity: 0 }}
+                      className="absolute top-12 left-3 right-3 z-50 bg-slate-900/95 border border-slate-700/80 rounded-2xl p-2.5 shadow-2xl backdrop-blur-md flex items-center gap-2.5 text-xs text-white"
+                    >
+                      <div className="h-7 w-7 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                        <CheckCircle2 className="h-4 w-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="font-bold text-[11px] block text-emerald-400">DineFlow OS Alert</span>
+                        <span className="text-[10px] text-slate-300 truncate block">{iosNotification}</span>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 {/* iOS Status Bar */}
                 <div className="h-10 pt-2 px-6 flex items-center justify-between text-white text-[11px] font-semibold shrink-0 z-30">
@@ -220,6 +360,18 @@ export function LandingCustomerJourney() {
                       <div className="h-full w-3.5 bg-emerald-400 rounded-[1.5px]" />
                     </div>
                   </div>
+                </div>
+
+                {/* Top PWA / Safari Loading Bar (21st.dev style) */}
+                <div className="h-[2.5px] w-full bg-slate-900 overflow-hidden relative z-40">
+                  {isScreenLoading && (
+                    <motion.div
+                      initial={{ x: "-100%" }}
+                      animate={{ x: "0%" }}
+                      transition={{ duration: 0.55, ease: "easeInOut" }}
+                      className="h-full w-full bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 shadow-[0_0_8px_#10b981]"
+                    />
+                  )}
                 </div>
 
                 {/* Screen Sub-Header / Location Info */}
@@ -264,6 +416,33 @@ export function LandingCustomerJourney() {
                 {/* Dynamic Screen Content Body (DineFlow Interactive App Experience) */}
                 <div className="flex-1 overflow-y-auto px-3.5 py-2.5 flex flex-col justify-between text-white text-xs relative z-10">
                   
+                  {/* Contextual Hospitality Micro-Loader Overlay */}
+                  <AnimatePresence>
+                    {isScreenLoading && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute inset-0 bg-slate-950/85 backdrop-blur-xs z-30 flex flex-col items-center justify-center p-5 text-center select-none"
+                      >
+                        <div className="relative w-14 h-14 flex items-center justify-center mb-3">
+                          <div className="absolute inset-0 rounded-full bg-emerald-500/15 animate-ping" />
+                          <div className="w-12 h-12 rounded-full border-2 border-emerald-500/20 border-t-emerald-400 animate-spin flex items-center justify-center">
+                            <UtensilsCrossed className="h-4 w-4 text-emerald-400" />
+                          </div>
+                        </div>
+                        <p className="text-xs font-bold text-white tracking-wide leading-snug">
+                          {loadingMessage}
+                        </p>
+                        <span className="text-[10px] text-emerald-400/90 font-mono mt-1 flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                          DineFlow OS • Fast Connect
+                        </span>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
                   {/* ==================== RESTAURANT JOURNEY SCREENS ==================== */}
                   {journeyType === "restaurant" ? (
                     <>
@@ -283,7 +462,7 @@ export function LandingCustomerJourney() {
                           {/* Interactive QR Stand Target */}
                           <div 
                             onClick={handleNextStep}
-                            className="relative my-auto mx-auto w-44 h-44 rounded-2xl bg-slate-900 border-2 border-emerald-500/40 p-3 flex flex-col items-center justify-center text-center cursor-pointer hover:border-emerald-400 hover:scale-[1.02] transition-all shadow-lg shadow-emerald-500/10 group/qr"
+                            className="relative my-auto mx-auto w-44 h-44 rounded-2xl bg-slate-900 border-2 border-emerald-500/40 p-3 flex flex-col items-center justify-center text-center cursor-pointer hover:border-emerald-400 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-emerald-500/10 group/qr"
                           >
                             {/* Scanning Laser Line */}
                             <div className="absolute inset-x-2 top-2 h-0.5 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_10px_#10b981] animate-pulse" />
@@ -318,34 +497,68 @@ export function LandingCustomerJourney() {
                       {/* STEP 2: Browse Menu */}
                       {activeStep === 1 && (
                         <div className="flex-1 flex flex-col justify-between py-1 space-y-2">
-                          {/* Search & Categories */}
+                          {/* Search & Interactive Category Tabs */}
                           <div className="space-y-2">
                             <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-[11px] text-slate-400">
                               <Search className="h-3.5 w-3.5" />
                               <span className="truncate">Search margherita, pasta...</span>
                             </div>
+                            
+                            {/* Clickable Category Filter Tabs */}
                             <div className="flex items-center gap-1 overflow-x-auto pb-0.5 scrollbar-none text-[10px]">
-                              <span className="px-2 py-0.5 rounded-full bg-emerald-500 text-slate-950 font-bold shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => setSelectedCategory("popular")}
+                                className={`px-2 py-0.5 rounded-full font-bold shrink-0 transition-colors cursor-pointer ${
+                                  selectedCategory === "popular"
+                                    ? "bg-emerald-500 text-slate-950 shadow-xs"
+                                    : "bg-slate-900 border border-slate-800 text-slate-300 hover:text-white"
+                                }`}
+                              >
                                 🔥 Popular
-                              </span>
-                              <span className="px-2 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-slate-300 shrink-0">
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setSelectedCategory("pizza")}
+                                className={`px-2 py-0.5 rounded-full font-bold shrink-0 transition-colors cursor-pointer ${
+                                  selectedCategory === "pizza"
+                                    ? "bg-emerald-500 text-slate-950 shadow-xs"
+                                    : "bg-slate-900 border border-slate-800 text-slate-300 hover:text-white"
+                                }`}
+                              >
                                 🍕 Pizza
-                              </span>
-                              <span className="px-2 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-slate-300 shrink-0">
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setSelectedCategory("pasta")}
+                                className={`px-2 py-0.5 rounded-full font-bold shrink-0 transition-colors cursor-pointer ${
+                                  selectedCategory === "pasta"
+                                    ? "bg-emerald-500 text-slate-950 shadow-xs"
+                                    : "bg-slate-900 border border-slate-800 text-slate-300 hover:text-white"
+                                }`}
+                              >
                                 🍝 Pasta
-                              </span>
-                              <span className="px-2 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-slate-300 shrink-0">
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setSelectedCategory("drinks")}
+                                className={`px-2 py-0.5 rounded-full font-bold shrink-0 transition-colors cursor-pointer ${
+                                  selectedCategory === "drinks"
+                                    ? "bg-emerald-500 text-slate-950 shadow-xs"
+                                    : "bg-slate-900 border border-slate-800 text-slate-300 hover:text-white"
+                                }`}
+                              >
                                 🍹 Drinks
-                              </span>
+                              </button>
                             </div>
                           </div>
 
-                          {/* Menu Cards */}
+                          {/* Dynamic Menu Cards Based on Selected Category */}
                           <div className="space-y-2 flex-1 my-1">
-                            {/* Item 1 */}
+                            {/* Dish 1: Margherita */}
                             <div 
                               onClick={handleNextStep}
-                              className="p-2.5 rounded-xl bg-slate-900/90 border border-emerald-500/30 hover:border-emerald-500/70 transition-all cursor-pointer flex gap-2.5 items-center group/item"
+                              className="p-2.5 rounded-xl bg-slate-900/90 border border-emerald-500/30 hover:border-emerald-500/70 active:scale-[0.99] transition-all cursor-pointer flex gap-2.5 items-center group/item"
                             >
                               <div className="h-14 w-14 rounded-lg bg-amber-500/10 border border-amber-500/20 flex flex-col items-center justify-center shrink-0">
                                 <span className="text-xl">🍕</span>
@@ -366,24 +579,42 @@ export function LandingCustomerJourney() {
                               </div>
                             </div>
 
-                            {/* Item 2 */}
+                            {/* Dish 2: Changes depending on Category */}
                             <div 
                               onClick={handleNextStep}
-                              className="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition-all cursor-pointer flex gap-2.5 items-center"
+                              className="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 active:scale-[0.99] transition-all cursor-pointer flex gap-2.5 items-center group/item2"
                             >
                               <div className="h-14 w-14 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex flex-col items-center justify-center shrink-0">
-                                <span className="text-xl">🍝</span>
-                                <span className="text-[8px] font-bold text-emerald-400">TRUFFLE</span>
+                                <span className="text-xl">
+                                  {selectedCategory === "drinks" ? "🍹" : selectedCategory === "pizza" ? "🧀" : "🍝"}
+                                </span>
+                                <span className="text-[8px] font-bold text-emerald-400">
+                                  {selectedCategory === "drinks" ? "SPRITZ" : selectedCategory === "pizza" ? "FOUR CHEESE" : "TRUFFLE"}
+                                </span>
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1.5">
                                   <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                                  <h5 className="font-bold text-xs text-white truncate">Wild Mushroom Risotto</h5>
+                                  <h5 className="font-bold text-xs text-white truncate">
+                                    {selectedCategory === "drinks" 
+                                      ? "Blood Orange Spritz"
+                                      : selectedCategory === "pizza"
+                                      ? "Quattro Formaggi"
+                                      : "Wild Mushroom Risotto"}
+                                  </h5>
                                 </div>
-                                <p className="text-[10px] text-slate-400 truncate">Arborio rice, parmesan</p>
+                                <p className="text-[10px] text-slate-400 truncate">
+                                  {selectedCategory === "drinks"
+                                    ? "Fresh citrus, sparkling tonic"
+                                    : selectedCategory === "pizza"
+                                    ? "Gorgonzola, parmesan, taleggio"
+                                    : "Arborio rice, porcini, parmesan"}
+                                </p>
                                 <div className="flex items-center justify-between mt-1">
-                                  <span className="font-mono font-bold text-slate-300 text-xs">₹680</span>
-                                  <span className="px-2 py-0.5 rounded-md bg-slate-800 text-slate-400 text-[10px] font-bold">
+                                  <span className="font-mono font-bold text-slate-300 text-xs">
+                                    {selectedCategory === "drinks" ? "₹280" : "₹680"}
+                                  </span>
+                                  <span className="px-2 py-0.5 rounded-md bg-slate-800 text-slate-400 text-[10px] font-bold group-hover/item2:bg-emerald-500 group-hover/item2:text-slate-950 transition-colors">
                                     + Add
                                   </span>
                                 </div>
@@ -405,7 +636,7 @@ export function LandingCustomerJourney() {
                         </div>
                       )}
 
-                      {/* STEP 3: Add to Cart (Customizer Sheet) */}
+                      {/* STEP 3: Add to Cart (Item Customizer) */}
                       {activeStep === 2 && (
                         <div className="flex-1 flex flex-col justify-between py-1 space-y-2">
                           <div className="space-y-1">
@@ -413,39 +644,85 @@ export function LandingCustomerJourney() {
                               Item Customizer
                             </span>
                             <h4 className="text-sm font-extrabold text-white">Wood-Fired Margherita</h4>
-                            <p className="text-[11px] text-slate-400">Customize toppings & kitchen instructions</p>
+                            <p className="text-[11px] text-slate-400">Select live modifiers & kitchen instructions</p>
                           </div>
 
-                          {/* Customizer Drawer Box */}
+                          {/* Customizer Drawer Box with Real Interactive Controls */}
                           <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 space-y-2.5 flex-1 my-1">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
-                              Add Modifiers
-                            </span>
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
+                                Interactive Toppings
+                              </span>
+                              <span className="text-[9px] text-emerald-400 font-medium">Click to toggle</span>
+                            </div>
                             
-                            <div className="flex items-center justify-between p-2 rounded-lg bg-slate-800/80 border border-emerald-500/30">
+                            {/* Interactive Modifier Checkbox 1 */}
+                            <div 
+                              onClick={() => setHasExtraCheese(!hasExtraCheese)}
+                              className={`flex items-center justify-between p-2 rounded-lg border transition-all cursor-pointer ${
+                                hasExtraCheese 
+                                  ? "bg-slate-800/90 border-emerald-500/40" 
+                                  : "bg-slate-900/40 border-slate-800 opacity-60"
+                              }`}
+                            >
                               <div className="flex items-center gap-2">
-                                <div className="w-4 h-4 rounded bg-emerald-500 flex items-center justify-center text-slate-950">
-                                  <Check className="h-3 w-3 stroke-[3]" />
+                                <div className={`w-4 h-4 rounded flex items-center justify-center transition-colors ${
+                                  hasExtraCheese ? "bg-emerald-500 text-slate-950" : "border border-slate-600"
+                                }`}>
+                                  {hasExtraCheese && <Check className="h-3 w-3 stroke-[3]" />}
                                 </div>
                                 <span className="text-[11px] font-medium text-white">Extra Bufala Mozzarella</span>
                               </div>
                               <span className="font-mono text-emerald-400 text-[11px] font-bold">+₹120</span>
                             </div>
 
-                            <div className="flex items-center justify-between p-2 rounded-lg bg-slate-800/50 border border-slate-700/60">
+                            {/* Interactive Modifier Checkbox 2 */}
+                            <div 
+                              onClick={() => setHasGarlicDip(!hasGarlicDip)}
+                              className={`flex items-center justify-between p-2 rounded-lg border transition-all cursor-pointer ${
+                                hasGarlicDip 
+                                  ? "bg-slate-800/90 border-emerald-500/40" 
+                                  : "bg-slate-900/40 border-slate-800 opacity-60"
+                              }`}
+                            >
                               <div className="flex items-center gap-2">
-                                <div className="w-4 h-4 rounded bg-emerald-500 flex items-center justify-center text-slate-950">
-                                  <Check className="h-3 w-3 stroke-[3]" />
+                                <div className={`w-4 h-4 rounded flex items-center justify-center transition-colors ${
+                                  hasGarlicDip ? "bg-emerald-500 text-slate-950" : "border border-slate-600"
+                                }`}>
+                                  {hasGarlicDip && <Check className="h-3 w-3 stroke-[3]" />}
                                 </div>
                                 <span className="text-[11px] font-medium text-white">Fresh Garlic Basil Dip</span>
                               </div>
                               <span className="font-mono text-emerald-400 text-[11px] font-bold">+₹60</span>
                             </div>
 
-                            <div className="pt-1">
-                              <span className="text-[10px] text-slate-400 block mb-1">Kitchen Note</span>
-                              <div className="p-1.5 rounded-lg bg-slate-950 border border-slate-800 text-[10px] text-emerald-400 font-mono italic">
-                                "Extra crispy crust, please!"
+                            {/* Interactive Quantity Stepper */}
+                            <div className="flex items-center justify-between pt-1">
+                              <span className="text-[10px] text-slate-400">Portions</span>
+                              <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 rounded-lg p-1">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (quantity > 1) setQuantity(quantity - 1);
+                                  }}
+                                  className="w-5 h-5 rounded flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-white cursor-pointer active:scale-95"
+                                >
+                                  <Minus className="h-3 w-3" />
+                                </button>
+                                <span className="font-mono font-bold text-xs text-white px-1">
+                                  {quantity}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (quantity < 9) setQuantity(quantity + 1);
+                                  }}
+                                  className="w-5 h-5 rounded flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-white cursor-pointer active:scale-95"
+                                >
+                                  <Plus className="h-3 w-3" />
+                                </button>
                               </div>
                             </div>
                           </div>
@@ -458,16 +735,16 @@ export function LandingCustomerJourney() {
                           >
                             <span className="flex items-center gap-1.5">
                               <ShoppingBag className="h-3.5 w-3.5" />
-                              <span>Add to Order (1 Item)</span>
+                              <span>Add to Order ({quantity} Item{quantity > 1 ? "s" : ""})</span>
                             </span>
                             <span className="font-extrabold flex items-center gap-1">
-                              ₹730 <ArrowRight className="h-3.5 w-3.5" />
+                              ₹{itemTotalPrice} <ArrowRight className="h-3.5 w-3.5" />
                             </span>
                           </button>
                         </div>
                       )}
 
-                      {/* STEP 4: Place Order */}
+                      {/* STEP 4: Place Order (Checkout Summary) */}
                       {activeStep === 3 && (
                         <div className="flex-1 flex flex-col justify-between py-1 space-y-2">
                           <div className="space-y-1">
@@ -478,15 +755,21 @@ export function LandingCustomerJourney() {
                             <p className="text-[11px] text-slate-400">Dispatched directly to Kitchen Display</p>
                           </div>
 
-                          {/* Order Billing Card */}
+                          {/* Order Billing Card with Live Calculations */}
                           <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 space-y-2 flex-1 my-1">
                             <div className="flex justify-between items-start text-[11px]">
                               <div>
-                                <span className="font-bold text-white">1x Margherita (Custom)</span>
-                                <p className="text-[9px] text-slate-400">Extra Mozzarella, Basil Dip</p>
+                                <span className="font-bold text-white">{quantity}x Margherita Pizza</span>
+                                <p className="text-[9px] text-slate-400">
+                                  {hasExtraCheese ? "Extra Bufala" : ""}
+                                  {hasExtraCheese && hasGarlicDip ? ", " : ""}
+                                  {hasGarlicDip ? "Garlic Dip" : ""}
+                                  {!hasExtraCheese && !hasGarlicDip ? "Standard Crust" : ""}
+                                </p>
                               </div>
-                              <span className="font-mono font-bold text-slate-200">₹730.00</span>
+                              <span className="font-mono font-bold text-slate-200">₹{itemTotalPrice.toFixed(2)}</span>
                             </div>
+                            
                             <div className="flex justify-between items-start text-[11px]">
                               <div>
                                 <span className="font-bold text-white">1x Wild Mushroom Risotto</span>
@@ -495,18 +778,61 @@ export function LandingCustomerJourney() {
                               <span className="font-mono font-bold text-slate-200">₹680.00</span>
                             </div>
 
-                            <div className="border-t border-slate-800 pt-2 space-y-1 text-[10px] text-slate-400">
+                            {/* Payment Method Selector */}
+                            <div className="pt-1.5 border-t border-slate-800">
+                              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wide block mb-1">
+                                Payment Method
+                              </span>
+                              <div className="grid grid-cols-3 gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => setPaymentMethod("upi")}
+                                  className={`py-1 px-1.5 rounded-md text-[9px] font-bold border transition-colors cursor-pointer text-center ${
+                                    paymentMethod === "upi"
+                                      ? "bg-emerald-500/20 border-emerald-500 text-emerald-400"
+                                      : "bg-slate-950 border-slate-800 text-slate-400"
+                                  }`}
+                                >
+                                  ⚡ UPI Fast
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setPaymentMethod("card")}
+                                  className={`py-1 px-1.5 rounded-md text-[9px] font-bold border transition-colors cursor-pointer text-center ${
+                                    paymentMethod === "card"
+                                      ? "bg-emerald-500/20 border-emerald-500 text-emerald-400"
+                                      : "bg-slate-950 border-slate-800 text-slate-400"
+                                  }`}
+                                >
+                                  💳 Card
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setPaymentMethod("cash")}
+                                  className={`py-1 px-1.5 rounded-md text-[9px] font-bold border transition-colors cursor-pointer text-center ${
+                                    paymentMethod === "cash"
+                                      ? "bg-emerald-500/20 border-emerald-500 text-emerald-400"
+                                      : "bg-slate-950 border-slate-800 text-slate-400"
+                                  }`}
+                                >
+                                  💵 Cash
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Subtotal & Taxes */}
+                            <div className="border-t border-slate-800 pt-1.5 space-y-0.5 text-[10px] text-slate-400">
                               <div className="flex justify-between">
                                 <span>Subtotal</span>
-                                <span>₹1,410.00</span>
+                                <span>₹{subtotalPrice.toFixed(2)}</span>
                               </div>
                               <div className="flex justify-between">
                                 <span>GST (5%)</span>
-                                <span>₹70.50</span>
+                                <span>₹{gstAmount.toFixed(2)}</span>
                               </div>
                               <div className="flex justify-between font-bold text-white text-xs pt-1 border-t border-slate-800">
                                 <span>Total Amount</span>
-                                <span className="text-emerald-400 font-mono">₹1,480.50</span>
+                                <span className="text-emerald-400 font-mono">₹{grandTotal.toFixed(2)}</span>
                               </div>
                             </div>
                           </div>
@@ -537,11 +863,13 @@ export function LandingCustomerJourney() {
                                 🔥 Cooking
                               </Badge>
                             </div>
-                            <p className="text-[11px] text-slate-400">Estimated Ready: ~6 mins</p>
+                            <p className="text-[11px] text-slate-400">
+                              Estimated Ready: ~{Math.floor(kdsSecondsRemaining / 60)}m {kdsSecondsRemaining % 60}s
+                            </p>
                           </div>
 
                           {/* Timeline Progress */}
-                          <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 space-y-3 flex-1 my-1">
+                          <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 space-y-2.5 flex-1 my-1">
                             <div className="space-y-1">
                               <div className="flex justify-between text-[10px] text-slate-400">
                                 <span>Station 2: Pizza Oven</span>
@@ -552,24 +880,34 @@ export function LandingCustomerJourney() {
                               </div>
                             </div>
 
-                            <div className="space-y-2 text-[11px]">
+                            <div className="space-y-1.5 text-[10px]">
                               <div className="flex items-center gap-2 text-emerald-400 font-medium">
-                                <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-                                <span>Order Received by Kitchen</span>
+                                <CheckCircle2 className="h-3 w-3 shrink-0" />
+                                <span>Order Received by Kitchen (19:42)</span>
                               </div>
                               <div className="flex items-center gap-2 text-emerald-400 font-medium">
-                                <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-                                <span>Dough Tossed & Hand-Stretched</span>
+                                <CheckCircle2 className="h-3 w-3 shrink-0" />
+                                <span>Dough Hand-Stretched & Sauced</span>
                               </div>
                               <div className="flex items-center gap-2 text-amber-400 font-semibold">
-                                <Clock className="h-3.5 w-3.5 shrink-0 animate-spin" />
+                                <Clock className="h-3 w-3 shrink-0 animate-spin" />
                                 <span>Baking in Wood-Fire Oven (450°C)</span>
                               </div>
                               <div className="flex items-center gap-2 text-slate-500">
-                                <div className="h-3.5 w-3.5 rounded-full border border-slate-700 shrink-0" />
-                                <span>Garnish & Table Service</span>
+                                <div className="h-3 w-3 rounded-full border border-slate-700 shrink-0" />
+                                <span>Plating & Table Service</span>
                               </div>
                             </div>
+
+                            {/* Interactive Ping Server Button */}
+                            <button
+                              type="button"
+                              onClick={() => triggerIosNotification("Server notified for Table 04 water / service request")}
+                              className="w-full py-1 px-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-[10px] font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer active:scale-95"
+                            >
+                              <Volume2 className="h-3 w-3 text-amber-400" />
+                              <span>Ping Floor Server (Table 04)</span>
+                            </button>
                           </div>
 
                           {/* Clickable Mobile CTA */}
@@ -614,12 +952,19 @@ export function LandingCustomerJourney() {
                                 Thank you for dining with us! Here is your GST Invoice:
                               </p>
                               <div className="font-mono text-emerald-400 font-bold">
-                                Inv: #DF-904 • ₹1,480.50 (Paid)
+                                Inv: #DF-904 • ₹{grandTotal.toFixed(2)} (Paid)
                               </div>
-                              <div className="flex items-center gap-1.5 text-slate-400 pt-1">
-                                <FileText className="h-3 w-3 text-emerald-400" />
-                                <span>tax-invoice-df904.pdf (48 KB)</span>
-                              </div>
+                              <button
+                                type="button"
+                                onClick={() => triggerIosNotification("tax-invoice-df904.pdf downloaded to Files")}
+                                className="w-full flex items-center justify-between text-slate-300 hover:text-white pt-1 bg-slate-800/60 p-1.5 rounded-md cursor-pointer transition-colors"
+                              >
+                                <span className="flex items-center gap-1.5 text-slate-400">
+                                  <FileText className="h-3 w-3 text-emerald-400" />
+                                  <span>tax-invoice-df904.pdf</span>
+                                </span>
+                                <span className="text-[9px] text-emerald-400 font-bold">Download</span>
+                              </button>
                             </div>
 
                             <div className="flex items-center justify-between text-[10px] text-emerald-300 font-medium px-1">
@@ -633,7 +978,7 @@ export function LandingCustomerJourney() {
                           {/* Clickable Mobile CTA */}
                           <button
                             type="button"
-                            onClick={handleNextStep}
+                            onClick={() => goToStep(0, "Resetting interactive customer journey…")}
                             className="w-full py-2.5 px-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-slate-950 font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25 transition-all cursor-pointer"
                           >
                             <RotateCcw className="h-3.5 w-3.5" />
@@ -661,7 +1006,7 @@ export function LandingCustomerJourney() {
 
                           <div 
                             onClick={handleNextStep}
-                            className="relative my-auto mx-auto w-44 h-44 rounded-2xl bg-slate-900 border-2 border-emerald-500/40 p-3 flex flex-col items-center justify-center text-center cursor-pointer hover:border-emerald-400 hover:scale-[1.02] transition-all shadow-lg shadow-emerald-500/10 group/hotel"
+                            className="relative my-auto mx-auto w-44 h-44 rounded-2xl bg-slate-900 border-2 border-emerald-500/40 p-3 flex flex-col items-center justify-center text-center cursor-pointer hover:border-emerald-400 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-emerald-500/10 group/hotel"
                           >
                             <div className="absolute inset-x-2 top-2 h-0.5 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_10px_#10b981] animate-pulse" />
                             <div className="p-2.5 rounded-xl bg-white text-slate-950 mb-1.5 group-hotel:scale-105 transition-transform">
@@ -698,7 +1043,7 @@ export function LandingCustomerJourney() {
                           <div className="space-y-2 flex-1 my-1">
                             <div 
                               onClick={handleNextStep}
-                              className="p-2.5 rounded-xl bg-slate-900/90 border border-emerald-500/30 hover:border-emerald-500/70 transition-all cursor-pointer flex gap-2.5 items-center group/item"
+                              className="p-2.5 rounded-xl bg-slate-900/90 border border-emerald-500/30 hover:border-emerald-500/70 active:scale-[0.99] transition-all cursor-pointer flex gap-2.5 items-center group/item"
                             >
                               <div className="h-14 w-14 rounded-lg bg-amber-500/10 border border-amber-500/20 flex flex-col items-center justify-center shrink-0">
                                 <span className="text-xl">🥪</span>
@@ -718,7 +1063,7 @@ export function LandingCustomerJourney() {
 
                             <div 
                               onClick={handleNextStep}
-                              className="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition-all cursor-pointer flex gap-2.5 items-center"
+                              className="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 active:scale-[0.99] transition-all cursor-pointer flex gap-2.5 items-center"
                             >
                               <div className="h-14 w-14 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex flex-col items-center justify-center shrink-0">
                                 <span className="text-xl">☕</span>
@@ -882,7 +1227,7 @@ export function LandingCustomerJourney() {
 
                           <button
                             type="button"
-                            onClick={handleNextStep}
+                            onClick={() => goToStep(0, "Resetting interactive customer journey…")}
                             className="w-full py-2.5 px-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-slate-950 font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25 transition-all cursor-pointer"
                           >
                             <RotateCcw className="h-3.5 w-3.5" />
