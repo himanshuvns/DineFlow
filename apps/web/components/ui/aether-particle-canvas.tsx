@@ -79,15 +79,15 @@ export function AetherParticleCanvas({
           false
         );
         if (isNearMouse) {
-          // Highlight particle near cursor: pure white in dark mode, vibrant deep emerald in light mode
+          // Highlight particle near cursor: pure white in dark mode, light bright emerald in light mode
           ctx.fillStyle = currentDark
             ? "rgba(255, 255, 255, 0.95)"
-            : "rgba(4, 120, 87, 1)";
+            : "rgba(16, 185, 129, 0.9)";
         } else {
-          // Ambient particle: signature DineFlow emerald
+          // Ambient particle: soft, lighter emerald glow
           ctx.fillStyle = currentDark
-            ? "rgba(16, 185, 129, 0.85)"
-            : "rgba(5, 150, 105, 0.85)";
+            ? "rgba(52, 211, 153, 0.75)"
+            : "rgba(16, 185, 129, 0.65)";
         }
         ctx.fill();
       }
@@ -170,13 +170,13 @@ export function AetherParticleCanvas({
           mouse.radius
         );
         if (currentDark) {
-          aura.addColorStop(0, "rgba(16, 185, 129, 0.16)");
-          aura.addColorStop(0.5, "rgba(20, 184, 166, 0.05)");
-          aura.addColorStop(1, "rgba(16, 185, 129, 0)");
+          aura.addColorStop(0, "rgba(52, 211, 153, 0.12)");
+          aura.addColorStop(0.5, "rgba(45, 212, 191, 0.04)");
+          aura.addColorStop(1, "rgba(52, 211, 153, 0)");
         } else {
-          aura.addColorStop(0, "rgba(16, 185, 129, 0.16)");
-          aura.addColorStop(0.5, "rgba(13, 148, 136, 0.05)");
-          aura.addColorStop(1, "rgba(16, 185, 129, 0)");
+          aura.addColorStop(0, "rgba(52, 211, 153, 0.12)");
+          aura.addColorStop(0.5, "rgba(45, 212, 191, 0.04)");
+          aura.addColorStop(1, "rgba(52, 211, 153, 0)");
         }
         ctx.beginPath();
         ctx.arc(mouse.x, mouse.y, mouse.radius, 0, Math.PI * 2);
@@ -205,17 +205,17 @@ export function AetherParticleCanvas({
             }
 
             if (isNearMouse) {
-              // Radiant white/emerald in dark mode, deep vibrant emerald-700 in light mode
+              // Radiant white in dark mode, light bright emerald in light mode
               ctx.strokeStyle = currentDark
-                ? `rgba(255, 255, 255, ${opacityValue * 0.85})`
-                : `rgba(4, 120, 87, ${opacityValue * 0.85})`;
-              ctx.lineWidth = 1.35;
+                ? `rgba(255, 255, 255, ${opacityValue * 0.8})`
+                : `rgba(16, 185, 129, ${opacityValue * 0.7})`;
+              ctx.lineWidth = 1.15;
             } else {
-              // Ambient constellation lines: teal base
+              // Ambient constellation lines: soft, delicate lighter teal threads
               ctx.strokeStyle = currentDark
-                ? `rgba(20, 184, 166, ${opacityValue * 0.4})`
-                : `rgba(13, 148, 136, ${opacityValue * 0.45})`;
-              ctx.lineWidth = 0.9;
+                ? `rgba(45, 212, 191, ${opacityValue * 0.3})`
+                : `rgba(20, 184, 166, ${opacityValue * 0.3})`;
+              ctx.lineWidth = 0.75;
             }
 
             ctx.beginPath();

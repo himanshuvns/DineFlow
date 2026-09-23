@@ -51,7 +51,7 @@ export function LandingInteractivePreview() {
   return (
     <section
       id="interactive-demo"
-      className="relative w-full py-16 sm:py-24 bg-transparent scroll-mt-32 overflow-hidden"
+      className="relative w-full py-16 sm:py-24 bg-white dark:bg-slate-900 border-y border-slate-200/80 dark:border-slate-800/80 shadow-xs scroll-mt-32 overflow-hidden"
     >
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
       {/* Section Header */}
