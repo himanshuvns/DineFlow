@@ -139,12 +139,20 @@ export function AetherParticleCanvas({
 
     const resizeCanvas = () => {
       if (!canvas) return;
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      const rect = canvas.parentElement?.getBoundingClientRect();
+      canvas.width = rect && rect.width > 0 ? Math.floor(rect.width) : window.innerWidth;
+      canvas.height = rect && rect.height > 0 ? Math.floor(rect.height) : window.innerHeight;
       init();
     };
 
     window.addEventListener("resize", resizeCanvas);
+    let resizeObserver: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined" && canvas.parentElement) {
+      resizeObserver = new ResizeObserver(() => {
+        resizeCanvas();
+      });
+      resizeObserver.observe(canvas.parentElement);
+    }
     resizeCanvas();
 
     const connect = () => {
@@ -206,8 +214,8 @@ export function AetherParticleCanvas({
               // Ambient constellation lines: teal base
               ctx.strokeStyle = currentDark
                 ? `rgba(20, 184, 166, ${opacityValue * 0.4})`
-                : `rgba(13, 148, 136, ${opacityValue * 0.35})`;
-              ctx.lineWidth = 0.8;
+                : `rgba(13, 148, 136, ${opacityValue * 0.45})`;
+              ctx.lineWidth = 0.9;
             }
 
             ctx.beginPath();
@@ -231,8 +239,10 @@ export function AetherParticleCanvas({
     };
 
     const handleMouseMove = (event: MouseEvent) => {
-      mouse.x = event.clientX;
-      mouse.y = event.clientY;
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      mouse.x = event.clientX - rect.left;
+      mouse.y = event.clientY - rect.top;
     };
 
     const handleMouseLeave = () => {
@@ -247,6 +257,7 @@ export function AetherParticleCanvas({
     animate();
 
     return () => {
+      if (resizeObserver) resizeObserver.disconnect();
       window.removeEventListener("resize", resizeCanvas);
       window.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseleave", handleMouseLeave);

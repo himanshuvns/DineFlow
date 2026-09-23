@@ -660,9 +660,9 @@
     "semantic_hash": ""
   },
   "apps/web/app/page.tsx": {
-    "mtime": 1790179244.495396,
-    "seen": 1790179573.261464,
-    "ast_hash": "7893ad30c4c03b019972c276640649bd",
+    "mtime": 1790179918.0722687,
+    "seen": 1790180087.164287,
+    "ast_hash": "8be27a960b352f479d1df64afc8f66c3",
     "semantic_hash": ""
   },
   "apps/web/app/pricing/page.tsx": {
@@ -2340,9 +2340,9 @@
     "semantic_hash": ""
   },
   "apps/web/components/ui/aether-particle-canvas.tsx": {
-    "mtime": 1790179216.413769,
-    "seen": 1790179573.2615092,
-    "ast_hash": "db44a5178fd313ea64cb33e67990e50d",
+    "mtime": 1790179995.3869927,
+    "seen": 1790180087.164332,
+    "ast_hash": "baa6b76db7a2ca1d884167631170c585",
     "semantic_hash": ""
   }
 }

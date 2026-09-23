@@ -18,7 +18,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-[#090D16] dark:text-slate-100 flex flex-col relative transition-colors duration-200 selection:bg-emerald-500/20 selection:text-emerald-600">
       {/* Global Fixed Parallax Background Canvas - Single Pristine Mouse Hovering Effect */}
-      <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden" aria-hidden="true">
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
         <AetherParticleCanvas className="w-full h-full" />
       </div>
 
@@ -26,7 +26,7 @@ export default function HomePage() {
       <LandingNavbar />
 
       {/* Main Content Flow */}
-      <main className="flex-1 flex flex-col items-center w-full">
+      <main className="flex-1 flex flex-col items-center w-full relative z-10">
         {/* 1. Hero with Layered Hospitality Mockup */}
         <LandingHero />
 
