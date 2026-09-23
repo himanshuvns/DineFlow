@@ -1878,9 +1878,9 @@
     "semantic_hash": ""
   },
   "apps/web/components/landing/landing-customer-journey.tsx": {
-    "mtime": 1790165381.721874,
-    "seen": 1790165434.077636,
-    "ast_hash": "1e0aa1330d7c067d6f21c752415a0446",
+    "mtime": 1790166719.2803445,
+    "seen": 1790166785.586431,
+    "ast_hash": "7788d4620b680d22531f2bec87c62f8a",
     "semantic_hash": ""
   },
   "apps/web/components/landing/landing-features.tsx": {
