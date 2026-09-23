@@ -92,6 +92,7 @@ export function LandingCustomerJourney() {
   const [kdsSecondsRemaining, setKdsSecondsRemaining] = React.useState(372); // ~6 mins
 
   const steps = journeyType === "restaurant" ? RESTAURANT_STEPS : HOTEL_STEPS;
+  const currentStep = steps[activeStep] || steps[0];
   const loadingMessages = journeyType === "restaurant" ? RESTAURANT_LOADING_MESSAGES : HOTEL_LOADING_MESSAGES;
 
   // Countdown timer for Step 5 (KDS)
@@ -207,8 +208,8 @@ export function LandingCustomerJourney() {
 
       {/* Interactive Journey Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-        {/* Left: Step Selection List */}
-        <div className="lg:col-span-6 xl:col-span-7 space-y-3">
+        {/* Left: Step Selection List (Desktop Only, hidden on mobile) */}
+        <div className="hidden lg:block lg:col-span-6 xl:col-span-7 space-y-3">
           {steps.map((step, idx) => {
             const StepIcon = step.icon;
             const isCurrent = activeStep === idx;
@@ -257,11 +258,47 @@ export function LandingCustomerJourney() {
         </div>
 
         {/* Right: Realistic iPhone Pro Device Frame */}
-        <div className="lg:col-span-6 xl:col-span-5 flex flex-col items-center justify-center">
+        <div className="w-full lg:col-span-6 xl:col-span-5 flex flex-col items-center justify-center">
+          
+          {/* Mobile-Only Step Navigation Bar (< lg) */}
+          <div className="lg:hidden mb-5 w-full max-w-[325px] space-y-2">
+            <div className="flex items-center justify-between px-1">
+              <span className="font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                Step 0{activeStep + 1} of 0{steps.length}
+              </span>
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                {currentStep.title}
+              </span>
+            </div>
+
+            {/* Horizontal Step Pills */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+              {steps.map((step, idx) => {
+                const isCurrent = activeStep === idx;
+                const StepIcon = step.icon;
+                return (
+                  <button
+                    key={step.title}
+                    type="button"
+                    onClick={() => goToStep(idx)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-all cursor-pointer ${
+                      isCurrent
+                        ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/25 ring-1 ring-emerald-500 scale-[1.02]"
+                        : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                    }`}
+                  >
+                    <StepIcon className="h-3.5 w-3.5 shrink-0" />
+                    <span>0{idx + 1}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Realistic iPhone Pro Hardware Mockup Container */}
           <div className="relative group">
             {/* Outer Titanium Chassis */}
-            <div className="relative w-[305px] sm:w-[325px] h-[635px] sm:h-[655px] rounded-[50px] p-[10px] bg-gradient-to-b from-slate-700 via-slate-800 to-slate-900 shadow-2xl shadow-black/60 border border-slate-600/60 ring-1 ring-white/15">
+            <div className="relative w-[295px] sm:w-[325px] h-[620px] sm:h-[655px] rounded-[48px] sm:rounded-[50px] p-[8px] sm:p-[10px] bg-gradient-to-b from-slate-700 via-slate-800 to-slate-900 shadow-2xl shadow-black/60 border border-slate-600/60 ring-1 ring-white/15">
               
               {/* Hardware Side Buttons */}
               <div className="absolute -left-[4.5px] top-[102px] w-[4px] h-[24px] bg-slate-700 rounded-l-sm border-y border-l border-slate-600 shadow-xs" />
