@@ -18,6 +18,7 @@ import {
   Sparkles,
   BrainCircuit,
   Video,
+  History,
 } from "lucide-react";
 import { useUIStore } from "@/lib/stores/ui-store";
 import { useAuthStore } from "@/lib/stores/auth-store";
@@ -39,6 +40,7 @@ export const NAV_SECTIONS = [
     title: "Hospitality & Guest",
     items: [
       { href: "/dashboard/rooms", label: "Rooms & Suites", icon: Hotel, badge: "Hotel" },
+      { href: "/dashboard/history", label: "Guest & Dining History", icon: History, badge: "Log" },
       { href: "/dashboard/whatsapp", label: "WhatsApp Connect", icon: MessageSquareShare, badge: "AI" },
       { href: "/dashboard/video", label: "Video Studio", icon: Video, badge: "Remotion" },
     ],

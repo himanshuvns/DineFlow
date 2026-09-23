@@ -60,9 +60,9 @@
     "semantic_hash": ""
   },
   "apps/api/internal/application/order/service.go": {
-    "mtime": 1789918695.0833905,
-    "seen": 1789919566.155966,
-    "ast_hash": "e0fdb4b4dfa9494a3e14e637a93ed3c6",
+    "mtime": 1790183118.22632,
+    "seen": 1790183578.912441,
+    "ast_hash": "d9e00600e5152701bd1eb77b117c9558",
     "semantic_hash": ""
   },
   "apps/api/internal/application/room/service.go": {
@@ -120,15 +120,15 @@
     "semantic_hash": "fdfc1cbc2034fa59a759312a645cacd0"
   },
   "apps/api/internal/domain/order/order.go": {
-    "mtime": 1789918493.8174329,
-    "seen": 1789919566.155981,
-    "ast_hash": "22feaea4366b7bffef281a370dd954b7",
+    "mtime": 1790183090.6855514,
+    "seen": 1790183578.9124548,
+    "ast_hash": "f9f2a02a851dac0293310aa4f3b1f77b",
     "semantic_hash": ""
   },
   "apps/api/internal/domain/order/order_test.go": {
-    "mtime": 1789918801.2493634,
-    "seen": 1789919566.155981,
-    "ast_hash": "b4a299ef6404cd17329bee790ecc850c",
+    "mtime": 1790183102.3247652,
+    "seen": 1790183578.912456,
+    "ast_hash": "6b7f2706a33a8fee9353d1bb9c16c5b8",
     "semantic_hash": ""
   },
   "apps/api/internal/domain/printer/printer.go": {
@@ -282,10 +282,10 @@
     "semantic_hash": ""
   },
   "apps/api/internal/interfaces/http/handlers/order.go": {
-    "mtime": 1789389642.6760132,
-    "seen": 1789625093.7009642,
-    "ast_hash": "b7de6d25dd0b03d9ba72cdbe01304bac",
-    "semantic_hash": "b7de6d25dd0b03d9ba72cdbe01304bac"
+    "mtime": 1790183124.3033662,
+    "seen": 1790183578.912477,
+    "ast_hash": "c62b33f11e59522a7cc8585fe6d8f105",
+    "semantic_hash": ""
   },
   "apps/api/internal/interfaces/http/handlers/room.go": {
     "mtime": 1789970171.0287557,
@@ -576,9 +576,9 @@
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/orders/page.tsx": {
-    "mtime": 1790113152.9348176,
-    "seen": 1790113296.695818,
-    "ast_hash": "268962d6e846195c0ab7d4382eb2086d",
+    "mtime": 1790183498.8948283,
+    "seen": 1790183578.912519,
+    "ast_hash": "b689951e4e08db730e19f32a244ad683",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/page.tsx": {
@@ -612,9 +612,9 @@
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/tables/page.tsx": {
-    "mtime": 1790113099.942969,
-    "seen": 1790113296.6958232,
-    "ast_hash": "11786b0d542412ec4446e4385765856c",
+    "mtime": 1790185645.1135457,
+    "seen": 1790185735.363748,
+    "ast_hash": "651245f0adb8b12af47d579206bb0403",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/whatsapp/page.tsx": {
@@ -996,9 +996,9 @@
     "semantic_hash": ""
   },
   "apps/web/lib/stores/tenant-data-store.ts": {
-    "mtime": 1789994701.1998718,
-    "seen": 1789994817.634374,
-    "ast_hash": "248d46e67e7df1c61571831932e111ed",
+    "mtime": 1790183270.8353963,
+    "seen": 1790183578.9125981,
+    "ast_hash": "96f18d7c0c9a0cca294db4881a6fd816",
     "semantic_hash": ""
   },
   "apps/web/lib/stores/ui-store.ts": {
@@ -2343,6 +2343,12 @@
     "mtime": 1790180394.6641462,
     "seen": 1790180451.243126,
     "ast_hash": "91c9e93c11e8a539d0c1c971123e67d8",
+    "semantic_hash": ""
+  },
+  "apps/web/components/orders/settle-bill-modal.tsx": {
+    "mtime": 1790185682.8744602,
+    "seen": 1790185735.363795,
+    "ast_hash": "aea1a34e8a20c6234d9ad57c1a1e2f77",
     "semantic_hash": ""
   }
 }

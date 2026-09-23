@@ -1988,3 +1988,37 @@ func (s *Service) RejectStayExtensionRequest(ctx context.Context, tenantID bson.
 	return &extReq, &r, &g, nil
 }
 
+// ListGuestHistory returns all hotel guest check-in records for a tenant, optionally filtered by date range.
+func (s *Service) ListGuestHistory(ctx context.Context, tenantID bson.ObjectID, startDate, endDate *time.Time) ([]domainroom.Guest, error) {
+	guestsColl := s.db.Collection("guests")
+
+	filter := bson.M{"tenantId": tenantID}
+
+	if startDate != nil || endDate != nil {
+		dateFilter := bson.M{}
+		if startDate != nil {
+			dateFilter["$gte"] = *startDate
+		}
+		if endDate != nil {
+			dateFilter["$lte"] = *endDate
+		}
+		filter["checkIn"] = dateFilter
+	}
+
+	opts := options.Find().SetSort(bson.D{{Key: "checkIn", Value: -1}})
+	cursor, err := guestsColl.Find(ctx, filter, opts)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var guests []domainroom.Guest
+	if err := cursor.All(ctx, &guests); err != nil {
+		return nil, err
+	}
+	if guests == nil {
+		guests = []domainroom.Guest{}
+	}
+	return guests, nil
+}
+

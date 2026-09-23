@@ -1282,5 +1282,41 @@ func (h *RoomHandler) RejectExtensionRequest(c *gin.Context) {
 	})
 }
 
+// ListGuestHistory returns past and active hotel guest check-in records for a tenant.
+func (h *RoomHandler) ListGuestHistory(c *gin.Context) {
+	tenantID := middleware.GetTenantID(c)
+	if tenantID == "" {
+		response.Unauthorized(c, "tenant context missing")
+		return
+	}
+	tOID, _ := bson.ObjectIDFromHex(tenantID)
+
+	var startDate, endDate *time.Time
+	if s := c.Query("startDate"); s != "" {
+		if t, err := time.Parse(time.RFC3339, s); err == nil {
+			startDate = &t
+		} else if t, err := time.Parse("2006-01-02", s); err == nil {
+			startDate = &t
+		}
+	}
+	if e := c.Query("endDate"); e != "" {
+		if t, err := time.Parse(time.RFC3339, e); err == nil {
+			endDate = &t
+		} else if t, err := time.Parse("2006-01-02", e); err == nil {
+			endOfDay := t.Add(23*time.Hour + 59*time.Minute + 59*time.Second)
+			endDate = &endOfDay
+		}
+	}
+
+	guests, err := h.roomService.ListGuestHistory(c.Request.Context(), tOID, startDate, endDate)
+	if err != nil {
+		response.InternalError(c)
+		return
+	}
+
+	response.OK(c, guests)
+}
+
+
 
 

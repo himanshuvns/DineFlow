@@ -203,6 +203,7 @@ func Setup(
 			{
 				roomGroup.GET("", roomHandler.List)
 				roomGroup.GET("/stats", roomHandler.GetStats)
+				roomGroup.GET("/guests/history", middleware.OwnerOrManager(), roomHandler.ListGuestHistory)
 				roomGroup.GET("/tasks", roomHandler.ListTasks)
 				roomGroup.PATCH("/tasks/:taskId", roomHandler.UpdateTask)
 				roomGroup.POST("", middleware.OwnerOrManager(), roomHandler.Create)

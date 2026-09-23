@@ -66,9 +66,9 @@
     "semantic_hash": ""
   },
   "apps/api/internal/application/room/service.go": {
-    "mtime": 1789970053.3781912,
-    "seen": 1789972021.9272928,
-    "ast_hash": "dd315db3f5a88dfe3dd3875f2b9df68a",
+    "mtime": 1790187717.217369,
+    "seen": 1790187927.220799,
+    "ast_hash": "7743c042431efbc757b54202c94f9699",
     "semantic_hash": ""
   },
   "apps/api/internal/application/staff/service.go": {
@@ -288,9 +288,9 @@
     "semantic_hash": ""
   },
   "apps/api/internal/interfaces/http/handlers/room.go": {
-    "mtime": 1789970171.0287557,
-    "seen": 1789972021.927331,
-    "ast_hash": "9887188a8cf17b982c9472d5202582ca",
+    "mtime": 1790187745.6131058,
+    "seen": 1790187927.220843,
+    "ast_hash": "ce01932b67128f89be830d7e8ac332cb",
     "semantic_hash": ""
   },
   "apps/api/internal/interfaces/http/handlers/staff.go": {
@@ -348,9 +348,9 @@
     "semantic_hash": ""
   },
   "apps/api/internal/interfaces/http/routes/routes.go": {
-    "mtime": 1789993187.7502034,
-    "seen": 1789993568.876977,
-    "ast_hash": "f69d258b79af09b7840c31825e491f5c",
+    "mtime": 1790187756.3814685,
+    "seen": 1790187927.220854,
+    "ast_hash": "784494725172cc4cd5c6af0829e4ed65",
     "semantic_hash": ""
   },
   "apps/api/package.json": {
@@ -768,9 +768,9 @@
     "semantic_hash": "1949d2c976b3ee6fd48edf96b9482e63"
   },
   "apps/web/components/dashboard/sidebar.tsx": {
-    "mtime": 1790082633.5692225,
-    "seen": 1790083858.350264,
-    "ast_hash": "52f2ecacc31b218e46f8764c58a9f08d",
+    "mtime": 1790187797.1374815,
+    "seen": 1790187927.220929,
+    "ast_hash": "a22fcf1db74fc8c70294bccfcd843cbb",
     "semantic_hash": ""
   },
   "apps/web/components/dashboard/topbar.tsx": {
@@ -1818,9 +1818,9 @@
     "semantic_hash": ""
   },
   "apps/web/lib/rbac/roles.ts": {
-    "mtime": 1790012184.951374,
-    "seen": 1790069809.277517,
-    "ast_hash": "72017984a4921563743b17906e3d498d",
+    "mtime": 1790187783.7244148,
+    "seen": 1790187927.220972,
+    "ast_hash": "ec969e393f99a66f21554686478dae8f",
     "semantic_hash": ""
   },
   "apps/web/lib/stores/platform-store.ts": {
@@ -2349,6 +2349,12 @@
     "mtime": 1790185682.8744602,
     "seen": 1790185735.363795,
     "ast_hash": "aea1a34e8a20c6234d9ad57c1a1e2f77",
+    "semantic_hash": ""
+  },
+  "apps/web/app/dashboard/history/page.tsx": {
+    "mtime": 1790187840.4747202,
+    "seen": 1790187927.220884,
+    "ast_hash": "b4ae253a3b83a9388c7d1ebd5046d06d",
     "semantic_hash": ""
   }
 }
