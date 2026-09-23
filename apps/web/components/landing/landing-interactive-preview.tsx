@@ -52,7 +52,7 @@ export function LandingInteractivePreview() {
   return (
     <section
       id="interactive-demo"
-      className="relative w-full py-16 sm:py-24 bg-white/85 dark:bg-slate-900/50 border-y border-slate-200/80 dark:border-slate-800/80 scroll-mt-24 overflow-hidden"
+      className="relative w-full py-16 sm:py-24 bg-white/85 dark:bg-slate-900/50 border-b border-slate-200/80 dark:border-slate-800/80 scroll-mt-32 overflow-hidden"
     >
       {/* Background Dot-Matrix Texture */}
       <div

@@ -51,7 +51,7 @@ export function LandingHero() {
   return (
     <section
       ref={heroRef}
-      className="relative w-full overflow-hidden min-h-[85vh] sm:min-h-[90vh] flex items-center justify-center"
+      className="relative w-full overflow-hidden min-h-[calc(100vh-4rem)] sm:min-h-[calc(100vh-5rem)] flex items-center justify-center pb-12 sm:pb-16"
     >
       {/* Interactive Cursor Dynamic Particle Canvas - Full Hero Section Coverage */}
       <div className="absolute inset-0 z-0 pointer-events-none">
@@ -321,6 +321,12 @@ export function LandingHero() {
         </div>
       </div>
       </div>
+
+      {/* Bottom seamless transition fade into Section 2 */}
+      <div 
+        aria-hidden="true" 
+        className="pointer-events-none absolute bottom-0 inset-x-0 h-20 bg-gradient-to-t from-slate-50 via-slate-50/50 to-transparent dark:from-[#090D16] dark:via-[#090D16]/50 z-10" 
+      />
     </section>
   );
 }

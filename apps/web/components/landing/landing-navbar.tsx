@@ -25,8 +25,9 @@ export function LandingNavbar() {
 
   React.useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+      setIsScrolled(window.scrollY > 15);
     };
+    handleScroll();
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -56,8 +57,8 @@ export function LandingNavbar() {
     <header
       className={`sticky top-0 z-50 w-full transition-all duration-200 ease-in-out ${
         isScrolled
-          ? "bg-white/90 dark:bg-[#090D16]/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 shadow-xs"
-          : "bg-transparent border-b border-transparent"
+          ? "bg-white/95 dark:bg-[#090D16]/95 backdrop-blur-xl border-b border-slate-200/80 dark:border-slate-800/80 shadow-xs shadow-slate-900/5 dark:shadow-black/20"
+          : "bg-white/80 dark:bg-[#090D16]/80 backdrop-blur-lg border-b border-slate-200/50 dark:border-slate-800/50"
       }`}
     >
       <div

@@ -36,9 +36,6 @@ export default function HomePage() {
         {/* 1. Hero with Interactive AetherFlow Cursor Particles & Layered Hospitality Mockup */}
         <LandingHero />
 
-        {/* Glowing Gradient Hairline Divider */}
-        <SectionDivider />
-
         {/* 2. Interactive Multi-Surface Dashboard ("Everything you need to run your hospitality business") */}
         <LandingInteractivePreview />
 
