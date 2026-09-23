@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Pricing, PricingPlan } from "@/components/ui/pricing";
+import { ParallaxFloatingOrb } from "@/components/landing/section-decorations";
 
 const CANONICAL_PLANS: PricingPlan[] = [
   {
@@ -100,14 +101,23 @@ const CANONICAL_PLANS: PricingPlan[] = [
 
 export function LandingPricing() {
   return (
-    <section id="pricing" className="scroll-mt-24 w-full">
-      <Pricing
-        plans={CANONICAL_PLANS}
-        title="Transparent pricing for every hospitality stage"
-        description="Start free, upgrade as your table capacity, hotel rooms, and kitchen volume expands. No hidden setup fees or order commissions."
-        currency="INR"
-        currencySymbol="₹"
-      />
+    <section
+      id="pricing"
+      className="relative w-full py-8 sm:py-12 bg-gradient-to-b from-slate-50 via-emerald-50/25 to-slate-50 dark:from-[#090D16] dark:via-emerald-950/20 dark:to-[#090D16] scroll-mt-24 overflow-hidden"
+    >
+      {/* Parallax Floating Ambient Emerald Glows */}
+      <ParallaxFloatingOrb color="emerald" speed={50} className="top-1/3 -left-48 w-96 h-96" />
+      <ParallaxFloatingOrb color="teal" speed={40} className="bottom-1/4 -right-48 w-96 h-96" />
+
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+        <Pricing
+          plans={CANONICAL_PLANS}
+          title="Transparent pricing for every hospitality stage"
+          description="Start free, upgrade as your table capacity, hotel rooms, and kitchen volume expands. No hidden setup fees or order commissions."
+          currency="INR"
+          currencySymbol="₹"
+        />
+      </div>
     </section>
   );
 }

@@ -31,6 +31,7 @@ import {
   Volume2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { ParallaxFloatingOrb, ParallaxFloat } from "@/components/landing/section-decorations";
 
 type JourneyType = "restaurant" | "hotel";
 
@@ -159,7 +160,19 @@ export function LandingCustomerJourney() {
   };
 
   return (
-    <section className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+    <section
+      id="customer-journey"
+      className="relative w-full py-16 sm:py-24 bg-white/85 dark:bg-slate-900/50 border-y border-slate-200/80 dark:border-slate-800/80 scroll-mt-24 overflow-hidden"
+    >
+      {/* Radial Spotlight Aura behind the phone stage */}
+      <div 
+        aria-hidden="true" 
+        className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_45%,rgba(16,185,129,0.07),rgba(255,255,255,0))] dark:bg-[radial-gradient(ellipse_80%_60%_at_50%_45%,rgba(16,185,129,0.14),rgba(9,13,22,0))] pointer-events-none" 
+      />
+      <ParallaxFloatingOrb color="emerald" speed={55} className="-top-24 right-1/4 w-80 h-80" />
+      <ParallaxFloatingOrb color="teal" speed={40} className="bottom-12 -left-20 w-80 h-80" />
+
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
       {/* Header */}
       <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16 space-y-3">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-semibold shadow-xs">
@@ -295,8 +308,8 @@ export function LandingCustomerJourney() {
             </div>
           </div>
 
-          {/* Realistic iPhone Pro Hardware Mockup Container (Theme-Aware Titanium Chassis) */}
-          <div className="relative group">
+          {/* Realistic iPhone Pro Hardware Mockup Container (Theme-Aware Titanium Chassis) with Parallax Float */}
+          <ParallaxFloat offset={16} className="relative group">
             {/* Outer Titanium Chassis: Silver/Natural Titanium in Light Mode, Space Black Titanium in Dark Mode */}
             <div className="relative w-[295px] sm:w-[325px] h-[620px] sm:h-[655px] rounded-[48px] sm:rounded-[50px] p-[8px] sm:p-[10px] bg-gradient-to-b from-slate-200 via-slate-100 to-slate-300 dark:from-slate-700 dark:via-slate-800 dark:to-slate-900 shadow-2xl shadow-slate-400/30 dark:shadow-black/70 border border-slate-300/80 dark:border-slate-600/60 ring-1 ring-slate-900/10 dark:ring-white/15 transition-colors">
               
@@ -1287,7 +1300,7 @@ export function LandingCustomerJourney() {
                 </div>
               </div>
             </div>
-          </div>
+          </ParallaxFloat>
 
           {/* Interactive Navigation Hint */}
           <div className="mt-4 text-center">
@@ -1297,6 +1310,7 @@ export function LandingCustomerJourney() {
             </p>
           </div>
         </div>
+      </div>
       </div>
     </section>
   );

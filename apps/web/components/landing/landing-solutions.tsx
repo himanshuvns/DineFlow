@@ -20,6 +20,7 @@ import { Card, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { ParallaxFloatingOrb } from "@/components/landing/section-decorations";
 
 interface SolutionItem {
   id: string;
@@ -155,7 +156,15 @@ export function LandingSolutions() {
   const Icon = currentSolution.icon;
 
   return (
-    <section id="solutions" className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full scroll-mt-24">
+    <section
+      id="solutions"
+      className="relative w-full py-16 sm:py-24 bg-gradient-to-b from-slate-50 via-amber-50/25 to-slate-50 dark:from-[#090D16] dark:via-amber-950/10 dark:to-[#090D16] scroll-mt-24 overflow-hidden"
+    >
+      {/* Parallax Floating Warm Hospitality Glows */}
+      <ParallaxFloatingOrb color="amber" speed={45} className="top-1/4 -right-40 w-96 h-96" />
+      <ParallaxFloatingOrb color="emerald" speed={35} className="bottom-10 -left-40 w-96 h-96" />
+
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
       {/* Section Header */}
       <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-14 space-y-3">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-semibold shadow-xs">
@@ -285,6 +294,7 @@ export function LandingSolutions() {
             </div>
           </div>
         </div>
+      </div>
       </div>
     </section>
   );

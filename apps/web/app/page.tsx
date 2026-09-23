@@ -11,6 +11,7 @@ import { LandingSolutions } from "@/components/landing/landing-solutions";
 import { LandingCustomerJourney } from "@/components/landing/landing-customer-journey";
 import { LandingPricing } from "@/components/landing/landing-pricing";
 import { LandingFooter } from "@/components/landing/landing-footer";
+import { SectionDivider } from "@/components/landing/section-decorations";
 import { PeekingChef } from "@/components/ui/peeking-chef";
 import { SpotlightCursor } from "@/components/ui/spotlight-cursor";
 
@@ -35,17 +36,32 @@ export default function HomePage() {
         {/* 1. Hero with Interactive AetherFlow Cursor Particles & Layered Hospitality Mockup */}
         <LandingHero />
 
+        {/* Glowing Gradient Hairline Divider */}
+        <SectionDivider />
+
         {/* 2. Interactive Multi-Surface Dashboard ("Everything you need to run your hospitality business") */}
         <LandingInteractivePreview />
+
+        {/* Glowing Gradient Hairline Divider */}
+        <SectionDivider />
 
         {/* 3. Tailored Hospitality Solutions (Fine Dining, Cafés, Hotels, Cloud Kitchens) */}
         <LandingSolutions />
 
+        {/* Glowing Gradient Hairline Divider */}
+        <SectionDivider />
+
         {/* 4. The Modern Customer Journey (Dine-in Table QR vs. Hotel In-Room Dining) */}
         <LandingCustomerJourney />
 
+        {/* Glowing Gradient Hairline Divider */}
+        <SectionDivider />
+
         {/* 5. Transparent Pricing with Animated NumberFlow & Confetti Poppers */}
         <LandingPricing />
+
+        {/* Glowing Gradient Hairline Divider */}
+        <SectionDivider />
 
         {/* 6. Pre-Footer Hospitality Conversion Banner with Interactive Peeking Chef */}
         <section className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full relative">

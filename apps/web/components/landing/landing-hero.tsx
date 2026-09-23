@@ -25,10 +25,34 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import AetherFlowHero from "@/components/ui/aether-flow-hero";
+import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
 
 export function LandingHero() {
+  const heroRef = React.useRef<HTMLElement>(null);
+  const shouldReduceMotion = useReducedMotion();
+
+  const { scrollYProgress } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"],
+  });
+
+  const mockupY = useTransform(
+    scrollYProgress,
+    [0, 1],
+    shouldReduceMotion ? [0, 0] : [0, 45]
+  );
+
+  const floatingPillY = useTransform(
+    scrollYProgress,
+    [0, 1],
+    shouldReduceMotion ? [0, 0] : [0, -30]
+  );
+
   return (
-    <section className="relative w-full overflow-hidden min-h-[85vh] sm:min-h-[90vh] flex items-center justify-center">
+    <section
+      ref={heroRef}
+      className="relative w-full overflow-hidden min-h-[85vh] sm:min-h-[90vh] flex items-center justify-center"
+    >
       {/* Interactive Cursor Dynamic Particle Canvas - Full Hero Section Coverage */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         <AetherFlowHero
@@ -126,8 +150,11 @@ export function LandingHero() {
           {/* Ambient Glows */}
           <div className="absolute -inset-2 bg-gradient-to-tr from-emerald-500/20 via-amber-500/10 to-teal-500/20 rounded-3xl blur-2xl pointer-events-none -z-10" />
 
-          {/* Main Desktop Dashboard Preview */}
-          <div className="w-full max-w-xl rounded-2xl border border-slate-200/80 dark:border-slate-800/90 bg-white/90 dark:bg-[#0B0F19]/90 backdrop-blur-xl shadow-2xl shadow-slate-900/10 dark:shadow-black/60 overflow-hidden">
+          {/* Main Desktop Dashboard Preview with Smooth Parallax Depth */}
+          <motion.div
+            style={{ y: mockupY }}
+            className="w-full max-w-xl rounded-2xl border border-slate-200/80 dark:border-slate-800/90 bg-white/90 dark:bg-[#0B0F19]/90 backdrop-blur-xl shadow-2xl shadow-slate-900/10 dark:shadow-black/60 overflow-hidden"
+          >
             {/* Window Topbar */}
             <div className="px-4 py-3 border-b border-slate-200/70 dark:border-slate-800/70 bg-slate-50/80 dark:bg-slate-900/60 flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
@@ -228,7 +255,7 @@ export function LandingHero() {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Layered Mobile Customer QR Ordering Phone Mockup — safely positioned without right overflow */}
           <div className="absolute -bottom-6 sm:-bottom-8 right-0 sm:right-2 lg:-right-2 xl:-right-4 w-48 sm:w-56 lg:w-60 rounded-3xl border-4 border-slate-800 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl shadow-black/40 overflow-hidden transform rotate-1 sm:rotate-2 hover:rotate-0 transition-transform duration-300 hidden sm:block">
@@ -275,16 +302,22 @@ export function LandingHero() {
             </div>
           </div>
 
-          {/* Floating Trust Pills */}
-          <div className="absolute -top-4 -left-4 sm:left-2 bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 rounded-full px-3.5 py-1.5 shadow-lg flex items-center gap-2 text-xs font-semibold text-slate-800 dark:text-slate-200">
+          {/* Floating Trust Pills with Counter-Parallax Motion */}
+          <motion.div
+            style={{ y: floatingPillY }}
+            className="absolute -top-4 -left-4 sm:left-2 bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 rounded-full px-3.5 py-1.5 shadow-lg flex items-center gap-2 text-xs font-semibold text-slate-800 dark:text-slate-200"
+          >
             <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping shrink-0" />
             <span>⚡ Instant QR • Zero App Install</span>
-          </div>
+          </motion.div>
 
-          <div className="absolute -bottom-4 left-4 bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 rounded-full px-3.5 py-1.5 shadow-lg flex items-center gap-2 text-xs font-semibold text-slate-800 dark:text-slate-200 hidden sm:flex">
+          <motion.div
+            style={{ y: floatingPillY }}
+            className="absolute -bottom-4 left-4 bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 rounded-full px-3.5 py-1.5 shadow-lg flex items-center gap-2 text-xs font-semibold text-slate-800 dark:text-slate-200 hidden sm:flex"
+          >
             <MessageSquare className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
             <span>Instant WhatsApp Receipts</span>
-          </div>
+          </motion.div>
         </div>
       </div>
       </div>
