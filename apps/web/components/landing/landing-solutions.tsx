@@ -21,7 +21,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ParallaxFloatingOrb } from "@/components/landing/section-decorations";
-import { AetherParticleCanvas } from "@/components/ui/aether-particle-canvas";
 
 interface SolutionItem {
   id: string;
@@ -159,18 +158,8 @@ export function LandingSolutions() {
   return (
     <section
       id="solutions"
-      className="relative w-full pt-24 pb-20 sm:pt-28 sm:pb-24 bg-gradient-to-b from-slate-50 via-amber-50/25 to-slate-50 dark:from-[#090D16] dark:via-amber-950/10 dark:to-[#090D16] scroll-mt-32 overflow-hidden"
+      className="relative w-full pt-24 pb-20 sm:pt-28 sm:pb-24 bg-slate-50/60 dark:bg-[#090D16]/60 backdrop-blur-md scroll-mt-32 overflow-hidden"
     >
-      {/* Interactive Cursor Dynamic Particle Canvas - Warm Amber & Emerald Constellations */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        <AetherParticleCanvas
-          particleColor="rgba(245, 158, 11, 0.85)"
-          lineColor="rgba(16, 185, 129, "
-          cursorAuraColor="rgba(245, 158, 11, "
-          particleDensityDivider={10500}
-        />
-      </div>
-
       {/* Parallax Floating Warm Hospitality Glows */}
       <ParallaxFloatingOrb color="amber" speed={45} className="top-1/4 -right-40 w-96 h-96" />
       <ParallaxFloatingOrb color="emerald" speed={35} className="bottom-10 -left-40 w-96 h-96" />

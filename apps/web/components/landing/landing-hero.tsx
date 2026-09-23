@@ -24,7 +24,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import AetherFlowHero from "@/components/ui/aether-flow-hero";
 import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
 
 export function LandingHero() {
@@ -53,15 +52,6 @@ export function LandingHero() {
       ref={heroRef}
       className="relative w-full overflow-hidden min-h-[calc(100vh-4rem)] sm:min-h-[calc(100vh-5rem)] flex items-center justify-center pb-12 sm:pb-16"
     >
-      {/* Interactive Cursor Dynamic Particle Canvas - Full Hero Section Coverage */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        <AetherFlowHero
-          showOverlayContent={false}
-          className="h-full w-full"
-          particleColor="rgba(16, 185, 129, 0.85)"
-          lineColor="rgba(20, 184, 166, 0.5)"
-        />
-      </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full pt-8 pb-20 sm:pt-12 sm:pb-28">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center w-full">

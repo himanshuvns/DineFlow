@@ -162,7 +162,7 @@ export function LandingCustomerJourney() {
   return (
     <section
       id="customer-journey"
-      className="relative w-full pt-20 pb-16 sm:pt-24 sm:pb-24 bg-white/85 dark:bg-slate-900/50 border-y border-slate-200/80 dark:border-slate-800/80 scroll-mt-32 overflow-hidden"
+      className="relative w-full pt-20 pb-16 sm:pt-24 sm:pb-24 bg-white/70 dark:bg-slate-900/50 backdrop-blur-md border-y border-slate-200/80 dark:border-slate-800/80 scroll-mt-32 overflow-hidden"
     >
       {/* Radial Spotlight Aura behind the phone stage */}
       <div 

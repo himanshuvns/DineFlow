@@ -233,23 +233,8 @@ export function AetherParticleCanvas({
     };
 
     const handleMouseMove = (event: MouseEvent) => {
-      if (!canvas) return;
-      const rect = canvas.getBoundingClientRect();
-      const clientX = event.clientX;
-      const clientY = event.clientY;
-
-      if (
-        clientX >= rect.left &&
-        clientX <= rect.right &&
-        clientY >= rect.top &&
-        clientY <= rect.bottom
-      ) {
-        mouse.x = clientX - rect.left;
-        mouse.y = clientY - rect.top;
-      } else {
-        mouse.x = null;
-        mouse.y = null;
-      }
+      mouse.x = event.clientX;
+      mouse.y = event.clientY;
     };
 
     const handleMouseLeave = () => {
@@ -257,7 +242,7 @@ export function AetherParticleCanvas({
       mouse.y = null;
     };
 
-    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mousemove", handleMouseMove, { passive: true });
     document.addEventListener("mouseleave", handleMouseLeave);
 
     init();

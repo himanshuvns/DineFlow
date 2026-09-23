@@ -3,7 +3,6 @@
 import * as React from "react";
 import { Pricing, PricingPlan } from "@/components/ui/pricing";
 import { ParallaxFloatingOrb } from "@/components/landing/section-decorations";
-import { AetherParticleCanvas } from "@/components/ui/aether-particle-canvas";
 
 const CANONICAL_PLANS: PricingPlan[] = [
   {
@@ -104,18 +103,8 @@ export function LandingPricing() {
   return (
     <section
       id="pricing"
-      className="relative w-full py-12 sm:py-16 bg-gradient-to-b from-slate-50 via-emerald-50/25 to-slate-50 dark:from-[#090D16] dark:via-emerald-950/20 dark:to-[#090D16] scroll-mt-32 overflow-hidden"
+      className="relative w-full py-12 sm:py-16 bg-emerald-50/15 dark:bg-[#090D16]/60 backdrop-blur-md scroll-mt-32 overflow-hidden"
     >
-      {/* Interactive Cursor Dynamic Particle Canvas - Emerald & Teal Constellations */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        <AetherParticleCanvas
-          particleColor="rgba(16, 185, 129, 0.85)"
-          lineColor="rgba(20, 184, 166, "
-          cursorAuraColor="rgba(16, 185, 129, "
-          particleDensityDivider={11000}
-        />
-      </div>
-
       {/* Parallax Floating Ambient Emerald Glows */}
       <ParallaxFloatingOrb color="emerald" speed={50} className="top-1/3 -left-48 w-96 h-96" />
       <ParallaxFloatingOrb color="teal" speed={40} className="bottom-1/4 -right-48 w-96 h-96" />
