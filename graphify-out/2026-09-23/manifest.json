@@ -540,9 +540,9 @@
     "semantic_hash": "3c92067a8c7d7dd12c948a85043b21e1"
   },
   "apps/web/app/dashboard/analytics/page.tsx": {
-    "mtime": 1790083578.4179523,
-    "seen": 1790083858.350225,
-    "ast_hash": "61fc04ae202dc8fa20c007230f8cc2cc",
+    "mtime": 1790113231.478599,
+    "seen": 1790113296.6958132,
+    "ast_hash": "96dde2e5373fcc06eca65ca5138c2cd7",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/error.tsx": {
@@ -576,9 +576,9 @@
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/orders/page.tsx": {
-    "mtime": 1790082898.0717053,
-    "seen": 1790083858.350229,
-    "ast_hash": "07a3759df16ec9ed83ee863781993e96",
+    "mtime": 1790113152.9348176,
+    "seen": 1790113296.695818,
+    "ast_hash": "268962d6e846195c0ab7d4382eb2086d",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/page.tsx": {
@@ -594,9 +594,9 @@
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/rooms/page.tsx": {
-    "mtime": 1790083114.8034775,
-    "seen": 1790083858.350231,
-    "ast_hash": "0f99ee630c58b0cb3a200031ecd906d3",
+    "mtime": 1790113125.9919183,
+    "seen": 1790113296.69582,
+    "ast_hash": "95ab0632b84417c81a6b2d702c12630d",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/settings/page.tsx": {
@@ -606,21 +606,21 @@
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/staff/page.tsx": {
-    "mtime": 1790083315.9632645,
-    "seen": 1790083858.3502321,
-    "ast_hash": "d1cc15aba5e100398d45b466f374ac70",
+    "mtime": 1790113209.7895396,
+    "seen": 1790113296.695822,
+    "ast_hash": "a8d1b1240e7cc8c15bbb006ea9d67295",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/tables/page.tsx": {
-    "mtime": 1790082989.9620156,
-    "seen": 1790083858.350233,
-    "ast_hash": "1404a45f88c0bda847c957cbb5b7ed81",
+    "mtime": 1790113099.942969,
+    "seen": 1790113296.6958232,
+    "ast_hash": "11786b0d542412ec4446e4385765856c",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/whatsapp/page.tsx": {
-    "mtime": 1790084385.1813118,
-    "seen": 1790084439.2250612,
-    "ast_hash": "de362d371e81eb0eb28bead9fe102a28",
+    "mtime": 1790113182.6012752,
+    "seen": 1790113296.695824,
+    "ast_hash": "a26015b4a9e1d7e64f4bec0020e93a6d",
     "semantic_hash": ""
   },
   "apps/web/app/demo/page.tsx": {
