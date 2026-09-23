@@ -1051,15 +1051,17 @@ export default function TablesManagementPage() {
       )}
 
       {/* Reception / Manager Bill Settlement Modal */}
-      <SettleBillModal
-        isOpen={settleOrderModal.isOpen}
-        onClose={() => setSettleOrderModal({ isOpen: false, order: null, table: null })}
-        order={settleOrderModal.order}
-        table={settleOrderModal.table}
-        onSuccess={() => {
-          fetchTables?.();
-        }}
-      />
+      {settleOrderModal.isOpen && settleOrderModal.order && (
+        <SettleBillModal
+          isOpen={settleOrderModal.isOpen}
+          onClose={() => setSettleOrderModal({ isOpen: false, order: null, table: null })}
+          order={settleOrderModal.order}
+          table={settleOrderModal.table}
+          onSuccess={() => {
+            fetchTables?.();
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -75,25 +75,23 @@ export function SettleBillModal({
     }
   }, [order]);
 
-  if (!order) return null;
+  if (!isOpen || !order) return null;
 
   const totalAmount = order.total || 0;
   const tenderedNum = parseFloat(cashTendered) || 0;
   const changeDue = Math.max(0, tenderedNum - totalAmount);
   const shortfall = Math.max(0, totalAmount - tenderedNum);
 
-  // Quick Cash denomination suggestions
-  const quickCashOptions = React.useMemo(() => {
-    const list = [totalAmount];
-    const steps = [100, 200, 500, 1000, 2000];
-    for (const step of steps) {
-      const nextRound = Math.ceil(totalAmount / step) * step;
-      if (nextRound > totalAmount && !list.includes(nextRound)) {
-        list.push(nextRound);
-      }
+  // Quick Cash denomination suggestions (pure calculation, zero extra hooks)
+  const quickCashList = [totalAmount];
+  const denominationSteps = [100, 200, 500, 1000, 2000];
+  for (const step of denominationSteps) {
+    const nextRound = Math.ceil(totalAmount / step) * step;
+    if (nextRound > totalAmount && !quickCashList.includes(nextRound)) {
+      quickCashList.push(nextRound);
     }
-    return list.slice(0, 4);
-  }, [totalAmount]);
+  }
+  const quickCashOptions = quickCashList.slice(0, 4);
 
   const handleSettle = async () => {
     if (isSettling) return;
