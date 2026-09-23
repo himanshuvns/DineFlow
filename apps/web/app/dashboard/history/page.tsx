@@ -22,6 +22,10 @@ import {
   Filter,
   FileSpreadsheet,
   Check,
+  Zap,
+  Radio,
+  Activity,
+  ChevronDown,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,8 +36,17 @@ import { useToast } from "@/components/ui/toast";
 import { apiClient } from "@/lib/api";
 import { useTenantData, KdsOrder } from "@/lib/stores/tenant-data-store";
 import { useAuthStore } from "@/lib/stores/auth-store";
+import { useNotificationStore } from "@/lib/stores/notification-store";
 import { cn, formatCurrency } from "@/lib/utils";
 import NumberFlow from "@number-flow/react";
+import {
+  triggerDiningBillSettled,
+  triggerHotelGuestCheckedIn,
+  triggerHotelGuestCheckedOut,
+  getStoredHotelGuests,
+  getStoredSettledOrders,
+  HistorySyncEvent,
+} from "@/lib/realtime/history-events";
 
 interface HotelGuestRecord {
   id: string;
@@ -51,6 +64,7 @@ interface HotelGuestRecord {
   idProofType?: string;
   nationality?: string;
   address?: string;
+  isLive?: boolean;
 }
 
 interface DiningRecord {
@@ -65,6 +79,7 @@ interface DiningRecord {
   items: Array<{ name: string; qty: number }>;
   createdAt: string;
   roomNumber?: string;
+  isLive?: boolean;
 }
 
 type DatePreset = "today" | "yesterday" | "7d" | "30d" | "custom";
@@ -81,6 +96,12 @@ export default function GuestDiningHistoryPage() {
   const [searchQuery, setSearchQuery] = React.useState<string>("");
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = React.useState<boolean>(false);
+
+  // Real-time synchronization state
+  const [highlightedId, setHighlightedId] = React.useState<string | null>(null);
+  const [liveEventCount, setLiveEventCount] = React.useState<number>(0);
+  const [lastLiveMessage, setLastLiveMessage] = React.useState<string | null>(null);
+  const [showSimulateMenu, setShowSimulateMenu] = React.useState<boolean>(false);
 
   // Raw data collections
   const [hotelGuests, setHotelGuests] = React.useState<HotelGuestRecord[]>([]);
@@ -150,6 +171,25 @@ export default function GuestDiningHistoryPage() {
           nationality: g.nationality || "Indian",
           address: g.address || "Bengaluru, Karnataka",
         }));
+      }
+
+      // Merge persisted real-time guests from localStorage (from rooms dashboard check-ins)
+      const storedGuests = getStoredHotelGuests(tenantSlug || "default");
+      if (storedGuests.length > 0) {
+        storedGuests.forEach((sg) => {
+          const cleanId = String(sg.id);
+          const existingIdx = loadedGuests.findIndex(
+            (lg) => lg.id === cleanId || (lg.roomNumber === sg.roomNumber && lg.name === sg.name)
+          );
+          if (existingIdx >= 0) {
+            loadedGuests[existingIdx] = { ...loadedGuests[existingIdx], ...sg };
+          } else {
+            loadedGuests.unshift({
+              ...sg,
+              folioBalance: sg.folioBalance || 0,
+            });
+          }
+        });
       }
 
       // If backend has no past guests or in demo mode, supply rich realistic multi-day records
@@ -319,24 +359,55 @@ export default function GuestDiningHistoryPage() {
         }));
       }
 
+      // Merge persisted real-time settled orders from localStorage
+      const storedSettled = getStoredSettledOrders(tenantSlug || "default");
+      if (storedSettled.length > 0) {
+        storedSettled.forEach((so) => {
+          const cleanId = String(so.id).replace(/^#+/, "");
+          const existingIdx = loadedOrders.findIndex((lo) => lo.id === cleanId);
+          const formatted: DiningRecord = {
+            id: cleanId,
+            table: so.table || "Dine-in",
+            customerName: so.customerName || "Dine-in Customer",
+            customerPhone: so.customerPhone || "+91 99000 11222",
+            destination: so.destination || "dine_in",
+            status: "paid",
+            billingMethod: so.billingMethod || "UPI / QR",
+            total: so.total,
+            items: so.items || [],
+            createdAt: so.createdAt || new Date().toISOString(),
+            roomNumber: so.roomNumber,
+          };
+          if (existingIdx >= 0) {
+            loadedOrders[existingIdx] = { ...loadedOrders[existingIdx], ...formatted };
+          } else {
+            loadedOrders.unshift(formatted);
+          }
+        });
+      }
+
       // Merge with store orders if present
       if (storeOrders.length > 0) {
         storeOrders.forEach((so) => {
           const cleanId = String(so.id).replace(/^#+/, "");
-          if (!loadedOrders.some((lo) => lo.id === cleanId)) {
-            loadedOrders.unshift({
-              id: cleanId,
-              table: so.table,
-              customerName: so.customerName || "Dine-in Customer",
-              customerPhone: so.customerPhone || "+91 99000 11222",
-              destination: so.destination,
-              status: so.status,
-              billingMethod: so.billingMethod || "UPI / QR",
-              total: so.total,
-              items: so.items.map((it) => ({ name: it.name, qty: it.qty })),
-              createdAt: so.createdAt || new Date().toISOString(),
-              roomNumber: so.roomNumber,
-            });
+          const existingIdx = loadedOrders.findIndex((lo) => lo.id === cleanId);
+          const formatted: DiningRecord = {
+            id: cleanId,
+            table: so.table,
+            customerName: so.customerName || "Dine-in Customer",
+            customerPhone: so.customerPhone || "+91 99000 11222",
+            destination: so.destination,
+            status: so.status,
+            billingMethod: so.billingMethod || (so.status === "paid" ? "UPI / QR" : undefined),
+            total: so.total,
+            items: so.items.map((it) => ({ name: it.name, qty: it.qty })),
+            createdAt: so.time ? new Date().toISOString() : new Date().toISOString(),
+            roomNumber: so.roomNumber,
+          };
+          if (existingIdx >= 0) {
+            loadedOrders[existingIdx] = { ...loadedOrders[existingIdx], ...formatted };
+          } else {
+            loadedOrders.unshift(formatted);
           }
         });
       }
@@ -458,61 +529,19 @@ export default function GuestDiningHistoryPage() {
             billingMethod: "Card (POS)",
             total: 3200,
             items: [
-              { name: "Wood-Fired Pizza Quattro", qty: 2 },
-              { name: "Tiramisu Gelato", qty: 2 },
-              { name: "Craft Kombucha", qty: 2 },
+              { name: "Tandoori Jheenga", qty: 2 },
+              { name: "Butter Naan Basket", qty: 3 },
+              { name: "Royal Mango Lassi", qty: 2 },
             ],
             createdAt: new Date(day2Ago.getFullYear(), day2Ago.getMonth(), day2Ago.getDate(), 21, 10).toISOString(),
           },
-          {
-            id: "1045",
-            table: "Table 04",
-            customerName: "Neha Sharma",
-            customerPhone: "+91 98199 88776",
-            destination: "dine_in",
-            status: "paid",
-            billingMethod: "UPI / QR",
-            total: 2450,
-            items: [
-              { name: "Paneer Tikka Platter", qty: 2 },
-              { name: "Garlic Butter Naan", qty: 4 },
-              { name: "Dal Makhani", qty: 1 },
-            ],
-            createdAt: new Date(day7Ago.getFullYear(), day7Ago.getMonth(), day7Ago.getDate(), 20, 0).toISOString(),
-          },
-          {
-            id: "1012",
-            table: "Table 01",
-            customerName: "Tanvi Agarwal",
-            customerPhone: "+91 98222 33445",
-            destination: "dine_in",
-            status: "paid",
-            billingMethod: "Cash",
-            total: 1850,
-            items: [
-              { name: "Artisanal Dosa Tasting", qty: 2 },
-              { name: "Filter Kaapi", qty: 3 },
-            ],
-            createdAt: new Date(day14Ago.getFullYear(), day14Ago.getMonth(), day14Ago.getDate(), 11, 45).toISOString(),
-          },
-          {
-            id: "978",
-            table: "Table 03",
-            customerName: "Kunal Bansal",
-            customerPhone: "+91 98101 22334",
-            destination: "dine_in",
-            status: "paid",
-            billingMethod: "Card (POS)",
-            total: 4100,
-            items: [
-              { name: "Chef's Family Feast", qty: 1 },
-              { name: "Beverage Pitcher", qty: 1 },
-            ],
-            createdAt: new Date(day26Ago.getFullYear(), day26Ago.getMonth(), day26Ago.getDate(), 19, 45).toISOString(),
-          },
         ];
 
-        loadedOrders = [...loadedOrders, ...demoDining];
+        demoDining.forEach((dd) => {
+          if (!loadedOrders.some((lo) => lo.id === dd.id)) {
+            loadedOrders.push(dd);
+          }
+        });
       }
 
       setDiningOrders(loadedOrders);
@@ -522,10 +551,190 @@ export default function GuestDiningHistoryPage() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [storeOrders]);
+  }, [storeOrders, tenantSlug, tenantName]);
 
+  // Initial load
   React.useEffect(() => {
     loadHistoryData();
+  }, [loadHistoryData]);
+
+  // Listen for real-time history events across tabs, same-window, and SSE notifications
+  React.useEffect(() => {
+    const handleHistoryEvent = (event: HistorySyncEvent) => {
+      if (!event || !event.type) return;
+
+      setLiveEventCount((prev) => prev + 1);
+
+      if (event.type === "BILL_SETTLED" || event.type === "ORDER_CREATED") {
+        const orderData = event.payload;
+        const cleanId = String(orderData.id).replace(/^#+/, "");
+        const formattedRecord: DiningRecord = {
+          id: cleanId,
+          table: orderData.table || "Dine-in",
+          customerName: orderData.customerName || "Customer",
+          customerPhone: orderData.customerPhone || "+91 99000 11222",
+          destination: orderData.destination || "dine_in",
+          status: orderData.status || (event.type === "BILL_SETTLED" ? "paid" : "pending"),
+          billingMethod: orderData.billingMethod || "UPI / QR",
+          total: Number(orderData.total) || 0,
+          items: Array.isArray(orderData.items)
+            ? orderData.items.map((it: any) => ({ name: it.name, qty: it.qty || 1 }))
+            : [{ name: "Chef Tasting", qty: 1 }],
+          createdAt: orderData.createdAt || orderData.settledAt || new Date().toISOString(),
+          roomNumber: orderData.roomNumber,
+          isLive: true,
+        };
+
+        setDiningOrders((prev) => {
+          const idx = prev.findIndex((o) => o.id === cleanId);
+          if (idx >= 0) {
+            const next = [...prev];
+            next[idx] = { ...next[idx], ...formattedRecord };
+            return next;
+          }
+          return [formattedRecord, ...prev];
+        });
+
+        setHighlightedId(cleanId);
+        const msg =
+          event.type === "BILL_SETTLED"
+            ? `Bill Settled: ${formattedRecord.table} — ${formatCurrency(formattedRecord.total)} via ${formattedRecord.billingMethod}`
+            : `New Order: #${cleanId} for ${formattedRecord.table}`;
+        setLastLiveMessage(msg);
+        addToast("success", "⚡ Real-Time Update", msg);
+
+        setTimeout(() => {
+          setHighlightedId((curr) => (curr === cleanId ? null : curr));
+        }, 5000);
+      } else if (event.type === "GUEST_CHECKED_IN") {
+        const g = event.payload;
+        const guestId = g.id || `gst-${Date.now()}`;
+        const newGuest: HotelGuestRecord = {
+          id: guestId,
+          roomNumber: g.roomNumber || "Suite",
+          roomType: g.roomType || "Deluxe Suite",
+          name: g.name || "Hotel Resident",
+          phone: g.phone || "+91 98000 00000",
+          email: g.email,
+          numberOfGuests: g.numberOfGuests || 1,
+          checkIn: g.checkIn || new Date().toISOString(),
+          expectedCheckOut: g.expectedCheckOut,
+          status: "checked_in",
+          folioBalance: g.folioBalance || 0,
+          idProofType: g.idProofType || "Aadhaar Card",
+          nationality: g.nationality || "Indian",
+          address: g.address || "Bengaluru, India",
+          isLive: true,
+        };
+
+        setHotelGuests((prev) => {
+          const idx = prev.findIndex(
+            (item) => item.id === guestId || (item.roomNumber === newGuest.roomNumber && item.name === newGuest.name)
+          );
+          if (idx >= 0) {
+            const next = [...prev];
+            next[idx] = { ...next[idx], ...newGuest };
+            return next;
+          }
+          return [newGuest, ...prev];
+        });
+
+        setHighlightedId(guestId);
+        const msg = `Guest Checked In: ${newGuest.name} in Room ${newGuest.roomNumber}`;
+        setLastLiveMessage(msg);
+        addToast("success", "⚡ Real-Time Check-In", msg);
+
+        setTimeout(() => {
+          setHighlightedId((curr) => (curr === guestId ? null : curr));
+        }, 5000);
+      } else if (event.type === "GUEST_CHECKED_OUT") {
+        const g = event.payload;
+        const checkoutId = g.id;
+        const targetRoom = String(g.roomNumber || "").trim().toLowerCase();
+
+        setHotelGuests((prev) =>
+          prev.map((item) => {
+            const match =
+              (checkoutId && item.id === checkoutId) ||
+              (item.roomNumber.toLowerCase() === targetRoom && item.status === "checked_in") ||
+              (item.name.toLowerCase() === (g.name || "").toLowerCase() && item.status === "checked_in");
+            if (match) {
+              return {
+                ...item,
+                status: "checked_out",
+                checkOut: g.checkOut || new Date().toISOString(),
+                folioBalance: g.folioBalance ?? item.folioBalance,
+                isLive: true,
+              };
+            }
+            return item;
+          })
+        );
+
+        if (checkoutId) setHighlightedId(checkoutId);
+        const msg = `Guest Checked Out: ${g.name || "Resident"} from Room ${g.roomNumber || ""}`;
+        setLastLiveMessage(msg);
+        addToast("info", "⚡ Real-Time Check-Out", msg);
+
+        setTimeout(() => {
+          setHighlightedId((curr) => (curr === checkoutId ? null : curr));
+        }, 5000);
+      }
+    };
+
+    // 1. BroadcastChannel for cross-tab sync
+    let channel: BroadcastChannel | null = null;
+    try {
+      if ("BroadcastChannel" in window) {
+        channel = new BroadcastChannel("dineflow_history_sync");
+        channel.onmessage = (e) => {
+          if (e.data) handleHistoryEvent(e.data);
+        };
+      }
+    } catch {}
+
+    // 2. CustomEvent for same-tab instant sync
+    const handleCustom = (e: Event) => {
+      const customEvent = e as CustomEvent<HistorySyncEvent>;
+      if (customEvent.detail) handleHistoryEvent(customEvent.detail);
+    };
+    window.addEventListener("dineflow_history_event", handleCustom);
+
+    // 3. Storage event listener for multi-tab fallback
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key && (e.key.startsWith("dineflow_hotel_guests_") || e.key.startsWith("dineflow_live_settled_orders_"))) {
+        loadHistoryData();
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+
+    return () => {
+      channel?.close();
+      window.removeEventListener("dineflow_history_event", handleCustom);
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, [addToast, loadHistoryData]);
+
+  // Connect to SSE notifications stream
+  React.useEffect(() => {
+    const notifStore = useNotificationStore.getState();
+    notifStore.connectSSE();
+
+    const unsub = useNotificationStore.subscribe((state, prevState) => {
+      if (state.notifications.length > prevState.notifications.length) {
+        const latest = state.notifications[0];
+        if (
+          latest &&
+          (latest.category === "payments" || latest.category === "orders" || latest.category === "reservations")
+        ) {
+          loadHistoryData();
+        }
+      }
+    });
+
+    return () => {
+      unsub();
+    };
   }, [loadHistoryData]);
 
   // Date Filtering Predicate
@@ -585,6 +794,7 @@ export default function GuestDiningHistoryPage() {
       amount?: number;
       method?: string;
       status: string;
+      isLive?: boolean;
     }> = [];
 
     filteredHotelGuests.forEach((g) => {
@@ -596,6 +806,7 @@ export default function GuestDiningHistoryPage() {
         subtitle: `${g.roomType || "Room"} • ${g.numberOfGuests} Guests • ${g.phone}`,
         detail: `ID: ${g.idProofType || "Verified"} • Folio: ${formatCurrency(g.folioBalance)}`,
         status: g.status === "checked_in" ? "In-House" : "Checked Out",
+        isLive: g.isLive,
       });
 
       if (g.checkOut && isDateWithinRange(g.checkOut)) {
@@ -608,6 +819,7 @@ export default function GuestDiningHistoryPage() {
           detail: `Folio Total: ${formatCurrency(g.folioBalance)}`,
           amount: g.folioBalance,
           status: "Checked Out",
+          isLive: g.isLive,
         });
       }
     });
@@ -625,6 +837,7 @@ export default function GuestDiningHistoryPage() {
         amount: o.total,
         method: o.billingMethod,
         status: o.status === "paid" ? "Paid & Settled" : o.status,
+        isLive: o.isLive,
       });
     });
 
@@ -644,7 +857,8 @@ export default function GuestDiningHistoryPage() {
     const totalFolioRevenue = filteredHotelGuests.reduce((acc, g) => acc + g.folioBalance, 0);
     const combinedRevenue = totalDiningRevenue + totalFolioRevenue;
 
-    const averageDiningSpend = totalDiningCustomersCount > 0 ? Math.round(totalDiningRevenue / totalDiningCustomersCount) : 0;
+    const averageDiningSpend =
+      totalDiningCustomersCount > 0 ? Math.round(totalDiningRevenue / totalDiningCustomersCount) : 0;
 
     return {
       hotelCheckins: filteredHotelGuests.length,
@@ -659,58 +873,135 @@ export default function GuestDiningHistoryPage() {
     };
   }, [filteredHotelGuests, filteredDiningOrders]);
 
-  // CSV Export Action
+  // 1-Click Simulated Event Handlers for instant testing
+  const handleSimulateSettle = () => {
+    const orderNum = Math.floor(1000 + Math.random() * 9000);
+    const tables = ["Table 04", "Table 02", "Table 05", "Table 07", "Table 10"];
+    const customers = ["Aarav Mehta", "Shreya Sen", "Vikrant Nair", "Rohit Singhania", "Pooja Hegde"];
+    const methods = ["UPI / QR", "Cash", "Card (POS)"];
+    const randomTable = tables[Math.floor(Math.random() * tables.length)];
+    const randomCustomer = customers[Math.floor(Math.random() * customers.length)];
+    const randomMethod = methods[Math.floor(Math.random() * methods.length)];
+    const randomTotal = Math.floor(450 + Math.random() * 2200);
+
+    triggerDiningBillSettled(
+      {
+        id: String(orderNum),
+        table: randomTable,
+        customerName: randomCustomer,
+        customerPhone: "+91 98" + Math.floor(10000000 + Math.random() * 90000000),
+        destination: "dine_in",
+        status: "paid",
+        billingMethod: randomMethod,
+        total: randomTotal,
+        items: [
+          { name: "Specialty Chef Tasting", qty: 2 },
+          { name: "Artisanal Brew", qty: 2 },
+        ],
+        createdAt: new Date().toISOString(),
+        settledAt: new Date().toISOString(),
+        notes: `Simulated live settlement via ${randomMethod}`,
+      },
+      undefined,
+      tenantSlug
+    );
+    setShowSimulateMenu(false);
+  };
+
+  const handleSimulateCheckIn = () => {
+    const suites = ["305", "204", "108", "402", "206"];
+    const names = ["Siddharth & Priya Verma", "Dr. Rajesh Sen", "Kavita Rao", "Aditya Nambiar"];
+    const randomSuite = suites[Math.floor(Math.random() * suites.length)];
+    const randomName = names[Math.floor(Math.random() * names.length)];
+
+    triggerHotelGuestCheckedIn(
+      {
+        id: `gst-${Date.now()}`,
+        roomNumber: randomSuite,
+        roomType: "Executive Suite",
+        name: randomName,
+        phone: "+91 98" + Math.floor(10000000 + Math.random() * 90000000),
+        email: "guest@hotelstay.in",
+        numberOfGuests: 2,
+        checkIn: new Date().toISOString(),
+        expectedCheckOut: new Date(Date.now() + 86400000 * 2).toISOString(),
+        status: "checked_in",
+        folioBalance: 0,
+        idProofType: "Aadhaar Card",
+        nationality: "Indian",
+        address: "Bengaluru, Karnataka",
+      },
+      undefined,
+      tenantSlug
+    );
+    setShowSimulateMenu(false);
+  };
+
+  const handleSimulateCheckOut = () => {
+    const inHouse = hotelGuests.find((g) => g.status === "checked_in");
+    const targetRoom = inHouse ? inHouse.roomNumber : "302";
+    const targetName = inHouse ? inHouse.name : "Dr. Vikram Malhotra";
+    const targetId = inHouse ? inHouse.id : "gst-01";
+
+    triggerHotelGuestCheckedOut(
+      {
+        id: targetId,
+        roomNumber: targetRoom,
+        name: targetName,
+        checkOut: new Date().toISOString(),
+        folioBalance: inHouse ? inHouse.folioBalance : 2450,
+      },
+      undefined,
+      tenantSlug
+    );
+    setShowSimulateMenu(false);
+  };
+
+  // CSV Report Generator
   const handleExportCSV = () => {
-    const headers = [
-      "Record Type",
-      "Date & Time",
-      "Identifier (Room/Table)",
-      "Guest / Customer Name",
-      "Phone",
-      "Guests / Items",
-      "Total Amount (INR)",
-      "Payment / Folio Method",
-      "Status",
-    ];
-
-    const rows: string[][] = [];
-
-    // Hotel guest check-in rows
-    filteredHotelGuests.forEach((g) => {
-      rows.push([
-        "Hotel Stay",
-        new Date(g.checkIn).toLocaleString(),
-        `Room ${g.roomNumber}`,
+    const rows = [
+      ["DineFlow — Operational Guest & Dining Audit Report"],
+      [`Generated: ${new Date().toLocaleString()}`],
+      [`Period: ${dateRangeBounds.label} (${dateRangeBounds.start.toLocaleDateString()} to ${dateRangeBounds.end.toLocaleDateString()})`],
+      [`Tenant: ${tenantName || "DineFlow Hospitality"}`],
+      [],
+      ["--- SECTION 1: HOTEL GUEST CHECK-IN RECORDS ---"],
+      ["Room Number", "Room Type", "Guest Name", "Phone", "Email", "Guests", "Check-In", "Check-Out / Expected", "Status", "Folio Balance", "ID Proof", "Nationality"],
+      ...filteredHotelGuests.map((g) => [
+        `"${g.roomNumber}"`,
+        `"${g.roomType || "Standard"}"`,
         `"${g.name}"`,
         `"${g.phone}"`,
-        `${g.numberOfGuests} Guests`,
-        String(g.folioBalance),
-        `Folio (${g.idProofType || "Verified"})`,
-        g.status,
-      ]);
-    });
-
-    // Restaurant dining rows
-    filteredDiningOrders.forEach((o) => {
-      const itemsCount = o.items.reduce((acc, it) => acc + it.qty, 0);
-      rows.push([
-        "Restaurant Dining",
-        new Date(o.createdAt).toLocaleString(),
-        o.table,
+        `"${g.email || ""}"`,
+        g.numberOfGuests,
+        `"${new Date(g.checkIn).toLocaleString()}"`,
+        `"${g.checkOut ? new Date(g.checkOut).toLocaleString() : g.expectedCheckOut ? new Date(g.expectedCheckOut).toLocaleString() : "Active Stay"}"`,
+        `"${g.status}"`,
+        g.folioBalance,
+        `"${g.idProofType || ""}"`,
+        `"${g.nationality || ""}"`,
+      ]),
+      [],
+      ["--- SECTION 2: RESTAURANT DINING & BILLING RECORDS ---"],
+      ["Ticket ID", "Table / Location", "Customer Name", "Customer Phone", "Destination", "Bill Total", "Payment Method", "Order Status", "Order Timestamp", "Items Ordered"],
+      ...filteredDiningOrders.map((o) => [
+        `"#${o.id}"`,
+        `"${o.table}"`,
         `"${o.customerName}"`,
         `"${o.customerPhone}"`,
-        `${itemsCount} dishes`,
-        String(o.total),
-        o.billingMethod || "Paid",
-        o.status,
-      ]);
-    });
+        `"${o.destination}"`,
+        o.total,
+        `"${o.billingMethod || "Paid"}"`,
+        `"${o.status}"`,
+        `"${new Date(o.createdAt).toLocaleString()}"`,
+        `"${o.items.map((it) => `${it.qty}x ${it.name}`).join(", ")}"`,
+      ]),
+    ];
 
-    const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
+    const csvContent = "data:text/csv;charset=utf-8," + rows.map((r) => r.join(",")).join("\n");
+    const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
-    link.setAttribute("href", url);
+    link.setAttribute("href", encodedUri);
     link.setAttribute("download", `dineflow-guest-dining-history-${datePreset}-${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
@@ -729,18 +1020,88 @@ export default function GuestDiningHistoryPage() {
               <History className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-                Guest & Dining History
-              </h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+                  Guest & Dining History
+                </h1>
+                {/* Real-time pulse indicator */}
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </span>
+                  <span>Live Real-Time Sync</span>
+                  {liveEventCount > 0 && (
+                    <Badge variant="glow" size="sm" className="ml-0.5 text-[9px] bg-emerald-600 text-white font-mono px-1 py-0">
+                      +{liveEventCount} new
+                    </Badge>
+                  )}
+                </div>
+              </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                Comprehensive operational records of hotel room check-ins and restaurant dining customers.
+                Live operational log of settled restaurant bills and hotel room check-in/out stays.
               </p>
             </div>
           </div>
         </div>
 
         {/* Global Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Quick Simulate Trigger Dropdown for testing */}
+          <div className="relative">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowSimulateMenu(!showSimulateMenu)}
+              className="text-xs flex items-center gap-1.5 border-dashed border-amber-500/40 text-amber-700 dark:text-amber-400 bg-amber-500/5 hover:bg-amber-500/10 cursor-pointer"
+            >
+              <Zap className="h-3.5 w-3.5 text-amber-500" />
+              <span>⚡ Test Live Trigger</span>
+              <ChevronDown className="h-3 w-3 opacity-60" />
+            </Button>
+
+            {showSimulateMenu && (
+              <div className="absolute right-0 top-full mt-1.5 w-64 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl p-1.5 z-50 animate-scale-in text-xs space-y-1">
+                <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  Simulate Real-Time Trigger
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSimulateSettle}
+                  className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center gap-2 cursor-pointer transition-colors"
+                >
+                  <UtensilsCrossed className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                  <div>
+                    <span className="font-bold block">Settle Dining Bill</span>
+                    <span className="text-[10px] text-slate-400 block">Table 04 • ₹1,840 via UPI</span>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSimulateCheckIn}
+                  className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center gap-2 cursor-pointer transition-colors"
+                >
+                  <Hotel className="h-3.5 w-3.5 text-purple-500 shrink-0" />
+                  <div>
+                    <span className="font-bold block">Hotel Guest Check-In</span>
+                    <span className="text-[10px] text-slate-400 block">Suite 305 • Radhika Nair</span>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSimulateCheckOut}
+                  className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center gap-2 cursor-pointer transition-colors"
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+                  <div>
+                    <span className="font-bold block">Hotel Guest Check-Out</span>
+                    <span className="text-[10px] text-slate-400 block">Suite 302 • Folio Cleared</span>
+                  </div>
+                </button>
+              </div>
+            )}
+          </div>
+
           <Button
             variant="outline"
             size="sm"
@@ -751,6 +1112,7 @@ export default function GuestDiningHistoryPage() {
             <RefreshCw className={cn("h-3.5 w-3.5", isRefreshing && "animate-spin")} />
             <span>Refresh</span>
           </Button>
+
           <Button
             variant="glow"
             size="sm"
@@ -762,6 +1124,24 @@ export default function GuestDiningHistoryPage() {
           </Button>
         </div>
       </div>
+
+      {/* Live notification flash banner if an event was recently received */}
+      {lastLiveMessage && (
+        <div className="px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between text-xs text-emerald-700 dark:text-emerald-300 animate-slide-up">
+          <div className="flex items-center gap-2">
+            <Zap className="h-3.5 w-3.5 text-emerald-600 animate-bounce" />
+            <strong className="font-bold">Real-Time Trigger:</strong>
+            <span>{lastLiveMessage}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setLastLiveMessage(null)}
+            className="text-xs opacity-60 hover:opacity-100 cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Date Filter & Search Controls Bar */}
       <Card variant="glass" className="p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-2xs space-y-4">
@@ -861,8 +1241,12 @@ export default function GuestDiningHistoryPage() {
             </span>
           </div>
           <div className="mt-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between text-[11px] text-slate-500">
-            <span>🟢 In-House: <strong className="text-slate-900 dark:text-white">{metrics.inHouseGuests}</strong></span>
-            <span>⚪ Departed: <strong className="text-slate-900 dark:text-white">{metrics.departedGuests}</strong></span>
+            <span>
+              🟢 In-House: <strong className="text-slate-900 dark:text-white">{metrics.inHouseGuests}</strong>
+            </span>
+            <span>
+              ⚪ Departed: <strong className="text-slate-900 dark:text-white">{metrics.departedGuests}</strong>
+            </span>
           </div>
         </Card>
 
@@ -880,9 +1264,7 @@ export default function GuestDiningHistoryPage() {
             <span className="text-2xl font-black text-slate-900 dark:text-white font-mono">
               <NumberFlow value={metrics.diningOrdersCount} />
             </span>
-            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-              meals served
-            </span>
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">meals served</span>
           </div>
           <div className="mt-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between text-[11px] text-slate-500">
             <span>Revenue:</span>
@@ -927,9 +1309,7 @@ export default function GuestDiningHistoryPage() {
             <span className="text-2xl font-black text-slate-900 dark:text-white font-mono">
               {formatCurrency(metrics.averageDiningSpend)}
             </span>
-            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-              per order
-            </span>
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">per order</span>
           </div>
           <div className="mt-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between text-[11px] text-slate-500">
             <span>Active Range:</span>
@@ -970,9 +1350,16 @@ export default function GuestDiningHistoryPage() {
               {combinedActivityFeed.map((item) => {
                 const isHotel = item.type.startsWith("hotel");
                 const isCheckin = item.type === "hotel_checkin";
+                const isJustUpdated = highlightedId && item.id.includes(highlightedId);
 
                 return (
-                  <div key={item.id} className="p-4 hover:bg-slate-500/5 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div
+                    key={item.id}
+                    className={cn(
+                      "p-4 transition-all duration-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3",
+                      isJustUpdated ? "bg-emerald-500/15 dark:bg-emerald-500/20 ring-1 ring-emerald-500" : "hover:bg-slate-500/5"
+                    )}
+                  >
                     <div className="flex items-start sm:items-center gap-3 min-w-0">
                       <div
                         className={cn(
@@ -1004,13 +1391,16 @@ export default function GuestDiningHistoryPage() {
                           >
                             {item.status}
                           </Badge>
+                          {(item.isLive || isJustUpdated) && (
+                            <Badge variant="glow" size="sm" className="bg-emerald-500 text-white text-[9px] px-1.5 py-0 font-mono animate-pulse">
+                              ● LIVE
+                            </Badge>
+                          )}
                         </div>
                         <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
                           {item.subtitle}
                         </p>
-                        <p className="text-[11px] text-slate-400 font-mono mt-0.5">
-                          {item.detail}
-                        </p>
+                        <p className="text-[11px] text-slate-400 font-mono mt-0.5">{item.detail}</p>
                       </div>
                     </div>
 
@@ -1075,10 +1465,21 @@ export default function GuestDiningHistoryPage() {
                 ) : (
                   filteredHotelGuests.map((guest) => {
                     const checkInDate = new Date(guest.checkIn);
-                    const checkOutDate = guest.checkOut ? new Date(guest.checkOut) : guest.expectedCheckOut ? new Date(guest.expectedCheckOut) : null;
+                    const checkOutDate = guest.checkOut
+                      ? new Date(guest.checkOut)
+                      : guest.expectedCheckOut
+                      ? new Date(guest.expectedCheckOut)
+                      : null;
+                    const isRowHighlighted = highlightedId === guest.id;
 
                     return (
-                      <TableRow key={guest.id} className="hover:bg-slate-500/5 transition-colors">
+                      <TableRow
+                        key={guest.id}
+                        className={cn(
+                          "transition-all duration-700",
+                          isRowHighlighted ? "bg-emerald-500/15 dark:bg-emerald-500/20 ring-1 ring-emerald-500" : "hover:bg-slate-500/5"
+                        )}
+                      >
                         {/* Room & Type */}
                         <TableCell className="pl-4">
                           <div className="flex items-center gap-2.5">
@@ -1099,9 +1500,16 @@ export default function GuestDiningHistoryPage() {
                         {/* Guest Name & Contact */}
                         <TableCell>
                           <div>
-                            <span className="text-sm font-bold text-slate-900 dark:text-white block">
-                              {guest.name}
-                            </span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-sm font-bold text-slate-900 dark:text-white block">
+                                {guest.name}
+                              </span>
+                              {(guest.isLive || isRowHighlighted) && (
+                                <Badge variant="glow" size="sm" className="bg-emerald-500 text-white text-[9px] px-1 py-0 font-mono animate-pulse">
+                                  LIVE
+                                </Badge>
+                              )}
+                            </div>
                             <span className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 font-mono">
                               <Phone className="h-3 w-3 text-slate-400" />
                               {guest.phone}
@@ -1156,7 +1564,7 @@ export default function GuestDiningHistoryPage() {
 
                         {/* ID Proof */}
                         <TableCell>
-                          <span className="text-xs font-semibold px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                          <span className="text-xs font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700">
                             {guest.idProofType || "Verified"}
                           </span>
                         </TableCell>
@@ -1181,20 +1589,20 @@ export default function GuestDiningHistoryPage() {
         </Card>
       )}
 
-      {/* Tab 3: Restaurant Dining Customers Table */}
+      {/* Tab 3: Restaurant Dining History Table */}
       {activeTab === "dining" && (
         <Card variant="glass" className="rounded-2xl border border-slate-200/80 dark:border-slate-800/80 overflow-hidden shadow-2xs">
           <div className="p-4 border-b border-slate-200/80 dark:border-slate-800/80 flex items-center justify-between">
             <div>
               <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                Restaurant Dining Customers History
+                Restaurant Dining & Billing Log
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Customers who visited and dined during {dateRangeBounds.label}.
+                Customers who ordered food, settled bills, or dined during {dateRangeBounds.label}.
               </p>
             </div>
             <Badge variant="neutral" size="sm">
-              {filteredDiningOrders.length} Diners
+              {filteredDiningOrders.length} Dining Tickets
             </Badge>
           </div>
 
@@ -1203,34 +1611,46 @@ export default function GuestDiningHistoryPage() {
               <TableHeader>
                 <TableRow className="hover:bg-transparent border-b border-slate-200/80 dark:border-slate-800/80">
                   <TableHead className="pl-4">Ticket & Time</TableHead>
-                  <TableHead>Table / Destination</TableHead>
+                  <TableHead>Table / Location</TableHead>
                   <TableHead>Customer Details</TableHead>
-                  <TableHead>Dishes & Food Ordered</TableHead>
-                  <TableHead>Bill Amount</TableHead>
+                  <TableHead>Food & Dishes Ordered</TableHead>
+                  <TableHead>Total Bill</TableHead>
                   <TableHead>Payment Method</TableHead>
-                  <TableHead className="text-right pr-4">Order Status</TableHead>
+                  <TableHead className="text-right pr-4">Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredDiningOrders.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="py-12 text-center text-xs text-slate-400 italic">
-                      No restaurant dining records found for {dateRangeBounds.label}.
+                      No dining records found for {dateRangeBounds.label}.
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredDiningOrders.map((order) => {
                     const orderDate = new Date(order.createdAt);
                     const isRoom = order.destination === "room_service" || order.table.toLowerCase().includes("suite");
+                    const isRowHighlighted = highlightedId === order.id;
 
                     return (
-                      <TableRow key={order.id} className="hover:bg-slate-500/5 transition-colors">
+                      <TableRow
+                        key={order.id}
+                        className={cn(
+                          "transition-all duration-700",
+                          isRowHighlighted ? "bg-emerald-500/15 dark:bg-emerald-500/20 ring-1 ring-emerald-500" : "hover:bg-slate-500/5"
+                        )}
+                      >
                         {/* Ticket & Time */}
                         <TableCell className="pl-4">
                           <div className="flex items-center gap-2">
                             <span className="font-mono text-xs font-bold text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700">
                               #{order.id.slice(-4).toUpperCase()}
                             </span>
+                            {(order.isLive || isRowHighlighted) && (
+                              <Badge variant="glow" size="sm" className="bg-emerald-500 text-white text-[9px] px-1 py-0 font-mono animate-pulse">
+                                LIVE
+                              </Badge>
+                            )}
                             <span className="text-[11px] text-slate-400 font-mono">
                               {orderDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                             </span>

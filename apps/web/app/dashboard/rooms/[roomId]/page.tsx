@@ -47,6 +47,7 @@ import { apiClient } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
 import { validateIndianPhone, formatIndianPhoneInput } from "@/lib/validation";
 import { StaffOrderFoodModal } from "@/components/room/staff-order-food-modal";
+import { triggerHotelGuestCheckedIn, triggerHotelGuestCheckedOut } from "@/lib/realtime/history-events";
 
 interface RoomDetail {
   id: string;
@@ -954,6 +955,29 @@ export default function RoomDetailPage() {
         }
       } catch (_) {}
 
+      try {
+        triggerHotelGuestCheckedIn(
+          {
+            id: `gst-${Date.now()}`,
+            roomNumber: room.roomNumber || room.name.replace(/\D/g, "") || room.name,
+            roomType: room.roomType || "Suite",
+            name: guestName.trim(),
+            phone: phoneValidation.normalized,
+            email: guestEmail.trim() || undefined,
+            numberOfGuests: Number(guestCount) || 1,
+            checkIn: checkInDate ? new Date(checkInDate).toISOString() : new Date().toISOString(),
+            expectedCheckOut: expectedCheckOutDate ? new Date(expectedCheckOutDate).toISOString() : undefined,
+            status: "checked_in",
+            folioBalance: 0,
+            idProofType: guestIdProof,
+            nationality: guestNationality.trim() || "Indian",
+            address: guestAddress.trim() || undefined,
+          },
+          tenant?.id,
+          tenantSlug
+        );
+      } catch (_) {}
+
       setIsCheckInOpen(false);
       setGuestName("");
       setGuestPhone("");
@@ -1345,6 +1369,22 @@ export default function RoomDetailPage() {
       const res = await apiClient.post(`/rooms/${encodeURIComponent(room.id)}/check-out`, {});
       const summary = res.data?.data?.staySummary || currentStaySummary;
       setCompletedInvoice(summary);
+
+      // Real-time hotel guest check-out trigger
+      try {
+        triggerHotelGuestCheckedOut(
+          {
+            id: room.id,
+            roomNumber: room.roomNumber || room.name.replace(/\D/g, "") || room.name,
+            name: room.currentGuestName || currentStaySummary?.guestName || "Hotel Resident",
+            checkOut: new Date().toISOString(),
+            folioBalance: summary?.totalAmount || summary?.grandTotal || currentStaySummary?.grandTotal || 0,
+          },
+          tenant?.id,
+          tenantSlug
+        );
+      } catch (_) {}
+
       setOrders([]);
       setTasks([]);
       setRoom({

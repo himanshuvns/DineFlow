@@ -52,6 +52,7 @@ import { validateIndianPhone, formatIndianPhoneInput } from "@/lib/validation";
 import { ViewToggle, useViewMode } from "@/components/ui/view-toggle";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import NumberFlow from "@number-flow/react";
+import { triggerHotelGuestCheckedIn, triggerHotelGuestCheckedOut } from "@/lib/realtime/history-events";
 
 interface RoomItem {
   id: string;
@@ -808,6 +809,31 @@ export default function RoomsDirectoryPage() {
         "Guest Checked In",
         `${guestName} is now in-house in ${checkInRoom.name} with verified ${guestIdProof}.`
       );
+
+      // Real-time hotel guest check-in trigger
+      try {
+        triggerHotelGuestCheckedIn(
+          {
+            id: `gst-${Date.now()}`,
+            roomNumber: checkInRoom.roomNumber || checkInRoom.name.replace(/\D/g, "") || checkInRoom.name,
+            roomType: checkInRoom.type || "Deluxe Suite",
+            name: guestName.trim(),
+            phone: phoneValidation.normalized,
+            email: guestEmail.trim() || undefined,
+            numberOfGuests: Number(guestCount) || 1,
+            checkIn: checkInDate ? new Date(checkInDate).toISOString() : new Date().toISOString(),
+            expectedCheckOut: expectedCheckOutDate ? new Date(expectedCheckOutDate).toISOString() : undefined,
+            status: "checked_in",
+            folioBalance: 0,
+            idProofType: guestIdProof,
+            nationality: guestNationality.trim() || "Indian",
+            address: guestAddress.trim() || undefined,
+          },
+          tenant?.id,
+          tenantSlug
+        );
+      } catch {}
+
       setCheckInRoom(null);
       setGuestName("");
       setGuestPhone("");
@@ -876,6 +902,22 @@ export default function RoomsDirectoryPage() {
       const res = await apiClient.post(`/rooms/${encodeURIComponent(checkOutRoom.id)}/check-out`, {});
       const summary = res.data?.data?.staySummary || currentStaySummary;
       setCompletedInvoice(summary);
+
+      // Real-time hotel guest check-out trigger
+      try {
+        triggerHotelGuestCheckedOut(
+          {
+            id: checkOutRoom.id,
+            roomNumber: checkOutRoom.roomNumber || checkOutRoom.name.replace(/\D/g, "") || checkOutRoom.name,
+            name: checkOutRoom.currentGuestName || currentStaySummary?.guestName || "Hotel Resident",
+            checkOut: new Date().toISOString(),
+            folioBalance: summary?.totalAmount || summary?.grandTotal || currentStaySummary?.grandTotal || 0,
+          },
+          tenant?.id,
+          tenantSlug
+        );
+      } catch {}
+
       setCheckOutRoom(null);
       addToast(
         "success",

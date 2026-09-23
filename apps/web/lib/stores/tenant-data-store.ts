@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { apiClient } from "@/lib/api";
 import { useAuthStore, Tenant, User } from "./auth-store";
 import { formatCategoryName, deduplicateCategories, isCategoryMatch } from "@/lib/utils/category-utils";
+import { triggerDiningBillSettled, triggerCustomerOrderCreated } from "@/lib/realtime/history-events";
 
 export interface MenuItem {
   id: string;
@@ -1453,6 +1454,26 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
       }
     } catch {}
 
+    try {
+      triggerCustomerOrderCreated(
+        {
+          id: orderId,
+          table: orderData.table || "Dine-in",
+          customerName: orderData.customerName || "Customer",
+          customerPhone: orderData.customerPhone || "",
+          destination: orderData.destination || "dine_in",
+          status: "pending",
+          total: orderData.total || 0,
+          items: (orderData.items || []).map((it) => ({ name: it.name, qty: it.qty })),
+          createdAt: new Date().toISOString(),
+          roomNumber: orderData.roomNumber,
+          notes: (orderData as any).notes,
+        },
+        state.tenantId,
+        state.tenantSlug
+      );
+    } catch {}
+
     persistTenantState(state.tenantId, { orders: updatedOrders, tables: updatedTables });
 
     // Ensure notification center is updated in real-time
@@ -1531,6 +1552,33 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
         actionUrl: isRoom ? "/dashboard/rooms" : "/dashboard/orders",
         metadata: { orderId: cleanId, status, billingMethod },
       }).catch(() => {});
+    }
+
+    // Trigger real-time history synchronization when an order bill is settled
+    if (status === "paid") {
+      const order = state.orders.find((o) => o.id === id);
+      const cleanId = String(id || "").replace(/^#+/, "").trim();
+      try {
+        triggerDiningBillSettled(
+          {
+            id: cleanId,
+            table: order?.table || "Table",
+            customerName: order?.customerName || "Dine-in Customer",
+            customerPhone: order?.customerPhone || "",
+            destination: order?.destination || "dine_in",
+            status: "paid",
+            billingMethod: billingMethod || order?.billingMethod || "Cash",
+            total: order?.total || 0,
+            items: (order?.items || []).map((it) => ({ name: it.name, qty: it.qty })),
+            createdAt: new Date().toISOString(),
+            settledAt: new Date().toISOString(),
+            roomNumber: order?.roomNumber,
+            notes: note,
+          },
+          state.tenantId,
+          state.tenantSlug
+        );
+      } catch {}
     }
 
     persistTenantState(state.tenantId, { orders: updatedOrders, tables: updatedTables });

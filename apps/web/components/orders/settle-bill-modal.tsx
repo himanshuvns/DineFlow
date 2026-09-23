@@ -24,6 +24,7 @@ import { useToast } from "@/components/ui/toast";
 import { cn, formatCurrency } from "@/lib/utils";
 import { useTenantData, KdsOrder, TableItem } from "@/lib/stores/tenant-data-store";
 import { ThermalPrintModal } from "@/components/orders/thermal-receipt-modal";
+import { triggerDiningBillSettled } from "@/lib/realtime/history-events";
 
 export interface SettleBillModalProps {
   isOpen: boolean;
@@ -43,7 +44,7 @@ export function SettleBillModal({
   onSuccess,
 }: SettleBillModalProps) {
   const { addToast } = useToast();
-  const { settleOrderBill, tenantName } = useTenantData();
+  const { settleOrderBill, tenantName, tenantSlug, tenantId } = useTenantData();
 
   const [paymentMethod, setPaymentMethod] = React.useState<PaymentMethod>("cash");
   const [cashTendered, setCashTendered] = React.useState<string>("");
@@ -130,6 +131,27 @@ export function SettleBillModal({
       }
 
       await settleOrderBill(order.id, methodLabel, paymentMethod === "cash" ? tenderedNum : totalAmount, detailNote);
+
+      // Real-time history synchronization trigger
+      triggerDiningBillSettled(
+        {
+          id: String(order.id).replace(/^#+/, ""),
+          table: order.table,
+          customerName: order.customerName || "Dine-in Customer",
+          customerPhone: order.customerPhone || "",
+          destination: order.destination || "dine_in",
+          status: "paid",
+          billingMethod: methodLabel,
+          total: totalAmount,
+          items: (order.items || []).map((it) => ({ name: it.name, qty: it.qty })),
+          createdAt: order.createdAt || new Date().toISOString(),
+          settledAt: new Date().toISOString(),
+          roomNumber: roomNumber.trim() || order.roomNumber,
+          notes: detailNote,
+        },
+        tenantId,
+        tenantSlug
+      );
 
       addToast(
         "success",
