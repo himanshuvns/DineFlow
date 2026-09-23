@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import {
   QrCode,
   Plus,
@@ -24,6 +25,7 @@ import {
   ChevronUp,
   CreditCard,
   Receipt,
+  Soup,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,13 +35,20 @@ import { useToast } from "@/components/ui/toast";
 import { QRCodeImage } from "@/components/ui/qr-code-image";
 import { cn, formatCurrency } from "@/lib/utils";
 import { useTenantData, TableItem, KdsOrder, STARTER_TEMPLATES } from "@/lib/stores/tenant-data-store";
+import { useAuthStore } from "@/lib/stores/auth-store";
+import { hasTables, getCategoryConfig } from "@/lib/rbac/roles";
 import { SettleBillModal } from "@/components/orders/settle-bill-modal";
 import { ViewToggle, useViewMode } from "@/components/ui/view-toggle";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import NumberFlow from "@number-flow/react";
 
 export default function TablesManagementPage() {
+  const router = useRouter();
   const { addToast } = useToast();
+  const { tenant } = useAuthStore();
+  const isTableVertical = hasTables(tenant?.type);
+  const categoryConfig = getCategoryConfig(tenant?.type);
+
   const {
     tenantName,
     tenantSlug,
@@ -222,6 +231,41 @@ export default function TablesManagementPage() {
     }
     return true;
   });
+
+  if (!isTableVertical) {
+    return (
+      <div className="max-w-2xl mx-auto py-16 px-4 text-center">
+        <div className="h-16 w-16 mx-auto rounded-3xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400 mb-6 shadow-lg shadow-amber-500/10">
+          <Soup className="h-8 w-8" />
+        </div>
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 text-xs font-semibold mb-3">
+          Cloud Kitchen Delivery Hub
+        </div>
+        <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight mb-2">
+          Dine-In Tables Not Required
+        </h1>
+        <p className="text-sm text-slate-600 dark:text-slate-400 max-w-md mx-auto mb-8 leading-relaxed">
+          Cloud kitchens operate as delivery, takeaway, and digital dispatch hubs without physical dine-in tables. Your orders, packaging, and dispatches are handled in real-time via the Kitchen Display System (KDS).
+        </p>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+          <Button
+            variant="outline"
+            onClick={() => router.push("/dashboard")}
+            className="w-full sm:w-auto"
+          >
+            Back to Dashboard
+          </Button>
+          <Button
+            variant="glow"
+            onClick={() => router.push("/dashboard/orders")}
+            className="w-full sm:w-auto"
+          >
+            Open Live KDS & Orders
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full min-h-0 gap-2.5">

@@ -31,7 +31,8 @@ import { useTenantData, STARTER_TEMPLATES } from "@/lib/stores/tenant-data-store
 import { useToast } from "@/components/ui/toast";
 import { formatCurrency } from "@/lib/utils";
 import { HospitalityLoader } from "@/components/ui/hospitality-loader";
-import { getRoleLabel, canViewFinancials, isOwner, isManager } from "@/lib/rbac/roles";
+import { getRoleLabel, canViewFinancials, isOwner, isManager, getCategoryConfig, hasRooms, hasTables } from "@/lib/rbac/roles";
+import { useAuthStore } from "@/lib/stores/auth-store";
 import NumberFlow from "@number-flow/react";
 
 export default function DashboardOverviewPage() {
@@ -55,6 +56,12 @@ export default function DashboardOverviewPage() {
     toggleOnboardingStep,
     applyStarterTemplate,
   } = useTenantData();
+
+  const authTenant = useAuthStore((state) => state.tenant);
+  const effectiveCategory = authTenant?.type || tenant?.type || "restaurant";
+  const categoryConfig = getCategoryConfig(effectiveCategory);
+  const showRooms = hasRooms(effectiveCategory);
+  const showTables = hasTables(effectiveCategory);
 
   const { addToast } = useToast();
 
@@ -185,7 +192,7 @@ export default function DashboardOverviewPage() {
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold mb-2">
             <Sparkles className="h-3.5 w-3.5" />
-            <span>{isDemoTenant ? "Live Demo Showcase" : `${tenantName} Workspace`}</span>
+            <span>{isDemoTenant ? "Live Demo Showcase" : categoryConfig.badge}</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
             {isFirstLogin ? `Welcome, ${userDisplayName} 👋` : `Welcome back, ${userDisplayName} 👋`}
@@ -228,15 +235,17 @@ export default function DashboardOverviewPage() {
             </Button>
           ) : (
             <>
-              <Button
-                variant="outline"
-                size="sm"
-                leftIcon={<QrCode className="h-4 w-4" />}
-                asChild
-              >
-                <Link href="/dashboard/tables">Table QRs</Link>
-              </Button>
-              {(isOwner(user?.role) || isManager(user?.role)) && (
+              {showTables && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  leftIcon={<QrCode className="h-4 w-4" />}
+                  asChild
+                >
+                  <Link href="/dashboard/tables">Table QRs</Link>
+                </Button>
+              )}
+              {showRooms && (isOwner(user?.role) || isManager(user?.role)) && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -244,6 +253,16 @@ export default function DashboardOverviewPage() {
                   asChild
                 >
                   <Link href="/dashboard/rooms">Hotel Suites</Link>
+                </Button>
+              )}
+              {!showTables && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  leftIcon={<Utensils className="h-4 w-4 text-emerald-500" />}
+                  asChild
+                >
+                  <Link href="/dashboard/menu">Menu Catalog</Link>
                 </Button>
               )}
               <Button

@@ -22,40 +22,63 @@ import {
 } from "lucide-react";
 import { useUIStore } from "@/lib/stores/ui-store";
 import { useAuthStore } from "@/lib/stores/auth-store";
-import { isRouteAllowed, isOwner } from "@/lib/rbac/roles";
+import { isRouteAllowed, isOwner, getCategoryConfig } from "@/lib/rbac/roles";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 
-export const NAV_SECTIONS = [
-  {
-    title: "Operations",
-    items: [
-      { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
-      { href: "/dashboard/orders", label: "Live KDS & Orders", icon: ChefHat, badge: "Live" },
-      { href: "/dashboard/menu", label: "Menu Management", icon: UtensilsCrossed },
-      { href: "/dashboard/tables", label: "Tables & QR Codes", icon: QrCode },
-    ],
-  },
-  {
-    title: "Hospitality & Guest",
-    items: [
-      { href: "/dashboard/rooms", label: "Rooms & Suites", icon: Hotel, badge: "Hotel" },
-      { href: "/dashboard/history", label: "Guest & Dining History", icon: History, badge: "Log" },
-      { href: "/dashboard/whatsapp", label: "WhatsApp Connect", icon: MessageSquareShare, badge: "AI" },
-      { href: "/dashboard/video", label: "Video Studio", icon: Video, badge: "Remotion" },
-    ],
-  },
-  {
-    title: "Management & Growth",
-    items: [
-      { href: "/dashboard/staff", label: "Staff & Permissions", icon: Users },
-      { href: "/dashboard/analytics", label: "Analytics & Sales", icon: BarChart3 },
-      { href: "/dashboard/ai", label: "AI Studio", icon: BrainCircuit, badge: "New" },
-      { href: "/pricing", label: "Subscription Plans", icon: Sparkles, badge: "SaaS", ownerOnly: true },
-      { href: "/dashboard/settings", label: "Settings & Billing", icon: Settings },
-    ],
-  },
-];
+export function getNavSections(category?: string | null) {
+  const config = getCategoryConfig(category);
+  const secondSectionTitle =
+    config.id === "hotel" || config.id === "resort"
+      ? "Hospitality & Guest"
+      : config.id === "cloud_kitchen"
+      ? "Dispatch & Growth"
+      : "Customer & Dining";
+
+  return [
+    {
+      title: "Operations",
+      items: [
+        { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
+        { href: "/dashboard/orders", label: "Live KDS & Orders", icon: ChefHat, badge: "Live" },
+        { href: "/dashboard/menu", label: "Menu Management", icon: UtensilsCrossed },
+        ...(config.hasTables
+          ? [{ href: "/dashboard/tables", label: config.tableLabel || "Tables & QR Codes", icon: QrCode }]
+          : []),
+      ],
+    },
+    {
+      title: secondSectionTitle,
+      items: [
+        ...(config.hasRooms
+          ? [
+              {
+                href: "/dashboard/rooms",
+                label: config.roomLabel || "Rooms & Suites",
+                icon: Hotel,
+                badge: config.id === "resort" ? "Resort" : "Hotel",
+              },
+            ]
+          : []),
+        { href: "/dashboard/history", label: config.historyTitle, icon: History, badge: "Log" },
+        { href: "/dashboard/whatsapp", label: "WhatsApp Connect", icon: MessageSquareShare, badge: "AI" },
+        { href: "/dashboard/video", label: "Video Studio", icon: Video, badge: "Remotion" },
+      ],
+    },
+    {
+      title: "Management & Growth",
+      items: [
+        { href: "/dashboard/staff", label: "Staff & Permissions", icon: Users },
+        { href: "/dashboard/analytics", label: "Analytics & Sales", icon: BarChart3 },
+        { href: "/dashboard/ai", label: "AI Studio", icon: BrainCircuit, badge: "New" },
+        { href: "/pricing", label: "Subscription Plans", icon: Sparkles, badge: "SaaS", ownerOnly: true },
+        { href: "/dashboard/settings", label: "Settings & Billing", icon: Settings },
+      ],
+    },
+  ];
+}
+
+export const NAV_SECTIONS = getNavSections("restaurant");
 
 export const NAV_ITEMS = NAV_SECTIONS.flatMap((s) => s.items);
 
@@ -65,6 +88,8 @@ export function Sidebar() {
   const tenant = useAuthStore((state) => state.tenant);
   const user = useAuthStore((state) => state.user);
   const isOwnerUser = isOwner(user?.role);
+  const categoryConfig = getCategoryConfig(tenant?.type);
+  const navSections = React.useMemo(() => getNavSections(tenant?.type), [tenant?.type]);
 
   return (
     <aside
@@ -99,9 +124,7 @@ export function Sidebar() {
                 </span>
                 <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 truncate flex items-center gap-1">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  {tenant?.type
-                    ? `${tenant.type.charAt(0).toUpperCase() + tenant.type.slice(1).replace("_", " ")} OS`
-                    : "Restaurant OS"}
+                  {categoryConfig.tagline}
                 </span>
               </div>
             )}
@@ -117,8 +140,8 @@ export function Sidebar() {
 
         {/* Navigation grouped by section */}
         <nav className="p-3 space-y-3">
-          {NAV_SECTIONS.map((section) => {
-            const visibleItems = section.items.filter((item) => isRouteAllowed(item.href, user?.role));
+          {navSections.map((section) => {
+            const visibleItems = section.items.filter((item) => isRouteAllowed(item.href, user?.role, tenant?.type));
             if (visibleItems.length === 0) return null;
 
             return (

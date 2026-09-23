@@ -38,6 +38,7 @@ import { useTenantData, KdsOrder } from "@/lib/stores/tenant-data-store";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { useNotificationStore } from "@/lib/stores/notification-store";
 import { cn, formatCurrency } from "@/lib/utils";
+import { hasRooms, getCategoryConfig } from "@/lib/rbac/roles";
 import NumberFlow from "@number-flow/react";
 import {
   triggerDiningBillSettled,
@@ -87,7 +88,11 @@ type DatePreset = "today" | "yesterday" | "7d" | "30d" | "custom";
 export default function GuestDiningHistoryPage() {
   const { addToast } = useToast();
   const { orders: storeOrders, tenantName, tenantSlug } = useTenantData();
-  const { user } = useAuthStore();
+  const { user, tenant } = useAuthStore();
+
+  const hasRoomsEnabled = hasRooms(tenant?.type);
+  const categoryConfig = getCategoryConfig(tenant?.type);
+  const isCloudKitchen = categoryConfig.id === "cloud_kitchen";
 
   const [activeTab, setActiveTab] = React.useState<"all" | "hotel" | "dining">("all");
   const [datePreset, setDatePreset] = React.useState<DatePreset>("today");
@@ -96,6 +101,13 @@ export default function GuestDiningHistoryPage() {
   const [searchQuery, setSearchQuery] = React.useState<string>("");
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = React.useState<boolean>(false);
+
+  // If rooms disabled and user is on hotel tab, fallback to dining
+  React.useEffect(() => {
+    if (!hasRoomsEnabled && activeTab === "hotel") {
+      setActiveTab("dining");
+    }
+  }, [hasRoomsEnabled, activeTab]);
 
   // Real-time synchronization state
   const [highlightedId, setHighlightedId] = React.useState<string | null>(null);
@@ -337,7 +349,11 @@ export default function GuestDiningHistoryPage() {
           },
         ];
       }
-      setHotelGuests(loadedGuests);
+      if (!hasRoomsEnabled) {
+        setHotelGuests([]);
+      } else {
+        setHotelGuests(loadedGuests);
+      }
 
       // 2. Process Restaurant Dining History
       let loadedOrders: DiningRecord[] = [];
@@ -551,7 +567,7 @@ export default function GuestDiningHistoryPage() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [storeOrders, tenantSlug, tenantName]);
+  }, [storeOrders, tenantSlug, tenantName, hasRoomsEnabled]);
 
   // Initial load
   React.useEffect(() => {
@@ -959,30 +975,50 @@ export default function GuestDiningHistoryPage() {
 
   // CSV Report Generator
   const handleExportCSV = () => {
-    const rows = [
-      ["DineFlow — Operational Guest & Dining Audit Report"],
+    const reportTitle = hasRoomsEnabled
+      ? "DineFlow — Operational Guest & Dining Audit Report"
+      : isCloudKitchen
+      ? "DineFlow — Cloud Kitchen Order & Dispatch Audit Report"
+      : "DineFlow — Restaurant Dining & Billing Audit Report";
+
+    const rows: Array<Array<string | number>> = [
+      [reportTitle],
       [`Generated: ${new Date().toLocaleString()}`],
       [`Period: ${dateRangeBounds.label} (${dateRangeBounds.start.toLocaleDateString()} to ${dateRangeBounds.end.toLocaleDateString()})`],
       [`Tenant: ${tenantName || "DineFlow Hospitality"}`],
       [],
-      ["--- SECTION 1: HOTEL GUEST CHECK-IN RECORDS ---"],
-      ["Room Number", "Room Type", "Guest Name", "Phone", "Email", "Guests", "Check-In", "Check-Out / Expected", "Status", "Folio Balance", "ID Proof", "Nationality"],
-      ...filteredHotelGuests.map((g) => [
-        `"${g.roomNumber}"`,
-        `"${g.roomType || "Standard"}"`,
-        `"${g.name}"`,
-        `"${g.phone}"`,
-        `"${g.email || ""}"`,
-        g.numberOfGuests,
-        `"${new Date(g.checkIn).toLocaleString()}"`,
-        `"${g.checkOut ? new Date(g.checkOut).toLocaleString() : g.expectedCheckOut ? new Date(g.expectedCheckOut).toLocaleString() : "Active Stay"}"`,
-        `"${g.status}"`,
-        g.folioBalance,
-        `"${g.idProofType || ""}"`,
-        `"${g.nationality || ""}"`,
-      ]),
-      [],
-      ["--- SECTION 2: RESTAURANT DINING & BILLING RECORDS ---"],
+    ];
+
+    if (hasRoomsEnabled) {
+      rows.push(
+        ["--- SECTION 1: HOTEL GUEST CHECK-IN RECORDS ---"],
+        ["Room Number", "Room Type", "Guest Name", "Phone", "Email", "Guests", "Check-In", "Check-Out / Expected", "Status", "Folio Balance", "ID Proof", "Nationality"],
+        ...filteredHotelGuests.map((g) => [
+          `"${g.roomNumber}"`,
+          `"${g.roomType || "Standard"}"`,
+          `"${g.name}"`,
+          `"${g.phone}"`,
+          `"${g.email || ""}"`,
+          g.numberOfGuests,
+          `"${new Date(g.checkIn).toLocaleString()}"`,
+          `"${g.checkOut ? new Date(g.checkOut).toLocaleString() : g.expectedCheckOut ? new Date(g.expectedCheckOut).toLocaleString() : "Active Stay"}"`,
+          `"${g.status}"`,
+          g.folioBalance,
+          `"${g.idProofType || ""}"`,
+          `"${g.nationality || ""}"`,
+        ]),
+        []
+      );
+    }
+
+    const sectionTitle = hasRoomsEnabled
+      ? "--- SECTION 2: RESTAURANT DINING & BILLING RECORDS ---"
+      : isCloudKitchen
+      ? "--- CLOUD KITCHEN ORDERS & DISPATCH RECORDS ---"
+      : "--- RESTAURANT DINING & BILLING RECORDS ---";
+
+    rows.push(
+      [sectionTitle],
       ["Ticket ID", "Table / Location", "Customer Name", "Customer Phone", "Destination", "Bill Total", "Payment Method", "Order Status", "Order Timestamp", "Items Ordered"],
       ...filteredDiningOrders.map((o) => [
         `"#${o.id}"`,
@@ -995,19 +1031,24 @@ export default function GuestDiningHistoryPage() {
         `"${o.status}"`,
         `"${new Date(o.createdAt).toLocaleString()}"`,
         `"${o.items.map((it) => `${it.qty}x ${it.name}`).join(", ")}"`,
-      ]),
-    ];
+      ])
+    );
 
     const csvContent = "data:text/csv;charset=utf-8," + rows.map((r) => r.join(",")).join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `dineflow-guest-dining-history-${datePreset}-${new Date().toISOString().slice(0, 10)}.csv`);
+    const filePrefix = hasRoomsEnabled
+      ? "dineflow-guest-dining-history"
+      : isCloudKitchen
+      ? "dineflow-cloud-kitchen-history"
+      : "dineflow-dining-history";
+    link.setAttribute("download", `${filePrefix}-${datePreset}-${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
 
-    addToast("success", "History Exported", `Generated CSV report with ${rows.length} guest and dining records.`);
+    addToast("success", "History Exported", `Generated CSV report with ${rows.length} records.`);
   };
 
   return (
@@ -1022,7 +1063,7 @@ export default function GuestDiningHistoryPage() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-                  Guest & Dining History
+                  {categoryConfig.historyTitle}
                 </h1>
                 {/* Real-time pulse indicator */}
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
@@ -1039,7 +1080,7 @@ export default function GuestDiningHistoryPage() {
                 </div>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                Live operational log of settled restaurant bills and hotel room check-in/out stays.
+                {categoryConfig.historyDescription}
               </p>
             </div>
           </div>
@@ -1072,32 +1113,40 @@ export default function GuestDiningHistoryPage() {
                 >
                   <UtensilsCrossed className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
                   <div>
-                    <span className="font-bold block">Settle Dining Bill</span>
-                    <span className="text-[10px] text-slate-400 block">Table 04 • ₹1,840 via UPI</span>
+                    <span className="font-bold block">
+                      {isCloudKitchen ? "Settle Kitchen Order" : "Settle Dining Bill"}
+                    </span>
+                    <span className="text-[10px] text-slate-400 block">
+                      {isCloudKitchen ? "Order #4092 • ₹1,240 via Online" : "Table 04 • ₹1,840 via UPI"}
+                    </span>
                   </div>
                 </button>
-                <button
-                  type="button"
-                  onClick={handleSimulateCheckIn}
-                  className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center gap-2 cursor-pointer transition-colors"
-                >
-                  <Hotel className="h-3.5 w-3.5 text-purple-500 shrink-0" />
-                  <div>
-                    <span className="font-bold block">Hotel Guest Check-In</span>
-                    <span className="text-[10px] text-slate-400 block">Suite 305 • Radhika Nair</span>
-                  </div>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSimulateCheckOut}
-                  className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center gap-2 cursor-pointer transition-colors"
-                >
-                  <CheckCircle2 className="h-3.5 w-3.5 text-blue-500 shrink-0" />
-                  <div>
-                    <span className="font-bold block">Hotel Guest Check-Out</span>
-                    <span className="text-[10px] text-slate-400 block">Suite 302 • Folio Cleared</span>
-                  </div>
-                </button>
+                {hasRoomsEnabled && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleSimulateCheckIn}
+                      className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center gap-2 cursor-pointer transition-colors"
+                    >
+                      <Hotel className="h-3.5 w-3.5 text-purple-500 shrink-0" />
+                      <div>
+                        <span className="font-bold block">Hotel Guest Check-In</span>
+                        <span className="text-[10px] text-slate-400 block">Suite 305 • Radhika Nair</span>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSimulateCheckOut}
+                      className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center gap-2 cursor-pointer transition-colors"
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+                      <div>
+                        <span className="font-bold block">Hotel Guest Check-Out</span>
+                        <span className="text-[10px] text-slate-400 block">Suite 302 • Folio Cleared</span>
+                      </div>
+                    </button>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -1221,40 +1270,42 @@ export default function GuestDiningHistoryPage() {
       </Card>
 
       {/* Aggregate KPI Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* KPI 1: Hotel Check-ins */}
-        <Card variant="glass" className="p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Hotel Check-ins
-            </span>
-            <div className="h-8 w-8 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center">
-              <Hotel className="h-4 w-4" />
+      <div className={cn("grid gap-4", hasRoomsEnabled ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4" : "grid-cols-1 sm:grid-cols-3")}>
+        {/* KPI 1: Hotel Check-ins (Hotels & Resorts only) */}
+        {hasRoomsEnabled && (
+          <Card variant="glass" className="p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Hotel Check-ins
+              </span>
+              <div className="h-8 w-8 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                <Hotel className="h-4 w-4" />
+              </div>
             </div>
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-black text-slate-900 dark:text-white font-mono">
-              <NumberFlow value={metrics.hotelCheckins} />
-            </span>
-            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-              ({metrics.totalGuestsStaying} total guests)
-            </span>
-          </div>
-          <div className="mt-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between text-[11px] text-slate-500">
-            <span>
-              🟢 In-House: <strong className="text-slate-900 dark:text-white">{metrics.inHouseGuests}</strong>
-            </span>
-            <span>
-              ⚪ Departed: <strong className="text-slate-900 dark:text-white">{metrics.departedGuests}</strong>
-            </span>
-          </div>
-        </Card>
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="text-2xl font-black text-slate-900 dark:text-white font-mono">
+                <NumberFlow value={metrics.hotelCheckins} />
+              </span>
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                ({metrics.totalGuestsStaying} total guests)
+              </span>
+            </div>
+            <div className="mt-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between text-[11px] text-slate-500">
+              <span>
+                🟢 In-House: <strong className="text-slate-900 dark:text-white">{metrics.inHouseGuests}</strong>
+              </span>
+              <span>
+                ⚪ Departed: <strong className="text-slate-900 dark:text-white">{metrics.departedGuests}</strong>
+              </span>
+            </div>
+          </Card>
+        )}
 
-        {/* KPI 2: Restaurant Diners */}
+        {/* KPI 2: Restaurant Diners / Kitchen Orders */}
         <Card variant="glass" className="p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Restaurant Diners
+              {isCloudKitchen ? "Orders Dispatched" : "Restaurant Diners"}
             </span>
             <div className="h-8 w-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
               <UtensilsCrossed className="h-4 w-4" />
@@ -1264,7 +1315,9 @@ export default function GuestDiningHistoryPage() {
             <span className="text-2xl font-black text-slate-900 dark:text-white font-mono">
               <NumberFlow value={metrics.diningOrdersCount} />
             </span>
-            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">meals served</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+              {isCloudKitchen ? "orders fulfilled" : "meals served"}
+            </span>
           </div>
           <div className="mt-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between text-[11px] text-slate-500">
             <span>Revenue:</span>
@@ -1286,12 +1339,21 @@ export default function GuestDiningHistoryPage() {
           </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
-              {formatCurrency(metrics.combinedRevenue)}
+              {formatCurrency(hasRoomsEnabled ? metrics.combinedRevenue : metrics.totalDiningRevenue)}
             </span>
           </div>
           <div className="mt-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between text-[11px] text-slate-500">
-            <span>Dining: {formatCurrency(metrics.totalDiningRevenue)}</span>
-            <span>Folio: {formatCurrency(metrics.totalFolioRevenue)}</span>
+            {hasRoomsEnabled ? (
+              <>
+                <span>Dining: {formatCurrency(metrics.totalDiningRevenue)}</span>
+                <span>Folio: {formatCurrency(metrics.totalFolioRevenue)}</span>
+              </>
+            ) : (
+              <>
+                <span>Settled Checks: <strong className="text-slate-900 dark:text-white font-mono">{metrics.diningOrdersCount}</strong></span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-medium">100% Cleared</span>
+              </>
+            )}
           </div>
         </Card>
 
@@ -1299,7 +1361,7 @@ export default function GuestDiningHistoryPage() {
         <Card variant="glass" className="p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Avg Dining Ticket
+              {isCloudKitchen ? "Avg Order Value" : "Avg Dining Ticket"}
             </span>
             <div className="h-8 w-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
               <Receipt className="h-4 w-4" />
@@ -1323,10 +1385,16 @@ export default function GuestDiningHistoryPage() {
         <Tabs
           tabs={[
             { id: "all", label: "All Activity Feed", badge: combinedActivityFeed.length },
-            { id: "hotel", label: "🏨 Hotel Guest Check-ins", badge: filteredHotelGuests.length },
-            { id: "dining", label: "🍽️ Restaurant Dining History", badge: filteredDiningOrders.length },
+            ...(hasRoomsEnabled
+              ? [{ id: "hotel", label: "🏨 Hotel Guest Check-ins", badge: filteredHotelGuests.length }]
+              : []),
+            {
+              id: "dining",
+              label: isCloudKitchen ? "🍳 Kitchen Order Bills" : "🍽️ Restaurant Dining History",
+              badge: filteredDiningOrders.length,
+            },
           ]}
-          activeTab={activeTab}
+          activeTab={!hasRoomsEnabled && activeTab === "hotel" ? "dining" : activeTab}
           onChange={(id) => setActiveTab(id as any)}
         />
       </div>

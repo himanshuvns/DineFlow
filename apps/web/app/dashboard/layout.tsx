@@ -3,13 +3,13 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Sidebar, NAV_SECTIONS } from "@/components/dashboard/sidebar";
+import { Sidebar, NAV_SECTIONS, getNavSections } from "@/components/dashboard/sidebar";
 import { TopBar } from "@/components/dashboard/topbar";
 import { ImpersonationBanner } from "@/components/dashboard/impersonation-banner";
 import { BroadcastBanner } from "@/components/dashboard/broadcast-banner";
 import { useUIStore } from "@/lib/stores/ui-store";
 import { useAuthStore } from "@/lib/stores/auth-store";
-import { isPlatformRole, isRouteAllowed, getPrimaryRouteForRole } from "@/lib/rbac/roles";
+import { isPlatformRole, isRouteAllowed, getPrimaryRouteForRole, getCategoryConfig } from "@/lib/rbac/roles";
 import { X, UtensilsCrossed, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -57,16 +57,19 @@ export default function DashboardLayout({
       return;
     }
 
-    // 4. Role-based Route Protection: verify if current pathname is allowed for user's role
+    // 4. Role and Category-based Route Protection: verify if current pathname is allowed
     const effectiveRole = roleFromStorage || user?.role;
-    if (effectiveRole && !isRouteAllowed(pathname, effectiveRole)) {
+    if (effectiveRole && !isRouteAllowed(pathname, effectiveRole, tenant?.type)) {
       const fallbackRoute = getPrimaryRouteForRole(effectiveRole);
       router.replace(fallbackRoute);
       return;
     }
 
     setIsAuthorized(true);
-  }, [pathname, router, isAuthenticated, accessToken, user]);
+  }, [pathname, router, isAuthenticated, accessToken, user, tenant?.type]);
+
+  const categoryConfig = getCategoryConfig(tenant?.type);
+  const navSections = React.useMemo(() => getNavSections(tenant?.type), [tenant?.type]);
 
   if (!isAuthorized) {
     return (
@@ -84,7 +87,6 @@ export default function DashboardLayout({
       {/* Pinned Desktop Sidebar */}
       <Sidebar />
 
-      {/* Mobile Drawer */}
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 md:hidden flex">
@@ -117,9 +119,7 @@ export default function DashboardLayout({
                     </span>
                     <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 truncate flex items-center gap-1">
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      {tenant?.type
-                        ? `${tenant.type.charAt(0).toUpperCase() + tenant.type.slice(1).replace("_", " ")} OS`
-                        : "Restaurant OS"}
+                      {categoryConfig.tagline}
                     </span>
                   </div>
                 </div>
@@ -134,8 +134,8 @@ export default function DashboardLayout({
 
               {/* Navigation grouped by section matching desktop sidebar */}
               <nav className="mt-4 space-y-3">
-                {NAV_SECTIONS.map((section) => {
-                  const visibleItems = section.items.filter((item) => isRouteAllowed(item.href, user?.role));
+                {navSections.map((section) => {
+                  const visibleItems = section.items.filter((item) => isRouteAllowed(item.href, user?.role, tenant?.type));
                   if (visibleItems.length === 0) return null;
 
                   return (

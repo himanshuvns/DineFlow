@@ -39,6 +39,7 @@ import { useToast } from "@/components/ui/toast";
 import { useTheme } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
 import { GeminiLogoModal } from "@/components/settings/gemini-logo-modal";
+import { BusinessCategorySelector } from "@/components/auth/business-category-selector";
 
 interface Invoice {
   id: string;
@@ -85,12 +86,16 @@ export default function SettingsPage() {
   const [name, setName] = React.useState(tenant?.name || "The Grand Bistro");
   const [currency, setCurrency] = React.useState(tenant?.currency || "INR");
   const [logoUrl, setLogoUrl] = React.useState(tenant?.logoUrl || tenant?.logo || "");
+  const [category, setCategory] = React.useState<string>(tenant?.type || "restaurant");
   const [isLogoModalOpen, setIsLogoModalOpen] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
   React.useEffect(() => {
     if (tenant?.logoUrl || tenant?.logo) {
       setLogoUrl(tenant.logoUrl || tenant.logo || "");
+    }
+    if (tenant?.type) {
+      setCategory(tenant.type);
     }
   }, [tenant]);
 
@@ -207,7 +212,7 @@ export default function SettingsPage() {
 
   const handleSaveGeneral = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateTenant({ name, currency, logoUrl, logo: logoUrl });
+    updateTenant({ name, currency, logoUrl, logo: logoUrl, type: category });
 
     try {
       const apiBase =
@@ -223,14 +228,14 @@ export default function SettingsPage() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ name, currency, logoUrl }),
+          body: JSON.stringify({ name, currency, logoUrl, businessType: category }),
         });
       }
     } catch (err) {
       console.warn("Backend tenant update warning:", err);
     }
 
-    addToast("success", "Settings Saved", "Your restaurant workspace profile was updated.");
+    addToast("success", "Settings Saved", `Workspace profile and ${category.replace("_", " ")} configuration updated.`);
   };
 
   const handleConfirmUpgrade = () => {
@@ -591,6 +596,23 @@ export default function SettingsPage() {
                     />
                   </div>
                 </div>
+              </div>
+
+              {/* Business Category Vertical Switcher */}
+              <div className="pt-2 border-t border-slate-200/80 dark:border-slate-800/80">
+                <BusinessCategorySelector
+                  value={category}
+                  onChange={(newCat) => {
+                    setCategory(newCat);
+                    updateTenant({ type: newCat });
+                    addToast(
+                      "info",
+                      "Vertical Preview Active",
+                      `Dashboard adapted for ${newCat.replace("_", " ").toUpperCase()}. Click Save Changes to keep.`
+                    );
+                  }}
+                  detailed
+                />
               </div>
 
               <div className="pt-2 flex justify-end">

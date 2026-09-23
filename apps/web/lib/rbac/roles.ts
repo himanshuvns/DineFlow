@@ -6,6 +6,26 @@
  * 2. Tenant Roles (Hospitality Client Workspaces)
  */
 
+import {
+  isRouteAllowedForCategory,
+  hasRooms,
+  hasTables,
+  getCategoryConfig,
+  normalizeCategory,
+  type BusinessCategory,
+  type CategoryConfig,
+} from "./category-features";
+
+export {
+  isRouteAllowedForCategory,
+  hasRooms,
+  hasTables,
+  getCategoryConfig,
+  normalizeCategory,
+  type BusinessCategory,
+  type CategoryConfig,
+};
+
 export type PlatformRole =
   | "super_admin"
   | "platform_admin"
@@ -254,12 +274,25 @@ export const ROLE_ALLOWED_ROUTES: Record<string, string[]> = {
 };
 
 /**
- * Checks if a role is permitted to view or navigate to a given route.
+ * Checks if a role and business category are permitted to view or navigate to a given route.
  */
-export function isRouteAllowed(pathname: string, role?: string | null): boolean {
+export function isRouteAllowed(
+  pathname: string,
+  role?: string | null,
+  category?: string | null
+): boolean {
   if (!role) return false;
-  // Super admin and platform admins have full access across workspace
-  if (isPlatformAdmin(role) || isOwner(role)) return true;
+
+  // Platform super admins and platform admins bypass category gating for system debugging
+  if (isPlatformAdmin(role)) return true;
+
+  // Enforce vertical business category gating (e.g. Restaurants have no Rooms; Cloud Kitchens have neither Rooms nor Tables)
+  if (category && !isRouteAllowedForCategory(pathname, category)) {
+    return false;
+  }
+
+  // Business Owner has access to all category-permitted workspace routes
+  if (isOwner(role)) return true;
 
   const allowedRoutes = ROLE_ALLOWED_ROUTES[role] || ROLE_ALLOWED_ROUTES["staff"];
 

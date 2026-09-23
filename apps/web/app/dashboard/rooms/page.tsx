@@ -53,6 +53,7 @@ import { ViewToggle, useViewMode } from "@/components/ui/view-toggle";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import NumberFlow from "@number-flow/react";
 import { triggerHotelGuestCheckedIn, triggerHotelGuestCheckedOut } from "@/lib/realtime/history-events";
+import { hasRooms, getCategoryConfig } from "@/lib/rbac/roles";
 
 interface RoomItem {
   id: string;
@@ -125,6 +126,9 @@ export default function RoomsDirectoryPage() {
   const { tenant } = useAuthStore();
   const tenantSlug = tenant?.slug || "dineflow";
   const tenantName = tenant?.name || "Your Hotel & Suites";
+
+  const isRoomVertical = hasRooms(tenant?.type);
+  const categoryConfig = getCategoryConfig(tenant?.type);
 
   const [rooms, setRooms] = React.useState<RoomItem[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -1026,6 +1030,41 @@ export default function RoomsDirectoryPage() {
     }
     return true;
   });
+
+  if (!isRoomVertical) {
+    return (
+      <div className="max-w-2xl mx-auto py-16 px-4 text-center">
+        <div className="h-16 w-16 mx-auto rounded-3xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400 mb-6 shadow-lg shadow-purple-500/10">
+          <Hotel className="h-8 w-8" />
+        </div>
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-700 dark:text-purple-300 text-xs font-semibold mb-3">
+          Hotel & Resort Vertical Feature
+        </div>
+        <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight mb-2">
+          Rooms & Suites Unavailable
+        </h1>
+        <p className="text-sm text-slate-600 dark:text-slate-400 max-w-md mx-auto mb-8 leading-relaxed">
+          Your workspace is currently configured as a <strong className="text-slate-900 dark:text-white capitalize">{categoryConfig.label}</strong>. Room allocations, stay folios, and housekeeping are exclusively enabled for Hotel and Resort workspaces.
+        </p>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+          <Button
+            variant="outline"
+            onClick={() => router.push("/dashboard")}
+            className="w-full sm:w-auto"
+          >
+            Back to Dashboard
+          </Button>
+          <Button
+            variant="glow"
+            onClick={() => router.push("/dashboard/settings?tab=general")}
+            className="w-full sm:w-auto"
+          >
+            Switch Category in Settings
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full min-h-0 gap-2.5">

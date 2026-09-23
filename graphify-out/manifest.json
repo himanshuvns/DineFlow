@@ -444,9 +444,9 @@
     "semantic_hash": ""
   },
   "apps/web/app/(auth)/register/page.tsx": {
-    "mtime": 1790015828.6736217,
-    "seen": 1790069809.277299,
-    "ast_hash": "4dbe4967347981fc5142faf5360e12c4",
+    "mtime": 1790190706.6487293,
+    "seen": 1790190770.2101262,
+    "ast_hash": "a804492097894ea6a1a066707cd2f748",
     "semantic_hash": ""
   },
   "apps/web/app/(auth)/reset-password/page.tsx": {
@@ -552,9 +552,9 @@
     "semantic_hash": "d29c43e8a5e05a6ca7c60f0a84efd176"
   },
   "apps/web/app/dashboard/layout.tsx": {
-    "mtime": 1790096476.919449,
-    "seen": 1790096656.535599,
-    "ast_hash": "00a887f7ed3fcc004a6d0f120659f3a3",
+    "mtime": 1790190295.41011,
+    "seen": 1790190770.210141,
+    "ast_hash": "7a54c804f249bbb824241bc50e1580cc",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/loading.tsx": {
@@ -582,9 +582,9 @@
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/page.tsx": {
-    "mtime": 1790082703.2242837,
-    "seen": 1790083858.35023,
-    "ast_hash": "cdfb27048cd11650e787f75f0f2ec7d7",
+    "mtime": 1790190333.684258,
+    "seen": 1790190770.210145,
+    "ast_hash": "0f701de420b35714955892dfcfbc0870",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/rooms/[roomId]/page.tsx": {
@@ -594,15 +594,15 @@
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/rooms/page.tsx": {
-    "mtime": 1790188797.420896,
-    "seen": 1790189223.429395,
-    "ast_hash": "1e3eef5ada99f550d2a7396a126010df",
+    "mtime": 1790190556.972212,
+    "seen": 1790190770.210146,
+    "ast_hash": "566ed02f18faf0d32cd2b98945d7b8c6",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/settings/page.tsx": {
-    "mtime": 1790015787.56495,
-    "seen": 1790069809.2773771,
-    "ast_hash": "68ad40f01d5702d2bbf6ebb695a60613",
+    "mtime": 1790190684.4909217,
+    "seen": 1790190770.2101471,
+    "ast_hash": "3b63b23240da4ddf0d148a92f9e5e851",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/staff/page.tsx": {
@@ -612,9 +612,9 @@
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/tables/page.tsx": {
-    "mtime": 1790185645.1135457,
-    "seen": 1790185735.363748,
-    "ast_hash": "651245f0adb8b12af47d579206bb0403",
+    "mtime": 1790190606.7891154,
+    "seen": 1790190770.210148,
+    "ast_hash": "0150f95ce2c72b8e7a5e22e3794c9172",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/whatsapp/page.tsx": {
@@ -678,10 +678,10 @@
     "semantic_hash": "d753aae00f9497d553e2d23eae3b4a7f"
   },
   "apps/web/components/auth/business-category-selector.tsx": {
-    "mtime": 1789294012.2857685,
-    "seen": 1789625093.701001,
-    "ast_hash": "933daacb77c80b0c7fc44c854b3fc657",
-    "semantic_hash": "933daacb77c80b0c7fc44c854b3fc657"
+    "mtime": 1790190621.2041159,
+    "seen": 1790190770.210167,
+    "ast_hash": "0b2bd379d17ef5ead51e864901173ec2",
+    "semantic_hash": ""
   },
   "apps/web/components/auth/chef-mascot.tsx": {
     "mtime": 1789285575.1277528,
@@ -768,9 +768,9 @@
     "semantic_hash": "1949d2c976b3ee6fd48edf96b9482e63"
   },
   "apps/web/components/dashboard/sidebar.tsx": {
-    "mtime": 1790187797.1374815,
-    "seen": 1790187927.220929,
-    "ast_hash": "a22fcf1db74fc8c70294bccfcd843cbb",
+    "mtime": 1790190253.2422717,
+    "seen": 1790190770.210179,
+    "ast_hash": "78c94ed1add565ca2179e1aa0ad9bce1",
     "semantic_hash": ""
   },
   "apps/web/components/dashboard/topbar.tsx": {
@@ -1818,9 +1818,9 @@
     "semantic_hash": ""
   },
   "apps/web/lib/rbac/roles.ts": {
-    "mtime": 1790187783.7244148,
-    "seen": 1790187927.220972,
-    "ast_hash": "ec969e393f99a66f21554686478dae8f",
+    "mtime": 1790190217.8090813,
+    "seen": 1790190770.210221,
+    "ast_hash": "7599108db1c2b1912e34ea23bd690973",
     "semantic_hash": ""
   },
   "apps/web/lib/stores/platform-store.ts": {
@@ -2352,15 +2352,21 @@
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/history/page.tsx": {
-    "mtime": 1790189178.2773912,
-    "seen": 1790189223.429389,
-    "ast_hash": "54dfadc3761b0bd663de758cc20ffb12",
+    "mtime": 1790190512.0659018,
+    "seen": 1790190770.210141,
+    "ast_hash": "c3994acf0189c173f2d01439a1ce0d81",
     "semantic_hash": ""
   },
   "apps/web/lib/realtime/history-events.ts": {
     "mtime": 1790189152.1752336,
     "seen": 1790189223.429472,
     "ast_hash": "143d350f4e637c54cacc1d70566f30c0",
+    "semantic_hash": ""
+  },
+  "apps/web/lib/rbac/category-features.ts": {
+    "mtime": 1790190196.2017384,
+    "seen": 1790190770.21022,
+    "ast_hash": "d90b6c63d1d5979976e9fa383ea99d17",
     "semantic_hash": ""
   }
 }

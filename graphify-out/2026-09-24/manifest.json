@@ -588,15 +588,15 @@
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/rooms/[roomId]/page.tsx": {
-    "mtime": 1789974513.7027094,
-    "seen": 1789979131.209991,
-    "ast_hash": "96e0a4d407a7b87a5faf645d771442b0",
+    "mtime": 1790189107.8099082,
+    "seen": 1790189223.429394,
+    "ast_hash": "c06a767ac5149de6d1abe22b90d6fb25",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/rooms/page.tsx": {
-    "mtime": 1790113125.9919183,
-    "seen": 1790113296.69582,
-    "ast_hash": "95ab0632b84417c81a6b2d702c12630d",
+    "mtime": 1790188797.420896,
+    "seen": 1790189223.429395,
+    "ast_hash": "1e3eef5ada99f550d2a7396a126010df",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/settings/page.tsx": {
@@ -996,9 +996,9 @@
     "semantic_hash": ""
   },
   "apps/web/lib/stores/tenant-data-store.ts": {
-    "mtime": 1790183270.8353963,
-    "seen": 1790183578.9125981,
-    "ast_hash": "96f18d7c0c9a0cca294db4881a6fd816",
+    "mtime": 1790189161.5046577,
+    "seen": 1790189223.429476,
+    "ast_hash": "bb052a138e5c001baac037c3692b5b57",
     "semantic_hash": ""
   },
   "apps/web/lib/stores/ui-store.ts": {
@@ -2346,15 +2346,21 @@
     "semantic_hash": ""
   },
   "apps/web/components/orders/settle-bill-modal.tsx": {
-    "mtime": 1790185682.8744602,
-    "seen": 1790185735.363795,
-    "ast_hash": "aea1a34e8a20c6234d9ad57c1a1e2f77",
+    "mtime": 1790188721.6708193,
+    "seen": 1790189223.4294431,
+    "ast_hash": "50e88a6277e31afae296d89204a92ed9",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/history/page.tsx": {
-    "mtime": 1790187840.4747202,
-    "seen": 1790187927.220884,
-    "ast_hash": "b4ae253a3b83a9388c7d1ebd5046d06d",
+    "mtime": 1790189178.2773912,
+    "seen": 1790189223.429389,
+    "ast_hash": "54dfadc3761b0bd663de758cc20ffb12",
+    "semantic_hash": ""
+  },
+  "apps/web/lib/realtime/history-events.ts": {
+    "mtime": 1790189152.1752336,
+    "seen": 1790189223.429472,
+    "ast_hash": "143d350f4e637c54cacc1d70566f30c0",
     "semantic_hash": ""
   }
 }

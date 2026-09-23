@@ -182,10 +182,23 @@ export default function RegisterPage() {
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="space-y-2 sm:space-y-2.5">
           {/* 1. Business Category Selector */}
-          <BusinessCategorySelector
-            value={businessType}
-            onChange={setBusinessType}
-          />
+          <div>
+            <BusinessCategorySelector
+              value={businessType}
+              onChange={setBusinessType}
+            />
+            <p className="text-[10.5px] text-slate-500 dark:text-slate-400 mt-1 px-0.5">
+              {businessType === "hotel"
+                ? "✨ Full Hospitality: Hotel Rooms, Suites & Folio Billing + Dining Management"
+                : businessType === "resort"
+                ? "🌴 Resort Living: Villas, Cabanas, Stays & In-Room / Poolside Dining"
+                : businessType === "cloud_kitchen"
+                ? "🍳 Kitchen Focused: Live KDS & Delivery Dispatch (No physical dine-in tables or rooms)"
+                : businessType === "cafe"
+                ? "☕ Café & Counter: Counter Orders, Tables, and Barista KDS Display"
+                : "🍽️ Full Service: Dining Room Tables, QR Ordering, Menu, and Kitchen Displays"}
+            </p>
+          </div>
 
           {/* 2. Business Name with inline QR Slug Preview */}
           <div>
