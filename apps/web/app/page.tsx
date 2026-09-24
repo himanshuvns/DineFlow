@@ -15,6 +15,13 @@ import { PeekingChef } from "@/components/ui/peeking-chef";
 import { AetherParticleCanvas } from "@/components/ui/aether-particle-canvas";
 
 export default function HomePage() {
+  React.useEffect(() => {
+    // If user arrived without an explicit anchor hash, guarantee clean viewport entry at top
+    if (typeof window !== "undefined" && !window.location.hash) {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-[#090D16] dark:text-slate-100 flex flex-col relative transition-colors duration-200 selection:bg-emerald-500/20 selection:text-emerald-600">
       {/* Global Fixed Parallax Background Canvas - Single Pristine Mouse Hovering Effect */}

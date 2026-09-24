@@ -660,9 +660,9 @@
     "semantic_hash": ""
   },
   "apps/web/app/page.tsx": {
-    "mtime": 1790179918.0722687,
-    "seen": 1790180087.164287,
-    "ast_hash": "8be27a960b352f479d1df64afc8f66c3",
+    "mtime": 1790255086.1446037,
+    "seen": 1790255163.3322518,
+    "ast_hash": "aa61cdd866b5c3e73ae80d8628c9d05c",
     "semantic_hash": ""
   },
   "apps/web/app/pricing/page.tsx": {
@@ -1896,15 +1896,15 @@
     "semantic_hash": ""
   },
   "apps/web/components/landing/landing-hero.tsx": {
-    "mtime": 1790179266.3594763,
-    "seen": 1790179573.261493,
-    "ast_hash": "3f076dd67880770f7ce0c3935eb30887",
+    "mtime": 1790255103.905219,
+    "seen": 1790255163.3322828,
+    "ast_hash": "be53583b583da539e12297d1cbe70851",
     "semantic_hash": ""
   },
   "apps/web/components/landing/landing-interactive-preview.tsx": {
-    "mtime": 1790180848.283126,
-    "seen": 1790180906.143872,
-    "ast_hash": "d53a9b201e637fa7454debf6a6179814",
+    "mtime": 1790255074.478548,
+    "seen": 1790255163.332284,
+    "ast_hash": "d0dfe188507112ec72503190cd8a19c9",
     "semantic_hash": ""
   },
   "apps/web/components/landing/landing-kds-preview.tsx": {

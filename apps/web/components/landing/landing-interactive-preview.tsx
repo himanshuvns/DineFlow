@@ -54,7 +54,9 @@ const TABS: TabDef[] = [
 
 export function LandingInteractivePreview() {
   const containerRef = React.useRef<HTMLDivElement>(null);
+  const tabsNavRef = React.useRef<HTMLDivElement>(null);
   const tabButtonRefs = React.useRef<(HTMLButtonElement | null)[]>([]);
+  const isInitialMountRef = React.useRef(true);
   const isManualClickRef = React.useRef(false);
   const manualTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const shouldReduceMotion = useReducedMotion();
@@ -82,12 +84,20 @@ export function LandingInteractivePreview() {
 
   // Ensure active tab button is scrolled into view in horizontal tabs bar (mobile/tablet)
   React.useEffect(() => {
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      return;
+    }
+
     const activeIndex = TABS.findIndex((t) => t.key === activeTab);
-    if (activeIndex >= 0 && tabButtonRefs.current[activeIndex]) {
-      tabButtonRefs.current[activeIndex]?.scrollIntoView({
+    const container = tabsNavRef.current;
+    const button = tabButtonRefs.current[activeIndex];
+
+    if (container && button && container.scrollWidth > container.clientWidth) {
+      const scrollLeft = button.offsetLeft - container.clientWidth / 2 + button.clientWidth / 2;
+      container.scrollTo({
+        left: Math.max(0, scrollLeft),
         behavior: "smooth",
-        block: "nearest",
-        inline: "center",
       });
     }
   }, [activeTab]);
@@ -167,7 +177,10 @@ export function LandingInteractivePreview() {
           </div>
 
           {/* Interactive Tabs Bar */}
-          <div className="flex items-center justify-start lg:justify-center overflow-x-auto lg:overflow-visible flex-nowrap lg:flex-wrap gap-2 pb-2 px-1 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div
+            ref={tabsNavRef}
+            className="flex items-center justify-start lg:justify-center overflow-x-auto lg:overflow-visible flex-nowrap lg:flex-wrap gap-2 pb-2 px-1 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
             {TABS.map((tab, idx) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.key;

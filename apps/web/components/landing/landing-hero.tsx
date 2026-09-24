@@ -50,10 +50,10 @@ export function LandingHero() {
   return (
     <section
       ref={heroRef}
-      className="relative w-full overflow-hidden min-h-[calc(100vh-4rem)] sm:min-h-[calc(100vh-5rem)] flex items-center justify-center pb-12 sm:pb-16"
+      className="relative w-full overflow-hidden min-h-[calc(100vh-4rem)] sm:min-h-[calc(100vh-5rem)] flex items-center justify-center py-6 sm:py-10"
     >
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full pt-8 pb-20 sm:pt-12 sm:pb-28">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center w-full">
         {/* Left Column: Value Proposition & Conversion CTAs */}
         <div className="lg:col-span-6 space-y-6 text-center lg:text-left">
