@@ -108,7 +108,7 @@ export function TopBar() {
   ];
 
   return (
-    <header className="h-14 border-b border-slate-200/80 dark:border-slate-800/80 bg-white/95 dark:bg-[#090D16]/95 backdrop-blur-md sticky top-0 z-40 flex items-center px-3 sm:px-5 gap-3 transition-colors duration-200">
+    <header className="h-14 border-b border-slate-200/80 dark:border-slate-800/80 bg-white/95 dark:bg-[#090D16]/95 backdrop-blur-md sticky top-0 z-40 flex items-center px-3 sm:px-5 lg:px-6 xl:px-8 gap-3 transition-colors duration-200">
 
       {/* Left: Mobile menu trigger + Breadcrumbs */}
       <div className="flex items-center gap-2 min-w-0 flex-1 md:flex-initial">

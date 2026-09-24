@@ -94,7 +94,7 @@ const STATS = [
 
 export default function AIStudioPage() {
   return (
-    <div className="space-y-8 max-w-7xl">
+    <div className="space-y-8 w-full">
       {/* Hero Header */}
       <div className="relative overflow-hidden rounded-3xl border border-violet-200 dark:border-violet-500/20 bg-gradient-to-br from-violet-50/80 via-white to-indigo-50/60 dark:from-[#0d0f1a] dark:via-[#111526] dark:to-[#0b0d18] p-8 shadow-xs">
         {/* Background glow */}

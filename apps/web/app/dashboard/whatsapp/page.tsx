@@ -1078,7 +1078,7 @@ export default function WhatsAppPage() {
   });
 
   return (
-    <div className="space-y-6 max-w-7xl w-full min-w-0 mx-auto pb-12 overflow-x-hidden">
+    <div className="space-y-6 w-full min-w-0 pb-12 overflow-x-hidden">
       {/* ── Page Header ─────────────────────────────────────────────────────── */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 min-w-0">
         <div className="min-w-0">

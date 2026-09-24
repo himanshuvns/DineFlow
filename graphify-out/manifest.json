@@ -510,39 +510,39 @@
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/ai/forecast/page.tsx": {
-    "mtime": 1789294401.8583848,
-    "seen": 1789625093.700984,
-    "ast_hash": "f80f45b9206382305519668be78b309f",
-    "semantic_hash": "f80f45b9206382305519668be78b309f"
+    "mtime": 1790250992.3992484,
+    "seen": 1790251145.844598,
+    "ast_hash": "569fce9b6359fb427a6b3a23c0c08d5c",
+    "semantic_hash": ""
   },
   "apps/web/app/dashboard/ai/menu-writer/page.tsx": {
-    "mtime": 1790015719.470213,
-    "seen": 1790069809.277351,
-    "ast_hash": "73acd00bbbf73aa38f6539d419c867b4",
+    "mtime": 1790251028.2113113,
+    "seen": 1790251145.844599,
+    "ast_hash": "1f10c9b48333dc3d056ea683b136d154",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/ai/page.tsx": {
-    "mtime": 1789619657.3539274,
-    "seen": 1789625093.7009861,
-    "ast_hash": "13f6159fc3f528467b2d129b467d448a",
-    "semantic_hash": "13f6159fc3f528467b2d129b467d448a"
+    "mtime": 1790250979.9362588,
+    "seen": 1790251145.8446,
+    "ast_hash": "ce93fdc39e58ae64bc520c3cf20b937b",
+    "semantic_hash": ""
   },
   "apps/web/app/dashboard/ai/pricing/page.tsx": {
-    "mtime": 1789294449.50461,
-    "seen": 1789625093.7009869,
-    "ast_hash": "b8ea409d3df857ee20343686ff0f5d2d",
-    "semantic_hash": "b8ea409d3df857ee20343686ff0f5d2d"
+    "mtime": 1790251005.1676028,
+    "seen": 1790251145.8446,
+    "ast_hash": "fe831711537acbdb0f650b71a44bec05",
+    "semantic_hash": ""
   },
   "apps/web/app/dashboard/ai/upsell/page.tsx": {
-    "mtime": 1789190410.7868707,
-    "seen": 1789625093.7009869,
-    "ast_hash": "3c92067a8c7d7dd12c948a85043b21e1",
-    "semantic_hash": "3c92067a8c7d7dd12c948a85043b21e1"
+    "mtime": 1790251017.5950243,
+    "seen": 1790251145.8446012,
+    "ast_hash": "1ef84599bad5887015309385e1dfbf4a",
+    "semantic_hash": ""
   },
   "apps/web/app/dashboard/analytics/page.tsx": {
-    "mtime": 1790113231.478599,
-    "seen": 1790113296.6958132,
-    "ast_hash": "96dde2e5373fcc06eca65ca5138c2cd7",
+    "mtime": 1790250926.7471306,
+    "seen": 1790251145.8446012,
+    "ast_hash": "fc04826b1fc7f333f0781be177d9cba2",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/error.tsx": {
@@ -552,9 +552,9 @@
     "semantic_hash": "d29c43e8a5e05a6ca7c60f0a84efd176"
   },
   "apps/web/app/dashboard/layout.tsx": {
-    "mtime": 1790190295.41011,
-    "seen": 1790190770.210141,
-    "ast_hash": "7a54c804f249bbb824241bc50e1580cc",
+    "mtime": 1790250782.2961154,
+    "seen": 1790251145.844604,
+    "ast_hash": "cdf89ec7407e6efff8f4d6d2a424856d",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/loading.tsx": {
@@ -564,27 +564,27 @@
     "semantic_hash": "fb3d216d06d08716a65bcb486f6db956"
   },
   "apps/web/app/dashboard/menu/page.tsx": {
-    "mtime": 1790097232.792728,
-    "seen": 1790097270.558145,
-    "ast_hash": "dcb8fda67cbcfb4e3d4a96252abc3694",
+    "mtime": 1790250865.476641,
+    "seen": 1790251145.844605,
+    "ast_hash": "9dbddc1cff133aac28cf1ee274822087",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/notifications/page.tsx": {
-    "mtime": 1790083417.0526397,
-    "seen": 1790083858.350228,
-    "ast_hash": "47a3b673ae21f77ea08d37f35a150e38",
+    "mtime": 1790251060.1845071,
+    "seen": 1790251145.844605,
+    "ast_hash": "c1cc679aa6c3447b71cc7c385c43b8bd",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/orders/page.tsx": {
-    "mtime": 1790183498.8948283,
-    "seen": 1790183578.912519,
-    "ast_hash": "b689951e4e08db730e19f32a244ad683",
+    "mtime": 1790250816.7693703,
+    "seen": 1790251145.844606,
+    "ast_hash": "5607b86b544b8613b1002c4cbef5f4c8",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/page.tsx": {
-    "mtime": 1790190333.684258,
-    "seen": 1790190770.210145,
-    "ast_hash": "0f701de420b35714955892dfcfbc0870",
+    "mtime": 1790250803.4120007,
+    "seen": 1790251145.844606,
+    "ast_hash": "1267e26006473070e918b66faf13333d",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/rooms/[roomId]/page.tsx": {
@@ -594,15 +594,15 @@
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/rooms/page.tsx": {
-    "mtime": 1790190556.972212,
-    "seen": 1790190770.210146,
-    "ast_hash": "566ed02f18faf0d32cd2b98945d7b8c6",
+    "mtime": 1790250916.9408393,
+    "seen": 1790251145.844608,
+    "ast_hash": "405f6d984d3ba9ae9534b234a664237a",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/settings/page.tsx": {
-    "mtime": 1790190684.4909217,
-    "seen": 1790190770.2101471,
-    "ast_hash": "3b63b23240da4ddf0d148a92f9e5e851",
+    "mtime": 1790251052.3971765,
+    "seen": 1790251145.844609,
+    "ast_hash": "a885fc06f3477641cce1e5140dc2fd5b",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/staff/page.tsx": {
@@ -612,15 +612,15 @@
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/tables/page.tsx": {
-    "mtime": 1790190606.7891154,
-    "seen": 1790190770.210148,
-    "ast_hash": "0150f95ce2c72b8e7a5e22e3794c9172",
+    "mtime": 1790250883.1926491,
+    "seen": 1790251145.84461,
+    "ast_hash": "46f9a243eee1c942b0d7901bbb7ad824",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/whatsapp/page.tsx": {
-    "mtime": 1790113182.6012752,
-    "seen": 1790113296.695824,
-    "ast_hash": "a26015b4a9e1d7e64f4bec0020e93a6d",
+    "mtime": 1790250956.3166082,
+    "seen": 1790251145.8446112,
+    "ast_hash": "95424f0274f5b6b10d7f1d4c2c70b94f",
     "semantic_hash": ""
   },
   "apps/web/app/demo/page.tsx": {
@@ -774,9 +774,9 @@
     "semantic_hash": ""
   },
   "apps/web/components/dashboard/topbar.tsx": {
-    "mtime": 1790096591.202562,
-    "seen": 1790096656.535635,
-    "ast_hash": "3bb6f25d79af45e28439ca9471785291",
+    "mtime": 1790250790.8071446,
+    "seen": 1790251145.844643,
+    "ast_hash": "70d7f8e92a6cf5543620d9c58cf00a1e",
     "semantic_hash": ""
   },
   "apps/web/components/menu/camera-menu-scanner-modal.tsx": {
@@ -2106,9 +2106,9 @@
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/video/page.tsx": {
-    "mtime": 1790015736.3548307,
-    "seen": 1790069809.2773829,
-    "ast_hash": "a7c9585128d790fa29ef46671dfe57f9",
+    "mtime": 1790250963.8845234,
+    "seen": 1790251145.8446112,
+    "ast_hash": "623ff808aee981b7ffe58f3445f8f9c8",
     "semantic_hash": ""
   },
   "apps/web/remotion.config.ts": {

@@ -64,7 +64,7 @@ export default function UpsellPage() {
   const totalLift = rules.filter((r) => r.enabled).reduce((acc, r) => acc + r.suggestions.reduce((a, s) => a + s.lift, 0) / r.suggestions.length, 0);
 
   return (
-    <div className="space-y-6 max-w-6xl">
+    <div className="space-y-6 w-full">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>

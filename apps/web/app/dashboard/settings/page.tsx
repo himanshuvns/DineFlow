@@ -293,7 +293,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-6 w-full max-w-7xl">
       <div>
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold mb-2">
           <Sparkles className="h-3.5 w-3.5" /> Workspace Configuration

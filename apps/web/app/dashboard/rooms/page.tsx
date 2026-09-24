@@ -1365,7 +1365,7 @@ export default function RoomsDirectoryPage() {
 
       {/* Hotel Rooms: Loading Skeleton OR Empty State OR Grid / List View */}
       {loading && rooms.length === 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
           {Array.from({ length: 8 }).map((_, i) => (
             <div
               key={`room-skel-${i}`}
@@ -1413,7 +1413,7 @@ export default function RoomsDirectoryPage() {
           />
         </div>
       ) : viewMode === "grid" ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
           {filteredRooms.map((room) => {
             const isOccupied = room.status === "occupied";
           const isCleaning = room.status === "cleaning";
