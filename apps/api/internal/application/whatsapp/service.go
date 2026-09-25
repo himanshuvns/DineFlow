@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"math"
 	"net/http"
 	"os"
@@ -101,27 +102,26 @@ func (s *Service) RecordOptOut(phone string) {
 // ── Meta WhatsApp Cloud API Dispatcher ───────────────────────────────────────
 
 func (s *Service) dispatchMetaMessage(ctx context.Context, tenantID bson.ObjectID, recipientPhone, messageText string) (string, error) {
-	// If modular provider is configured (OpenWA, Meta, Mock), dispatch via provider interface
-	if s.provider != nil {
-		return s.provider.SendText(ctx, recipientPhone, messageText)
+	cleanPhone := strings.TrimPrefix(strings.ReplaceAll(strings.ReplaceAll(recipientPhone, " ", ""), "-", ""), "+")
+	if len(cleanPhone) == 10 {
+		cleanPhone = "91" + cleanPhone
 	}
 
-	cleanPhone := strings.TrimPrefix(strings.ReplaceAll(strings.ReplaceAll(recipientPhone, " ", ""), "-", ""), "+")
-	
-	// 1. Check if tenant has custom Meta credentials or fallback to system environment variables
+	// 1. Check if tenant has configured custom Meta credentials in MongoDB
 	config := s.GetWABAStatus(ctx, tenantID)
-	phoneID := config.PhoneNumberID
-	token := config.AccessToken
+	phoneID := strings.TrimSpace(config.PhoneNumberID)
+	token := strings.TrimSpace(config.AccessToken)
 
-	if phoneID == "" {
-		phoneID = os.Getenv("WHATSAPP_PHONE_NUMBER_ID")
+	// If tenant didn't set custom credentials in DB, fallback to system environment variables
+	if phoneID == "" || strings.HasPrefix(phoneID, "phone_act_") {
+		phoneID = strings.TrimSpace(os.Getenv("WHATSAPP_PHONE_NUMBER_ID"))
 	}
 	if token == "" {
-		token = os.Getenv("WHATSAPP_ACCESS_TOKEN")
+		token = strings.TrimSpace(os.Getenv("WHATSAPP_ACCESS_TOKEN"))
 	}
 
-	// If live Meta credentials exist, call Meta Graph API v21.0
-	if phoneID != "" && token != "" && !strings.Contains(phoneID, "mock") {
+	// 2. If live Meta credentials exist, call Meta Graph API v21.0
+	if phoneID != "" && token != "" && !strings.Contains(phoneID, "mock") && !strings.HasPrefix(phoneID, "phone_act_") {
 		url := fmt.Sprintf("https://graph.facebook.com/v21.0/%s/messages", phoneID)
 		payload := map[string]interface{}{
 			"messaging_product": "whatsapp",
@@ -134,79 +134,161 @@ func (s *Service) dispatchMetaMessage(ctx context.Context, tenantID bson.ObjectI
 		}
 
 		bodyBytes, err := json.Marshal(payload)
-		if err == nil {
-			req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(bodyBytes))
-			if err == nil {
-				req.Header.Set("Authorization", "Bearer "+token)
-				req.Header.Set("Content-Type", "application/json")
+		if err != nil {
+			return "", fmt.Errorf("failed to encode meta payload: %w", err)
+		}
 
-				resp, err := s.httpClient.Do(req)
-				if err == nil {
-					defer resp.Body.Close()
-					if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-						var metaResp struct {
-							Messages []struct {
-								ID string `json:"id"`
-							} `json:"messages"`
-						}
-						_ = json.NewDecoder(resp.Body).Decode(&metaResp)
-						if len(metaResp.Messages) > 0 {
-							return metaResp.Messages[0].ID, nil
-						}
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(bodyBytes))
+		if err != nil {
+			return "", fmt.Errorf("failed to create meta request: %w", err)
+		}
+		req.Header.Set("Authorization", "Bearer "+token)
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := s.httpClient.Do(req)
+		if err != nil {
+			return "", fmt.Errorf("meta graph API network error: %w", err)
+		}
+		defer resp.Body.Close()
+
+		respBody, _ := io.ReadAll(resp.Body)
+		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+			var metaResp struct {
+				Messages []struct {
+					ID string `json:"id"`
+				} `json:"messages"`
+			}
+			if err := json.Unmarshal(respBody, &metaResp); err == nil && len(metaResp.Messages) > 0 {
+				return metaResp.Messages[0].ID, nil
+			}
+			return fmt.Sprintf("wamid.meta_%d", time.Now().UnixNano()), nil
+		}
+
+		// If Meta returned 131047 (outside 24h customer service window), attempt pre-approved hello_world template
+		if strings.Contains(string(respBody), "131047") {
+			templatePayload := map[string]interface{}{
+				"messaging_product": "whatsapp",
+				"to":                cleanPhone,
+				"type":              "template",
+				"template": map[string]interface{}{
+					"name": "hello_world",
+					"language": map[string]string{
+						"code": "en_US",
+					},
+				},
+			}
+			tBytes, _ := json.Marshal(templatePayload)
+			tReq, _ := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(tBytes))
+			tReq.Header.Set("Authorization", "Bearer "+token)
+			tReq.Header.Set("Content-Type", "application/json")
+			tResp, tErr := s.httpClient.Do(tReq)
+			if tErr == nil {
+				defer tResp.Body.Close()
+				tRespBody, _ := io.ReadAll(tResp.Body)
+				if tResp.StatusCode >= 200 && tResp.StatusCode < 300 {
+					var metaResp struct {
+						Messages []struct {
+							ID string `json:"id"`
+						} `json:"messages"`
 					}
+					if err := json.Unmarshal(tRespBody, &metaResp); err == nil && len(metaResp.Messages) > 0 {
+						return metaResp.Messages[0].ID, nil
+					}
+					return fmt.Sprintf("wamid.meta_template_%d", time.Now().UnixNano()), nil
 				}
 			}
 		}
+
+		// Parse and return exact Meta error message so the user gets actionable feedback
+		var metaErr struct {
+			Error struct {
+				Message string `json:"message"`
+				Code    int    `json:"code"`
+				Type    string `json:"type"`
+			} `json:"error"`
+		}
+		if err := json.Unmarshal(respBody, &metaErr); err == nil && metaErr.Error.Message != "" {
+			return "", fmt.Errorf("Meta API error (%d): %s", metaErr.Error.Code, metaErr.Error.Message)
+		}
+
+		return "", fmt.Errorf("Meta API returned HTTP %d: %s", resp.StatusCode, string(respBody))
 	}
 
-	// High-fidelity sandbox fallback for development and automated tests
+	// 3. Fall back to modular provider (OpenWA or Mock) if configured
+	if s.provider != nil {
+		return s.provider.SendText(ctx, recipientPhone, messageText)
+	}
+
+	// 4. High-fidelity sandbox fallback for development and automated tests
 	return fmt.Sprintf("wamid.sandbox_%d_%s", time.Now().UnixNano(), cleanPhone), nil
 }
 
 func (s *Service) dispatchMetaInteractive(ctx context.Context, tenantID bson.ObjectID, recipientPhone string, payload domainwa.OutboundInteractivePayload) (string, error) {
 	cleanPhone := strings.TrimPrefix(strings.ReplaceAll(strings.ReplaceAll(recipientPhone, " ", ""), "-", ""), "+")
+	if len(cleanPhone) == 10 {
+		cleanPhone = "91" + cleanPhone
+	}
 	payload.To = cleanPhone
 	payload.MessagingProduct = "whatsapp"
 	payload.RecipientType = "individual"
 	payload.Type = "interactive"
 
 	config := s.GetWABAStatus(ctx, tenantID)
-	phoneID := config.PhoneNumberID
-	token := config.AccessToken
+	phoneID := strings.TrimSpace(config.PhoneNumberID)
+	token := strings.TrimSpace(config.AccessToken)
 
-	if phoneID == "" {
-		phoneID = os.Getenv("WHATSAPP_PHONE_NUMBER_ID")
+	if phoneID == "" || strings.HasPrefix(phoneID, "phone_act_") {
+		phoneID = strings.TrimSpace(os.Getenv("WHATSAPP_PHONE_NUMBER_ID"))
 	}
 	if token == "" {
-		token = os.Getenv("WHATSAPP_ACCESS_TOKEN")
+		token = strings.TrimSpace(os.Getenv("WHATSAPP_ACCESS_TOKEN"))
 	}
 
-	if phoneID != "" && token != "" && !strings.Contains(phoneID, "mock") {
+	if phoneID != "" && token != "" && !strings.Contains(phoneID, "mock") && !strings.HasPrefix(phoneID, "phone_act_") {
 		url := fmt.Sprintf("https://graph.facebook.com/v21.0/%s/messages", phoneID)
 		bodyBytes, err := json.Marshal(payload)
-		if err == nil {
-			req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(bodyBytes))
-			if err == nil {
-				req.Header.Set("Authorization", "Bearer "+token)
-				req.Header.Set("Content-Type", "application/json")
-
-				resp, err := s.httpClient.Do(req)
-				if err == nil {
-					defer resp.Body.Close()
-					if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-						var metaResp struct {
-							Messages []struct {
-								ID string `json:"id"`
-							} `json:"messages"`
-						}
-						_ = json.NewDecoder(resp.Body).Decode(&metaResp)
-						if len(metaResp.Messages) > 0 {
-							return metaResp.Messages[0].ID, nil
-						}
-					}
-				}
-			}
+		if err != nil {
+			return "", fmt.Errorf("failed to encode interactive payload: %w", err)
 		}
+
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(bodyBytes))
+		if err != nil {
+			return "", fmt.Errorf("failed to create interactive request: %w", err)
+		}
+		req.Header.Set("Authorization", "Bearer "+token)
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := s.httpClient.Do(req)
+		if err != nil {
+			return "", fmt.Errorf("meta interactive request error: %w", err)
+		}
+		defer resp.Body.Close()
+
+		respBody, _ := io.ReadAll(resp.Body)
+		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+			var metaResp struct {
+				Messages []struct {
+					ID string `json:"id"`
+				} `json:"messages"`
+			}
+			if err := json.Unmarshal(respBody, &metaResp); err == nil && len(metaResp.Messages) > 0 {
+				return metaResp.Messages[0].ID, nil
+			}
+			return fmt.Sprintf("wamid.interactive_%d", time.Now().UnixNano()), nil
+		}
+
+		var metaErr struct {
+			Error struct {
+				Message string `json:"message"`
+				Code    int    `json:"code"`
+				Type    string `json:"type"`
+			} `json:"error"`
+		}
+		if err := json.Unmarshal(respBody, &metaErr); err == nil && metaErr.Error.Message != "" {
+			return "", fmt.Errorf("Meta API error (%d): %s", metaErr.Error.Code, metaErr.Error.Message)
+		}
+
+		return "", fmt.Errorf("Meta API returned HTTP %d: %s", resp.StatusCode, string(respBody))
 	}
 
 	return fmt.Sprintf("wamid.interactive_sandbox_%d_%s", time.Now().UnixNano(), cleanPhone), nil

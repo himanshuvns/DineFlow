@@ -896,8 +896,13 @@ export default function WhatsAppPage() {
       });
       addToast("success", "Notification Dispatched", `Sent digital notification to ${v.formatted}`);
       fetchData();
-    } catch (err) {
-      addToast("success", "Sandbox Dispatched", `Notification recorded in dispatch logs for ${v.formatted}`);
+    } catch (err: any) {
+      const errMsg =
+        err?.response?.data?.error?.message ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Could not send WhatsApp message. Please check your Meta credentials.";
+      addToast("error", "Dispatch Failed", errMsg);
     } finally {
       setIsSendingTest(false);
     }

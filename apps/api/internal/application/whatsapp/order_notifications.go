@@ -26,7 +26,7 @@ func (s *Service) SetAdminAlertConfig(numbers []string, threshold float64) {
 // NotifyOrderConfirmed sends automated confirmation message to customer.
 func (s *Service) NotifyOrderConfirmed(ctx context.Context, tenantID bson.ObjectID, ord *domainorder.Order) {
 	phone := strings.TrimSpace(ord.CustomerPhone)
-	if phone == "" || s.IsOptedOut(phone) || s.provider == nil {
+	if phone == "" || s.IsOptedOut(phone) {
 		return
 	}
 
@@ -47,14 +47,14 @@ func (s *Service) NotifyOrderConfirmed(ctx context.Context, tenantID bson.Object
 		"📍 Live Tracker: %s\n\n"+
 		"Reply STOP to opt-out.", custName, ord.OrderNumber, trackingURL)
 
-	extID, _ := s.provider.SendText(ctx, phone, body)
+	extID, _ := s.dispatchMetaMessage(ctx, tenantID, phone, body)
 	_, _ = s.LogMessage(ctx, tenantID, phone, custName, domainwa.TemplateOrderConfirmed, body, loc, domainwa.StatusDelivered, extID)
 }
 
 // NotifyOrderReady alerts customer when kitchen finishes preparation.
 func (s *Service) NotifyOrderReady(ctx context.Context, tenantID bson.ObjectID, ord *domainorder.Order) {
 	phone := strings.TrimSpace(ord.CustomerPhone)
-	if phone == "" || s.IsOptedOut(phone) || s.provider == nil {
+	if phone == "" || s.IsOptedOut(phone) {
 		return
 	}
 
@@ -72,14 +72,14 @@ func (s *Service) NotifyOrderReady(ctx context.Context, tenantID bson.ObjectID, 
 		"Your order %s is ready for pickup at %s!\n\n"+
 		"Bon appétit!", custName, ord.OrderNumber, loc)
 
-	extID, _ := s.provider.SendText(ctx, phone, body)
+	extID, _ := s.dispatchMetaMessage(ctx, tenantID, phone, body)
 	_, _ = s.LogMessage(ctx, tenantID, phone, custName, domainwa.TemplateKitchenReady, body, loc, domainwa.StatusDelivered, extID)
 }
 
 // NotifyOrderCancelled alerts customer if their order is cancelled or rejected.
 func (s *Service) NotifyOrderCancelled(ctx context.Context, tenantID bson.ObjectID, ord *domainorder.Order) {
 	phone := strings.TrimSpace(ord.CustomerPhone)
-	if phone == "" || s.IsOptedOut(phone) || s.provider == nil {
+	if phone == "" || s.IsOptedOut(phone) {
 		return
 	}
 
@@ -97,7 +97,7 @@ func (s *Service) NotifyOrderCancelled(ctx context.Context, tenantID bson.Object
 		"Your order %s has been cancelled.\n"+
 		"If you have any questions or need assistance, please contact restaurant staff.", custName, ord.OrderNumber)
 
-	extID, _ := s.provider.SendText(ctx, phone, body)
+	extID, _ := s.dispatchMetaMessage(ctx, tenantID, phone, body)
 	_, _ = s.LogMessage(ctx, tenantID, phone, custName, domainwa.TemplateOrderConfirmed, body, loc, domainwa.StatusDelivered, extID)
 }
 
@@ -105,7 +105,7 @@ func (s *Service) NotifyOrderCancelled(ctx context.Context, tenantID bson.Object
 
 // NotifyAdminNewOrder sends alert to configured admin WhatsApp numbers.
 func (s *Service) NotifyAdminNewOrder(ctx context.Context, tenantID bson.ObjectID, ord *domainorder.Order) {
-	if len(s.adminNumbers) == 0 || s.provider == nil {
+	if len(s.adminNumbers) == 0 {
 		return
 	}
 
@@ -121,13 +121,13 @@ func (s *Service) NotifyAdminNewOrder(ctx context.Context, tenantID bson.ObjectI
 		"Items: %d", loc, ord.OrderNumber, ord.TotalAmount, len(ord.Items))
 
 	for _, adminPhone := range s.adminNumbers {
-		_, _ = s.provider.SendText(ctx, adminPhone, alertText)
+		_, _ = s.dispatchMetaMessage(ctx, tenantID, adminPhone, alertText)
 	}
 }
 
 // NotifyAdminLargeOrder alerts admins when an order exceeds the threshold.
 func (s *Service) NotifyAdminLargeOrder(ctx context.Context, tenantID bson.ObjectID, ord *domainorder.Order) {
-	if len(s.adminNumbers) == 0 || s.provider == nil {
+	if len(s.adminNumbers) == 0 {
 		return
 	}
 	if s.largeOrderThreshold <= 0 {
@@ -149,13 +149,13 @@ func (s *Service) NotifyAdminLargeOrder(ctx context.Context, tenantID bson.Objec
 		"Items: %d", loc, ord.OrderNumber, ord.TotalAmount, s.largeOrderThreshold, len(ord.Items))
 
 	for _, adminPhone := range s.adminNumbers {
-		_, _ = s.provider.SendText(ctx, adminPhone, alertText)
+		_, _ = s.dispatchMetaMessage(ctx, tenantID, adminPhone, alertText)
 	}
 }
 
 // NotifyAdminOrderCancelled alerts admins when an order is cancelled.
 func (s *Service) NotifyAdminOrderCancelled(ctx context.Context, tenantID bson.ObjectID, ord *domainorder.Order) {
-	if len(s.adminNumbers) == 0 || s.provider == nil {
+	if len(s.adminNumbers) == 0 {
 		return
 	}
 
@@ -170,13 +170,13 @@ func (s *Service) NotifyAdminOrderCancelled(ctx context.Context, tenantID bson.O
 		"Amount: ₹%.0f", loc, ord.OrderNumber, ord.TotalAmount)
 
 	for _, adminPhone := range s.adminNumbers {
-		_, _ = s.provider.SendText(ctx, adminPhone, alertText)
+		_, _ = s.dispatchMetaMessage(ctx, tenantID, adminPhone, alertText)
 	}
 }
 
 // NotifyStaffHousekeepingRequest alerts EVERY staff member with a registered phone number when a housekeeping request arrives.
 func (s *Service) NotifyStaffHousekeepingRequest(ctx context.Context, tenantID bson.ObjectID, task *domainroom.HousekeepingTask, staffList []domainuser.User) {
-	if s.provider == nil || len(staffList) == 0 {
+	if len(staffList) == 0 {
 		return
 	}
 
@@ -209,7 +209,7 @@ func (s *Service) NotifyStaffHousekeepingRequest(ctx context.Context, tenantID b
 		if phone == "" || s.IsOptedOut(phone) {
 			continue
 		}
-		extID, _ := s.provider.SendText(ctx, phone, body)
+		extID, _ := s.dispatchMetaMessage(ctx, tenantID, phone, body)
 		stName := st.Name
 		if stName == "" {
 			stName = "Staff Member"
@@ -221,7 +221,7 @@ func (s *Service) NotifyStaffHousekeepingRequest(ctx context.Context, tenantID b
 // NotifyStaffTaskAssigned alerts an individual housekeeper when they are assigned a request.
 func (s *Service) NotifyStaffTaskAssigned(ctx context.Context, tenantID bson.ObjectID, task *domainroom.HousekeepingTask, staffPhone, staffName string) {
 	phone := strings.TrimSpace(staffPhone)
-	if phone == "" || s.provider == nil || s.IsOptedOut(phone) {
+	if phone == "" || s.IsOptedOut(phone) {
 		return
 	}
 
@@ -238,7 +238,7 @@ func (s *Service) NotifyStaffTaskAssigned(ctx context.Context, tenantID bson.Obj
 	}
 	body += "\nPlease attend to this guest request promptly."
 
-	extID, _ := s.provider.SendText(ctx, phone, body)
+	extID, _ := s.dispatchMetaMessage(ctx, tenantID, phone, body)
 	_, _ = s.LogMessage(ctx, tenantID, phone, staffName, domainwa.TemplateRoomService, body, roomLoc, domainwa.StatusDelivered, extID)
 }
 
