@@ -10,6 +10,7 @@ import (
 
 	appwa "github.com/dineflow/api/internal/application/whatsapp"
 	"github.com/dineflow/api/internal/interfaces/http/handlers"
+	"github.com/dineflow/api/internal/interfaces/http/middleware"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
@@ -17,6 +18,7 @@ import (
 func setupTestRouter() (*gin.Engine, *appwa.Service) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
+	r.Use(middleware.NoSQLSanitizer())
 
 	waService := appwa.NewService(nil)
 	waHandler := handlers.NewWhatsAppHandler(waService)

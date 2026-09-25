@@ -69,6 +69,9 @@ func (h *WhatsAppHandler) VerifyWebhook(c *gin.Context) {
 
 	expectedToken := os.Getenv("WHATSAPP_VERIFY_TOKEN")
 	if expectedToken == "" {
+		expectedToken = os.Getenv("WHATSAPP_WEBHOOK_VERIFY_TOKEN")
+	}
+	if expectedToken == "" {
 		expectedToken = "dineflow_webhook_verify_secret"
 	}
 

@@ -66,15 +66,18 @@ func NoSQLSanitizer() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 1. Sanitize Query Parameters
 		for key, values := range c.Request.URL.Query() {
-			if strings.Contains(key, "$") || strings.Contains(key, ".") {
-				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-					"success": false,
-					"error": gin.H{
-						"code":    "OPERATOR_INJECTION_DETECTED",
-						"message": "Dangerous query parameter detected containing reserved database operators.",
-					},
-				})
-				return
+			// Exempt standard WebSub / Meta Webhook parameters (e.g. hub.mode, hub.challenge, hub.verify_token)
+			if !strings.HasPrefix(key, "hub.") {
+				if strings.Contains(key, "$") || strings.Contains(key, ".") {
+					c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+						"success": false,
+						"error": gin.H{
+							"code":    "OPERATOR_INJECTION_DETECTED",
+							"message": "Dangerous query parameter detected containing reserved database operators.",
+						},
+					})
+					return
+				}
 			}
 			for _, v := range values {
 				lower := strings.ToLower(v)
