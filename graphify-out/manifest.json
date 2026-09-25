@@ -660,9 +660,9 @@
     "semantic_hash": ""
   },
   "apps/web/app/page.tsx": {
-    "mtime": 1790255086.1446037,
-    "seen": 1790255163.3322518,
-    "ast_hash": "aa61cdd866b5c3e73ae80d8628c9d05c",
+    "mtime": 1790332134.9732807,
+    "seen": 1790332191.556907,
+    "ast_hash": "b9db4f0aecf713e19a06223a452d6390",
     "semantic_hash": ""
   },
   "apps/web/app/pricing/page.tsx": {

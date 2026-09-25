@@ -11,7 +11,6 @@ import { LandingSolutions } from "@/components/landing/landing-solutions";
 import { LandingCustomerJourney } from "@/components/landing/landing-customer-journey";
 import { LandingPricing } from "@/components/landing/landing-pricing";
 import { LandingFooter } from "@/components/landing/landing-footer";
-import { PeekingChef } from "@/components/ui/peeking-chef";
 import { AetherParticleCanvas } from "@/components/ui/aether-particle-canvas";
 
 export default function HomePage() {
@@ -49,12 +48,8 @@ export default function HomePage() {
         {/* 5. Transparent Pricing */}
         <LandingPricing />
 
-        {/* 6. Pre-Footer Hospitality Conversion Banner with Interactive Peeking Chef */}
+        {/* 6. Pre-Footer Hospitality Conversion Banner */}
         <section className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full relative">
-          {/* Peeking Chef Mascot with Smooth Cursor-Tracking Physics */}
-          <div className="flex justify-center -mb-8 relative z-20 pointer-events-auto">
-            <PeekingChef />
-          </div>
 
           <div className="relative rounded-3xl overflow-hidden border border-emerald-500/30 bg-gradient-to-tr from-emerald-950 via-slate-900 to-amber-950/70 p-8 sm:p-12 lg:p-16 text-center text-white shadow-2xl shadow-emerald-950/40">
             {/* Ambient inner glow */}
