@@ -7,6 +7,7 @@ import {
   useScroll,
   useMotionValueEvent,
   useReducedMotion,
+  type Variants,
 } from "framer-motion";
 import {
   LayoutDashboard,
@@ -38,18 +39,70 @@ type TabKey = "overview" | "orders" | "menu" | "tables" | "rooms" | "staff" | "a
 
 interface TabDef {
   key: TabKey;
+  step: string;
   label: string;
+  shortDesc: string;
+  badge: string;
   icon: React.ElementType;
 }
 
 const TABS: TabDef[] = [
-  { key: "overview", label: "Overview", icon: LayoutDashboard },
-  { key: "orders", label: "Live KDS", icon: ShoppingBag },
-  { key: "menu", label: "Menu", icon: UtensilsCrossed },
-  { key: "tables", label: "Tables & QR", icon: Grid },
-  { key: "rooms", label: "Rooms & Suites", icon: Hotel },
-  { key: "staff", label: "Staff & HR", icon: Users },
-  { key: "analytics", label: "Analytics", icon: BarChart3 },
+  {
+    key: "overview",
+    step: "01",
+    label: "Overview",
+    shortDesc: "Live KPIs, revenue & quick operational actions",
+    badge: "Command Center",
+    icon: LayoutDashboard,
+  },
+  {
+    key: "orders",
+    step: "02",
+    label: "Live KDS",
+    shortDesc: "Real-time kitchen displays & order tickets",
+    badge: "Sub-second Sync",
+    icon: ShoppingBag,
+  },
+  {
+    key: "menu",
+    step: "03",
+    label: "Menu & Catalog",
+    shortDesc: "Dynamic pricing, 86'd toggles & modifiers",
+    badge: "Smart Menu",
+    icon: UtensilsCrossed,
+  },
+  {
+    key: "tables",
+    step: "04",
+    label: "Tables & QR",
+    shortDesc: "Floor plan, table status & QR ordering",
+    badge: "App-less Dining",
+    icon: Grid,
+  },
+  {
+    key: "rooms",
+    step: "05",
+    label: "Rooms & Suites",
+    shortDesc: "Hotel PMS folio & in-room dining orders",
+    badge: "PMS Suite",
+    icon: Hotel,
+  },
+  {
+    key: "staff",
+    step: "06",
+    label: "Staff & HR",
+    shortDesc: "GPS geofenced attendance & verified shifts",
+    badge: "Geofenced",
+    icon: Users,
+  },
+  {
+    key: "analytics",
+    step: "07",
+    label: "Analytics & P&L",
+    shortDesc: "Revenue velocity, dish volumes & sales",
+    badge: "Intelligence",
+    icon: BarChart3,
+  },
 ];
 
 export function LandingInteractivePreview() {
@@ -62,6 +115,7 @@ export function LandingInteractivePreview() {
   const shouldReduceMotion = useReducedMotion();
 
   const [activeTab, setActiveTab] = React.useState<TabKey>("overview");
+  const [direction, setDirection] = React.useState<number>(1);
   const [progressPercent, setProgressPercent] = React.useState(0);
 
   const { scrollYProgress } = useScroll({
@@ -78,6 +132,8 @@ export function LandingInteractivePreview() {
     const index = Math.min(TABS.length - 1, Math.max(0, Math.floor(latest / segment)));
     const nextTab = TABS[index].key;
     if (nextTab !== activeTab) {
+      const currentIdx = TABS.findIndex((t) => t.key === activeTab);
+      setDirection(index > currentIdx ? 1 : -1);
       setActiveTab(nextTab);
     }
   });
@@ -103,7 +159,11 @@ export function LandingInteractivePreview() {
   }, [activeTab]);
 
   const handleTabClick = (tabKey: TabKey, index: number) => {
-    setActiveTab(tabKey);
+    const currentIdx = TABS.findIndex((t) => t.key === activeTab);
+    if (currentIdx !== index) {
+      setDirection(index > currentIdx ? 1 : -1);
+      setActiveTab(tabKey);
+    }
     isManualClickRef.current = true;
     if (manualTimeoutRef.current) clearTimeout(manualTimeoutRef.current);
     manualTimeoutRef.current = setTimeout(() => {
@@ -131,6 +191,42 @@ export function LandingInteractivePreview() {
 
   const activeIndex = TABS.findIndex((t) => t.key === activeTab);
 
+  // Silky smooth upward-exit / bottom-enter spring animation
+  const slideVariants: Variants = {
+    enter: (dir: number) => ({
+      y: shouldReduceMotion ? 0 : dir >= 0 ? 80 : -80,
+      opacity: 0,
+      scale: shouldReduceMotion ? 1 : 0.98,
+      filter: shouldReduceMotion ? "none" : "blur(4px)",
+    }),
+    center: {
+      zIndex: 1,
+      y: 0,
+      opacity: 1,
+      scale: 1,
+      filter: "blur(0px)",
+      transition: {
+        y: { type: "spring" as const, stiffness: 240, damping: 26, mass: 0.8 },
+        opacity: { duration: 0.35, ease: [0.16, 1, 0.3, 1] },
+        scale: { duration: 0.35, ease: [0.16, 1, 0.3, 1] },
+        filter: { duration: 0.25 },
+      },
+    },
+    exit: (dir: number) => ({
+      zIndex: 0,
+      y: shouldReduceMotion ? 0 : dir >= 0 ? -80 : 80,
+      opacity: 0,
+      scale: shouldReduceMotion ? 1 : 0.98,
+      filter: shouldReduceMotion ? "none" : "blur(4px)",
+      transition: {
+        y: { type: "spring" as const, stiffness: 240, damping: 26, mass: 0.8 },
+        opacity: { duration: 0.28, ease: [0.16, 1, 0.3, 1] },
+        scale: { duration: 0.28, ease: [0.16, 1, 0.3, 1] },
+        filter: { duration: 0.2 },
+      },
+    }),
+  };
+
   return (
     <section
       id="interactive-demo"
@@ -141,45 +237,43 @@ export function LandingInteractivePreview() {
       <div className="sticky top-14 sm:top-16 lg:top-20 min-h-[calc(100vh-3.5rem)] sm:min-h-[calc(100vh-4rem)] flex flex-col justify-center py-4 sm:py-6 bg-white dark:bg-slate-900 border-y border-slate-200/80 dark:border-slate-800/80 shadow-xs overflow-hidden">
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
           {/* Section Header */}
-          <div className="text-center max-w-3xl mx-auto mb-3 sm:mb-4 space-y-1.5">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-semibold shadow-xs">
-              <Sparkles className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-              <span>Interactive Product Exploration</span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-              Everything you need to run your hospitality business
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-              Scroll down to explore each operational module sequentially, or click any tab to jump directly.
-            </p>
-          </div>
-
-          {/* Module Step Indicator & Subtle Progress Bar */}
-          <div className="max-w-2xl mx-auto mb-2 px-1">
-            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-              <div className="flex items-center gap-1.5 font-medium">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>
-                  Module {activeIndex + 1} of {TABS.length}:{" "}
-                  <strong className="text-slate-900 dark:text-white">{TABS[activeIndex]?.label}</strong>
-                </span>
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-4 lg:mb-6">
+            <div className="space-y-1.5 max-w-2xl">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-semibold shadow-xs">
+                <Sparkles className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span>Interactive Product Exploration</span>
               </div>
-              <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hidden sm:inline">
-                {activeIndex === TABS.length - 1 ? "Module Tour Complete • Scroll down to continue" : "Scroll to advance module"}
-              </span>
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                Everything you need to run your hospitality business
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+                Scroll down to explore each operational module sequentially, or click any tab to jump directly.
+              </p>
             </div>
-            <div className="w-full h-1 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden mt-1">
-              <div
-                className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-600 rounded-full transition-all duration-150"
-                style={{ width: `${Math.max(5, progressPercent)}%` }}
-              />
+
+            {/* Live Progress Pill */}
+            <div className="hidden sm:flex items-center gap-3 shrink-0 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80 shadow-xs">
+              <div className="text-right">
+                <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                  Module <span className="font-bold text-slate-900 dark:text-white">{activeIndex + 1}</span> of {TABS.length}
+                </div>
+                <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                  {TABS[activeIndex]?.label}
+                </div>
+              </div>
+              <div className="w-16 h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-150"
+                  style={{ width: `${Math.max(10, progressPercent)}%` }}
+                />
+              </div>
             </div>
           </div>
 
-          {/* Interactive Tabs Bar */}
+          {/* Mobile Horizontal Tabs Bar (< lg) */}
           <div
             ref={tabsNavRef}
-            className="flex items-center justify-start lg:justify-center overflow-x-auto lg:overflow-visible flex-nowrap lg:flex-wrap gap-2 pb-2 px-1 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="lg:hidden flex items-center justify-start overflow-x-auto flex-nowrap gap-2 pb-2 mb-3 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {TABS.map((tab, idx) => {
               const Icon = tab.icon;
@@ -192,53 +286,145 @@ export function LandingInteractivePreview() {
                   }}
                   type="button"
                   onClick={() => handleTabClick(tab.key, idx)}
-                  className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap shrink-0 cursor-pointer border ${
+                  className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap shrink-0 cursor-pointer border ${
                     isActive
-                      ? "bg-emerald-600 border-emerald-600 text-white shadow-md shadow-emerald-500/25 ring-2 ring-emerald-500/30 scale-[1.02]"
+                      ? "bg-emerald-600 border-emerald-600 text-white shadow-md shadow-emerald-500/25 ring-2 ring-emerald-500/30"
                       : "bg-white dark:bg-slate-900/80 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border-slate-200/80 dark:border-slate-800/80"
                   }`}
                 >
-                  <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-white" : "text-emerald-500"}`} />
+                  <Icon className={`h-3.5 w-3.5 shrink-0 ${isActive ? "text-white" : "text-emerald-500"}`} />
                   <span>{tab.label}</span>
                 </button>
               );
             })}
           </div>
 
-          {/* Preview Container */}
-          <div className="mt-2 rounded-2xl border border-slate-200/80 dark:border-slate-800/90 bg-white/95 dark:bg-[#0B0F19]/95 backdrop-blur-xl shadow-xl overflow-hidden transition-all duration-300">
-        {/* Mock Window Header */}
-        <div className="px-4 sm:px-6 lg:px-8 py-3 border-b border-slate-200/70 dark:border-slate-800/70 bg-slate-50 dark:bg-slate-900/60 flex items-center justify-between text-xs">
-          <div className="flex items-center gap-2">
-            <div className="flex gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-full bg-rose-400/80" />
-              <div className="w-2.5 h-2.5 rounded-full bg-amber-400/80" />
-              <div className="w-2.5 h-2.5 rounded-full bg-emerald-400/80" />
+          {/* Two-Column Showcase: Left Navigation + Right Animated Preview */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6 items-start w-full">
+            {/* Left Column: Vertical Interactive Menu Rail (lg+) */}
+            <div className="hidden lg:flex flex-col gap-2 lg:col-span-5 xl:col-span-4 shrink-0">
+              {TABS.map((tab, idx) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.key;
+
+                return (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={() => handleTabClick(tab.key, idx)}
+                    className={`group relative w-full text-left p-3 rounded-2xl transition-all duration-200 cursor-pointer border flex items-center justify-between gap-3 ${
+                      isActive
+                        ? "bg-emerald-500/10 dark:bg-emerald-500/15 border-emerald-500/40 shadow-sm shadow-emerald-500/10 ring-1 ring-emerald-500/30"
+                        : "bg-slate-50/70 dark:bg-slate-900/50 border-slate-200/70 dark:border-slate-800/70 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700"
+                    }`}
+                  >
+                    {/* Left Active Glow Indicator */}
+                    {isActive && (
+                      <motion.div
+                        layoutId="active-left-pill"
+                        className="absolute left-0 top-2.5 bottom-2.5 w-1.5 bg-gradient-to-b from-emerald-500 to-teal-400 rounded-r-full"
+                        transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                      />
+                    )}
+
+                    <div className="flex items-center gap-3 min-w-0 pl-1">
+                      <div
+                        className={`h-9 w-9 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                          isActive
+                            ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/30"
+                            : "bg-slate-200/80 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white"
+                        }`}
+                      >
+                        <Icon className="h-4 w-4 shrink-0" />
+                      </div>
+
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`text-[11px] font-mono font-bold tracking-wider ${
+                              isActive
+                                ? "text-emerald-600 dark:text-emerald-400"
+                                : "text-slate-400 dark:text-slate-500"
+                            }`}
+                          >
+                            {tab.step}
+                          </span>
+                          <span
+                            className={`text-sm font-bold truncate ${
+                              isActive
+                                ? "text-slate-900 dark:text-white"
+                                : "text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white"
+                            }`}
+                          >
+                            {tab.label}
+                          </span>
+                        </div>
+                        <p
+                          className={`text-xs line-clamp-1 mt-0.5 ${
+                            isActive
+                              ? "text-slate-600 dark:text-slate-300 font-medium"
+                              : "text-slate-500 dark:text-slate-400"
+                          }`}
+                        >
+                          {tab.shortDesc}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="shrink-0 flex items-center gap-1.5">
+                      {isActive ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          {tab.badge}
+                        </span>
+                      ) : (
+                        <span className="text-[11px] text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300 font-medium">
+                          →
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
-            <span className="font-semibold text-slate-700 dark:text-slate-300 ml-2 hidden sm:inline">
-              DineFlow Operations Hub
-            </span>
-            <span className="text-slate-400">•</span>
-            <span className="text-emerald-600 dark:text-emerald-400 font-medium capitalize">
-              {activeTab} Module
-            </span>
-          </div>
 
-          <Badge variant="outline" size="sm" className="text-xs text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-700">
-            Interactive Preview
-          </Badge>
-        </div>
+            {/* Right Column: Interactive Mockup Showcase */}
+            <div className="lg:col-span-7 xl:col-span-8 w-full min-w-0">
+              <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800/90 bg-white/95 dark:bg-[#0B0F19]/95 backdrop-blur-xl shadow-xl overflow-hidden transition-all duration-300 flex flex-col">
+                {/* Mock Window Header */}
+                <div className="px-4 sm:px-6 py-3 border-b border-slate-200/70 dark:border-slate-800/70 bg-slate-50 dark:bg-slate-900/60 flex items-center justify-between text-xs shrink-0">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="flex gap-1.5 shrink-0">
+                      <div className="w-2.5 h-2.5 rounded-full bg-rose-400/80" />
+                      <div className="w-2.5 h-2.5 rounded-full bg-amber-400/80" />
+                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-400/80" />
+                    </div>
+                    <span className="font-semibold text-slate-700 dark:text-slate-300 ml-2 hidden sm:inline">
+                      DineFlow Operations Hub
+                    </span>
+                    <span className="text-slate-400 hidden sm:inline">•</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-medium capitalize truncate">
+                      {TABS[activeIndex]?.label} Module
+                    </span>
+                  </div>
 
-        {/* Tab Specific Content Panels */}
-        <div className="p-4 sm:p-6 lg:p-8 min-h-[420px] flex flex-col justify-center">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
-            >
+                  <Badge variant="outline" size="sm" className="text-xs text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-700 shrink-0">
+                    Live Preview
+                  </Badge>
+                </div>
+
+                {/* Tab Specific Content Panels with Upward-Exit / Bottom-Enter Animation */}
+                <div className="p-4 sm:p-6 min-h-[460px] flex flex-col justify-center overflow-hidden relative">
+                  <AnimatePresence mode="popLayout" custom={direction} initial={false}>
+                    <motion.div
+                      key={activeTab}
+                      custom={direction}
+                      variants={slideVariants}
+                      initial="enter"
+                      animate="center"
+                      exit="exit"
+                      className="w-full"
+                    >
               {/* TAB 1: OVERVIEW */}
           {activeTab === "overview" && (
             <div className="space-y-6 animate-in fade-in duration-300">
@@ -672,11 +858,13 @@ export function LandingInteractivePreview() {
               </div>
             </div>
           )}
-            </motion.div>
-          </AnimatePresence>
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-      </div>
       </div>
     </section>
   );

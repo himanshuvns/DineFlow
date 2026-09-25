@@ -1,7 +1,7 @@
-# Graph Report - DineFlow  (2026-09-25)
+# Graph Report - DineFlow  (2026-09-24)
 
 ## Corpus Check
-- 339 files · ~684,046 words
+- 339 files · ~683,404 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 12 file(s) not represented in the graph (top: (none) 6, .example 2, .toml 1)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `9c2c0867`
+- Built from commit: `e5660b3c`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -658,7 +658,7 @@ _Questions this graph is uniquely positioned to answer:_
 - **Why does `react` connect `react` to `video/page.tsx`, `orders/page.tsx`, `cn`, `TubesCursor`, `spotlight-cursor.tsx`, `lucide-react`, `landing-customer-journey.tsx`, `menu/page.tsx`, `[roomId]/page.tsx`, `label.tsx`, `landing-workflow.tsx`, `toast.tsx`, `web/package.json`, `useToast`, `notification-store.ts`, `useAuthStore`, `app/layout.tsx`?**
   _High betweenness centrality (0.024) - this node is a cross-community bridge._
 - **Why does `RoomHandler` connect `github.com/gin-gonic/gin.Context` to `Service`, `go.mongodb.org/mongo-driver/v2/bson.ObjectID`, `Setup`, `Service`, `BadRequest`, `NewScope`, `handlers/room.go`?**
-  _High betweenness centrality (0.013) - this node is a cross-community bridge._
+  _High betweenness centrality (0.014) - this node is a cross-community bridge._
 - **Why does `Order` connect `Order` to `time.Time`, `ai/service.go`, `main`, `go.mongodb.org/mongo-driver/v2/bson.ObjectID`, `Service`, `Service`, `order/order.go`?**
   _High betweenness centrality (0.012) - this node is a cross-community bridge._
 - **What connects `TestResult`, `github.com/dineflow/api`, `geminiRequest` to the rest of the system?**
