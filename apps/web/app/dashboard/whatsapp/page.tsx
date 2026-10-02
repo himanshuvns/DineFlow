@@ -2933,6 +2933,17 @@ export default function WhatsAppPage() {
             placeholder="EAAG... (never shared publicly)"
           />
 
+          <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 space-y-1">
+            <p className="font-semibold flex items-center gap-1.5">
+              <span>⚠️</span> Important Meta Authentication Requirements
+            </p>
+            <ul className="list-disc list-inside text-[11px] space-y-0.5 opacity-90">
+              <li><strong>Access Token:</strong> Temporary tokens from Meta "Try it out" expire in 24 hours. For permanent connection, generate a System User Token in Meta Business Settings.</li>
+              <li><strong>Phone Number ID:</strong> Found on Meta API Setup page (usually 15 digits). Do not confuse with WABA ID or phone number.</li>
+              <li><strong>Permissions:</strong> Ensure the token has <code className="px-1 py-0.5 rounded bg-black/10 dark:bg-white/10">whatsapp_business_messaging</code> and <code className="px-1 py-0.5 rounded bg-black/10 dark:bg-white/10">whatsapp_business_management</code>.</li>
+            </ul>
+          </div>
+
           <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
             <p className="font-bold text-slate-900 dark:text-white mb-1">Webhook Callback URL</p>
             <code className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono break-all select-all">

@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"math"
 	"net/http"
 	"os"
@@ -120,6 +121,11 @@ func (s *Service) dispatchMetaMessage(ctx context.Context, tenantID bson.ObjectI
 		token = strings.TrimSpace(os.Getenv("WHATSAPP_ACCESS_TOKEN"))
 	}
 
+	phoneID = strings.Trim(strings.TrimSpace(phoneID), "\"'")
+	token = strings.TrimPrefix(token, "Bearer ")
+	token = strings.TrimPrefix(token, "bearer ")
+	token = strings.Trim(strings.TrimSpace(token), "\"'")
+
 	// 2. If live Meta credentials exist, call Meta Graph API v21.0
 	if phoneID != "" && token != "" && !strings.Contains(phoneID, "mock") && !strings.HasPrefix(phoneID, "phone_act_") {
 		url := fmt.Sprintf("https://graph.facebook.com/v21.0/%s/messages", phoneID)
@@ -145,13 +151,22 @@ func (s *Service) dispatchMetaMessage(ctx context.Context, tenantID bson.ObjectI
 		req.Header.Set("Authorization", "Bearer "+token)
 		req.Header.Set("Content-Type", "application/json")
 
+		tokenPreview := token
+		if len(tokenPreview) > 8 {
+			tokenPreview = tokenPreview[:8]
+		}
+		log.Printf("[WhatsApp Meta API] Dispatching to %s via PhoneID %s (token prefix: %s..., len: %d)", cleanPhone, phoneID, tokenPreview, len(token))
+
 		resp, err := s.httpClient.Do(req)
 		if err != nil {
+			log.Printf("[WhatsApp Meta API Error] Network error: %v", err)
 			return "", fmt.Errorf("meta graph API network error: %w", err)
 		}
 		defer resp.Body.Close()
 
 		respBody, _ := io.ReadAll(resp.Body)
+		log.Printf("[WhatsApp Meta API Response] Status: %d, Body: %s", resp.StatusCode, string(respBody))
+
 		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 			var metaResp struct {
 				Messages []struct {
@@ -185,6 +200,7 @@ func (s *Service) dispatchMetaMessage(ctx context.Context, tenantID bson.ObjectI
 			if tErr == nil {
 				defer tResp.Body.Close()
 				tRespBody, _ := io.ReadAll(tResp.Body)
+				log.Printf("[WhatsApp Meta API Template Fallback Response] Status: %d, Body: %s", tResp.StatusCode, string(tRespBody))
 				if tResp.StatusCode >= 200 && tResp.StatusCode < 300 {
 					var metaResp struct {
 						Messages []struct {
@@ -208,6 +224,9 @@ func (s *Service) dispatchMetaMessage(ctx context.Context, tenantID bson.ObjectI
 			} `json:"error"`
 		}
 		if err := json.Unmarshal(respBody, &metaErr); err == nil && metaErr.Error.Message != "" {
+			if metaErr.Error.Code == 190 {
+				return "", fmt.Errorf("Meta API Authentication Error (190): %s. Your Access Token is expired or invalid. Please generate a Permanent System User Token in Meta Business Settings or refresh your temporary token.", metaErr.Error.Message)
+			}
 			return "", fmt.Errorf("Meta API error (%d): %s", metaErr.Error.Code, metaErr.Error.Message)
 		}
 
