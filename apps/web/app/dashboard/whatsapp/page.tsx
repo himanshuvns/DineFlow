@@ -2944,11 +2944,55 @@ export default function WhatsAppPage() {
             </ul>
           </div>
 
-          <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-            <p className="font-bold text-slate-900 dark:text-white mb-1">Webhook Callback URL</p>
-            <code className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono break-all select-all">
-              {configForm.webhookUrl}
-            </code>
+          <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-bold text-slate-900 dark:text-white">Meta Webhooks Configuration</p>
+                <p className="text-[11px] text-muted-foreground">Use these values in Meta Developer Portal &gt; Step 2. Production setup</p>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="font-medium text-slate-700 dark:text-slate-300">1. Callback URL</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(configForm.webhookUrl || "https://api-production-f170.up.railway.app/api/v1/whatsapp/webhook");
+                    addToast("success", "Callback URL Copied", "Webhook URL copied to clipboard.");
+                  }}
+                  className="text-primary hover:underline font-mono"
+                >
+                  Copy URL
+                </button>
+              </div>
+              <code className="block text-[11px] text-emerald-600 dark:text-emerald-400 font-mono break-all select-all bg-emerald-500/10 p-2 rounded border border-emerald-500/20">
+                {configForm.webhookUrl || "https://api-production-f170.up.railway.app/api/v1/whatsapp/webhook"}
+              </code>
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="font-medium text-slate-700 dark:text-slate-300">2. Verify Token</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(configForm.verifyToken || "dineflow_webhook_verify_secret");
+                    addToast("success", "Verify Token Copied", "Verify token copied to clipboard.");
+                  }}
+                  className="text-primary hover:underline font-mono"
+                >
+                  Copy Token
+                </button>
+              </div>
+              <code className="block text-[11px] text-emerald-600 dark:text-emerald-400 font-mono break-all select-all bg-emerald-500/10 p-2 rounded border border-emerald-500/20">
+                {configForm.verifyToken || "dineflow_webhook_verify_secret"}
+              </code>
+            </div>
+
+            <div className="text-[11px] text-muted-foreground bg-blue-500/10 border border-blue-500/20 p-2.5 rounded-lg text-blue-700 dark:text-blue-300">
+              <strong>🔔 Important for Inbound Auto-Replies:</strong> After clicking <em>Verify and save</em> in Meta, scroll down to <strong>Webhook fields</strong> and turn on <strong>Subscribed</strong> for the <code className="bg-blue-500/20 px-1 py-0.5 rounded font-mono">messages</code> field. This enables automatic responses when someone sends &quot;hi&quot;!
+            </div>
           </div>
 
           <div className="flex justify-end gap-2 pt-2">

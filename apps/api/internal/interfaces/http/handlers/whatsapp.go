@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -67,6 +68,8 @@ func (h *WhatsAppHandler) VerifyWebhook(c *gin.Context) {
 	token := c.Query("hub.verify_token")
 	challenge := c.Query("hub.challenge")
 
+	log.Printf("[WhatsApp Webhook Verify] Received challenge request: mode=%s, token=%s", mode, token)
+
 	expectedToken := os.Getenv("WHATSAPP_VERIFY_TOKEN")
 	if expectedToken == "" {
 		expectedToken = os.Getenv("WHATSAPP_WEBHOOK_VERIFY_TOKEN")
@@ -75,9 +78,22 @@ func (h *WhatsAppHandler) VerifyWebhook(c *gin.Context) {
 		expectedToken = "dineflow_webhook_verify_secret"
 	}
 
-	if mode == "subscribe" && token == expectedToken {
-		c.String(http.StatusOK, challenge)
-		return
+	if mode == "subscribe" {
+		if token == expectedToken {
+			log.Printf("[WhatsApp Webhook Verify] Success with default/env token")
+			c.String(http.StatusOK, challenge)
+			return
+		}
+
+		if h.waService != nil {
+			if cfg, err := h.waService.FindConfigByVerifyToken(c.Request.Context(), token); err == nil && cfg != nil {
+				log.Printf("[WhatsApp Webhook Verify] Success with custom verify token for tenant %s", cfg.TenantID.Hex())
+				c.String(http.StatusOK, challenge)
+				return
+			}
+		}
+
+		log.Printf("[WhatsApp Webhook Verify FAILED] Token %q does not match expected default %q or any tenant config", token, expectedToken)
 	}
 
 	c.AbortWithStatus(http.StatusForbidden)
@@ -213,6 +229,7 @@ func (h *WhatsAppHandler) HandleWebhook(c *gin.Context) {
 	// 2. Try parsing official Meta Webhook Payload
 	var metaPayload domainwa.MetaWebhookPayload
 	if err := json.Unmarshal(bodyBytes, &metaPayload); err == nil && metaPayload.Object != "" {
+		log.Printf("[WhatsApp Meta Webhook POST] Received Meta event (Object=%s, Entries=%d)", metaPayload.Object, len(metaPayload.Entry))
 		_ = h.waService.HandleMetaWebhook(c.Request.Context(), metaPayload)
 		c.Status(http.StatusOK)
 		return

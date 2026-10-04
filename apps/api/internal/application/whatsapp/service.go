@@ -451,6 +451,34 @@ func (s *Service) UpdateWABAConfig(ctx context.Context, tenantID bson.ObjectID, 
 	return &cfg, nil
 }
 
+// FindConfigByVerifyToken looks up a tenant WhatsApp config by verify token.
+func (s *Service) FindConfigByVerifyToken(ctx context.Context, token string) (*domainwa.WhatsAppConfig, error) {
+	clean := strings.TrimSpace(token)
+	if s.db == nil || clean == "" {
+		return nil, nil
+	}
+	coll := s.db.Collection("whatsapp_configs")
+	var cfg domainwa.WhatsAppConfig
+	if err := coll.FindOne(ctx, bson.M{"verifyToken": clean}).Decode(&cfg); err == nil {
+		return &cfg, nil
+	}
+	return nil, nil
+}
+
+// FindTenantByPhoneNumberID resolves the tenant ObjectID from Meta's recipient phone_number_id.
+func (s *Service) FindTenantByPhoneNumberID(ctx context.Context, phoneID string) bson.ObjectID {
+	clean := strings.TrimSpace(phoneID)
+	if s.db == nil || clean == "" {
+		return bson.NilObjectID
+	}
+	coll := s.db.Collection("whatsapp_configs")
+	var cfg domainwa.WhatsAppConfig
+	if err := coll.FindOne(ctx, bson.M{"phoneNumberId": clean}).Decode(&cfg); err == nil && !cfg.TenantID.IsZero() {
+		return cfg.TenantID
+	}
+	return bson.NilObjectID
+}
+
 // ── Real-Time Chatbot Engine ──────────────────────────────────────────────────
 
 type InboundResult struct {
@@ -781,12 +809,17 @@ func (s *Service) HandleMetaWebhook(ctx context.Context, payload domainwa.MetaWe
 				}
 
 				if bodyText != "" || buttonID != "" {
+					log.Printf("[WhatsApp Meta Inbound Message] From: %s, To PhoneID: %s, Body: %s, ButtonID: %s", fromPhone, val.Metadata.PhoneNumberID, bodyText, buttonID)
 					staff, err := s.FindStaffByPhone(ctx, fromPhone)
 					if err == nil && staff != nil {
 						_, _ = s.ProcessWorkforceMessage(ctx, staff, bodyText, buttonID)
 					} else {
-						tenantID := s.resolveTenantIDForPhone(ctx, fromPhone)
-						_, _ = s.ProcessChatbotMessage(ctx, tenantID, fromPhone, customerName, bodyText)
+						tenantID := s.FindTenantByPhoneNumberID(ctx, val.Metadata.PhoneNumberID)
+						if tenantID.IsZero() {
+							tenantID = s.resolveTenantIDForPhone(ctx, fromPhone)
+						}
+						reply, err := s.ProcessChatbotMessage(ctx, tenantID, fromPhone, customerName, bodyText)
+						log.Printf("[WhatsApp Meta Auto-Reply Result] To: %s, ReplyLen: %d, Err: %v", fromPhone, len(reply), err)
 					}
 				}
 			}
