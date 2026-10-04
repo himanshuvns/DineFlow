@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getWhatsAppLogs } from "@/lib/room-tasks";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 const DEFAULT_VERIFY_TOKEN = "dineflow_webhook_verify_secret";
+const META_DEFAULT_TOKEN =
+  "EAAT0C5k0pNoBSoxLeSngBEIhGDmBXkJZBKBcgjmZAOOTIyUUqbkDm1tRzjCgvlvCZARc76EBUvCCRRGlxf3hMQpKoXFRxdfUTD0vt4H69ML2L6ZAtMHZC6Jxd0lUiz9o3Q1WgoP9x1ZBWL4Cd5rDRWXpHZAXwI1tT5ipSvFUgCKGiv0zC0M3DxwR4tpaJQPDS2mFJ5ZBVrzeOVnZAKG0Bi6ycKuwKX2gRxIR7HYL7B3wUyQeW8CT678ZA8tZBSHlpdZCjdUuSbVEZCYiAmXlvZAF2YpNt4TlLz";
 
 /**
  * GET /api/whatsapp/webhook
@@ -65,7 +68,7 @@ export async function POST(req: NextRequest) {
           const value = change.value;
           if (!value || !Array.isArray(value.messages)) continue;
 
-          const phoneId = value.metadata?.phone_number_id || process.env.WHATSAPP_PHONE_NUMBER_ID;
+          const phoneId = value.metadata?.phone_number_id || process.env.WHATSAPP_PHONE_NUMBER_ID || "1382709818253532";
 
           for (const msg of value.messages) {
             const from = msg.from;
@@ -74,11 +77,24 @@ export async function POST(req: NextRequest) {
 
             console.log(`[Meta Inbound Message] From: ${from}, PhoneID: ${phoneId}, Text: "${text}"`);
 
+            // Record inbound message
+            try {
+              getWhatsAppLogs().unshift({
+                id: msg.id || "wam-in-" + Date.now(),
+                phone: "+" + from,
+                customerName: value.contacts?.[0]?.profile?.name || "Customer",
+                template: `Guest: "${text}"`,
+                status: "read",
+                time: "Just now",
+                location: "Table 14",
+              });
+            } catch {}
+
             // Generate intelligent auto-reply
             let replyText = "";
             if (lower === "hi" || lower === "hello" || lower === "hey" || lower === "start" || lower === "help") {
               replyText =
-                "Welcome to DineFlow! ✨\n\nHow may we serve you today? Reply with a number:\n\n" +
+                "Welcome to DineFlow! ✨🍽️\n\nHow may we serve you today? Reply with a number:\n\n" +
                 "1. 📋 Menu & Chef Specials\n" +
                 "2. 🛵 Track Live Order Status\n" +
                 "3. 🛎️ Room / Table Assistance\n" +
@@ -110,8 +126,10 @@ export async function POST(req: NextRequest) {
                 "• STAFF — Request live human assistance";
             }
 
-            // Dispatch response back via Meta Graph API if access token and phoneId are present
-            const token = process.env.WHATSAPP_ACCESS_TOKEN;
+            // Dispatch response back via Meta Graph API
+            const rawToken = process.env.WHATSAPP_ACCESS_TOKEN || META_DEFAULT_TOKEN;
+            const token = rawToken.replace(/^Bearer\s+/i, "");
+
             if (token && phoneId && from) {
               const cleanFrom = from.replace(/[^0-9]/g, "");
               const url = `https://graph.facebook.com/v21.0/${phoneId}/messages`;
@@ -120,7 +138,7 @@ export async function POST(req: NextRequest) {
                 const graphRes = await fetch(url, {
                   method: "POST",
                   headers: {
-                    Authorization: `Bearer ${token.replace(/^Bearer\s+/i, "")}`,
+                    Authorization: `Bearer ${token}`,
                     "Content-Type": "application/json",
                   },
                   body: JSON.stringify({
@@ -134,6 +152,19 @@ export async function POST(req: NextRequest) {
 
                 const graphData = await graphRes.json().catch(() => null);
                 console.log(`[Meta Auto-Reply Outbound] Status: ${graphRes.status}`, graphData);
+
+                // Record outbound auto-reply in log store
+                try {
+                  getWhatsAppLogs().unshift({
+                    id: graphData?.messages?.[0]?.id || "wam-rep-" + Date.now(),
+                    phone: "+" + cleanFrom,
+                    customerName: value.contacts?.[0]?.profile?.name || "Customer",
+                    template: `Auto-Reply: "${replyText.split("\n")[0]}"`,
+                    status: "delivered",
+                    time: "Just now",
+                    location: "Table 14",
+                  });
+                } catch {}
               } catch (dispatchErr) {
                 console.error("[Meta Auto-Reply Error] Failed to send via Graph API:", dispatchErr);
               }

@@ -342,7 +342,8 @@ export default function WhatsAppPage() {
     phoneNumber: "+1 (555) 149-2202",
     phoneNumberId: "1382709818253532",
     wabaAccountId: "1065968646215350",
-    accessToken: "EAAG...configured",
+    accessToken:
+      "EAAT0C5k0pNoBSoxLeSngBEIhGDmBXkJZBKBcgjmZAOOTIyUUqbkDm1tRzjCgvlvCZARc76EBUvCCRRGlxf3hMQpKoXFRxdfUTD0vt4H69ML2L6ZAtMHZC6Jxd0lUiz9o3Q1WgoP9x1ZBWL4Cd5rDRWXpHZAXwI1tT5ipSvFUgCKGiv0zC0M3DxwR4tpaJQPDS2mFJ5ZBVrzeOVnZAKG0Bi6ycKuwKX2gRxIR7HYL7B3wUyQeW8CT678ZA8tZBSHlpdZCjdUuSbVEZCYiAmXlvZAF2YpNt4TlLz",
     verifyToken: "dineflow_webhook_verify_secret",
     webhookUrl: "https://dineflow-steel.vercel.app/api/whatsapp/webhook",
     connected: true,
@@ -353,9 +354,9 @@ export default function WhatsAppPage() {
   const [configForm, setConfigForm] = React.useState<WABAConfig>(config);
 
   // Test Sender State
-  const [testNumber, setTestNumber] = React.useState("+91 98000 12345");
+  const [testNumber, setTestNumber] = React.useState("+91 78888 34311");
   const [testNumberTouched, setTestNumberTouched] = React.useState(false);
-  const [testGuestName, setTestGuestName] = React.useState("Alex Rivera");
+  const [testGuestName, setTestGuestName] = React.useState("Himanshu");
   const [isSendingTest, setIsSendingTest] = React.useState(false);
 
   // Dispatch Logs State
@@ -449,9 +450,19 @@ export default function WhatsAppPage() {
 
   const fetchData = React.useCallback(async () => {
     try {
-      // 1. Fetch Config
-      const cfgRes = await apiClient.get("/whatsapp/config");
-      if (cfgRes.data?.data) {
+      // 1. Fetch Config (prefer localStorage fallback if offline)
+      if (typeof window !== "undefined") {
+        const localCfg = localStorage.getItem("dineflow_waba_config");
+        if (localCfg) {
+          try {
+            const parsed = JSON.parse(localCfg);
+            setConfig(parsed);
+            setConfigForm(parsed);
+          } catch {}
+        }
+      }
+      const cfgRes = await apiClient.get("/whatsapp/config").catch(() => null);
+      if (cfgRes?.data?.data) {
         setConfig(cfgRes.data.data);
         setConfigForm(cfgRes.data.data);
       }
@@ -647,15 +658,15 @@ export default function WhatsAppPage() {
 
   // Polling loop for OpenWA status and QR code
   React.useEffect(() => {
-    if (isSandboxDemo) return;
+    if (isSandboxDemo || activeTab !== "gateway") return;
     fetchOpenWAStatus();
 
     const interval = setInterval(() => {
       fetchOpenWAStatus();
-      if (activeTab === "gateway" || openwaStatus.status === "qr" || openwaStatus.status === "starting") {
+      if (openwaStatus.status === "qr" || openwaStatus.status === "starting") {
         fetchOpenWAQR();
       }
-    }, 3000);
+    }, 5000);
 
     return () => clearInterval(interval);
   }, [fetchOpenWAStatus, fetchOpenWAQR, activeTab, openwaStatus.status, isSandboxDemo]);
@@ -864,12 +875,16 @@ export default function WhatsAppPage() {
   const handleUpdateConfig = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await apiClient.put("/whatsapp/config", configForm);
-      if (res.data?.data) {
-        setConfig(res.data.data);
-        addToast("success", "Settings Saved", "WhatsApp Business credentials updated successfully.");
-        setIsConfigModalOpen(false);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("dineflow_waba_config", JSON.stringify(configForm));
       }
+      setConfig(configForm);
+      const res = await apiClient.put("/whatsapp/config", configForm).catch(() => null);
+      if (res?.data?.data) {
+        setConfig(res.data.data);
+      }
+      addToast("success", "Settings Saved", "WhatsApp Business credentials updated successfully.");
+      setIsConfigModalOpen(false);
     } catch (err) {
       addToast("error", "Save Failed", "Could not save credentials. Check input values.");
     }
@@ -889,13 +904,36 @@ export default function WhatsAppPage() {
     setIsSendingTest(true);
 
     try {
-      await apiClient.post("/whatsapp/send-test", {
-        recipientPhone: v.normalized,
-        customerName: testGuestName,
-        template: "order_confirmed",
+      const res = await fetch("/api/whatsapp/send-test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          recipientPhone: v.normalized,
+          customerName: testGuestName,
+          template: "order_confirmed",
+          phoneId: configForm.phoneNumberId || config.phoneNumberId,
+          accessToken: configForm.accessToken || config.accessToken,
+        }),
       });
+
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(data?.error?.message || data?.error || data?.message || "Failed to dispatch WhatsApp message");
+      }
+
       addToast("success", "Notification Dispatched", `Sent digital notification to ${v.formatted}`);
-      fetchData();
+
+      // Add to live dispatch log list
+      const newLogItem: MessageLogItem = {
+        id: "wam-" + Date.now().toString().slice(-4),
+        phone: v.formatted,
+        customerName: testGuestName,
+        template: "Order Confirmed",
+        status: "delivered",
+        time: "Just now",
+        location: "Table 14",
+      };
+      setLogs((prev) => [newLogItem, ...prev]);
     } catch (err: any) {
       const errMsg =
         err?.response?.data?.error?.message ||

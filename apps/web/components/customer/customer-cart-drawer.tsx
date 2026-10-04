@@ -292,7 +292,7 @@ export function CustomerCartDrawer({
       `*Total: ${formatCurrency(total, "INR")}* (incl. taxes)\n\n` +
       `Please confirm receipt for kitchen preparation! 🙏`;
 
-    window.open(`https://wa.me/919876543210?text=${encodeURIComponent(text)}`, "_blank");
+    window.open(`https://wa.me/15551492202?text=${encodeURIComponent(text)}`, "_blank");
     addToast("info", "WhatsApp Opened", "Your order draft was prepared in WhatsApp!");
   };
 

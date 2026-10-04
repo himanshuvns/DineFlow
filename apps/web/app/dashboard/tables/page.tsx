@@ -198,7 +198,7 @@ export default function TablesManagementPage() {
   const getQRLink = (table: TableItem, target: "web" | "whatsapp" = qrTarget) => {
     if (target === "whatsapp") {
       const msg = `Hi ${tenantName}! 👋 I am seated at ${table.name}. Please send me the live digital menu & daily specials.`;
-      return `https://wa.me/919876543210?text=${encodeURIComponent(msg)}`;
+      return `https://wa.me/15551492202?text=${encodeURIComponent(msg)}`;
     }
     const slug = tenantSlug || "the-grand-bistro";
     return `${baseUrl}/m/${slug}/${table.id.toLowerCase()}`;

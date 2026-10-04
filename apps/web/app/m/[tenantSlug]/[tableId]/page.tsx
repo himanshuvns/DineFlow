@@ -531,7 +531,7 @@ export default function CustomerMenuPage() {
 
   const handleOpenWhatsApp = () => {
     const msg = `Hi ${restaurantDisplayName}! 👋 I am browsing the digital menu for ${tableName}. Could I get some recommendations or assistance?`;
-    window.open(`https://wa.me/919876543210?text=${encodeURIComponent(msg)}`, "_blank");
+    window.open(`https://wa.me/15551492202?text=${encodeURIComponent(msg)}`, "_blank");
   };
 
   // Filtered dishes
