@@ -418,13 +418,13 @@ func (s *Service) GetWABAStatus(ctx context.Context, tenantID bson.ObjectID) dom
 	// Default fallback config
 	return domainwa.WhatsAppConfig{
 		TenantID:      tenantID,
-		PhoneNumber:   "+91 98765 43210",
-		PhoneNumberID: "phone_act_981204812",
-		WABAAccountID: "waba_act_891823091",
+		PhoneNumber:   "+1 (555) 149-2202",
+		PhoneNumberID: "1382709818253532",
+		WABAAccountID: "1065968646215350",
 		VerifyToken:   "dineflow_webhook_verify_secret",
-		WebhookURL:    "https://api-production-f170.up.railway.app/api/v1/whatsapp/webhook",
+		WebhookURL:    "https://dineflow-steel.vercel.app/api/whatsapp/webhook",
 		Connected:     true,
-		TierLimit:     "Tier 2 (10,000 conversations / 24h)",
+		TierLimit:     "Sandbox (Test Account)",
 		QualityRating: "High (Green)",
 		UpdatedAt:     time.Now().UTC(),
 	}

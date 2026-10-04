@@ -339,15 +339,15 @@ export default function WhatsAppPage() {
 
   // Config & Status State
   const [config, setConfig] = React.useState<WABAConfig>({
-    phoneNumber: "+91 98765 43210",
-    phoneNumberId: "phone_act_981204812",
-    wabaAccountId: "waba_act_891823091",
+    phoneNumber: "+1 (555) 149-2202",
+    phoneNumberId: "1382709818253532",
+    wabaAccountId: "1065968646215350",
     accessToken: "EAAG...configured",
     verifyToken: "dineflow_webhook_verify_secret",
-    webhookUrl: "https://api-production-f170.up.railway.app/api/v1/whatsapp/webhook",
+    webhookUrl: "https://dineflow-steel.vercel.app/api/whatsapp/webhook",
     connected: true,
-    tierLimit: "Tier 2 (10k/day)",
-    qualityRating: "High",
+    tierLimit: "Sandbox (Test Account)",
+    qualityRating: "High (Green)",
   });
   const [isConfigModalOpen, setIsConfigModalOpen] = React.useState(false);
   const [configForm, setConfigForm] = React.useState<WABAConfig>(config);
@@ -2896,14 +2896,14 @@ export default function WhatsAppPage() {
               label="Registered Business Phone"
               value={configForm.phoneNumber}
               onChange={(e) => setConfigForm({ ...configForm, phoneNumber: e.target.value })}
-              placeholder="+91 98765 43210"
+              placeholder="+1 (555) 149-2202"
               required
             />
             <Input
               label="Phone Number ID (Meta Graph)"
               value={configForm.phoneNumberId}
               onChange={(e) => setConfigForm({ ...configForm, phoneNumberId: e.target.value })}
-              placeholder="e.g. 104928192839182"
+              placeholder="e.g. 1382709818253532"
               required
             />
           </div>
@@ -2913,7 +2913,7 @@ export default function WhatsAppPage() {
               label="WhatsApp Business Account ID (WABA ID)"
               value={configForm.wabaAccountId}
               onChange={(e) => setConfigForm({ ...configForm, wabaAccountId: e.target.value })}
-              placeholder="e.g. 891823091823901"
+              placeholder="e.g. 1065968646215350"
               required
             />
             <Input
