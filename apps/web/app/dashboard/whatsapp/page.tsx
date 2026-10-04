@@ -962,7 +962,11 @@ export default function WhatsAppPage() {
       if (!res.ok) throw new Error(data?.error?.message || data?.error || "Failed to dispatch WhatsApp message");
       addToast("success", "Invite Dispatched", `Sent WhatsApp onboarding to ${staff.name} (${staff.phone})`);
     } catch (err: any) {
-      addToast("error", "Dispatch Failed", err.message || "Failed to deliver WhatsApp message.");
+      let msg = err?.message || "Failed to deliver WhatsApp message.";
+      if (msg.toLowerCase().includes("authentication error") || msg.toLowerCase().includes("session has expired") || msg.includes("190")) {
+        msg = "Meta Access Token has expired (24h limit). Please generate a fresh token in Meta Developer Console or use a Permanent System User Token.";
+      }
+      addToast("error", "Dispatch Failed", msg);
     }
   };
 
@@ -1029,11 +1033,14 @@ export default function WhatsAppPage() {
       };
       setLogs((prev) => [newLogItem, ...prev]);
     } catch (err: any) {
-      const errMsg =
+      let errMsg =
         err?.response?.data?.error?.message ||
         err?.response?.data?.message ||
         err?.message ||
         "Could not send WhatsApp message. Please check your Meta credentials.";
+      if (errMsg.toLowerCase().includes("authentication error") || errMsg.toLowerCase().includes("session has expired") || errMsg.includes("190")) {
+        errMsg = "Meta Access Token has expired (24h limit). Please generate a fresh token in Meta Developer Console or use a Permanent System User Token.";
+      }
       addToast("error", "Dispatch Failed", errMsg);
     } finally {
       setIsSendingTest(false);

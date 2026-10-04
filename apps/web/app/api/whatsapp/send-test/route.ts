@@ -173,8 +173,9 @@ export async function POST(req: NextRequest) {
     });
   } catch (err: unknown) {
     console.error("[Send Test WhatsApp Error]", err);
+    const msg = (err as Error)?.message || String(err) || "Failed to dispatch test notification";
     return NextResponse.json(
-      { success: false, error: "Failed to dispatch test notification" },
+      { success: false, error: msg },
       { status: 500 }
     );
   }

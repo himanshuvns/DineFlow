@@ -732,7 +732,10 @@ export default function StaffPage() {
       if (!res.ok) throw new Error(data?.error?.message || data?.error || "Failed to dispatch WhatsApp message");
       addToast("success", "WhatsApp Invite Dispatched", `Sent workforce onboarding to ${member.name} (${member.phone})`);
     } catch (err: unknown) {
-      const errorMsg = (err as Error)?.message || "Failed to deliver WhatsApp message.";
+      let errorMsg = (err as Error)?.message || "Failed to deliver WhatsApp message.";
+      if (errorMsg.toLowerCase().includes("authentication error") || errorMsg.toLowerCase().includes("session has expired") || errorMsg.includes("190")) {
+        errorMsg = "Meta Access Token has expired (24h limit). Please generate a fresh token in Meta Developer Console or use a Permanent System User Token.";
+      }
       addToast("error", "Dispatch Failed", errorMsg);
     }
   };
