@@ -246,7 +246,7 @@ export function GeminiLogoModal({ isOpen, onClose, onLogoApplied }: GeminiLogoMo
       const apiBase =
         process.env.NEXT_PUBLIC_API_URL ||
         (process.env.NODE_ENV === "production"
-          ? "https://api-production-f170.up.railway.app/api/v1"
+          ? "https://dine.rovixatech.com/api/v1"
           : "http://localhost:8080/api/v1");
 
       const token = useAuthStore.getState().accessToken;

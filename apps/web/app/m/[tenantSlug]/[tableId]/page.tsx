@@ -117,7 +117,7 @@ export default function CustomerMenuPage() {
           (typeof window === "undefined" && process.env.INTERNAL_API_URL) ||
           process.env.NEXT_PUBLIC_API_URL ||
           (typeof window !== "undefined" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1"
-            ? "https://api-production-f170.up.railway.app/api/v1"
+            ? "https://dine.rovixatech.com/api/v1"
             : "http://localhost:8080/api/v1");
 
         const directRes = await fetch(`${apiBase}/public/m/${encodeURIComponent(slug)}?_t=${Date.now()}`, {
@@ -292,7 +292,7 @@ export default function CustomerMenuPage() {
             (typeof window !== "undefined" &&
             window.location.hostname !== "localhost" &&
             window.location.hostname !== "127.0.0.1"
-              ? "https://api-production-f170.up.railway.app/api/v1"
+              ? "https://dine.rovixatech.com/api/v1"
               : "http://localhost:8080/api/v1");
 
           const directRes = await fetch(

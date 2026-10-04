@@ -439,7 +439,7 @@ func (s *Service) UpdateWABAConfig(ctx context.Context, tenantID bson.ObjectID, 
 		cfg.VerifyToken = "dineflow_webhook_verify_secret"
 	}
 	if cfg.WebhookURL == "" {
-		cfg.WebhookURL = "https://api-production-f170.up.railway.app/api/v1/whatsapp/webhook"
+		cfg.WebhookURL = "https://dine.rovixatech.com/api/v1/whatsapp/webhook"
 	}
 
 	coll := s.db.Collection("whatsapp_configs")

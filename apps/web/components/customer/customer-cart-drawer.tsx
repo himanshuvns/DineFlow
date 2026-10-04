@@ -166,7 +166,7 @@ export function CustomerCartDrawer({
 
     const apiBase =
       process.env.NEXT_PUBLIC_API_URL ||
-      "https://api-production-f170.up.railway.app/api/v1";
+      "https://dine.rovixatech.com/api/v1";
 
     try {
       let orderId = "";

@@ -3124,7 +3124,7 @@ export default function WhatsAppPage() {
                 https://dineflow-steel.vercel.app/api/whatsapp/webhook
               </code>
               <p className="text-[10px] text-muted-foreground">
-                Alternatively, if using the dedicated Go backend on Railway: <code className="text-muted-foreground font-mono">https://api-production-f170.up.railway.app/api/v1/whatsapp/webhook</code>
+                Alternatively, if using the dedicated production Go API: <code className="text-muted-foreground font-mono">https://dine.rovixatech.com/api/v1/whatsapp/webhook</code>
               </p>
             </div>
 

@@ -4,9 +4,9 @@
 DineFlow is a **Next-Gen Multi-Tenant Restaurant & Hospitality OS** (monorepo):
 - `apps/web` — Next.js 14 frontend (TypeScript, Tailwind CSS, shadcn/ui)
 - `apps/api` — Go REST API (Gin framework, MongoDB, Redis)
-- Deployment: **Vercel** (frontend) + **Railway** (backend)
-- Production URL: https://dineflow-steel.vercel.app
-- Backend API: https://api-production-f170.up.railway.app
+- Deployment: Production VPS Docker Stack (**dine.rovixatech.com**) + **Vercel** (`dineflow-steel.vercel.app`)
+- Production URL: https://dine.rovixatech.com (mirror: https://dineflow-steel.vercel.app)
+- Backend API: https://dine.rovixatech.com/api/v1
 
 ## Tech Stack
 - **Package manager**: `pnpm` (workspace root) — always use `pnpm`, never `npm` or `yarn` directly
