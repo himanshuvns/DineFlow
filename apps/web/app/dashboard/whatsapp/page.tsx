@@ -2954,12 +2954,12 @@ export default function WhatsAppPage() {
 
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-[11px]">
-                <span className="font-medium text-slate-700 dark:text-slate-300">1. Callback URL</span>
+                <span className="font-semibold text-slate-900 dark:text-white">1. Callback URL (Recommended — Vercel Production)</span>
                 <button
                   type="button"
                   onClick={() => {
-                    navigator.clipboard.writeText(configForm.webhookUrl || "https://api-production-f170.up.railway.app/api/v1/whatsapp/webhook");
-                    addToast("success", "Callback URL Copied", "Webhook URL copied to clipboard.");
+                    navigator.clipboard.writeText("https://dineflow-steel.vercel.app/api/whatsapp/webhook");
+                    addToast("success", "Callback URL Copied", "Vercel Webhook URL copied to clipboard.");
                   }}
                   className="text-primary hover:underline font-mono"
                 >
@@ -2967,8 +2967,11 @@ export default function WhatsAppPage() {
                 </button>
               </div>
               <code className="block text-[11px] text-emerald-600 dark:text-emerald-400 font-mono break-all select-all bg-emerald-500/10 p-2 rounded border border-emerald-500/20">
-                {configForm.webhookUrl || "https://api-production-f170.up.railway.app/api/v1/whatsapp/webhook"}
+                https://dineflow-steel.vercel.app/api/whatsapp/webhook
               </code>
+              <p className="text-[10px] text-muted-foreground">
+                Alternatively, if using the dedicated Go backend on Railway: <code className="text-muted-foreground font-mono">https://api-production-f170.up.railway.app/api/v1/whatsapp/webhook</code>
+              </p>
             </div>
 
             <div className="space-y-1.5">
