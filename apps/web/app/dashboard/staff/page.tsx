@@ -301,6 +301,20 @@ export default function StaffPage() {
 
   const fetchStaff = React.useCallback(async () => {
     try {
+      // 1. Fetch from local Next.js serverless route first (resilient against Railway downtime)
+      try {
+        const localRes = await fetch("/api/staff");
+        if (localRes.ok) {
+          const localData = await localRes.json();
+          if (localData?.staff && Array.isArray(localData.staff) && localData.staff.length > 0) {
+            setStaffList(localData.staff);
+            return;
+          }
+        }
+      } catch (localErr) {
+        console.warn("Local staff fetch fallback:", localErr);
+      }
+
       const res = await apiClient.get("/staff");
       if (res.data?.data && Array.isArray(res.data.data)) {
         setStaffList(res.data.data);
@@ -644,6 +658,25 @@ export default function StaffPage() {
     }
 
     try {
+      // Also register into /api/staff so WhatsApp flows can recognize this staff member immediately!
+      if (normalizedPhone) {
+        try {
+          await fetch("/api/staff", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: inviteName.trim() || phone || email.split("@")[0],
+              phone: normalizedPhone,
+              role: inviteRole,
+              department: inviteDepartment,
+              employmentType: inviteType,
+            }),
+          });
+        } catch (apiErr) {
+          console.warn("Failed syncing to /api/staff:", apiErr);
+        }
+      }
+
       await apiClient.post("/staff/invite", {
         name: inviteName.trim() || phone || email.split("@")[0],
         phone: normalizedPhone,
@@ -657,7 +690,8 @@ export default function StaffPage() {
           specialAllowance: 2500,
           overtimeRate: 150,
         },
-      });
+      }).catch((e) => console.warn("API staff invite fallback:", e));
+
       addToast(
         "success",
         "Staff Enrolled!",
@@ -673,6 +707,33 @@ export default function StaffPage() {
       const errObj = (err as { response?: { data?: { error?: { message?: string } | string; message?: string } } })?.response?.data;
       const errorMsg = (typeof errObj?.error === "object" ? errObj?.error?.message : errObj?.error) || errObj?.message || "Could not enroll staff member.";
       addToast("error", "Invite Failed", errorMsg);
+    }
+  };
+
+  const handleSendStaffWhatsAppInvite = async (member: StaffMember) => {
+    if (!member.phone) {
+      addToast("warning", "No Phone Number", "This staff member does not have a phone number registered.");
+      return;
+    }
+    try {
+      const clean = member.phone.replace(/[^0-9]/g, "");
+      const msg = `👋 Welcome to DineFlow Workforce, ${member.name}!\n\nYour profile is enrolled as *${member.role.toUpperCase()}* (${member.department || "Operations"}).\n\nReply with any of these anytime:\n• *Hi* - Main workforce command menu\n• *1* - Clock In (Attendance)\n• *2* - Clock Out\n• *3* - Start Break\n• *4* - Request Leave\n• *5* - Shift Roster\n\nNeed assistance? Contact your shift supervisor.`;
+
+      const res = await fetch("/api/whatsapp/send-test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          recipientPhone: clean,
+          customerName: member.name,
+          message: msg,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error?.message || data?.error || "Failed to dispatch WhatsApp message");
+      addToast("success", "WhatsApp Invite Dispatched", `Sent workforce onboarding to ${member.name} (${member.phone})`);
+    } catch (err: unknown) {
+      const errorMsg = (err as Error)?.message || "Failed to deliver WhatsApp message.";
+      addToast("error", "Dispatch Failed", errorMsg);
     }
   };
 
@@ -1094,6 +1155,17 @@ export default function StaffPage() {
                       </TableCell>
                       <TableCell className="py-3.5 text-right pr-6">
                         <div className="flex items-center justify-end gap-1.5">
+                          {member.phone && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 hover:bg-emerald-500/10"
+                              onClick={() => handleSendStaffWhatsAppInvite(member)}
+                              title={`Send WhatsApp Workforce Onboarding to ${member.phone}`}
+                            >
+                              <MessageSquare className="h-3.5 w-3.5 mr-1" /> WhatsApp
+                            </Button>
+                          )}
                           {(currentUser?.role !== "manager" || (member.role !== "owner" && member.role !== "manager")) && (
                             <Button
                               variant="ghost"

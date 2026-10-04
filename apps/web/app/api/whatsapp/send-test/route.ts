@@ -13,7 +13,7 @@ const META_DEFAULT_TOKEN =
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { recipientPhone, customerName = "Valued Guest", phoneId = "1382709818253532", accessToken } = body;
+    const { recipientPhone, customerName = "Valued Guest", phoneId = "1382709818253532", accessToken, message } = body;
 
     if (!recipientPhone) {
       return NextResponse.json(
@@ -36,49 +36,18 @@ export async function POST(req: NextRequest) {
     if (token && !token.startsWith("EAAG...")) {
       const url = `https://graph.facebook.com/v21.0/${resolvedPhoneId}/messages`;
       
-      // Try sending pre-approved template first (works outside & inside 24h conversation window)
-      const dateStr = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-      const templatePayload = {
-        messaging_product: "whatsapp",
-        to: cleanPhone,
-        type: "template",
-        template: {
-          name: "jaspers_market_order_confirmation_v1",
-          language: { code: "en_US" },
-          components: [
-            {
-              type: "body",
-              parameters: [
-                { type: "text", text: customerName },
-                { type: "text", text: "ORD-" + Math.floor(1000 + Math.random() * 9000) },
-                { type: "text", text: dateStr },
-              ],
-            },
-          ],
-        },
-      };
+      let graphRes: Response;
+      let graphData: any;
 
-      let graphRes = await fetch(url, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(templatePayload),
-      });
-
-      let graphData = await graphRes.json().catch(() => null);
-
-      // If template fails, fallback to freeform text message
-      if (!graphRes.ok) {
-        console.warn("[Send Test WhatsApp Template failed, falling back to text]", graphData);
+      if (message) {
+        // Send custom freeform text message
         const textPayload = {
           messaging_product: "whatsapp",
           recipient_type: "individual",
           to: cleanPhone,
           type: "text",
           text: {
-            body: `Hi ${customerName}! 🍽️✨ Your test order from DineFlow Hospitality OS has been confirmed.\n\nTotal: ₹1,170.00\nStatus: Preparing in Kitchen\n\nLive tracking: https://dineflow-steel.vercel.app`,
+            body: message,
           },
         };
 
@@ -90,8 +59,65 @@ export async function POST(req: NextRequest) {
           },
           body: JSON.stringify(textPayload),
         });
+        graphData = await graphRes.json().catch(() => null);
+      } else {
+        // Try sending pre-approved template first (works outside & inside 24h conversation window)
+        const dateStr = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+        const templatePayload = {
+          messaging_product: "whatsapp",
+          to: cleanPhone,
+          type: "template",
+          template: {
+            name: "jaspers_market_order_confirmation_v1",
+            language: { code: "en_US" },
+            components: [
+              {
+                type: "body",
+                parameters: [
+                  { type: "text", text: customerName },
+                  { type: "text", text: "ORD-" + Math.floor(1000 + Math.random() * 9000) },
+                  { type: "text", text: dateStr },
+                ],
+              },
+            ],
+          },
+        };
+
+        graphRes = await fetch(url, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(templatePayload),
+        });
 
         graphData = await graphRes.json().catch(() => null);
+
+        // If template fails, fallback to freeform text message
+        if (!graphRes.ok) {
+          console.warn("[Send Test WhatsApp Template failed, falling back to text]", graphData);
+          const textPayload = {
+            messaging_product: "whatsapp",
+            recipient_type: "individual",
+            to: cleanPhone,
+            type: "text",
+            text: {
+              body: `Hi ${customerName}! 🍽️✨ Your test order from DineFlow Hospitality OS has been confirmed.\n\nTotal: ₹1,170.00\nStatus: Preparing in Kitchen\n\nLive tracking: https://dineflow-steel.vercel.app`,
+            },
+          };
+
+          graphRes = await fetch(url, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(textPayload),
+          });
+
+          graphData = await graphRes.json().catch(() => null);
+        }
       }
 
       if (!graphRes.ok) {
