@@ -1526,7 +1526,7 @@ export default function WhatsAppPage() {
                     OpenWA is a Local Development Gateway — Not for Real Customers
                   </h4>
                   <p className="text-slate-600 dark:text-slate-300 text-xs mt-0.5">
-                    This tab controls an unofficial WhatsApp Web multi-device session via Headless Chromium. In cloud production (Vercel/Railway), the local Chromium container is offline unless tunneled.
+                    This tab controls an unofficial WhatsApp Web multi-device session via Headless Chromium. In cloud production (VPS), the local Chromium container is offline unless tunneled.
                   </p>
                 </div>
               </div>
@@ -1941,7 +1941,7 @@ export default function WhatsAppPage() {
                           ) : (
                             <div className="text-[11px] text-slate-600 dark:text-slate-400 space-y-1 pt-1 border-t border-rose-500/20">
                               <p>
-                                • <strong>Why this happens in prod:</strong> OpenWA requires a local Docker container running Headless Chromium. Cloud servers (Vercel/Railway) cannot reach <code className="font-mono text-[10px]">localhost:2785</code> unless a live tunnel (ngrok / Cloudflare) is active.
+                                • <strong>Why this happens in prod:</strong> OpenWA requires a local Docker container running Headless Chromium. Cloud production servers cannot reach <code className="font-mono text-[10px]">localhost:2785</code> unless a live tunnel (ngrok / Cloudflare) is active.
                               </p>
                               <p>
                                 • <strong>For real customers:</strong> Do not use WhatsApp Web QR. Use the official <strong>Meta WhatsApp Cloud API</strong> (no Docker required, 99.99% uptime, zero phone ban risk).

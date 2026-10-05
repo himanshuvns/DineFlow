@@ -367,11 +367,13 @@ func (p *OpenWAProvider) StartSession(ctx context.Context, sessionID string) err
 }
 
 func (p *OpenWAProvider) ensureSessionWebhook(ctx context.Context, sessionUUID string) {
-	webhookURL := "http://host.docker.internal:8080/api/v1/whatsapp/webhook"
-	if publicDomain := os.Getenv("RAILWAY_PUBLIC_DOMAIN"); publicDomain != "" {
-		webhookURL = fmt.Sprintf("https://%s/api/v1/whatsapp/webhook", publicDomain)
-	} else if customWebhook := os.Getenv("WEBHOOK_PUBLIC_URL"); customWebhook != "" {
+	webhookURL := "https://dine.rovixatech.com/api/v1/whatsapp/webhook"
+	if customWebhook := os.Getenv("WEBHOOK_PUBLIC_URL"); customWebhook != "" {
 		webhookURL = customWebhook
+	} else if publicDomain := os.Getenv("APP_PUBLIC_DOMAIN"); publicDomain != "" {
+		webhookURL = fmt.Sprintf("https://%s/api/v1/whatsapp/webhook", publicDomain)
+	} else if os.Getenv("APP_ENV") == "development" {
+		webhookURL = "http://host.docker.internal:8080/api/v1/whatsapp/webhook"
 	}
 
 	payload := map[string]interface{}{

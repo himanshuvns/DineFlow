@@ -548,7 +548,7 @@ export const INITIAL_SYSTEM_SERVICES: SystemServiceHealth[] = [
     status: "healthy",
     latencyMs: 22,
     uptime: "99.95%",
-    details: "Railway US-East cluster handling multi-tenant RPCs.",
+    details: "Production VPS Docker cluster handling multi-tenant RPCs.",
   },
   {
     name: "MongoDB Atlas Primary Cluster",

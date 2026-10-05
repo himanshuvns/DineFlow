@@ -8,11 +8,11 @@
 |---|---|
 | Frontend | Next.js 15 (App Router) + TypeScript + Tailwind CSS v4 |
 | Backend | Go 1.26 + Gin |
-| Database | MongoDB Atlas |
-| Cache | Upstash Redis |
-| Real-time | Socket.io |
+| Database | MongoDB 7.0 (Production VPS) |
+| Cache | Redis 7.2 (Production VPS) |
+| Real-time | WebSocket + SSE |
 | Monorepo | Turborepo + pnpm |
-| Deployment | Vercel (frontend) + Railway.app (backend) |
+| Deployment | Production VPS Docker Stack (dine.rovixatech.com) |
 
 ## Monorepo Structure
 

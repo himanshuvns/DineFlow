@@ -1356,8 +1356,8 @@ func (s *Service) ValidateCheckInToken(tokenStr string) (tenantID, userID bson.O
 func (s *Service) getCheckInURL(token string) string {
 	baseURL := os.Getenv("FRONTEND_URL")
 	if baseURL == "" {
-		if os.Getenv("GIN_MODE") == "release" || os.Getenv("RAILWAY_ENVIRONMENT") != "" {
-			baseURL = "https://dineflow-steel.vercel.app"
+		if os.Getenv("GIN_MODE") == "release" || os.Getenv("APP_ENV") == "production" {
+			baseURL = "https://dine.rovixatech.com"
 		} else {
 			baseURL = "http://localhost:3000"
 		}

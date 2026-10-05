@@ -60,4 +60,7 @@ jobs:
       - name: Type check & build
         run: npm run build
         env:
-          NEXT_PUBLIC_API_URL: https://api.dineflow.app
+          NEXT_PUBLIC_API_URL: https://dine.rovixatech.com/api/v1
+          NEXT_PUBLIC_WS_URL: wss://dine.rovixatech.com
+          NEXT_PUBLIC_APP_URL: https://dine.rovixatech.com
+          NEXT_PUBLIC_ORDERING_URL: https://dine.rovixatech.com/order

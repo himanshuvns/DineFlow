@@ -301,7 +301,7 @@ export default function StaffPage() {
 
   const fetchStaff = React.useCallback(async () => {
     try {
-      // 1. Fetch from local Next.js serverless route first (resilient against Railway downtime)
+      // 1. Fetch from local Next.js route first (fastest latency)
       try {
         const localRes = await fetch("/api/staff");
         if (localRes.ok) {
