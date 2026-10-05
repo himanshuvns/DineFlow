@@ -1443,19 +1443,21 @@ func (s *Service) VerifyCheckInTokenDetails(ctx context.Context, tokenStr string
 	}
 
 	var u domainuser.User
-	var gf domainuser.GeofenceConfig
+	var gf *domainuser.GeofenceConfig
+	if s.staffService != nil {
+		gf, _ = s.staffService.GetGeofence(ctx, tenantID)
+	}
 	if s.db != nil {
 		coll := s.db.Collection("users")
 		_ = coll.FindOne(ctx, bson.M{"_id": userID}).Decode(&u)
-
-		gfColl := s.db.Collection("geofence_configs")
-		_ = gfColl.FindOne(ctx, bson.M{"tenantId": tenantID}).Decode(&gf)
 	}
 
-	if gf.Latitude == 0 && gf.Longitude == 0 {
-		gf.Latitude = 28.6139
-		gf.Longitude = 77.2090
-		gf.RadiusMeters = 100
+	if gf == nil || (gf.Latitude == 0 && gf.Longitude == 0) {
+		gf = &domainuser.GeofenceConfig{
+			Latitude:     28.6315,
+			Longitude:    77.2167,
+			RadiusMeters: 100,
+		}
 	}
 
 	restName, _ := s.getRestaurantDetails(ctx, tenantID)
@@ -1484,20 +1486,22 @@ func (s *Service) ProcessWorkforceCheckIn(ctx context.Context, input domainwa.Wo
 		return nil, err
 	}
 
-	var gf domainuser.GeofenceConfig
+	var gf *domainuser.GeofenceConfig
 	var u domainuser.User
+	if s.staffService != nil {
+		gf, _ = s.staffService.GetGeofence(ctx, tenantID)
+	}
 	if s.db != nil {
-		gfColl := s.db.Collection("geofence_configs")
-		_ = gfColl.FindOne(ctx, bson.M{"tenantId": tenantID}).Decode(&gf)
-
 		usersColl := s.db.Collection("users")
 		_ = usersColl.FindOne(ctx, bson.M{"_id": userID}).Decode(&u)
 	}
 
-	if gf.Latitude == 0 && gf.Longitude == 0 {
-		gf.Latitude = 28.6139
-		gf.Longitude = 77.2090
-		gf.RadiusMeters = 100
+	if gf == nil || (gf.Latitude == 0 && gf.Longitude == 0) {
+		gf = &domainuser.GeofenceConfig{
+			Latitude:     28.6315,
+			Longitude:    77.2167,
+			RadiusMeters: 100,
+		}
 	}
 
 	distance := domainuser.CalculateDistanceMeters(input.Latitude, input.Longitude, gf.Latitude, gf.Longitude)
