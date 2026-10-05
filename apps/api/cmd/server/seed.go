@@ -256,6 +256,69 @@ func seedDefaultData(ctx context.Context, db *mongoinfra.Client, log *zap.Logger
 		log.Info("🌱 Seeded housekeeping staff for demo tenant (Ramesh Kumar, Sunita Sharma)")
 	}
 
+	// Ensure Aastha and Himanshu Singh exist in users collection for workforce testing
+	aasthaCount, _ := usersColl.CountDocuments(ctx, bson.M{
+		"$or": []bson.M{
+			{"phone": "+917652058844"},
+			{"phone": "7652058844"},
+			{"phone": "+91 76520 58844"},
+		},
+	})
+	if aasthaCount == 0 {
+		nowA := time.Now().UTC()
+		aasthaUser := user.User{
+			ID:          bson.NewObjectID(),
+			TenantID:    tenantID,
+			Phone:       "+917652058844",
+			Email:       "aastha@dineflow.app",
+			Name:        "Aastha",
+			Role:        user.RoleWaiter,
+			Department:  "Floor Service",
+			EmployeeID:  "DF-EMP-1005",
+			Permissions: user.DefaultPermissionsForRole(user.RoleWaiter),
+			Status:      user.StatusActive,
+			ShiftName:   "Morning Shift (08:00 - 16:30)",
+			Salary: user.SalaryStructure{
+				Basic: 22000,
+			},
+			CreatedAt:   nowA,
+			UpdatedAt:   nowA,
+		}
+		_, _ = usersColl.InsertOne(ctx, aasthaUser)
+		log.Info("🌱 Seeded Aastha (+917652058844) staff account")
+	}
+
+	himanshuCount, _ := usersColl.CountDocuments(ctx, bson.M{
+		"$or": []bson.M{
+			{"phone": "+917888834311"},
+			{"phone": "7888834311"},
+			{"phone": "+91 78888 34311"},
+		},
+	})
+	if himanshuCount == 0 {
+		nowH := time.Now().UTC()
+		himanshuUser := user.User{
+			ID:          bson.NewObjectID(),
+			TenantID:    tenantID,
+			Phone:       "+917888834311",
+			Email:       "himanshu@dineflow.app",
+			Name:        "Himanshu Singh",
+			Role:        user.RoleOwner,
+			Department:  "Management",
+			EmployeeID:  "DF-EMP-1000",
+			Permissions: user.DefaultPermissionsForRole(user.RoleOwner),
+			Status:      user.StatusActive,
+			ShiftName:   "General Shift (09:00 - 18:00)",
+			Salary: user.SalaryStructure{
+				Basic: 85000,
+			},
+			CreatedAt:   nowH,
+			UpdatedAt:   nowH,
+		}
+		_, _ = usersColl.InsertOne(ctx, himanshuUser)
+		log.Info("🌱 Seeded Himanshu Singh (+917888834311) owner account")
+	}
+
 	// 3. Seed Sample Categories and Menu Items if none exist for this tenant
 	itemCount, _ := itemsColl.CountDocuments(ctx, bson.M{"tenantId": tenantID})
 	if itemCount == 0 {
