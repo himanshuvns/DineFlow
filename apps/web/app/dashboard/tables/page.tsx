@@ -89,7 +89,7 @@ export default function TablesManagementPage() {
 
   // QR Mode: "web" for Digital Menu, "whatsapp" for Direct WhatsApp ordering
   const [qrTarget, setQrTarget] = React.useState<"web" | "whatsapp">("web");
-  const [baseUrl, setBaseUrl] = React.useState("https://dineflow-steel.vercel.app");
+  const [baseUrl, setBaseUrl] = React.useState("https://dine.rovixatech.com");
 
   // Real-time table status synchronization (BroadcastChannel, storage event, background polling)
   React.useEffect(() => {

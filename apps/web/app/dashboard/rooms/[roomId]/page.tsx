@@ -260,7 +260,7 @@ export default function RoomDetailPage() {
   const [taskPriority, setTaskPriority] = React.useState("normal");
   const [taskNotes, setTaskNotes] = React.useState("");
 
-  const [baseUrl, setBaseUrl] = React.useState("https://dineflow-steel.vercel.app");
+  const [baseUrl, setBaseUrl] = React.useState("https://dine.rovixatech.com");
 
   React.useEffect(() => {
     if (typeof window !== "undefined" && window.location.origin) {

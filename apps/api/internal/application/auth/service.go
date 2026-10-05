@@ -639,7 +639,7 @@ func (s *Service) ForgotPassword(ctx context.Context, identifier string) error {
 
 	// Send reset email if user has email
 	if u.Email != "" && s.emailSvc != nil {
-		resetLink := fmt.Sprintf("https://dineflow-steel.vercel.app/reset-password?token=%s", resetToken)
+		resetLink := fmt.Sprintf("https://dine.rovixatech.com/reset-password?token=%s", resetToken)
 		_ = s.emailSvc.SendPasswordReset(ctx, u.Email, u.Name, resetLink)
 	}
 

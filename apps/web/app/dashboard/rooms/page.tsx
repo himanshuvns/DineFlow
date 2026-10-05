@@ -210,7 +210,7 @@ export default function RoomsDirectoryPage() {
   const [editFloor, setEditFloor] = React.useState("Floor 2");
   const [editWing, setEditWing] = React.useState("East Wing");
 
-  const [baseUrl, setBaseUrl] = React.useState("https://dineflow-steel.vercel.app");
+  const [baseUrl, setBaseUrl] = React.useState("https://dine.rovixatech.com");
 
   React.useEffect(() => {
     if (typeof window !== "undefined" && window.location.origin) {

@@ -422,7 +422,7 @@ func (s *Service) GetWABAStatus(ctx context.Context, tenantID bson.ObjectID) dom
 		PhoneNumberID: "1382709818253532",
 		WABAAccountID: "1065968646215350",
 		VerifyToken:   "dineflow_webhook_verify_secret",
-		WebhookURL:    "https://dineflow-steel.vercel.app/api/whatsapp/webhook",
+		WebhookURL:    "https://dine.rovixatech.com/api/whatsapp/webhook",
 		Connected:     true,
 		TierLimit:     "Sandbox (Test Account)",
 		QualityRating: "High (Green)",
@@ -1941,7 +1941,7 @@ func (s *Service) ProcessWorkforceMessage(ctx context.Context, staff *domainuser
 		if pFound {
 			baseURL := os.Getenv("FRONTEND_URL")
 			if baseURL == "" {
-				baseURL = "https://dineflow-steel.vercel.app"
+				baseURL = "https://dine.rovixatech.com"
 			}
 			payslipURL := fmt.Sprintf("%s/staff/payslips/%s/view", baseURL, p.ID.Hex())
 

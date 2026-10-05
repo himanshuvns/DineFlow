@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
             to: cleanPhone,
             type: "text",
             text: {
-              body: `Hi ${customerName}! 🍽️✨ Your test order from DineFlow Hospitality OS has been confirmed.\n\nTotal: ₹1,170.00\nStatus: Preparing in Kitchen\n\nLive tracking: https://dineflow-steel.vercel.app`,
+              body: `Hi ${customerName}! 🍽️✨ Your test order from DineFlow Hospitality OS has been confirmed.\n\nTotal: ₹1,170.00\nStatus: Preparing in Kitchen\n\nLive tracking: https://dine.rovixatech.com`,
             },
           };
 

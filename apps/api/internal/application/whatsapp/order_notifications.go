@@ -35,7 +35,7 @@ func (s *Service) NotifyOrderConfirmed(ctx context.Context, tenantID bson.Object
 		custName = "Valued Guest"
 	}
 
-	trackingURL := fmt.Sprintf("https://dineflow-steel.vercel.app/m/the-grand-bistro/order/%s", ord.OrderNumber)
+	trackingURL := fmt.Sprintf("https://dine.rovixatech.com/m/the-grand-bistro/order/%s", ord.OrderNumber)
 	loc := ord.TableName
 	if ord.RoomNumber != "" {
 		loc = fmt.Sprintf("Suite %s", ord.RoomNumber)

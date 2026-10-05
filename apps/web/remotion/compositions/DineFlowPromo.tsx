@@ -24,7 +24,7 @@ export const defaultDineFlowPromoProps: DineFlowPromoProps = {
   venueName: 'The Grand Bistro & Suites',
   primaryColor: '#6366f1',
   accentColor: '#10b981',
-  websiteUrl: 'dineflow-steel.vercel.app',
+  websiteUrl: 'dine.rovixatech.com',
 };
 
 // Scene 1: Brand Intro (Frames 0 - 75)

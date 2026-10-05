@@ -29,14 +29,14 @@ func (s *Service) ProcessRuleBasedCommand(ctx context.Context, tenantID bson.Obj
 
 	case clean == "menu":
 		// Get tenant slug if available
-		menuURL := "https://dineflow-steel.vercel.app/m/the-grand-bistro"
+		menuURL := "https://dine.rovixatech.com/m/the-grand-bistro"
 		if s.db != nil {
 			var t struct {
 				Slug string `bson:"slug"`
 				Name string `bson:"name"`
 			}
 			if err := s.db.Collection("tenants").FindOne(ctx, bson.M{"_id": tenantID}).Decode(&t); err == nil && t.Slug != "" {
-				menuURL = fmt.Sprintf("https://dineflow-steel.vercel.app/m/%s", t.Slug)
+				menuURL = fmt.Sprintf("https://dine.rovixatech.com/m/%s", t.Slug)
 			}
 		}
 
@@ -82,7 +82,7 @@ func (s *Service) ProcessRuleBasedCommand(ctx context.Context, tenantID bson.Obj
 		}
 
 		statusStr := strings.ToUpper(string(ord.Status))
-		trackingURL := fmt.Sprintf("https://dineflow-steel.vercel.app/m/the-grand-bistro/order/%s", ord.OrderNumber)
+		trackingURL := fmt.Sprintf("https://dine.rovixatech.com/m/the-grand-bistro/order/%s", ord.OrderNumber)
 
 		reply := fmt.Sprintf("📋 *Order Details: %s*\n\n"+
 			"• Status: *%s*\n"+

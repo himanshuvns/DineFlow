@@ -243,7 +243,7 @@ export function recordLeaveRequest(
  * Generates an anti-tamper signed mobile GPS check-in link for WhatsApp dispatches.
  */
 export function generateCheckInSignedUrl(staff: StaffMember, action: "clock_in" | "clock_out" = "clock_in"): string {
-  const baseUrl = "https://dineflow-steel.vercel.app";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://dine.rovixatech.com";
   const params = new URLSearchParams({
     action: action,
     emp: staff.employeeId || staff.id,

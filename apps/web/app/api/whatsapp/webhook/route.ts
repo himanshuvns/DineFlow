@@ -13,7 +13,7 @@ export const revalidate = 0;
 
 const DEFAULT_VERIFY_TOKEN = "dineflow_webhook_verify_secret";
 const META_DEFAULT_TOKEN =
-  "EAAT0C5k0pNoBSoxLeSngBEIhGDmBXkJZBKBcgjmZAOOTIyUUqbkDm1tRzjCgvlvCZARc76EBUvCCRRGlxf3hMQpKoXFRxdfUTD0vt4H69ML2L6ZAtMHZC6Jxd0lUiz9o3Q1WgoP9x1ZBWL4Cd5rDRWXpHZAXwI1tT5ipSvFUgCKGiv0zC0M3DxwR4tpaJQPDS2mFJ5ZBVrzeOVnZAKG0Bi6ycKuwKX2gRxIR7HYL7B3wUyQeW8CT678ZA8tZBSHlpdZCjdUuSbVEZCYiAmXlvZAF2YpNt4TlLz";
+  "EAAT0C5k0pNoBSmZCFAvUPZCJLxUrgB0iq6iMtZCZAs8W4OGJLLIqnjJbb86TY29vhhEOBVy4ZBW0EdQzEU5fgm9ldwC4oX62cbB84AAxyY12rFc6KdORkyRGi7ZB6JJqsfhNNeJrfZCrPZCfPukHImoynOncJ0iFoSe1cScOGchCOYGMgbPd4ZBAXaqvmpSRdwziuLtdzPU19FlM1guZCFsytGp9cZBRwi9xokbtYHjSJL1Br2J1JHOcY8TTFli1oEwDZB4Y0eCXxKAqO7DdfkALk26bczHz";
 
 /**
  * GET /api/whatsapp/webhook
@@ -244,7 +244,7 @@ function handleCustomerFlow(text: string, guestName: string): string {
       `• *Crispy Calamari Fritti* — ₹620\n` +
       `• *Signature Masala Chai & Tarts* — ₹280\n\n` +
       `📱 *Browse Full Interactive Digital Menu*:\n` +
-      `https://dineflow-steel.vercel.app\n\n` +
+      `https://dine.rovixatech.com\n\n` +
       `Reply with any item name to order or reply *2* to track an active order!`
     );
   }
@@ -260,7 +260,7 @@ function handleCustomerFlow(text: string, guestName: string): string {
       `📍 Location: Table 14\n` +
       `💰 Total: ₹1,170.00 (Confirmed)\n\n` +
       `📱 *Live tracking link*:\n` +
-      `https://dineflow-steel.vercel.app\n\n` +
+      `https://dine.rovixatech.com\n\n` +
       `Our floor steward will serve your items piping hot!`
     );
   }

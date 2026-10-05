@@ -343,9 +343,9 @@ export default function WhatsAppPage() {
     phoneNumberId: "1382709818253532",
     wabaAccountId: "1065968646215350",
     accessToken:
-      "EAAT0C5k0pNoBSoxLeSngBEIhGDmBXkJZBKBcgjmZAOOTIyUUqbkDm1tRzjCgvlvCZARc76EBUvCCRRGlxf3hMQpKoXFRxdfUTD0vt4H69ML2L6ZAtMHZC6Jxd0lUiz9o3Q1WgoP9x1ZBWL4Cd5rDRWXpHZAXwI1tT5ipSvFUgCKGiv0zC0M3DxwR4tpaJQPDS2mFJ5ZBVrzeOVnZAKG0Bi6ycKuwKX2gRxIR7HYL7B3wUyQeW8CT678ZA8tZBSHlpdZCjdUuSbVEZCYiAmXlvZAF2YpNt4TlLz",
+      "EAAT0C5k0pNoBSmZCFAvUPZCJLxUrgB0iq6iMtZCZAs8W4OGJLLIqnjJbb86TY29vhhEOBVy4ZBW0EdQzEU5fgm9ldwC4oX62cbB84AAxyY12rFc6KdORkyRGi7ZB6JJqsfhNNeJrfZCrPZCfPukHImoynOncJ0iFoSe1cScOGchCOYGMgbPd4ZBAXaqvmpSRdwziuLtdzPU19FlM1guZCFsytGp9cZBRwi9xokbtYHjSJL1Br2J1JHOcY8TTFli1oEwDZB4Y0eCXxKAqO7DdfkALk26bczHz",
     verifyToken: "dineflow_webhook_verify_secret",
-    webhookUrl: "https://dineflow-steel.vercel.app/api/whatsapp/webhook",
+    webhookUrl: "https://dine.rovixatech.com/api/whatsapp/webhook",
     connected: true,
     tierLimit: "Sandbox (Test Account)",
     qualityRating: "High (Green)",
@@ -1681,7 +1681,7 @@ export default function WhatsAppPage() {
                         </Button>
                       </div>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                        When using cloud deployment (<code className="font-mono text-[10px]">dineflow-steel.vercel.app</code>), connect via a public tunnel URL (e.g. from <code className="font-mono text-[10px]">ngrok http 2785</code> or <code className="font-mono text-[10px]">cloudflared tunnel --url http://localhost:2785</code>).
+                        When using cloud deployment (<code className="font-mono text-[10px]">dine.rovixatech.com</code>), connect via a public tunnel URL (e.g. from <code className="font-mono text-[10px]">ngrok http 2785</code> or <code className="font-mono text-[10px]">cloudflared tunnel --url http://localhost:2785</code>).
                       </p>
                     </div>
                   )}
@@ -3119,8 +3119,8 @@ export default function WhatsAppPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    navigator.clipboard.writeText("https://dineflow-steel.vercel.app/api/whatsapp/webhook");
-                    addToast("success", "Callback URL Copied", "Vercel Webhook URL copied to clipboard.");
+                    navigator.clipboard.writeText("https://dine.rovixatech.com/api/whatsapp/webhook");
+                    addToast("success", "Callback URL Copied", "Production Webhook URL copied to clipboard.");
                   }}
                   className="text-primary hover:underline font-mono"
                 >
@@ -3128,7 +3128,7 @@ export default function WhatsAppPage() {
                 </button>
               </div>
               <code className="block text-[11px] text-emerald-600 dark:text-emerald-400 font-mono break-all select-all bg-emerald-500/10 p-2 rounded border border-emerald-500/20">
-                https://dineflow-steel.vercel.app/api/whatsapp/webhook
+                https://dine.rovixatech.com/api/whatsapp/webhook
               </code>
               <p className="text-[10px] text-muted-foreground">
                 Alternatively, if using the dedicated production Go API: <code className="text-muted-foreground font-mono">https://dine.rovixatech.com/api/v1/whatsapp/webhook</code>

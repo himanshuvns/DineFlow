@@ -363,7 +363,7 @@ export default function ClientDetailsPage() {
               <Badge variant="success">Active</Badge>
             </div>
             <p className="text-slate-500 text-[11px]">
-              https://dineflow-steel.vercel.app/m/{client.slug}
+              https://dine.rovixatech.com/m/{client.slug}
             </p>
           </Card>
 
