@@ -687,7 +687,7 @@ export default function StaffPage() {
       await apiClient.post("/staff/invite", {
         name: inviteName.trim() || phone || email.split("@")[0],
         phone: normalizedPhone,
-        email: email,
+        email: email.trim(),
         role: inviteRole,
         department: inviteDepartment,
         employmentType: inviteType,
@@ -697,7 +697,7 @@ export default function StaffPage() {
           specialAllowance: 2500,
           overtimeRate: 150,
         },
-      }).catch((e) => console.warn("API staff invite fallback:", e));
+      });
 
       addToast(
         "success",

@@ -93,7 +93,9 @@ func (c *Client) EnsureIndexes(ctx context.Context) error {
 		},
 		"users": {
 			{Keys: bson.D{{Key: "phone", Value: 1}}, Options: options.Index().SetUnique(true).SetSparse(true).SetName("idx_user_phone")},
-			{Keys: bson.D{{Key: "tenantId", Value: 1}, {Key: "email", Value: 1}}, Options: options.Index().SetUnique(true).SetSparse(true).SetName("idx_tenant_email")},
+			{Keys: bson.D{{Key: "tenantId", Value: 1}, {Key: "email", Value: 1}}, Options: options.Index().SetUnique(true).SetName("idx_tenant_email").SetPartialFilterExpression(bson.M{
+				"email": bson.M{"$type": "string", "$gt": ""},
+			})},
 			{Keys: bson.D{{Key: "tenantId", Value: 1}, {Key: "role", Value: 1}}, Options: options.Index().SetName("idx_tenant_role")},
 			{Keys: bson.D{{Key: "auth.refreshTokens.tokenId", Value: 1}}, Options: options.Index().SetSparse(true).SetName("idx_refresh_token_id")},
 			{Keys: bson.D{{Key: "inviteToken", Value: 1}}, Options: options.Index().SetSparse(true).SetName("idx_invite_token")},
@@ -151,10 +153,31 @@ func (c *Client) EnsureIndexes(ctx context.Context) error {
 
 	for collName, models := range indexDefs {
 		coll := c.db.Collection(collName)
+
+		if collName == "users" {
+			// Drop legacy idx_tenant_email if it lacks PartialFilterExpression
+			cursor, lErr := coll.Indexes().List(ctx)
+			if lErr == nil {
+				var existingIndexes []bson.M
+				if cursor.All(ctx, &existingIndexes) == nil {
+					for _, idx := range existingIndexes {
+						if name, ok := idx["name"].(string); ok && name == "idx_tenant_email" {
+							if _, hasPfe := idx["partialFilterExpression"]; !hasPfe {
+								c.log.Info("Dropping legacy idx_tenant_email index lacking partialFilterExpression")
+								_ = coll.Indexes().DropOne(ctx, "idx_tenant_email")
+							}
+						}
+					}
+				}
+			}
+		}
+
 		_, err := coll.Indexes().CreateMany(ctx, models)
 		if err != nil {
-			if strings.Contains(err.Error(), "IndexKeySpecsConflict") {
-				c.log.Warn("IndexKeySpecsConflict detected, dropping all non-id indexes and recreating", zap.String("collection", collName))
+			if strings.Contains(err.Error(), "IndexKeySpecsConflict") ||
+				strings.Contains(err.Error(), "IndexOptionsConflict") ||
+				strings.Contains(err.Error(), "different options") {
+				c.log.Warn("Index conflict detected, dropping all non-id indexes and recreating", zap.String("collection", collName))
 				_ = coll.Indexes().DropAll(ctx)
 				if _, retryErr := coll.Indexes().CreateMany(ctx, models); retryErr != nil {
 					c.log.Error("Failed to recreate indexes after drop", zap.String("collection", collName), zap.Error(retryErr))

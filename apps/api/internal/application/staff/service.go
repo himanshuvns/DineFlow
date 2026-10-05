@@ -247,6 +247,15 @@ func (s *Service) InviteStaff(ctx context.Context, tenantID bson.ObjectID, input
 		}
 
 		if _, err := scope.InsertOne(ctx, &newUser); err != nil {
+			if mongo.IsDuplicateKeyError(err) {
+				if strings.Contains(err.Error(), "idx_tenant_email") || strings.Contains(err.Error(), "email") {
+					return nil, errors.New("a staff member with this email address already exists in this workspace")
+				}
+				if strings.Contains(err.Error(), "idx_user_phone") || strings.Contains(err.Error(), "phone") {
+					return nil, errors.New("a staff member with this phone number already exists on DineFlow")
+				}
+				return nil, errors.New("a staff member with these credentials already exists")
+			}
 			return nil, err
 		}
 

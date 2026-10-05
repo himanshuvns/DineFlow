@@ -10229,7 +10229,7 @@
       "file_type": "code",
       "norm_label": "runstartupcleanup()",
       "source_file": "apps/api/cmd/server/seed.go",
-      "source_location": "L812"
+      "source_location": "L875"
     },
     {
       "id": "apps_api_internal_application_menu_service_newservice",
@@ -14211,7 +14211,7 @@
       "file_type": "code",
       "norm_label": ".getopenwasessionstatus()",
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L2102"
+      "source_location": "L2106"
     },
     {
       "id": "docs_ui_ux_guidelines",
@@ -21687,7 +21687,7 @@
       "file_type": "code",
       "norm_label": "seedplatformdata()",
       "source_file": "apps/api/cmd/server/seed.go",
-      "source_location": "L442"
+      "source_location": "L505"
     },
     {
       "id": "apps_api_internal_application_auth_service_generateslug",
@@ -26578,7 +26578,7 @@
       "file_type": "code",
       "norm_label": ".getopenwaqr()",
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L2095"
+      "source_location": "L2099"
     },
     {
       "id": "whatsapp_service_getprovider",
@@ -26721,7 +26721,7 @@
       "file_type": "code",
       "norm_label": ".notifymanagersofleaverequest()",
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L1611"
+      "source_location": "L1615"
     },
     {
       "id": "whatsapp_service_processchatbotmessage",
@@ -26743,7 +26743,7 @@
       "file_type": "code",
       "norm_label": ".processworkforcecheckin()",
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L1481"
+      "source_location": "L1483"
     },
     {
       "id": "whatsapp_service_processworkforcemessage",
@@ -26754,7 +26754,7 @@
       "file_type": "code",
       "norm_label": ".processworkforcemessage()",
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L1682"
+      "source_location": "L1686"
     },
     {
       "id": "whatsapp_service_recordoptout",
@@ -26787,7 +26787,7 @@
       "file_type": "code",
       "norm_label": ".restartopenwasession()",
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L2120"
+      "source_location": "L2124"
     },
     {
       "id": "whatsapp_service_sendcampaign",
@@ -26897,7 +26897,7 @@
       "file_type": "code",
       "norm_label": ".startopenwasession()",
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L2088"
+      "source_location": "L2092"
     },
     {
       "id": "whatsapp_service_stopopenwasession",
@@ -26908,7 +26908,7 @@
       "file_type": "code",
       "norm_label": ".stopopenwasession()",
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L2113"
+      "source_location": "L2117"
     },
     {
       "id": "whatsapp_service_updatewabaconfig",
@@ -32056,6 +32056,18 @@
       "type": "external"
     },
     {
+      "id": "ref_crypto",
+      "label": "ref_crypto",
+      "_origin": "semantic",
+      "community": 4,
+      "community_name": "staff-storage.ts",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "ref_crypto",
+      "source_file": "",
+      "type": "external"
+    },
+    {
       "id": "ref_next_link",
       "label": "ref_next_link",
       "_origin": "semantic",
@@ -32892,17 +32904,6 @@
       "external": true,
       "file_type": "concept",
       "norm_label": "go_pkg_syscall",
-      "source_file": "",
-      "type": "external"
-    },
-    {
-      "id": "ref_crypto",
-      "label": "ref_crypto",
-      "community": 4,
-      "community_name": "staff-storage.ts",
-      "external": true,
-      "file_type": "concept",
-      "norm_label": "ref_crypto",
       "source_file": "",
       "type": "external"
     }
@@ -33913,7 +33914,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/cmd/server/seed.go",
-      "source_location": "L434",
+      "source_location": "L497",
       "weight": 1.0
     },
     {
@@ -33949,7 +33950,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/cmd/server/seed.go",
-      "source_location": "L595",
+      "source_location": "L658",
       "weight": 1.0
     },
     {
@@ -33961,7 +33962,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/cmd/server/seed.go",
-      "source_location": "L596",
+      "source_location": "L659",
       "weight": 1.0
     },
     {
@@ -33973,7 +33974,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/cmd/server/seed.go",
-      "source_location": "L620",
+      "source_location": "L683",
       "weight": 1.0
     },
     {
@@ -50965,7 +50966,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L1664",
+      "source_location": "L1668",
       "weight": 1.0
     },
     {
@@ -50977,7 +50978,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L1666",
+      "source_location": "L1670",
       "weight": 1.0
     },
     {
@@ -50989,7 +50990,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L1667",
+      "source_location": "L1671",
       "weight": 1.0
     },
     {
@@ -51097,7 +51098,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L1482",
+      "source_location": "L1484",
       "weight": 1.0
     },
     {
@@ -51109,7 +51110,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L1503",
+      "source_location": "L1507",
       "weight": 1.0
     },
     {
@@ -51121,7 +51122,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L1537",
+      "source_location": "L1541",
       "weight": 1.0
     },
     {
@@ -51133,7 +51134,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L1538",
+      "source_location": "L1542",
       "weight": 1.0
     },
     {
@@ -51145,7 +51146,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L1686",
+      "source_location": "L1690",
       "weight": 1.0
     },
     {
@@ -51157,7 +51158,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L1731",
+      "source_location": "L1735",
       "weight": 1.0
     },
     {
@@ -51169,7 +51170,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L1732",
+      "source_location": "L1736",
       "weight": 1.0
     },
     {
@@ -51181,7 +51182,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L1812",
+      "source_location": "L1816",
       "weight": 1.0
     },
     {
@@ -51193,7 +51194,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L1829",
+      "source_location": "L1833",
       "weight": 1.0
     },
     {
@@ -51205,7 +51206,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L1833",
+      "source_location": "L1837",
       "weight": 1.0
     },
     {
@@ -51469,7 +51470,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L1461",
+      "source_location": "L1463",
       "weight": 1.0
     },
     {
@@ -85908,7 +85909,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/cmd/server/seed.go",
-      "source_location": "L812",
+      "source_location": "L875",
       "weight": 1.0
     },
     {
@@ -85920,7 +85921,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/cmd/server/seed.go",
-      "source_location": "L812",
+      "source_location": "L875",
       "weight": 1.0
     },
     {
@@ -85932,7 +85933,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/cmd/server/seed.go",
-      "source_location": "L812",
+      "source_location": "L875",
       "weight": 1.0
     },
     {
@@ -85980,7 +85981,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/cmd/server/seed.go",
-      "source_location": "L442",
+      "source_location": "L505",
       "weight": 1.0
     },
     {
@@ -85992,7 +85993,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/cmd/server/seed.go",
-      "source_location": "L442",
+      "source_location": "L505",
       "weight": 1.0
     },
     {
@@ -86004,7 +86005,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/cmd/server/seed.go",
-      "source_location": "L442",
+      "source_location": "L505",
       "weight": 1.0
     },
     {
@@ -96000,7 +96001,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L2095",
+      "source_location": "L2099",
       "weight": 1.0
     },
     {
@@ -96012,7 +96013,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L2102",
+      "source_location": "L2106",
       "weight": 1.0
     },
     {
@@ -96360,7 +96361,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L1611",
+      "source_location": "L1615",
       "weight": 1.0
     },
     {
@@ -96372,7 +96373,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L1611",
+      "source_location": "L1615",
       "weight": 1.0
     },
     {
@@ -96384,7 +96385,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L1611",
+      "source_location": "L1615",
       "weight": 1.0
     },
     {
@@ -96396,7 +96397,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L1611",
+      "source_location": "L1615",
       "weight": 1.0
     },
     {
@@ -96648,7 +96649,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L1481",
+      "source_location": "L1483",
       "weight": 1.0
     },
     {
@@ -96660,7 +96661,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L1481",
+      "source_location": "L1483",
       "weight": 1.0
     },
     {
@@ -96672,7 +96673,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L1682",
+      "source_location": "L1686",
       "weight": 1.0
     },
     {
@@ -96684,7 +96685,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L1682",
+      "source_location": "L1686",
       "weight": 1.0
     },
     {
@@ -96708,7 +96709,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L2120",
+      "source_location": "L2124",
       "weight": 1.0
     },
     {
@@ -96900,7 +96901,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L2088",
+      "source_location": "L2092",
       "weight": 1.0
     },
     {
@@ -96912,7 +96913,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L2113",
+      "source_location": "L2117",
       "weight": 1.0
     },
     {
@@ -99696,7 +99697,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L2102",
+      "source_location": "L2106",
       "weight": 1.0
     },
     {
@@ -99804,7 +99805,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L1481",
+      "source_location": "L1483",
       "weight": 1.0
     },
     {
@@ -101496,7 +101497,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/cmd/server/seed.go",
-      "source_location": "L442",
+      "source_location": "L505",
       "weight": 1.0
     },
     {
@@ -101507,7 +101508,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/cmd/server/seed.go",
-      "source_location": "L812",
+      "source_location": "L875",
       "weight": 1.0
     },
     {
@@ -119743,7 +119744,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L1481",
+      "source_location": "L1483",
       "weight": 1.0
     },
     {
@@ -119754,7 +119755,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L1611",
+      "source_location": "L1615",
       "weight": 1.0
     },
     {
@@ -119765,7 +119766,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L1682",
+      "source_location": "L1686",
       "weight": 1.0
     },
     {
@@ -119776,7 +119777,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L2088",
+      "source_location": "L2092",
       "weight": 1.0
     },
     {
@@ -119787,7 +119788,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L2095",
+      "source_location": "L2099",
       "weight": 1.0
     },
     {
@@ -119798,7 +119799,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L2102",
+      "source_location": "L2106",
       "weight": 1.0
     },
     {
@@ -119809,7 +119810,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L2113",
+      "source_location": "L2117",
       "weight": 1.0
     },
     {
@@ -119820,7 +119821,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L2120",
+      "source_location": "L2124",
       "weight": 1.0
     },
     {
@@ -126360,5 +126361,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "63d3fb2b290fe8ec425c3ffa3dd79d7c38402270"
+  "built_at_commit": "b8af5c58b9c2cf68f76df7c4347e15e98aabbee7"
 }
