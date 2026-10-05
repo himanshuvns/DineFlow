@@ -48,6 +48,8 @@ type Service struct {
 	largeOrderThreshold float64
 	optOuts             map[string]bool
 	optOutsLock         sync.RWMutex
+	wfSessions          map[string]domainwa.WorkforceSession
+	wfSessionsLock      sync.RWMutex
 	httpClient          *http.Client
 }
 
@@ -55,6 +57,7 @@ func NewService(db *mongoinfra.Client) *Service {
 	return &Service{
 		db:         db,
 		optOuts:    make(map[string]bool),
+		wfSessions: make(map[string]domainwa.WorkforceSession),
 		httpClient: &http.Client{Timeout: 10 * time.Second},
 	}
 }
@@ -1676,8 +1679,22 @@ func (s *Service) notifyManagersOfLeaveRequest(ctx context.Context, tenantID bso
 			},
 		}
 
-		_, _ = s.dispatchMetaInteractive(ctx, tenantID, mgr.Phone, payload)
-		textNotice := fmt.Sprintf("%s\n\nReply:\n• *APPROVE %s*\n• *REJECT %s*", bodyText, leaveIDStr, leaveIDStr)
+		// Store pending leave request in manager's session so manager can simply reply 1 or 2
+		if s.db != nil {
+			wfSessionColl := s.db.Collection("workforce_sessions")
+			_, _ = wfSessionColl.UpdateOne(
+				ctx,
+				bson.M{"tenantId": tenantID, "userId": mgr.ID},
+				bson.M{"$set": bson.M{
+					"draftLeaveType":  "manager_pending_approval",
+					"draftLeaveStart": leaveIDStr,
+					"updatedAt":       time.Now().UTC(),
+				}},
+				options.UpdateOne().SetUpsert(true),
+			)
+		}
+
+		textNotice := fmt.Sprintf("%s\n\nReply with a number:\n1️⃣ *Approve Request*\n2️⃣ *Reject Request*\n(or reply APPROVE %s / REJECT %s)", bodyText, leaveIDStr, leaveIDStr)
 		extID, _ := s.dispatchMetaMessage(ctx, tenantID, mgr.Phone, textNotice)
 		_, _ = s.LogMessage(ctx, tenantID, mgr.Phone, mgr.Name, domainwa.TemplateFeedbackRequest, textNotice, "Manager Leave Approval", domainwa.StatusDelivered, extID)
 	}
@@ -1701,7 +1718,7 @@ func (s *Service) ProcessWorkforceMessage(ctx context.Context, staff *domainuser
 	restName, _ := s.getRestaurantDetails(ctx, tenantID)
 	now := time.Now().UTC()
 	todayStr := now.Format("2006-01-02")
-
+	sessionKey := staff.TenantID.Hex() + ":" + staff.ID.Hex()
 	var session domainwa.WorkforceSession
 	session = domainwa.WorkforceSession{
 		ID:            bson.NewObjectID(),
@@ -1720,111 +1737,251 @@ func (s *Service) ProcessWorkforceMessage(ctx context.Context, staff *domainuser
 		if err := wfSessionColl.FindOne(ctx, bson.M{"tenantId": tenantID, "userId": staff.ID}).Decode(&existing); err == nil {
 			session = existing
 		}
+	} else {
+		s.wfSessionsLock.RLock()
+		if existing, ok := s.wfSessions[sessionKey]; ok {
+			session = existing
+		}
+		s.wfSessionsLock.RUnlock()
 	}
 
 	var reply string
 
 	isManager := staff.Role == domainuser.RoleOwner || staff.Role == domainuser.RoleManager || staff.Permissions.CanApproveLeave
 
-	if isManager && (strings.HasPrefix(buttonID, "leave_approve_") || strings.HasPrefix(lower, "approve ")) {
+	if isManager && (strings.HasPrefix(buttonID, "leave_approve_") || strings.HasPrefix(lower, "approve ") || lower == "approve" || (lower == "1" && session.DraftLeaveType == "manager_pending_approval")) {
 		leaveIDStr := strings.TrimPrefix(buttonID, "leave_approve_")
-		if leaveIDStr == "" || leaveIDStr == buttonID {
-			leaveIDStr = strings.TrimSpace(strings.TrimPrefix(cleanText, "approve"))
-			leaveIDStr = strings.TrimSpace(strings.TrimPrefix(leaveIDStr, "APPROVE"))
+		if leaveIDStr == "" || leaveIDStr == buttonID || lower == "1" || lower == "approve" {
+			leaveIDStr = session.DraftLeaveStart
+			if strings.HasPrefix(lower, "approve ") {
+				leaveIDStr = strings.TrimSpace(strings.TrimPrefix(cleanText, "approve"))
+			}
 		}
 		lOID, err := bson.ObjectIDFromHex(leaveIDStr)
 		if err == nil && s.staffService != nil {
 			req, appErr := s.staffService.ApproveLeave(ctx, tenantID, lOID, staff.Name)
 			if appErr == nil && req != nil {
-				reply = fmt.Sprintf("✅ *Leave Approved Successfully!*\n\nEmployee: *%s*\nType: %s\nDates: %s to %s (%.1f days)\nStatus: Approved by %s",
+				reply = fmt.Sprintf("✅ *Leave Approved Successfully!*\n\nEmployee: *%s*\nType: %s\nDates: %s to %s (%.1f days)\nStatus: Approved by %s\n\nReply 0️⃣ for Main Menu.",
 					req.EmployeeName, req.LeaveType, req.StartDate, req.EndDate, req.DaysCount, staff.Name)
 
 				var empUser domainuser.User
 				if err := s.db.Collection("users").FindOne(ctx, bson.M{"_id": req.UserID}).Decode(&empUser); err == nil && empUser.Phone != "" {
-					empNotice := fmt.Sprintf("🎉 *Good News! Leave Approved*\n\nHello *%s*,\nYour requested *%s Leave* from *%s to %s* (%.1f days) has been APPROVED by %s.\n\nEnjoy your time off! ✨",
+					empNotice := fmt.Sprintf("🎉 *Good News! Leave Approved*\n\nHello *%s*,\nYour requested *%s Leave* from *%s to %s* (%.1f days) has been APPROVED by %s.\n\nEnjoy your time off! ✨\n\nReply 0️⃣ for Main Menu.",
 						empUser.Name, strings.ToUpper(string(req.LeaveType)), req.StartDate, req.EndDate, req.DaysCount, staff.Name)
 					_, _ = s.dispatchMetaMessage(ctx, tenantID, empUser.Phone, empNotice)
 					_, _ = s.LogMessage(ctx, tenantID, empUser.Phone, empUser.Name, domainwa.TemplateFeedbackRequest, empNotice, "Leave Notification", domainwa.StatusDelivered, "")
 				}
+				session.DraftLeaveType = ""
+				session.DraftLeaveStart = ""
 			} else {
-				reply = fmt.Sprintf("⚠️ Unable to approve leave request: %v", appErr)
+				reply = fmt.Sprintf("⚠️ Unable to approve leave request: %v\n\nReply 0️⃣ for Main Menu.", appErr)
 			}
 		} else {
-			reply = "⚠️ Invalid Leave ID. Please verify the request."
+			reply = "⚠️ Invalid Leave ID. Please verify the request.\n\nReply 0️⃣ for Main Menu."
 		}
-	} else if isManager && (strings.HasPrefix(buttonID, "leave_reject_") || strings.HasPrefix(lower, "reject ")) {
+	} else if isManager && (strings.HasPrefix(buttonID, "leave_reject_") || strings.HasPrefix(lower, "reject ") || lower == "reject" || (lower == "2" && session.DraftLeaveType == "manager_pending_approval")) {
 		leaveIDStr := strings.TrimPrefix(buttonID, "leave_reject_")
-		if leaveIDStr == "" || leaveIDStr == buttonID {
-			leaveIDStr = strings.TrimSpace(strings.TrimPrefix(cleanText, "reject"))
-			leaveIDStr = strings.TrimSpace(strings.TrimPrefix(leaveIDStr, "REJECT"))
+		if leaveIDStr == "" || leaveIDStr == buttonID || lower == "2" || lower == "reject" {
+			leaveIDStr = session.DraftLeaveStart
+			if strings.HasPrefix(lower, "reject ") {
+				leaveIDStr = strings.TrimSpace(strings.TrimPrefix(cleanText, "reject"))
+			}
 		}
 		lOID, err := bson.ObjectIDFromHex(leaveIDStr)
 		if err == nil && s.staffService != nil {
 			req, rejErr := s.staffService.RejectLeave(ctx, tenantID, lOID, staff.Name, "Operational requirements")
 			if rejErr == nil && req != nil {
-				reply = fmt.Sprintf("❌ *Leave Rejected*\n\nEmployee: *%s*\nType: %s\nDates: %s to %s\nStatus: Rejected by %s",
+				reply = fmt.Sprintf("❌ *Leave Rejected*\n\nEmployee: *%s*\nType: %s\nDates: %s to %s\nStatus: Rejected by %s\n\nReply 0️⃣ for Main Menu.",
 					req.EmployeeName, req.LeaveType, req.StartDate, req.EndDate, staff.Name)
 
 				var empUser domainuser.User
 				if err := s.db.Collection("users").FindOne(ctx, bson.M{"_id": req.UserID}).Decode(&empUser); err == nil && empUser.Phone != "" {
-					empNotice := fmt.Sprintf("⚠️ *Leave Request Update*\n\nHello *%s*,\nYour requested *%s Leave* from *%s to %s* was not approved due to operational requirements.\nPlease connect with %s for details.",
+					empNotice := fmt.Sprintf("⚠️ *Leave Request Update*\n\nHello *%s*,\nYour requested *%s Leave* from *%s to %s* was not approved due to operational requirements.\nPlease connect with %s for details.\n\nReply 0️⃣ for Main Menu.",
 						empUser.Name, strings.ToUpper(string(req.LeaveType)), req.StartDate, req.EndDate, staff.Name)
 					_, _ = s.dispatchMetaMessage(ctx, tenantID, empUser.Phone, empNotice)
 				}
+				session.DraftLeaveType = ""
+				session.DraftLeaveStart = ""
 			} else {
-				reply = fmt.Sprintf("⚠️ Unable to reject leave request: %v", rejErr)
+				reply = fmt.Sprintf("⚠️ Unable to reject leave request: %v\n\nReply 0️⃣ for Main Menu.", rejErr)
 			}
 		} else {
-			reply = "⚠️ Invalid Leave ID. Please verify the request."
+			reply = "⚠️ Invalid Leave ID. Please verify the request.\n\nReply 0️⃣ for Main Menu."
 		}
-	} else if session.State == domainwa.WFStateAwaitingLeaveDates && lower != "cancel" {
-		session.State = domainwa.WFStateIdle
+	} else if session.State == domainwa.WFStateAwaitingLeaveType && lower != "cancel" && lower != "0" && lower != "0️⃣" {
+		if lower == "1" || strings.Contains(lower, "casual") {
+			session.DraftLeaveType = string(domainuser.LeaveCasual)
+			session.State = domainwa.WFStateAwaitingLeaveDates
+			tomorrowStr := now.AddDate(0, 0, 1).Format("2006-01-02")
+			dayAfterStr := now.AddDate(0, 0, 2).Format("2006-01-02")
+			todayDateStr := now.Format("2006-01-02")
 
+			reply = fmt.Sprintf(
+				"🌴 *Apply for CASUAL Leave*\n\n"+
+					"Hello *%s*! Reply with a number for leave duration:\n\n"+
+					"1️⃣ Tomorrow (%s — 1 day)\n"+
+					"2️⃣ Today (%s — 1 day)\n"+
+					"3️⃣ Day after tomorrow (%s — 1 day)\n"+
+					"4️⃣ 2 Days (Tomorrow & Day after)\n"+
+					"5️⃣ Custom date or range (e.g. \"2026-10-15 to 2026-10-18\")\n\n"+
+					"0️⃣ Cancel / Back to Main Menu",
+				staff.Name, tomorrowStr, todayDateStr, dayAfterStr,
+			)
+		} else if lower == "2" || strings.Contains(lower, "sick") {
+			session.DraftLeaveType = string(domainuser.LeaveSick)
+			session.State = domainwa.WFStateAwaitingLeaveDates
+			tomorrowStr := now.AddDate(0, 0, 1).Format("2006-01-02")
+			dayAfterStr := now.AddDate(0, 0, 2).Format("2006-01-02")
+			todayDateStr := now.Format("2006-01-02")
+
+			reply = fmt.Sprintf(
+				"🌴 *Apply for SICK Leave*\n\n"+
+					"Hello *%s*! Reply with a number for leave duration:\n\n"+
+					"1️⃣ Tomorrow (%s — 1 day)\n"+
+					"2️⃣ Today (%s — 1 day)\n"+
+					"3️⃣ Day after tomorrow (%s — 1 day)\n"+
+					"4️⃣ 2 Days (Tomorrow & Day after)\n"+
+					"5️⃣ Custom date or range (e.g. \"2026-10-15 to 2026-10-18\")\n\n"+
+					"0️⃣ Cancel / Back to Main Menu",
+				staff.Name, tomorrowStr, todayDateStr, dayAfterStr,
+			)
+		} else if lower == "3" || strings.Contains(lower, "earned") || strings.Contains(lower, "annual") || strings.Contains(lower, "vacation") {
+			session.DraftLeaveType = string(domainuser.LeaveEarned)
+			session.State = domainwa.WFStateAwaitingLeaveDates
+			tomorrowStr := now.AddDate(0, 0, 1).Format("2006-01-02")
+			dayAfterStr := now.AddDate(0, 0, 2).Format("2006-01-02")
+			todayDateStr := now.Format("2006-01-02")
+
+			reply = fmt.Sprintf(
+				"🌴 *Apply for EARNED Leave*\n\n"+
+					"Hello *%s*! Reply with a number for leave duration:\n\n"+
+					"1️⃣ Tomorrow (%s — 1 day)\n"+
+					"2️⃣ Today (%s — 1 day)\n"+
+					"3️⃣ Day after tomorrow (%s — 1 day)\n"+
+					"4️⃣ 2 Days (Tomorrow & Day after)\n"+
+					"5️⃣ Custom date or range (e.g. \"2026-10-15 to 2026-10-18\")\n\n"+
+					"0️⃣ Cancel / Back to Main Menu",
+				staff.Name, tomorrowStr, todayDateStr, dayAfterStr,
+			)
+		} else {
+			casualAvail := 12.0
+			sickAvail := 8.0
+			earnedAvail := 15.0
+			if s.staffService != nil {
+				bal, _ := s.staffService.GetLeaveBalances(ctx, tenantID, staff.ID)
+				if bal != nil {
+					casualAvail = bal.CasualTotal - bal.CasualUsed
+					sickAvail = bal.SickTotal - bal.SickUsed
+					earnedAvail = bal.EarnedTotal - bal.EarnedUsed
+				}
+			}
+			reply = fmt.Sprintf(
+				"⚠️ *Please reply with a number (1, 2, or 3):*\n\n"+
+					"1️⃣ Casual Leave (%.1f days available)\n"+
+					"2️⃣ Sick Leave (%.1f days available)\n"+
+					"3️⃣ Earned Leave (%.1f days available)\n\n"+
+					"0️⃣ Cancel / Back to Main Menu",
+				casualAvail, sickAvail, earnedAvail,
+			)
+		}
+	} else if session.State == domainwa.WFStateAwaitingLeaveDates && lower != "cancel" && lower != "0" && lower != "0️⃣" {
 		leaveType := domainuser.LeaveCasual
-		if strings.Contains(lower, "sick") || strings.Contains(lower, "ill") || strings.Contains(lower, "fever") || strings.Contains(lower, "doctor") {
+		if session.DraftLeaveType != "" {
+			leaveType = domainuser.LeaveType(session.DraftLeaveType)
+		} else if strings.Contains(lower, "sick") || strings.Contains(lower, "ill") || strings.Contains(lower, "fever") {
 			leaveType = domainuser.LeaveSick
-		} else if strings.Contains(lower, "earned") || strings.Contains(lower, "annual") || strings.Contains(lower, "vacation") {
+		} else if strings.Contains(lower, "earned") || strings.Contains(lower, "vacation") {
 			leaveType = domainuser.LeaveEarned
 		}
 
 		startDate := todayStr
 		endDate := todayStr
 		days := 1.0
+		validDateInput := false
 
-		if strings.Contains(lower, "tomorrow") {
-			startDate = now.AddDate(0, 0, 1).Format("2006-01-02")
-			endDate = startDate
-		}
+		tomorrowStr := now.AddDate(0, 0, 1).Format("2006-01-02")
+		dayAfterStr := now.AddDate(0, 0, 2).Format("2006-01-02")
 
-		dateRe := regexp.MustCompile(`\d{4}-\d{2}-\d{2}`)
-		dates := dateRe.FindAllString(cleanText, -1)
-		if len(dates) == 1 {
-			startDate = dates[0]
-			endDate = dates[0]
-		} else if len(dates) >= 2 {
-			startDate = dates[0]
-			endDate = dates[1]
-			t1, _ := time.Parse("2006-01-02", startDate)
-			t2, _ := time.Parse("2006-01-02", endDate)
-			if t2.After(t1) {
-				days = math.Round(t2.Sub(t1).Hours()/24.0) + 1.0
+		if lower == "1" || strings.Contains(lower, "tomorrow") {
+			startDate = tomorrowStr
+			endDate = tomorrowStr
+			days = 1.0
+			validDateInput = true
+		} else if lower == "2" || strings.Contains(lower, "today") {
+			startDate = todayStr
+			endDate = todayStr
+			days = 1.0
+			validDateInput = true
+		} else if lower == "3" {
+			startDate = dayAfterStr
+			endDate = dayAfterStr
+			days = 1.0
+			validDateInput = true
+		} else if lower == "4" {
+			startDate = tomorrowStr
+			endDate = dayAfterStr
+			days = 2.0
+			validDateInput = true
+		} else if lower == "5" {
+			reply = "📅 Please reply with your desired dates (e.g. *\"2026-10-15 to 2026-10-18\"* or *\"tomorrow\"*) and reason.\n\nReply 0️⃣ to Cancel."
+		} else {
+			dateRe := regexp.MustCompile(`\d{4}-\d{2}-\d{2}`)
+			dates := dateRe.FindAllString(cleanText, -1)
+			if len(dates) == 1 {
+				startDate = dates[0]
+				endDate = dates[0]
+				days = 1.0
+				validDateInput = true
+			} else if len(dates) >= 2 {
+				startDate = dates[0]
+				endDate = dates[1]
+				t1, _ := time.Parse("2006-01-02", startDate)
+				t2, _ := time.Parse("2006-01-02", endDate)
+				if t2.After(t1) {
+					days = math.Round(t2.Sub(t1).Hours()/24.0) + 1.0
+				}
+				validDateInput = true
+			} else {
+				reply = "⚠️ *Please reply with a valid number (1 to 5):*\n\n" +
+					"1️⃣ Tomorrow (1 day)\n" +
+					"2️⃣ Today (1 day)\n" +
+					"3️⃣ Day after tomorrow (1 day)\n" +
+					"4️⃣ 2 Days (Tomorrow & Day after)\n" +
+					"5️⃣ Custom date or range\n\n" +
+					"0️⃣ Cancel / Back to Main Menu"
 			}
 		}
 
-		leaveReq := domainuser.LeaveRequest{
-			LeaveType: leaveType,
-			StartDate: startDate,
-			EndDate:   endDate,
-			DaysCount: days,
-			Reason:    cleanText,
-		}
+		if validDateInput {
+			if s.staffService != nil {
+				leaveReq := domainuser.LeaveRequest{
+					LeaveType: leaveType,
+					StartDate: startDate,
+					EndDate:   endDate,
+					DaysCount: days,
+					Reason:    cleanText,
+				}
 
-		if s.staffService != nil {
-			created, err := s.staffService.ApplyLeave(ctx, tenantID, staff.ID, leaveReq)
-			if err != nil {
-				reply = fmt.Sprintf("⚠️ Could not submit leave request: %v", err)
+				created, err := s.staffService.ApplyLeave(ctx, tenantID, staff.ID, leaveReq)
+				if err != nil {
+					reply = fmt.Sprintf("⚠️ Could not submit leave request: %v\n\nReply 0️⃣ for Main Menu.", err)
+				} else {
+					s.notifyManagersOfLeaveRequest(ctx, tenantID, staff, created)
+					reply = fmt.Sprintf(
+						"🌴 *Leave Request Submitted Successfully!*\n\n"+
+							"👤 Employee: *%s* (ID: %s)\n"+
+							"🏷️ Type: *%s*\n"+
+							"📅 Dates: *%s to %s* (%.1f days)\n"+
+							"📝 Reason: \"%s\"\n"+
+							"⏱️ Status: *Pending Manager Approval*\n\n"+
+							"We'll message you here on WhatsApp as soon as your manager reviews it! ✨\n\n"+
+							"Reply with a number:\n"+
+							"4️⃣ View Leave Balances\n"+
+							"0️⃣ Back to Main Menu",
+						staff.Name, staff.EmployeeID, strings.ToUpper(string(leaveType)), startDate, endDate, days, cleanText,
+					)
+				}
 			} else {
-				s.notifyManagersOfLeaveRequest(ctx, tenantID, staff, created)
 				reply = fmt.Sprintf(
 					"🌴 *Leave Request Submitted Successfully!*\n\n"+
 						"👤 Employee: *%s* (ID: %s)\n"+
@@ -1832,14 +1989,36 @@ func (s *Service) ProcessWorkforceMessage(ctx context.Context, staff *domainuser
 						"📅 Dates: *%s to %s* (%.1f days)\n"+
 						"📝 Reason: \"%s\"\n"+
 						"⏱️ Status: *Pending Manager Approval*\n\n"+
-						"We'll message you here on WhatsApp as soon as your manager reviews it! ✨",
+						"We'll message you here on WhatsApp as soon as your manager reviews it! ✨\n\n"+
+						"Reply with a number:\n"+
+						"4️⃣ View Leave Balances\n"+
+						"0️⃣ Back to Main Menu",
 					staff.Name, staff.EmployeeID, strings.ToUpper(string(leaveType)), startDate, endDate, days, cleanText,
 				)
 			}
+			session.State = domainwa.WFStateIdle
+			session.DraftLeaveType = ""
 		}
-	} else if lower == "cancel" {
+	} else if lower == "cancel" || lower == "0" || lower == "0️⃣" {
 		session.State = domainwa.WFStateIdle
-		reply = "Operation cancelled. Reply *MENU* or *HELP* to see available options."
+		session.DraftLeaveType = ""
+		session.DraftLeaveStart = ""
+		reply = fmt.Sprintf(
+			"👋 *Hello %s!*\n"+
+				"Welcome to *%s Workforce Assistant*.\n\n"+
+				"Reply with an option or number:\n\n"+
+				"1️⃣ 📍 *Clock In* (GPS Geofence)\n"+
+				"2️⃣ 🚪 *Clock Out* (GPS Geofence)\n"+
+				"3️⃣ ☕ *Break* (Take / Resume Break)\n"+
+				"4️⃣ 🌴 *Leave Balance & Apply*\n"+
+				"5️⃣ 📅 *Shift & Schedule*\n"+
+				"6️⃣ 🕒 *Attendance History*\n"+
+				"7️⃣ 💰 *Latest Payslip*\n"+
+				"8️⃣ 🛎️ *Tasks & Room Service*\n"+
+				"9️⃣ ❓ *Help / Menu*\n\n"+
+				"💡 _Or simply type 'apply sick leave tomorrow' or 'running 15 mins late'!_",
+			staff.Name, restName,
+		)
 	} else if buttonID == domainwa.BtnWFCheckIn || lower == "checkin" || lower == "check in" || lower == "clock in" || lower == "clockin" || lower == "in" || lower == "1" {
 		token, err := s.GenerateCheckInToken(tenantID, staff.ID, staff.EmployeeID, "clock_in")
 		if err != nil {
@@ -1851,7 +2030,11 @@ func (s *Service) ProcessWorkforceMessage(ctx context.Context, staff *domainuser
 					"Hello *%s*! Tap the secure link below on your mobile device to verify GPS coordinates within workplace premises:\n\n"+
 					"👉 %s\n\n"+
 					"⏱️ _Link expires in 15 minutes._\n"+
-					"🏢 _Workplace: %s (Geofence: 100m)_",
+					"🏢 _Workplace: %s (Geofence: 100m)_\n\n"+
+					"Reply with a number:\n"+
+					"2️⃣ Clock Out\n"+
+					"3️⃣ Take Break\n"+
+					"0️⃣ Back to Main Menu",
 				staff.Name, link, restName,
 			)
 		}
@@ -1866,7 +2049,10 @@ func (s *Service) ProcessWorkforceMessage(ctx context.Context, staff *domainuser
 					"Hello *%s*! Tap the secure link below to verify your workplace GPS and complete checkout:\n\n"+
 					"👉 %s\n\n"+
 					"⏱️ _Link expires in 15 minutes._\n"+
-					"Thank you for your dedication today!",
+					"Thank you for your dedication today!\n\n"+
+					"Reply with a number:\n"+
+					"1️⃣ Clock In\n"+
+					"0️⃣ Back to Main Menu",
 				staff.Name, link,
 			)
 		}
@@ -1874,12 +2060,14 @@ func (s *Service) ProcessWorkforceMessage(ctx context.Context, staff *domainuser
 		if s.staffService != nil {
 			rec, err := s.staffService.ToggleBreak(ctx, tenantID, staff.ID)
 			if err != nil {
-				reply = fmt.Sprintf("⚠️ %v\nReply *CHECKIN* first if you haven't started your shift today.", err)
+				reply = fmt.Sprintf("⚠️ %v\nReply 1️⃣ to clock in first if you haven't started your shift today.", err)
 			} else if rec.IsOnBreak {
 				reply = fmt.Sprintf(
 					"☕ *Break Started* at %s!\n\n"+
-						"Enjoy your break and refresh yourself! 🥐\n"+
-						"When you are ready to resume work, simply reply *BREAK* again.",
+						"Enjoy your break and refresh yourself! 🥐\n\n"+
+						"Reply with a number:\n"+
+						"3️⃣ Resume Duty / End Break\n"+
+						"0️⃣ Back to Main Menu",
 					now.Format("03:04 PM"),
 				)
 			} else {
@@ -1887,46 +2075,107 @@ func (s *Service) ProcessWorkforceMessage(ctx context.Context, staff *domainuser
 					"✅ *Welcome Back! Break Ended*\n\n"+
 						"Resumed at: %s\n"+
 						"Total break time today: %.0f mins\n"+
-						"Your shift hours are actively counting. Have a great shift!",
+						"Your shift hours are actively counting. Have a great shift!\n\n"+
+						"Reply with a number:\n"+
+						"2️⃣ Clock Out\n"+
+						"0️⃣ Back to Main Menu",
 					now.Format("03:04 PM"), rec.BreakHours*60,
 				)
 			}
 		}
 	} else if buttonID == domainwa.BtnWFLeaveBalance || lower == "balance" || lower == "leave balance" || lower == "leaves" || lower == "4" {
+		balYear := now.Year()
+		casualAvail := 12.0
+		casualUsed := 0.0
+		casualTotal := 12.0
+		sickAvail := 8.0
+		sickUsed := 0.0
+		sickTotal := 8.0
+		earnedAvail := 15.0
+		earnedUsed := 0.0
+		earnedTotal := 15.0
+
 		if s.staffService != nil {
 			bal, err := s.staffService.GetLeaveBalances(ctx, tenantID, staff.ID)
-			if err != nil {
-				reply = fmt.Sprintf("⚠️ Could not retrieve leave balance: %v", err)
-			} else {
-				reply = fmt.Sprintf(
-					"🌴 *Your Leave Balances (%d)*\n\n"+
-						"👤 *%s* (ID: %s)\n\n"+
-						"• *Casual Leave*: %.1f available (Used: %.1f / %.1f)\n"+
-						"• *Sick Leave*: %.1f available (Used: %.1f / %.1f)\n"+
-						"• *Earned Leave*: %.1f available (Used: %.1f / %.1f)\n\n"+
-						"📝 Reply *LEAVE* to apply for leave directly.",
-					bal.Year, staff.Name, staff.EmployeeID,
-					bal.CasualTotal-bal.CasualUsed, bal.CasualUsed, bal.CasualTotal,
-					bal.SickTotal-bal.SickUsed, bal.SickUsed, bal.SickTotal,
-					bal.EarnedTotal-bal.EarnedUsed, bal.EarnedUsed, bal.EarnedTotal,
-				)
+			if err == nil && bal != nil {
+				balYear = bal.Year
+				casualAvail = bal.CasualTotal - bal.CasualUsed
+				casualUsed = bal.CasualUsed
+				casualTotal = bal.CasualTotal
+				sickAvail = bal.SickTotal - bal.SickUsed
+				sickUsed = bal.SickUsed
+				sickTotal = bal.SickTotal
+				earnedAvail = bal.EarnedTotal - bal.EarnedUsed
+				earnedUsed = bal.EarnedUsed
+				earnedTotal = bal.EarnedTotal
 			}
 		}
-	} else if buttonID == domainwa.BtnWFLeave || lower == "leave" || lower == "apply leave" || strings.HasPrefix(lower, "apply ") {
-		if strings.Contains(lower, "tomorrow") || strings.Contains(lower, "today") || regexp.MustCompile(`\d{4}-\d{2}-\d{2}`).MatchString(cleanText) {
-			session.State = domainwa.WFStateAwaitingLeaveDates
-			return s.ProcessWorkforceMessage(ctx, staff, messageText, "")
-		}
 
+		session.State = domainwa.WFStateAwaitingLeaveType
+		reply = fmt.Sprintf(
+			"🌴 *Your Leave Balances (%d)*\n\n"+
+				"👤 *%s* (ID: %s)\n\n"+
+				"1️⃣ *Casual Leave*: %.1f available (Used: %.1f / %.1f)\n"+
+				"2️⃣ *Sick Leave*: %.1f available (Used: %.1f / %.1f)\n"+
+				"3️⃣ *Earned Leave*: %.1f available (Used: %.1f / %.1f)\n\n"+
+				"Reply with a number to apply:\n\n"+
+				"1️⃣ Apply Casual Leave\n"+
+				"2️⃣ Apply Sick Leave\n"+
+				"3️⃣ Apply Earned Leave\n"+
+				"0️⃣ Back to Main Menu",
+			balYear, staff.Name, staff.EmployeeID,
+			casualAvail, casualUsed, casualTotal,
+			sickAvail, sickUsed, sickTotal,
+			earnedAvail, earnedUsed, earnedTotal,
+		)
+	} else if strings.HasPrefix(lower, "apply ") && (strings.Contains(lower, "tomorrow") || strings.Contains(lower, "today") || regexp.MustCompile(`\d{4}-\d{2}-\d{2}`).MatchString(cleanText)) {
 		session.State = domainwa.WFStateAwaitingLeaveDates
+		return s.ProcessWorkforceMessage(ctx, staff, messageText, "")
+	} else if strings.HasPrefix(lower, "apply ") {
+		leaveType := domainuser.LeaveCasual
+		if strings.Contains(lower, "sick") {
+			leaveType = domainuser.LeaveSick
+		} else if strings.Contains(lower, "earned") {
+			leaveType = domainuser.LeaveEarned
+		}
+		session.DraftLeaveType = string(leaveType)
+		session.State = domainwa.WFStateAwaitingLeaveDates
+		tomorrowStr := now.AddDate(0, 0, 1).Format("2006-01-02")
+		dayAfterStr := now.AddDate(0, 0, 2).Format("2006-01-02")
+		todayDateStr := now.Format("2006-01-02")
+
+		reply = fmt.Sprintf(
+			"🌴 *Apply for %s Leave*\n\n"+
+				"Hello *%s*! Reply with a number for leave duration:\n\n"+
+				"1️⃣ Tomorrow (%s — 1 day)\n"+
+				"2️⃣ Today (%s — 1 day)\n"+
+				"3️⃣ Day after tomorrow (%s — 1 day)\n"+
+				"4️⃣ 2 Days (Tomorrow & Day after)\n"+
+				"5️⃣ Custom date or range (e.g. \"2026-10-15 to 2026-10-18\")\n\n"+
+				"0️⃣ Cancel / Back to Main Menu",
+			strings.ToUpper(string(leaveType)), staff.Name, tomorrowStr, todayDateStr, dayAfterStr,
+		)
+	} else if buttonID == domainwa.BtnWFLeave || lower == "leave" || lower == "apply leave" {
+		casualAvail := 12.0
+		sickAvail := 8.0
+		earnedAvail := 15.0
+		if s.staffService != nil {
+			bal, _ := s.staffService.GetLeaveBalances(ctx, tenantID, staff.ID)
+			if bal != nil {
+				casualAvail = bal.CasualTotal - bal.CasualUsed
+				sickAvail = bal.SickTotal - bal.SickUsed
+				earnedAvail = bal.EarnedTotal - bal.EarnedUsed
+			}
+		}
+		session.State = domainwa.WFStateAwaitingLeaveType
 		reply = fmt.Sprintf(
 			"🌴 *Apply for Leave*\n\n"+
-				"Hello *%s*! Please reply with your requested dates and type, for example:\n"+
-				"• _\"Casual leave tomorrow\"_\n"+
-				"• _\"Sick leave on 2026-09-22 due to fever\"_\n"+
-				"• _\"Earned leave from 2026-09-25 to 2026-09-28 for family trip\"_\n\n"+
-				"Or reply *CANCEL* to return to menu.",
-			staff.Name,
+				"Hello *%s*! Reply with a number to choose leave type:\n\n"+
+				"1️⃣ Casual Leave (%.1f days available)\n"+
+				"2️⃣ Sick Leave (%.1f days available)\n"+
+				"3️⃣ Earned Leave (%.1f days available)\n"+
+				"0️⃣ Back to Main Menu",
+			staff.Name, casualAvail, sickAvail, earnedAvail,
 		)
 	} else if buttonID == domainwa.BtnWFShift || lower == "shift" || lower == "schedule" || lower == "timing" || lower == "hours" || lower == "5" {
 		shiftName := staff.ShiftName
@@ -1946,8 +2195,11 @@ func (s *Service) ProcessWorkforceMessage(ctx context.Context, staff *domainuser
 				"⏰ Typical Hours: 09:00 AM – 06:00 PM\n"+
 				"⏳ Grace Period: 15 mins\n"+
 				"☕ Standard Break: 60 mins\n\n"+
-				"📍 Workplace: %s\n"+
-				"Reply *CHECKIN* when you arrive on site!",
+				"📍 Workplace: %s\n\n"+
+				"Reply with a number:\n"+
+				"1️⃣ Clock In\n"+
+				"6️⃣ View Attendance History\n"+
+				"0️⃣ Back to Main Menu",
 			staff.Name, staff.EmployeeID, dept, shiftName, restName,
 		)
 	} else if buttonID == domainwa.BtnWFAttendance || lower == "attendance" || lower == "history" || lower == "log" || lower == "6" {
@@ -1956,7 +2208,7 @@ func (s *Service) ProcessWorkforceMessage(ctx context.Context, staff *domainuser
 			endStr := todayStr
 			history, err := s.staffService.GetAttendanceHistory(ctx, tenantID, &staff.ID, startStr, endStr)
 			if err != nil || len(history) == 0 {
-				reply = "🕒 *Attendance History (Last 7 Days)*\n\nNo records found for the past week.\nReply *CHECKIN* to clock in today!"
+				reply = "🕒 *Attendance History (Last 7 Days)*\n\nNo records found for the past week.\n\nReply with a number:\n1️⃣ Clock In\n0️⃣ Back to Main Menu"
 			} else {
 				var sb strings.Builder
 				sb.WriteString(fmt.Sprintf("🕒 *Attendance History (Last 7 Days)*\n👤 *%s*\n\n", staff.Name))
@@ -1982,6 +2234,7 @@ func (s *Service) ProcessWorkforceMessage(ctx context.Context, staff *domainuser
 					sb.WriteString(fmt.Sprintf("• *%s*: %s %s (In: %s | Out: %s) [%.1f hrs]\n",
 						h.Date, icon, strings.ToUpper(string(h.Status)), inTime, outTime, h.WorkingHours))
 				}
+				sb.WriteString("\nReply with a number:\n1️⃣ Clock In\n4️⃣ Leave Balances\n0️⃣ Back to Main Menu")
 				reply = sb.String()
 			}
 		}
@@ -2007,7 +2260,8 @@ func (s *Service) ProcessWorkforceMessage(ctx context.Context, staff *domainuser
 					"📉 Deductions (PF/TDS): ₹%.2f\n"+
 					"--------------------------------\n"+
 					"💳 *Net Take-Home: ₹%.2f* (%s)\n\n"+
-					"📄 Download & Print Digital Payslip:\n👉 %s",
+					"📄 Download & Print Digital Payslip:\n👉 %s\n\n"+
+					"Reply 0️⃣ for Back to Main Menu.",
 				p.Month, p.EmployeeName, p.EmployeeID, p.Role, p.Department,
 				p.BasicSalary, p.HRA+p.Allowances, p.OvertimePay, p.OvertimeHours,
 				p.GrossEarnings, p.Deductions, p.NetPay, strings.ToUpper(p.PaymentStatus),
@@ -2019,7 +2273,8 @@ func (s *Service) ProcessWorkforceMessage(ctx context.Context, staff *domainuser
 					"👤 *%s* (ID: %s)\n"+
 					"💵 Basic: ₹%.2f | HRA: ₹%.2f\n"+
 					"⏱️ Overtime Rate: ₹%.2f/hr\n\n"+
-					"ℹ️ Monthly payslips are generated on the 1st of every month.",
+					"ℹ️ Monthly payslips are generated on the 1st of every month.\n\n"+
+					"Reply 0️⃣ for Back to Main Menu.",
 				staff.Name, staff.EmployeeID, staff.Salary.Basic, staff.Salary.HRA, staff.Salary.OvertimeRate,
 			)
 		}
@@ -2041,16 +2296,16 @@ func (s *Service) ProcessWorkforceMessage(ctx context.Context, staff *domainuser
 		if len(roomOrders) > 0 {
 			var sb strings.Builder
 			sb.WriteString(fmt.Sprintf("🛎️ *Active In-Room Service Tasks (%d)*\n\n", len(roomOrders)))
-			for _, ord := range roomOrders {
-				sb.WriteString(fmt.Sprintf("• Room *%s* (Order #%s) — %s (₹%.0f)\n", ord.RoomNumber, ord.OrderNumber, ord.Status, ord.TotalAmount))
+			for idx, ord := range roomOrders {
+				sb.WriteString(fmt.Sprintf("%d️⃣ Room *%s* (Order #%s) — %s (₹%.0f)\n", idx+1, ord.RoomNumber, ord.OrderNumber, ord.Status, ord.TotalAmount))
 			}
-			sb.WriteString("\nCheck KDS or Room Service tab to update status.")
+			sb.WriteString("\nReply with task number to update, or 0️⃣ for Main Menu.")
 			reply = sb.String()
 		} else {
-			reply = fmt.Sprintf("✨ *All Clear!*\nNo active room service orders or pending tasks in %s at this moment.", restName)
+			reply = fmt.Sprintf("✨ *All Clear!*\nNo active room service orders or pending tasks in %s at this moment.\n\nReply 0️⃣ for Back to Main Menu.", restName)
 		}
 	} else if strings.Contains(lower, "late") && (strings.Contains(lower, "running") || strings.Contains(lower, "traffic") || strings.Contains(lower, "delay") || strings.Contains(lower, "mins")) {
-		reply = fmt.Sprintf("⚠️ *Late Notice Acknowledged*\n\nThank you for updating us, *%s*. We have logged your delay message (\"%s\") and notified the floor manager. Please drive safely!", staff.Name, cleanText)
+		reply = fmt.Sprintf("⚠️ *Late Notice Acknowledged*\n\nThank you for updating us, *%s*. We have logged your delay message (\"%s\") and notified the floor manager. Please drive safely!\n\nReply with a number:\n1️⃣ Clock In upon arrival\n0️⃣ Back to Main Menu", staff.Name, cleanText)
 
 		if s.notifService != nil {
 			_, _ = s.notifService.CreateNotification(ctx, notifapp.CreateNotificationInput{
@@ -2081,11 +2336,15 @@ func (s *Service) ProcessWorkforceMessage(ctx context.Context, staff *domainuser
 		)
 	}
 
+	session.LastMessageAt = now
+	session.UpdatedAt = now
 	if s.db != nil {
-		session.LastMessageAt = now
-		session.UpdatedAt = now
 		wfSessionColl := s.db.Collection("workforce_sessions")
 		_, _ = wfSessionColl.UpdateOne(ctx, bson.M{"_id": session.ID}, bson.M{"$set": session}, options.UpdateOne().SetUpsert(true))
+	} else {
+		s.wfSessionsLock.Lock()
+		s.wfSessions[sessionKey] = session
+		s.wfSessionsLock.Unlock()
 	}
 
 	extID, _ := s.dispatchMetaMessage(ctx, tenantID, staff.Phone, reply)

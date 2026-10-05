@@ -90,9 +90,9 @@
     "semantic_hash": ""
   },
   "apps/api/internal/application/whatsapp/service.go": {
-    "mtime": 1791205078.9424667,
-    "seen": 1791205259.152087,
-    "ast_hash": "324a0f36092393c20d60ee3b8908a512",
+    "mtime": 1791219993.5594192,
+    "seen": 1791220109.177002,
+    "ast_hash": "3832af42bfa4761116f1f875038426b1",
     "semantic_hash": ""
   },
   "apps/api/internal/domain/ai/ai.go": {
@@ -186,9 +186,9 @@
     "semantic_hash": ""
   },
   "apps/api/internal/domain/whatsapp/whatsapp.go": {
-    "mtime": 1791205029.9086366,
-    "seen": 1791205259.152103,
-    "ast_hash": "f83915be513358fef8d94fd6d616e862",
+    "mtime": 1791219160.4941418,
+    "seen": 1791220109.1770182,
+    "ast_hash": "293e578db01ef5a4e1c7569ec0310722",
     "semantic_hash": ""
   },
   "apps/api/internal/domain/whatsapp/whatsapp_test.go": {
@@ -1662,9 +1662,9 @@
     "semantic_hash": ""
   },
   "apps/api/internal/application/whatsapp/workforce_test.go": {
-    "mtime": 1789651570.0736537,
-    "seen": 1789651963.2955031,
-    "ast_hash": "bf6e59a2a643aed28039da4e7d099d74",
+    "mtime": 1791220034.483098,
+    "seen": 1791220109.177003,
+    "ast_hash": "0d5ed9ef37559ad0654605ed10709837",
     "semantic_hash": ""
   },
   "apps/api/internal/interfaces/http/handlers/workforce_integration_test.go": {

@@ -470,6 +470,7 @@ type WorkforceState string
 
 const (
 	WFStateIdle                WorkforceState = "idle"
+	WFStateAwaitingLeaveType   WorkforceState = "awaiting_leave_type"
 	WFStateAwaitingLeaveDates  WorkforceState = "awaiting_leave_dates"
 	WFStateAwaitingLeaveReason WorkforceState = "awaiting_leave_reason"
 	WFStateAwaitingLateReason  WorkforceState = "awaiting_late_reason"
