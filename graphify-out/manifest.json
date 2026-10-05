@@ -618,9 +618,9 @@
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/whatsapp/page.tsx": {
-    "mtime": 1791189032.399141,
-    "seen": 1791189246.444919,
-    "ast_hash": "215685333c1bc26af698eefa88e1ebbc",
+    "mtime": 1791191935.6538088,
+    "seen": 1791192280.329133,
+    "ast_hash": "ac40f63c26ef764f4919c91d29ba8782",
     "semantic_hash": ""
   },
   "apps/web/app/demo/page.tsx": {
@@ -1986,9 +1986,9 @@
     "semantic_hash": ""
   },
   "docker-compose.prod.yml": {
-    "mtime": 1791188486.8521204,
-    "seen": 1791189246.445041,
-    "ast_hash": "23f092463819ee1bf854b7efb7b33969",
+    "mtime": 1791191873.676971,
+    "seen": 1791192280.3292549,
+    "ast_hash": "07bebff226bda26dc53d040b453db74b",
     "semantic_hash": ""
   },
   "apps/api/internal/application/whatsapp/commands.go": {
@@ -2358,15 +2358,15 @@
     "semantic_hash": ""
   },
   "apps/web/app/api/whatsapp/webhook/route.ts": {
-    "mtime": 1791188993.445802,
-    "seen": 1791189246.444906,
-    "ast_hash": "520804836d58cc35114581c9999f0c9e",
+    "mtime": 1791192166.5409815,
+    "seen": 1791192280.32912,
+    "ast_hash": "fdc17d9ecc12c62414f298cf4b4bbae0",
     "semantic_hash": ""
   },
   "apps/web/app/api/whatsapp/send-test/route.ts": {
-    "mtime": 1791189002.7809765,
-    "seen": 1791189246.444905,
-    "ast_hash": "3f10ae70c6023dcc3d84fc322b2fd51e",
+    "mtime": 1791191920.4476447,
+    "seen": 1791192280.329119,
+    "ast_hash": "1ce2a1caf90d5468cf1794d68c665417",
     "semantic_hash": ""
   },
   "apps/web/app/api/staff/route.ts": {
@@ -2379,6 +2379,24 @@
     "mtime": 1791188979.403766,
     "seen": 1791189246.444992,
     "ast_hash": "d3949905487fdfb12735828f03f5063a",
+    "semantic_hash": ""
+  },
+  "apps/web/app/data-deletion/page.tsx": {
+    "mtime": 1791192144.9279008,
+    "seen": 1791192280.329134,
+    "ast_hash": "9a92adfd128ce66313a16646d0b10de1",
+    "semantic_hash": ""
+  },
+  "apps/web/app/privacy/page.tsx": {
+    "mtime": 1791192122.3280785,
+    "seen": 1791192280.329151,
+    "ast_hash": "8a560d256a5d4f6ad5d266e60d3435c9",
+    "semantic_hash": ""
+  },
+  "apps/web/app/terms/page.tsx": {
+    "mtime": 1791192132.2831144,
+    "seen": 1791192280.329151,
+    "ast_hash": "41676d7e616933b135a499b619b17bb2",
     "semantic_hash": ""
   }
 }

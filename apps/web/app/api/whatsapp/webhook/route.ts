@@ -13,7 +13,7 @@ export const revalidate = 0;
 
 const DEFAULT_VERIFY_TOKEN = "dineflow_webhook_verify_secret";
 const META_DEFAULT_TOKEN =
-  "EAAT0C5k0pNoBSmZCFAvUPZCJLxUrgB0iq6iMtZCZAs8W4OGJLLIqnjJbb86TY29vhhEOBVy4ZBW0EdQzEU5fgm9ldwC4oX62cbB84AAxyY12rFc6KdORkyRGi7ZB6JJqsfhNNeJrfZCrPZCfPukHImoynOncJ0iFoSe1cScOGchCOYGMgbPd4ZBAXaqvmpSRdwziuLtdzPU19FlM1guZCFsytGp9cZBRwi9xokbtYHjSJL1Br2J1JHOcY8TTFli1oEwDZB4Y0eCXxKAqO7DdfkALk26bczHz";
+  "EAAT0C5k0pNoBSgv0uB2YNSB45Blc515eqTUKPZAZAPbsZCnGIR4ZASlVZCvTOz0G7ePRuNHiOE7Xp9UwxxHU8YFZCWWPOYitHutvE3JcoxygWiCqLB5ChgKxJhtVYm5HmZALPMbTtJIBDB2PpcYhY6eb2kyCfVg4CeMa3pMo6N5zaGMyYUkkLxYjLCaLi19LmuHGgZDZD";
 
 /**
  * GET /api/whatsapp/webhook
@@ -389,8 +389,14 @@ export async function POST(req: NextRequest) {
             } catch {}
 
             // 3. Dispatch Outbound Reply via Meta Graph API v21.0
-            const rawToken = process.env.WHATSAPP_ACCESS_TOKEN || META_DEFAULT_TOKEN;
-            const token = rawToken.replace(/^Bearer\s+/i, "");
+            const envToken = process.env.WHATSAPP_ACCESS_TOKEN;
+            const isStaleToken =
+              envToken &&
+              (envToken.startsWith("EAAT0C5k0pNoBSmZC") ||
+                envToken.startsWith("EAAT0C5k0pNoBSoxLe") ||
+                envToken.startsWith("EAAG..."));
+            const rawToken = !isStaleToken && envToken ? envToken : META_DEFAULT_TOKEN;
+            const token = rawToken.replace(/^Bearer\s+/i, "").trim();
 
             if (token && phoneId && from) {
               const cleanFrom = from.replace(/[^0-9]/g, "");
@@ -422,7 +428,7 @@ export async function POST(req: NextRequest) {
                     phone: "+" + cleanFrom,
                     customerName: isStaff ? matchedStaff!.name : contactName,
                     template: `${isStaff ? "Workforce Bot" : "DineFlow Bot"}: "${replyText.split("\n")[0]}"`,
-                    status: "delivered",
+                    status: graphRes.ok ? "delivered" : "failed",
                     time: "Just now",
                     location: isStaff ? matchedStaff!.department : "Table 14",
                   });

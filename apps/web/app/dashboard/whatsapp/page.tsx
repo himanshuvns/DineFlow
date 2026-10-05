@@ -343,7 +343,7 @@ export default function WhatsAppPage() {
     phoneNumberId: "1382709818253532",
     wabaAccountId: "1065968646215350",
     accessToken:
-      "EAAT0C5k0pNoBSmZCFAvUPZCJLxUrgB0iq6iMtZCZAs8W4OGJLLIqnjJbb86TY29vhhEOBVy4ZBW0EdQzEU5fgm9ldwC4oX62cbB84AAxyY12rFc6KdORkyRGi7ZB6JJqsfhNNeJrfZCrPZCfPukHImoynOncJ0iFoSe1cScOGchCOYGMgbPd4ZBAXaqvmpSRdwziuLtdzPU19FlM1guZCFsytGp9cZBRwi9xokbtYHjSJL1Br2J1JHOcY8TTFli1oEwDZB4Y0eCXxKAqO7DdfkALk26bczHz",
+      "EAAT0C5k0pNoBSgv0uB2YNSB45Blc515eqTUKPZAZAPbsZCnGIR4ZASlVZCvTOz0G7ePRuNHiOE7Xp9UwxxHU8YFZCWWPOYitHutvE3JcoxygWiCqLB5ChgKxJhtVYm5HmZALPMbTtJIBDB2PpcYhY6eb2kyCfVg4CeMa3pMo6N5zaGMyYUkkLxYjLCaLi19LmuHGgZDZD",
     verifyToken: "dineflow_webhook_verify_secret",
     webhookUrl: "https://dine.rovixatech.com/api/whatsapp/webhook",
     connected: true,
