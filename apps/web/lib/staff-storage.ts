@@ -320,7 +320,7 @@ export async function findStaffByPhoneAsync(phone: string): Promise<StaffMember 
           shiftName: s.shiftName || "Morning Shift",
           shiftHours: "08:00 - 16:30",
           salaryBasic: s.salaryBasic || 22000,
-          leaveBalance: { casual: 8, sick: 5, earned: 10 },
+          leaveBalance: { casual: 12, sick: 8, earned: 15 },
         };
         enrollStaff(mapped);
         return mapped;

@@ -197,9 +197,6 @@ func (h *WhatsAppHandler) HandleWebhook(c *gin.Context) {
 			staff, err := h.waService.FindStaffByPhone(c.Request.Context(), cleanFrom)
 			if err == nil && staff != nil {
 				reply, _ := h.waService.ProcessWorkforceMessage(c.Request.Context(), staff, text, "")
-				if h.waService.GetProvider() != nil && reply != "" {
-					_, _ = h.waService.GetProvider().SendText(c.Request.Context(), replyTarget, reply)
-				}
 				c.JSON(http.StatusOK, gin.H{"handled": "workforce", "reply": reply})
 				return
 			}
@@ -215,9 +212,6 @@ func (h *WhatsAppHandler) HandleWebhook(c *gin.Context) {
 
 			// 1c. Fallback to conversational chatbot or acknowledge
 			reply, _ := h.waService.ProcessChatbotMessage(c.Request.Context(), bson.NilObjectID, cleanFrom, "Guest", text)
-			if h.waService.GetProvider() != nil && reply != "" {
-				_, _ = h.waService.GetProvider().SendText(c.Request.Context(), replyTarget, reply)
-			}
 			c.JSON(http.StatusOK, gin.H{"handled": "chatbot", "reply": reply})
 			return
 		}
