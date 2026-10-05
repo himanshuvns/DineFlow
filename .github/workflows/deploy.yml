@@ -18,7 +18,7 @@ permissions:
 jobs:
   build-and-deploy:
     name: Build & Deploy
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 30
     env:
       DEPLOY_KEY: ${{ secrets.DINEFLOW_SSH_KEY }}
