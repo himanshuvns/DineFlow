@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -34,12 +35,15 @@ type Service struct {
 	httpClient *http.Client
 }
 
-// NewService creates an AIService.  geminiKey may be empty (→ mock mode).
+// NewService creates an AIService.
 func NewService(geminiKey string, db *mongoinfra.Client) *Service {
+	if geminiKey == "" {
+		geminiKey = os.Getenv("GEMINI_API_KEY")
+	}
 	return &Service{
-		geminiKey: geminiKey,
-		db:        db,
-		httpClient: &http.Client{Timeout: 30 * time.Second},
+		geminiKey:  geminiKey,
+		db:         db,
+		httpClient: &http.Client{Timeout: 45 * time.Second},
 	}
 }
 
@@ -232,6 +236,7 @@ func (s *Service) ScanMenuWithVision(ctx context.Context, imageBase64 string) ([
 		}
 		cleanB64 = imageBase64[idx+8:]
 	}
+	cleanB64 = strings.TrimSpace(cleanB64)
 
 	prompt := `You are an expert Indian restaurant menu digitizer.
 Analyze this restaurant menu image and extract EVERY single food item across all columns and sections.

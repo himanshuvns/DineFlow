@@ -30,9 +30,9 @@
     "semantic_hash": "38c43cf69c386313a81c8998f46322ec"
   },
   "apps/api/internal/application/ai/service.go": {
-    "mtime": 1791233885.5633295,
-    "seen": 1791234005.353245,
-    "ast_hash": "6f20cc568e26653ae2d828a5b4495cc9",
+    "mtime": 1791235292.213859,
+    "seen": 1791235394.677054,
+    "ast_hash": "a1b7e046905f8b4ca8f90f08554f31e3",
     "semantic_hash": ""
   },
   "apps/api/internal/application/analytics/service.go": {
@@ -492,9 +492,9 @@
     "semantic_hash": ""
   },
   "apps/web/app/api/menu/scan/route.ts": {
-    "mtime": 1791233829.7753723,
-    "seen": 1791234005.353319,
-    "ast_hash": "d286103cee429548239af9c3870d3551",
+    "mtime": 1791235238.2409487,
+    "seen": 1791235394.677118,
+    "ast_hash": "74e73b719d8d758c4b6da43f311b3687",
     "semantic_hash": ""
   },
   "apps/web/app/api/room/extend-stay/route.ts": {
@@ -780,9 +780,9 @@
     "semantic_hash": ""
   },
   "apps/web/components/menu/camera-menu-scanner-modal.tsx": {
-    "mtime": 1791233935.4095166,
-    "seen": 1791234005.353386,
-    "ast_hash": "acacc2e0a67674b08756982824487435",
+    "mtime": 1791235344.5911422,
+    "seen": 1791235394.6771772,
+    "ast_hash": "5fe8ce2f0d5827c74f1baff3cd568c75",
     "semantic_hash": ""
   },
   "apps/web/components/menu/menu-bulk-toolbar.tsx": {
@@ -798,9 +798,9 @@
     "semantic_hash": "b25ead535a260485fdb8dec689ed27a4"
   },
   "apps/web/components/menu/menu-upload-modal.tsx": {
-    "mtime": 1791233921.6414645,
-    "seen": 1791234005.353388,
-    "ast_hash": "497f1dcf77476510d64be151d290af5e",
+    "mtime": 1791235333.5101838,
+    "seen": 1791235394.6771789,
+    "ast_hash": "b81d7ab06efba7b9cd79023447054405",
     "semantic_hash": ""
   },
   "apps/web/components/notifications/notification-center.tsx": {
@@ -1974,9 +1974,9 @@
     "semantic_hash": ""
   },
   "deploy/gen-secrets.sh": {
-    "mtime": 1791108488.6440616,
-    "seen": 1791108568.023102,
-    "ast_hash": "f17ad0d78bd89119388a35ea574cfd82",
+    "mtime": 1791235276.4324434,
+    "seen": 1791235394.677221,
+    "ast_hash": "be0136acdba9692cbf2991d44547ae43",
     "semantic_hash": ""
   },
   ".github/workflows/deploy.yml": {
@@ -1986,9 +1986,9 @@
     "semantic_hash": ""
   },
   "docker-compose.prod.yml": {
-    "mtime": 1791205089.7005138,
-    "seen": 1791205259.152297,
-    "ast_hash": "93edf39797ca45c346d930ace881ed49",
+    "mtime": 1791235263.0024807,
+    "seen": 1791235394.677251,
+    "ast_hash": "2d89f852372c970f5ca2c37deac81aac",
     "semantic_hash": ""
   },
   "apps/api/internal/application/whatsapp/commands.go": {

@@ -19,9 +19,21 @@ import {
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
-import type { ParsedMenuItem } from "@/lib/utils/menu-nlp-engine";
+import { enrichRawExtractedItems, ParsedMenuItem } from "@/lib/utils/menu-nlp-engine";
 import type { MenuItem } from "@/lib/stores/tenant-data-store";
 import { apiClient } from "@/lib/api";
+
+function parseItemsFromResponse(data: unknown): any[] {
+  if (!data || typeof data !== "object") return [];
+  const obj = data as Record<string, any>;
+  if (Array.isArray(obj.items)) return obj.items;
+  if (obj.data && typeof obj.data === "object") {
+    if (Array.isArray(obj.data.items)) return obj.data.items;
+    if (Array.isArray(obj.data)) return obj.data;
+  }
+  if (Array.isArray(obj)) return obj;
+  return [];
+}
 
 interface CameraMenuScannerModalProps {
   isOpen: boolean;
@@ -217,7 +229,7 @@ export function CameraMenuScannerModal({
     setAnalysisStep("Analyzing menu layout with Gemini Vision AI…");
 
     try {
-      let data: any = null;
+      let rawDishes: any[] = [];
 
       // 1. Try Go backend API endpoint (/api/v1/menu/scan) via apiClient
       try {
@@ -226,17 +238,16 @@ export function CameraMenuScannerModal({
           imagesBase64: pagesToProcess.map((p) => p.dataUrl),
           existingItems,
         });
-        const itemsList = apiRes.data?.items || apiRes.data?.data;
-        if (Array.isArray(itemsList) && itemsList.length > 0) {
-          data = apiRes.data;
+        const fromApi = parseItemsFromResponse(apiRes.data);
+        if (fromApi.length > 0) {
+          rawDishes = fromApi;
         }
       } catch (apiErr) {
         console.warn("[camera-scanner] apiClient.post('/menu/scan') failed, trying Next.js proxy route:", apiErr);
       }
 
       // 2. Fallback to Next.js route (/api/menu/scan)
-      if (!data || !data.items || data.items.length === 0) {
-        data = null;
+      if (rawDishes.length === 0) {
         let fallbackError = "";
         try {
           const response = await fetch("/api/menu/scan", {
@@ -249,7 +260,11 @@ export function CameraMenuScannerModal({
           });
 
           if (response.ok) {
-            data = await response.json();
+            const resJson = await response.json();
+            const fromFetch = parseItemsFromResponse(resJson);
+            if (fromFetch.length > 0) {
+              rawDishes = fromFetch;
+            }
           } else {
             let errDetail = `HTTP ${response.status}`;
             try {
@@ -262,7 +277,7 @@ export function CameraMenuScannerModal({
           fallbackError = fetchErr instanceof Error ? fetchErr.message : "Network error";
         }
 
-        if (!data || !data.items || data.items.length === 0) {
+        if (rawDishes.length === 0) {
           setIsAnalyzing(false);
           if (fallbackError) {
             addToast("error", "AI Extraction Failed", `Gemini API error: ${fallbackError}`);
@@ -279,16 +294,20 @@ export function CameraMenuScannerModal({
 
       setAnalysisStep("Normalizing Indian categories, prices & dietary flags…");
 
-      const items = data?.items || data?.data || [];
-      if (items && items.length > 0) {
+      const parsedItems: ParsedMenuItem[] =
+        rawDishes.length > 0 && "tempId" in rawDishes[0]
+          ? (rawDishes as ParsedMenuItem[])
+          : enrichRawExtractedItems(rawDishes, existingItems);
+
+      if (parsedItems.length > 0) {
         setIsAnalyzing(false);
         onClose();
         addToast(
           "success",
           "AI Vision Complete",
-          `Successfully extracted ${items.length} items across all categories!`
+          `Successfully extracted ${parsedItems.length} items across all categories!`
         );
-        onExtracted(items);
+        onExtracted(parsedItems);
         return;
       }
     } catch (err) {

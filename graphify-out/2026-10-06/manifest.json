@@ -30,10 +30,10 @@
     "semantic_hash": "38c43cf69c386313a81c8998f46322ec"
   },
   "apps/api/internal/application/ai/service.go": {
-    "mtime": 1789322289.4048693,
-    "seen": 1789625093.7009401,
-    "ast_hash": "48196e00baf5c759bbca7373b2f9ec85",
-    "semantic_hash": "48196e00baf5c759bbca7373b2f9ec85"
+    "mtime": 1791233885.5633295,
+    "seen": 1791234005.353245,
+    "ast_hash": "6f20cc568e26653ae2d828a5b4495cc9",
+    "semantic_hash": ""
   },
   "apps/api/internal/application/analytics/service.go": {
     "mtime": 1789389746.9357939,
@@ -270,9 +270,9 @@
     "semantic_hash": "5fd2cd66b39d6c21b0ff9d17a2def763"
   },
   "apps/api/internal/interfaces/http/handlers/menu.go": {
-    "mtime": 1789986675.3214264,
-    "seen": 1789986868.604644,
-    "ast_hash": "df852788a212f76c1fe5886fdae53019",
+    "mtime": 1791233898.1609747,
+    "seen": 1791234005.353287,
+    "ast_hash": "15d8b792e4b5c1c168baef9b1ff7493a",
     "semantic_hash": ""
   },
   "apps/api/internal/interfaces/http/handlers/notification.go": {
@@ -492,10 +492,10 @@
     "semantic_hash": ""
   },
   "apps/web/app/api/menu/scan/route.ts": {
-    "mtime": 1789330906.6647384,
-    "seen": 1789625093.700983,
-    "ast_hash": "cc00f9125c8ad0baf20f99ff09968de3",
-    "semantic_hash": "cc00f9125c8ad0baf20f99ff09968de3"
+    "mtime": 1791233829.7753723,
+    "seen": 1791234005.353319,
+    "ast_hash": "d286103cee429548239af9c3870d3551",
+    "semantic_hash": ""
   },
   "apps/web/app/api/room/extend-stay/route.ts": {
     "mtime": 1791108348.1216424,
@@ -780,9 +780,9 @@
     "semantic_hash": ""
   },
   "apps/web/components/menu/camera-menu-scanner-modal.tsx": {
-    "mtime": 1789986790.024568,
-    "seen": 1789986868.604736,
-    "ast_hash": "fd63a06d138e9206d7775e7c73058acc",
+    "mtime": 1791233935.4095166,
+    "seen": 1791234005.353386,
+    "ast_hash": "acacc2e0a67674b08756982824487435",
     "semantic_hash": ""
   },
   "apps/web/components/menu/menu-bulk-toolbar.tsx": {
@@ -798,9 +798,9 @@
     "semantic_hash": "b25ead535a260485fdb8dec689ed27a4"
   },
   "apps/web/components/menu/menu-upload-modal.tsx": {
-    "mtime": 1789986765.8552923,
-    "seen": 1789986868.6047392,
-    "ast_hash": "4899dc996bd4c45262d223aeac9d053a",
+    "mtime": 1791233921.6414645,
+    "seen": 1791234005.353388,
+    "ast_hash": "497f1dcf77476510d64be151d290af5e",
     "semantic_hash": ""
   },
   "apps/web/components/notifications/notification-center.tsx": {
@@ -1296,9 +1296,9 @@
     "semantic_hash": ""
   },
   ".github/workflows/ci.yml": {
-    "mtime": 1791186871.5709484,
-    "seen": 1791187027.8345249,
-    "ast_hash": "7969012b8b5ad0ed783335b73be33244",
+    "mtime": 1791231807.9997637,
+    "seen": 1791234005.353463,
+    "ast_hash": "21a7dad9daa069ad543d941ebb337297",
     "semantic_hash": ""
   },
   "AGENTS.md": {
@@ -1980,9 +1980,9 @@
     "semantic_hash": ""
   },
   ".github/workflows/deploy.yml": {
-    "mtime": 1789992841.1304781,
-    "seen": 1789993568.877131,
-    "ast_hash": "5c2ac28cdfb89102f72a5c018492114d",
+    "mtime": 1791231812.5966613,
+    "seen": 1791234005.353463,
+    "ast_hash": "5e0818ba1d50d9e247f1ea6b1031e105",
     "semantic_hash": ""
   },
   "docker-compose.prod.yml": {

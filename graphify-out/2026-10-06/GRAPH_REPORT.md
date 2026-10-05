@@ -1,7 +1,7 @@
 # Graph Report - DineFlow  (2026-10-06)
 
 ## Corpus Check
-- 344 files · ~700,208 words
+- 344 files · ~700,482 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 12 file(s) not represented in the graph (top: (none) 6, .example 2, .toml 1)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `e462fa0b`
+- Built from commit: `0b50a64e`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
