@@ -1358,16 +1358,26 @@ func (s *Service) ValidateCheckInToken(tokenStr string) (tenantID, userID bson.O
 	return tOID, uOID, employeeID, action, nil
 }
 
-func (s *Service) getCheckInURL(token string) string {
-	baseURL := os.Getenv("FRONTEND_URL")
+func (s *Service) getPublicAppURL() string {
+	baseURL := os.Getenv("PUBLIC_APP_URL")
 	if baseURL == "" {
-		if os.Getenv("GIN_MODE") == "release" || os.Getenv("APP_ENV") == "production" {
+		baseURL = os.Getenv("NEXT_PUBLIC_APP_URL")
+	}
+	if baseURL == "" {
+		baseURL = os.Getenv("FRONTEND_URL")
+	}
+	if baseURL == "" || strings.Contains(baseURL, "dineflow-web") || strings.Contains(baseURL, "localhost") || strings.Contains(baseURL, "127.0.0.1") {
+		if os.Getenv("APP_ENV") == "production" || os.Getenv("GIN_MODE") == "release" {
 			baseURL = "https://dine.rovixatech.com"
-		} else {
+		} else if baseURL == "" {
 			baseURL = "http://localhost:3000"
 		}
 	}
-	return fmt.Sprintf("%s/m/check-in?token=%s", strings.TrimRight(baseURL, "/"), token)
+	return strings.TrimRight(baseURL, "/")
+}
+
+func (s *Service) getCheckInURL(token string) string {
+	return fmt.Sprintf("%s/m/check-in?token=%s", s.getPublicAppURL(), token)
 }
 
 func (s *Service) FindStaffByPhone(ctx context.Context, rawPhone string) (*domainuser.User, error) {
@@ -1468,15 +1478,16 @@ func (s *Service) VerifyCheckInTokenDetails(ctx context.Context, tokenStr string
 	}
 
 	return &domainwa.WorkforceTokenVerifyResult{
-		Valid:         true,
-		EmployeeName:  name,
-		EmployeeID:    empID,
-		Action:        action,
-		WorkplaceName: restName,
-		WorkplaceLat:  gf.Latitude,
-		WorkplaceLng:  gf.Longitude,
-		RadiusMeters:  gf.RadiusMeters,
-		ExpiresInSecs: 900,
+		Valid:           true,
+		EmployeeName:    name,
+		EmployeeID:      empID,
+		Action:          action,
+		WorkplaceName:   restName,
+		WorkplaceLat:    gf.Latitude,
+		WorkplaceLng:    gf.Longitude,
+		RadiusMeters:    gf.RadiusMeters,
+		EnforceGeofence: gf.EnforceGeofence,
+		ExpiresInSecs:   900,
 	}, nil
 }
 
@@ -1983,11 +1994,7 @@ func (s *Service) ProcessWorkforceMessage(ctx context.Context, staff *domainuser
 			pFound = pErr == nil && !p.ID.IsZero()
 		}
 		if pFound {
-			baseURL := os.Getenv("FRONTEND_URL")
-			if baseURL == "" {
-				baseURL = "https://dine.rovixatech.com"
-			}
-			payslipURL := fmt.Sprintf("%s/staff/payslips/%s/view", baseURL, p.ID.Hex())
+			payslipURL := fmt.Sprintf("%s/staff/payslips/%s/view", s.getPublicAppURL(), p.ID.Hex())
 
 			reply = fmt.Sprintf(
 				"💰 *Latest Payslip (%s)*\n\n"+

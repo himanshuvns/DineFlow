@@ -26,6 +26,7 @@ interface TokenInfo {
   workplaceLat: number;
   workplaceLng: number;
   radiusMeters: number;
+  enforceGeofence?: boolean;
   expiresInSecs: number;
   error?: string;
 }
@@ -189,7 +190,10 @@ function CheckInContent() {
 
   const isWithinGeofence =
     distance !== null && tokenInfo ? distance <= tokenInfo.radiusMeters : false;
+  const isEnforced = tokenInfo?.enforceGeofence ?? false;
   const isClockIn = tokenInfo?.action !== "clock_out";
+  const canSubmit =
+    !submitting && !gpsLoading && !!coords && (isWithinGeofence || !isEnforced);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col items-center justify-center p-4 sm:p-6">
@@ -373,14 +377,19 @@ function CheckInContent() {
                   {/* Geofence Indicator Badge */}
                   <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold">
                     {isWithinGeofence ? (
-                      <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-bold">
+                      <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/60 px-3 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
                         <ShieldCheck className="w-4 h-4 text-emerald-600" />
                         Inside Workplace Geofence (Radius: {tokenInfo.radiusMeters}m)
                       </span>
+                    ) : isEnforced ? (
+                      <span className="inline-flex items-center gap-1 text-rose-700 dark:text-rose-400 font-bold bg-rose-50 dark:bg-rose-950/60 px-3 py-1 rounded-full border border-rose-200 dark:border-rose-800">
+                        <AlertTriangle className="w-4 h-4 text-rose-600" />
+                        Outside Allowed Geofence (Allowed: {tokenInfo.radiusMeters}m • Strict Mode)
+                      </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-400 font-bold">
+                      <span className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-400 font-bold bg-amber-50 dark:bg-amber-950/60 px-3 py-1 rounded-full border border-amber-200 dark:border-amber-800">
                         <AlertTriangle className="w-4 h-4 text-amber-600" />
-                        Outside Allowed Geofence (Allowed: {tokenInfo.radiusMeters}m)
+                        Outside Geofence ({distance}m) • Advisory Mode (Audit Logged)
                       </span>
                     )}
                   </div>
@@ -402,13 +411,15 @@ function CheckInContent() {
             {/* Action Buttons */}
             <div className="space-y-2">
               <button
-                disabled={submitting || gpsLoading || !coords || (!isWithinGeofence && !tokenInfo.radiusMeters)}
+                disabled={!canSubmit}
                 onClick={handleSubmit}
                 className={`w-full py-3.5 px-4 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] ${
                   isWithinGeofence
                     ? isClockIn
                       ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/25"
                       : "bg-blue-600 hover:bg-blue-700 shadow-blue-500/25"
+                    : !isEnforced
+                    ? "bg-amber-600 hover:bg-amber-700 shadow-amber-500/25"
                     : "bg-slate-400 dark:bg-slate-700 cursor-not-allowed"
                 }`}
               >
@@ -420,6 +431,11 @@ function CheckInContent() {
                   <>
                     <ShieldCheck className="w-4 h-4" />
                     {isClockIn ? "Verify GPS & Clock In" : "Verify GPS & Clock Out"}
+                  </>
+                ) : !isEnforced ? (
+                  <>
+                    <Navigation className="w-4 h-4" />
+                    {isClockIn ? "Clock In (Advisory Mode - Logged)" : "Clock Out (Advisory Mode - Logged)"}
                   </>
                 ) : (
                   <>

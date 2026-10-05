@@ -1,7 +1,7 @@
 # Graph Report - DineFlow  (2026-10-05)
 
 ## Corpus Check
-- 344 files · ~692,226 words
+- 344 files · ~692,410 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 12 file(s) not represented in the graph (top: (none) 6, .example 2, .toml 1)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `63d3fb2b`
+- Built from commit: `b8af5c58`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -644,7 +644,7 @@ _Questions this graph is uniquely positioned to answer:_
 - **Why does `Service` connect `Service` to `go_pkg_time`, `main`, `redisKey`, `OK`, `testing.T`, `github.com/gin-gonic/gin.Context`, `OpenWAProvider`, `ai/service.go`, `NewScope`?**
   _High betweenness centrality (0.013) - this node is a cross-community bridge._
 - **Why does `RoomHandler` connect `github.com/gin-gonic/gin.Context` to `Service`, `Service`, `Setup`, `go.mongodb.org/mongo-driver/v2/bson.ObjectID`, `handlers/room.go`, `BadRequest`, `NewScope`?**
-  _High betweenness centrality (0.012) - this node is a cross-community bridge._
+  _High betweenness centrality (0.011) - this node is a cross-community bridge._
 - **What connects `TestResult`, `github.com/dineflow/api`, `geminiRequest` to the rest of the system?**
   _831 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `InternalError` be split into smaller, more focused modules?**

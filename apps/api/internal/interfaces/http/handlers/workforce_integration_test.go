@@ -79,11 +79,12 @@ func TestVerifyCheckInTokenHandler(t *testing.T) {
 
 	var resp struct {
 		Data struct {
-			Valid         bool    `json:"valid"`
-			EmployeeID    string  `json:"employeeId"`
-			Action        string  `json:"action"`
-			RadiusMeters  float64 `json:"radiusMeters"`
-			WorkplaceName string  `json:"workplaceName"`
+			Valid           bool    `json:"valid"`
+			EmployeeID      string  `json:"employeeId"`
+			Action          string  `json:"action"`
+			RadiusMeters    float64 `json:"radiusMeters"`
+			WorkplaceName   string  `json:"workplaceName"`
+			EnforceGeofence bool    `json:"enforceGeofence"`
 		} `json:"data"`
 	}
 	if err := json.Unmarshal(w2.Body.Bytes(), &resp); err != nil {

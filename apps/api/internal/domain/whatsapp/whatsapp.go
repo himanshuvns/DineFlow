@@ -595,16 +595,17 @@ type WorkforceCheckInResult struct {
 }
 
 type WorkforceTokenVerifyResult struct {
-	Valid         bool    `json:"valid"`
-	EmployeeName  string  `json:"employeeName"`
-	EmployeeID    string  `json:"employeeId"`
-	Action        string  `json:"action"`
-	WorkplaceName string  `json:"workplaceName"`
-	WorkplaceLat  float64 `json:"workplaceLat"`
-	WorkplaceLng  float64 `json:"workplaceLng"`
-	RadiusMeters  float64 `json:"radiusMeters"`
-	ExpiresInSecs int64   `json:"expiresInSecs"`
-	Error         string  `json:"error,omitempty"`
+	Valid           bool    `json:"valid"`
+	EmployeeName    string  `json:"employeeName"`
+	EmployeeID      string  `json:"employeeId"`
+	Action          string  `json:"action"`
+	WorkplaceName   string  `json:"workplaceName"`
+	WorkplaceLat    float64 `json:"workplaceLat"`
+	WorkplaceLng    float64 `json:"workplaceLng"`
+	RadiusMeters    float64 `json:"radiusMeters"`
+	EnforceGeofence bool    `json:"enforceGeofence"`
+	ExpiresInSecs   int64   `json:"expiresInSecs"`
+	Error           string  `json:"error,omitempty"`
 }
 
 
