@@ -2,18 +2,92 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { Sidebar, NAV_SECTIONS, getNavSections } from "@/components/dashboard/sidebar";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Sidebar, NAV_SECTIONS, getNavSections, type NavSubItem } from "@/components/dashboard/sidebar";
 import { TopBar } from "@/components/dashboard/topbar";
 import { ImpersonationBanner } from "@/components/dashboard/impersonation-banner";
 import { BroadcastBanner } from "@/components/dashboard/broadcast-banner";
 import { useUIStore } from "@/lib/stores/ui-store";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { isPlatformRole, isRouteAllowed, getPrimaryRouteForRole, getCategoryConfig } from "@/lib/rbac/roles";
-import { X, UtensilsCrossed, Sparkles } from "lucide-react";
+import { X, UtensilsCrossed, Sparkles, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { HospitalityLoader } from "@/components/ui/hospitality-loader";
+
+function MobileNavSubItems({
+  items,
+  isParentActive,
+  onItemClick,
+}: {
+  items: NavSubItem[];
+  isParentActive: boolean;
+  onItemClick: () => void;
+}) {
+  return (
+    <React.Suspense fallback={null}>
+      <MobileNavSubItemsInner
+        items={items}
+        isParentActive={isParentActive}
+        onItemClick={onItemClick}
+      />
+    </React.Suspense>
+  );
+}
+
+function MobileNavSubItemsInner({
+  items,
+  isParentActive,
+  onItemClick,
+}: {
+  items: NavSubItem[];
+  isParentActive: boolean;
+  onItemClick: () => void;
+}) {
+  const searchParams = useSearchParams();
+  const currentTab = searchParams.get("tab") || "staff";
+
+  return (
+    <div className="ml-5 pl-2.5 border-l border-slate-200 dark:border-slate-800 space-y-0.5 my-1">
+      {items.map((sub) => {
+        const isSubActive = isParentActive && currentTab === sub.tab;
+        const SubIcon = sub.icon;
+
+        return (
+          <Link
+            key={sub.href}
+            href={sub.href}
+            onClick={onItemClick}
+            className={cn(
+              "flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all group relative cursor-pointer",
+              isSubActive
+                ? "bg-emerald-500/10 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300 font-semibold border border-emerald-500/25 shadow-2xs"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800/60"
+            )}
+          >
+            {isSubActive && (
+              <span className="absolute -left-[11px] top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)]" />
+            )}
+            <SubIcon
+              className={cn(
+                "h-3.5 w-3.5 shrink-0 transition-colors",
+                isSubActive
+                  ? "text-emerald-600 dark:text-emerald-400"
+                  : "text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300"
+              )}
+            />
+            <span className="truncate">{sub.label}</span>
+            {sub.badge && (
+              <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 font-semibold">
+                {sub.badge}
+              </span>
+            )}
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function DashboardLayout({
   children,
@@ -25,6 +99,7 @@ export default function DashboardLayout({
   const { mobileMenuOpen, setMobileMenuOpen } = useUIStore();
   const { tenant, isAuthenticated, accessToken, user } = useAuthStore();
   const [isAuthorized, setIsAuthorized] = React.useState(false);
+  const [staffExpanded, setStaffExpanded] = React.useState(true);
 
   React.useEffect(() => {
     // 1. Check live Zustand store state
@@ -144,49 +219,87 @@ export default function DashboardLayout({
                         {section.title}
                       </div>
                       {visibleItems.map((item) => {
-                        const isActive = pathname === item.href;
+                        const isExactActive = pathname === item.href;
+                        const hasChildren = Boolean(item.children && item.children.length > 0);
+                        const isParentActive = hasChildren ? pathname.startsWith(item.href) : isExactActive;
                         const Icon = item.icon;
                         const displayLabel = item.href === "/dashboard/settings" && user?.role === "manager" ? "Settings" : item.label;
 
                         return (
-                          <Link
-                            key={item.href}
-                            href={item.href}
-                            onClick={() => setMobileMenuOpen(false)}
-                            className={cn(
-                              "flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all duration-150 relative cursor-pointer",
-                              isActive
-                                ? "bg-emerald-500/10 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300 font-semibold border border-emerald-500/25 dark:border-emerald-500/30 shadow-xs"
-                                : "text-slate-700 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-800/60"
-                            )}
-                          >
-                            {isActive && (
-                              <span className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
-                            )}
-                            <div className="flex items-center gap-3 min-w-0">
-                              <Icon
+                          <div key={item.href} className="space-y-0.5">
+                            <div className="flex items-center gap-1">
+                              <Link
+                                href={item.href}
+                                onClick={() => {
+                                  if (!hasChildren) {
+                                    setMobileMenuOpen(false);
+                                  } else {
+                                    setStaffExpanded(true);
+                                  }
+                                }}
                                 className={cn(
-                                  "h-4 w-4 shrink-0 transition-colors",
-                                  isActive
-                                    ? "text-emerald-600 dark:text-emerald-400"
-                                    : "text-slate-400 dark:text-slate-400"
-                                )}
-                              />
-                              <span className="truncate">{displayLabel}</span>
-                            </div>
-                            {item.badge && (
-                              <span
-                                className={cn(
-                                  "px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase shrink-0",
-                                  item.badge === "Live"
-                                    ? "bg-rose-500/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400 border border-rose-500/30 animate-pulse"
-                                    : "bg-emerald-500/10 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-500/30"
+                                  "flex-1 flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all duration-150 relative cursor-pointer",
+                                  isParentActive
+                                    ? "bg-emerald-500/10 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300 font-semibold border border-emerald-500/25 dark:border-emerald-500/30 shadow-xs"
+                                    : "text-slate-700 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-800/60"
                                 )}
                               >
-                                {item.badge}
-                              </span>
+                                {isParentActive && (
+                                  <span className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+                                )}
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <Icon
+                                    className={cn(
+                                      "h-4 w-4 shrink-0 transition-colors",
+                                      isParentActive
+                                        ? "text-emerald-600 dark:text-emerald-400"
+                                        : "text-slate-400 dark:text-slate-400"
+                                    )}
+                                  />
+                                  <span className="truncate">{displayLabel}</span>
+                                </div>
+                                {item.badge && (
+                                  <span
+                                    className={cn(
+                                      "px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase shrink-0",
+                                      item.badge === "Live"
+                                        ? "bg-rose-500/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400 border border-rose-500/30 animate-pulse"
+                                        : "bg-emerald-500/10 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-500/30"
+                                    )}
+                                  >
+                                    {item.badge}
+                                  </span>
+                                )}
+                              </Link>
+                              {hasChildren && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setStaffExpanded((prev) => !prev);
+                                  }}
+                                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                                  title={staffExpanded ? "Collapse subcategories" : "Expand subcategories"}
+                                >
+                                  <ChevronDown
+                                    className={cn(
+                                      "h-4 w-4 transition-transform duration-200",
+                                      staffExpanded ? "rotate-0" : "-rotate-90"
+                                    )}
+                                  />
+                                </button>
+                              )}
+                            </div>
+
+                            {hasChildren && staffExpanded && item.children && (
+                              <MobileNavSubItems
+                                items={item.children}
+                                isParentActive={isParentActive}
+                                onItemClick={() => setMobileMenuOpen(false)}
+                              />
                             )}
-                          </Link>
+                          </div>
                         );
                       })}
                     </div>

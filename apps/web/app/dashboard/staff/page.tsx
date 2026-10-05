@@ -1,8 +1,10 @@
 "use client";
 
 import * as React from "react";
+import { useSearchParams } from "next/navigation";
 import {
   UserPlus,
+  Users,
   Shield,
   Mail,
   Sparkles,
@@ -39,6 +41,7 @@ import {
   Award,
   ChevronDown,
   ChevronUp,
+  ChevronRight,
   LayoutGrid,
   List,
 } from "lucide-react";
@@ -220,13 +223,24 @@ function calculateDistanceM(lat1: number, lon1: number, lat2: number, lon2: numb
   return Math.round(R * c);
 }
 
-export default function StaffPage() {
+function StaffPageContent() {
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
   const { addToast } = useToast();
   const currentUser = useAuthStore((s) => s.user);
 
   const [activeTab, setActiveTab] = React.useState<"staff" | "attendance" | "shifts" | "leaves" | "payroll" | "holidays">("staff");
   const [loading, setLoading] = React.useState(true);
   const [showMobileStats, setShowMobileStats] = React.useState(false);
+
+  // Sync activeTab with URL tab query parameter
+  React.useEffect(() => {
+    if (tabParam && ["staff", "attendance", "shifts", "leaves", "payroll", "holidays"].includes(tabParam)) {
+      setActiveTab(tabParam as typeof activeTab);
+    } else if (!tabParam) {
+      setActiveTab("staff");
+    }
+  }, [tabParam]);
 
   // ── Data States ─────────────────────────────────────────────────────────────
   const [staffList, setStaffList] = React.useState<StaffMember[]>([]);
@@ -635,17 +649,6 @@ export default function StaffPage() {
     }, 20000);
     return () => clearInterval(interval);
   }, [loadAll, fetchAttendance, fetchStaff]);
-
-  // Read ?tab= from URL on initial mount if provided
-  React.useEffect(() => {
-    if (typeof window !== "undefined") {
-      const urlParams = new URLSearchParams(window.location.search);
-      const tabParam = urlParams.get("tab");
-      if (tabParam && ["staff", "attendance", "shifts", "leaves", "payroll", "holidays"].includes(tabParam)) {
-        setActiveTab(tabParam as typeof activeTab);
-      }
-    }
-  }, []);
 
   // ── Live Geolocation Tracking ───────────────────────────────────────────────
 
@@ -1203,181 +1206,97 @@ export default function StaffPage() {
 
   return (
     <div className="space-y-6">
-      {/* ── Top Header & Hero ────────────────────────────────────────────────── */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold mb-2">
-            <Sparkles className="h-3.5 w-3.5" /> Enterprise Workforce Management & HRMS
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
-            Workforce & Operations
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 hidden sm:block">
-            Real-time geofenced attendance, shift scheduling, leave approval queues, and automated Indian payroll.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <Button
-            variant="outline"
-            size="sm"
-            leftIcon={<Navigation className="h-3.5 w-3.5 text-emerald-500" />}
-            onClick={() => setIsGeofenceModalOpen(true)}
-            title={`Geofence (${geofence.radiusMeters}m)`}
-          >
-            <span className="hidden sm:inline">Geofence ({geofence.radiusMeters}m)</span>
-            <span className="sm:hidden">{geofence.radiusMeters}m</span>
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            leftIcon={<Calendar className="h-3.5 w-3.5 text-amber-500" />}
-            onClick={() => setIsApplyLeaveOpen(true)}
-            title="Apply Leave"
-          >
-            <span className="hidden sm:inline">Apply Leave</span>
-            <span className="sm:hidden">Leave</span>
-          </Button>
-          <Button
-            variant="glow"
-            size="sm"
-            leftIcon={<UserPlus className="h-4 w-4" />}
-            onClick={() => setIsInviteOpen(true)}
-          >
-            Invite Staff
-          </Button>
-        </div>
-      </div>
-
-      {/* Mobile Collapsible Stats Pill */}
-      <div className="sm:hidden flex items-center justify-between px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xs text-xs">
-        <div className="flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-300">
-          <span className="text-slate-900 dark:text-white">{displayStaff.length} Staff</span>
-          <span>•</span>
-          <span className="text-emerald-600 dark:text-emerald-400">
-            {todayAttendance.filter((a) => a.checkInTime).length} Active
-          </span>
-          <span>•</span>
-          <span className="text-amber-600 dark:text-amber-400">
-            {leaves.filter((l) => l.status === "pending").length} Leaves
-          </span>
-        </div>
-        <button
-          onClick={() => setShowMobileStats(!showMobileStats)}
-          className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5 cursor-pointer"
-        >
-          Stats {showMobileStats ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-        </button>
-      </div>
-
-      {/* ── KPI Metric Strip ─────────────────────────────────────────────────── */}
-      <div className={cn("grid grid-cols-2 sm:grid-cols-4 gap-3", !showMobileStats && "hidden sm:grid")}>
-        <Card variant="glass" hoverEffect className="min-w-0 p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Total Workforce</span>
-            <div className="h-8 w-8 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400">
-              <Shield className="h-4 w-4" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-              <NumberFlow value={displayStaff.length} />
-            </span>
-            <span className="text-[11px] text-slate-400">enrolled</span>
-          </div>
-        </Card>
-
-        <Card variant="glass" hoverEffect className="min-w-0 p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Clocked In Today</span>
-            <div className="h-8 w-8 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-              <Clock className="h-4 w-4" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-black tracking-tight text-emerald-600 dark:text-emerald-400">
-              <NumberFlow value={todayAttendance.filter((a) => a.checkInTime).length} />
-            </span>
-            <span className="text-[11px] text-slate-400">active</span>
-          </div>
-        </Card>
-
-        <Card variant="glass" hoverEffect className="min-w-0 p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Pending Leaves</span>
-            <div className="h-8 w-8 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400">
-              <CalendarCheck className="h-4 w-4" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-black tracking-tight text-amber-600 dark:text-amber-400">
-              <NumberFlow value={leaves.filter((l) => l.status === "pending").length} />
-            </span>
-            <span className="text-[11px] text-slate-400">requests</span>
-          </div>
-        </Card>
-
-        <Card variant="glass" hoverEffect className="min-w-0 p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Late Arrivals</span>
-            <div className="h-8 w-8 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-600 dark:text-rose-400">
-              <AlertCircle className="h-4 w-4" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-black tracking-tight text-rose-600 dark:text-rose-400">
-              <NumberFlow value={todayAttendance.filter((a) => a.status === "late").length} />
-            </span>
-            <span className="text-[11px] text-slate-400">today</span>
-          </div>
-        </Card>
-      </div>
-
-      {/* ── Tab Navigation ────────────────────────────────────────────────────── */}
-      <div className="overflow-x-auto scrollbar-none [-webkit-overflow-scrolling:touch] border-b border-slate-200 dark:border-slate-800">
-        <div className="flex items-center gap-2 min-w-max pb-1">
-        {[
-          { id: "staff", label: "Staff Directory & Profiles", icon: Shield, badge: loading && staffList.length === 0 ? undefined : `${displayStaff.length}` },
-          { id: "attendance", label: "Live Attendance & Geofencing", icon: MapPin, badge: `${todayAttendance.length} Today` },
-          { id: "shifts", label: "Shift Scheduling", icon: Clock, badge: `${shifts.length || 3}` },
-          { id: "leaves", label: "Leave Management", icon: CalendarCheck, badge: `${leaves.filter((l) => l.status === "pending").length} Pending` },
-          { id: "payroll", label: "Payroll & Payslips", icon: DollarSign, badge: "Automated" },
-          { id: "holidays", label: "Holidays Calendar", icon: Award, badge: `${holidays.length || 7}` },
-        ].map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as typeof activeTab)}
-              className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-                isActive
-                  ? "bg-slate-900 text-white dark:bg-emerald-600 dark:text-white shadow-sm border border-slate-900 dark:border-emerald-500"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60"
-              }`}
-            >
-              <Icon className={`h-4 w-4 ${isActive ? "text-emerald-400 dark:text-white" : "text-slate-400"}`} />
-              <span>{tab.label}</span>
-              {tab.badge && (
-                <span
-                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                    isActive
-                      ? "bg-white/20 text-white"
-                      : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
-                  }`}
-                >
-                  {tab.badge}
-                </span>
-              )}
-            </button>
-          );
-        })}
-        </div>
-      </div>
-
       {/* ── TAB 1: STAFF DIRECTORY & PROFILES ─────────────────────────────────── */}
       {activeTab === "staff" && (
         <div className="space-y-6">
+          {/* Header & Breadcrumb */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mb-1.5 font-medium">
+                <span>Staff & Permissions</span>
+                <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Staff Directory & Profiles</span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
+                <Users className="h-7 w-7 text-emerald-500" /> Staff Directory & Profiles
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1">
+                Manage employee roster, roles, statutory CTC structures, bank details, and WhatsApp onboarding.
+              </p>
+            </div>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <Button variant="outline" size="sm" onClick={fetchStaff} leftIcon={<RefreshCw className="h-3.5 w-3.5" />}>
+                Refresh
+              </Button>
+              <Button variant="glow" size="sm" onClick={() => setIsInviteOpen(true)} leftIcon={<UserPlus className="h-4 w-4" />}>
+                Invite Staff
+              </Button>
+            </div>
+          </div>
+
+          {/* Metric Strip */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <Card variant="glass" hoverEffect className="min-w-0 p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Total Workforce</span>
+                <div className="h-8 w-8 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                  <Shield className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+                  <NumberFlow value={displayStaff.length} />
+                </span>
+                <span className="text-[11px] text-slate-400">enrolled</span>
+              </div>
+            </Card>
+
+            <Card variant="glass" hoverEffect className="min-w-0 p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Active On Duty</span>
+                <div className="h-8 w-8 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                  <Clock className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-2xl font-black tracking-tight text-emerald-600 dark:text-emerald-400">
+                  <NumberFlow value={todayAttendance.filter((a) => a.checkInTime).length} />
+                </span>
+                <span className="text-[11px] text-slate-400">clocked in</span>
+              </div>
+            </Card>
+
+            <Card variant="glass" hoverEffect className="min-w-0 p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Departments</span>
+                <div className="h-8 w-8 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400">
+                  <Building className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-2xl font-black tracking-tight text-amber-600 dark:text-amber-400">
+                  <NumberFlow value={new Set(displayStaff.map((s) => s.department || "Operations")).size} />
+                </span>
+                <span className="text-[11px] text-slate-400">functional</span>
+              </div>
+            </Card>
+
+            <Card variant="glass" hoverEffect className="min-w-0 p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Full-Time Staff</span>
+                <div className="h-8 w-8 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-600 dark:text-purple-400">
+                  <Briefcase className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-2xl font-black tracking-tight text-purple-600 dark:text-purple-400">
+                  <NumberFlow value={displayStaff.filter((s) => s.employmentType !== "part_time").length} />
+                </span>
+                <span className="text-[11px] text-slate-400">regular</span>
+              </div>
+            </Card>
+          </div>
+
           <Card variant="glass">
             <CardHeader className="flex flex-row items-center justify-between pb-3">
               <div>
@@ -1603,17 +1522,38 @@ export default function StaffPage() {
       {/* ── TAB 2: LIVE ATTENDANCE & MULTI-SCALE ROSTER INTELLIGENCE ─────────── */}
       {activeTab === "attendance" && (
         <div className="space-y-6">
-          {/* Header Action Bar */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+          {/* Header & Breadcrumb */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Clock className="h-5 w-5 text-emerald-500" /> Workforce Attendance & Roster
-              </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Real-time clock-in stamps, manager overrides on behalf of staff, and multi-scale period attendance analysis.
+              <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mb-1.5 font-medium">
+                <span>Staff & Permissions</span>
+                <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Attendance & Geofencing</span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
+                <MapPin className="h-7 w-7 text-emerald-500" /> Attendance & Geofencing Station
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1">
+                Real-time GPS geofence validation, timeclock terminal, manager manual override, and monthly timesheet matrix.
               </p>
             </div>
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <Button
+                variant="outline"
+                size="sm"
+                leftIcon={<Navigation className="h-3.5 w-3.5 text-emerald-500" />}
+                onClick={() => setIsGeofenceModalOpen(true)}
+              >
+                Geofence ({geofence.radiusMeters}m)
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                leftIcon={<Download className="h-4 w-4" />}
+                onClick={handleExportAttendanceCSV}
+              >
+                Export CSV
+              </Button>
               <Button
                 variant="glow"
                 size="sm"
@@ -1629,25 +1569,74 @@ export default function StaffPage() {
                   setIsManualAttendanceOpen(true);
                 }}
               >
-                Mark Staff Attendance
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                leftIcon={<Download className="h-4 w-4" />}
-                onClick={handleExportAttendanceCSV}
-              >
-                Export CSV
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                leftIcon={<Navigation className="h-4 w-4 text-emerald-500" />}
-                onClick={() => setIsGeofenceModalOpen(true)}
-              >
-                Adjust Geofence
+                Manual Override
               </Button>
             </div>
+          </div>
+
+          {/* Metric Strip */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <Card variant="glass" hoverEffect className="min-w-0 p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Clocked In Today</span>
+                <div className="h-8 w-8 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                  <Clock className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-2xl font-black tracking-tight text-emerald-600 dark:text-emerald-400">
+                  <NumberFlow value={todayAttendance.filter((a) => a.checkInTime).length} />
+                </span>
+                <span className="text-[11px] text-slate-400">active</span>
+              </div>
+            </Card>
+
+            <Card variant="glass" hoverEffect className="min-w-0 p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">On-Time Rate</span>
+                <div className="h-8 w-8 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                  <CheckCircle2 className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-2xl font-black tracking-tight text-blue-600 dark:text-blue-400">
+                  {todayAttendance.length > 0
+                    ? Math.round((todayAttendance.filter((a) => a.status === "present").length / todayAttendance.length) * 100)
+                    : 100}%
+                </span>
+                <span className="text-[11px] text-slate-400">punctuality</span>
+              </div>
+            </Card>
+
+            <Card variant="glass" hoverEffect className="min-w-0 p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Late Arrivals</span>
+                <div className="h-8 w-8 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-600 dark:text-rose-400">
+                  <AlertCircle className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-2xl font-black tracking-tight text-rose-600 dark:text-rose-400">
+                  <NumberFlow value={todayAttendance.filter((a) => a.status === "late").length} />
+                </span>
+                <span className="text-[11px] text-slate-400">today</span>
+              </div>
+            </Card>
+
+            <Card variant="glass" hoverEffect className="min-w-0 p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Unmarked / Absent</span>
+                <div className="h-8 w-8 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400">
+                  <XCircle className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-2xl font-black tracking-tight text-amber-600 dark:text-amber-400">
+                  <NumberFlow value={Math.max(0, displayStaff.length - todayAttendance.length)} />
+                </span>
+                <span className="text-[11px] text-slate-400">pending</span>
+              </div>
+            </Card>
           </div>
 
           {/* Personal GPS Geofence Terminal for Current User */}
@@ -2477,6 +2466,96 @@ export default function StaffPage() {
       {/* ── TAB 3: SHIFT SCHEDULING ───────────────────────────────────────────── */}
       {activeTab === "shifts" && (
         <div className="space-y-6">
+          {/* Header & Breadcrumb */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mb-1.5 font-medium">
+                <span>Staff & Permissions</span>
+                <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Shift Scheduling</span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
+                <Clock className="h-7 w-7 text-emerald-500" /> Shift Scheduling & Rostering
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1">
+                Define working hours, grace periods, lunch breaks, and automated staff shift rosters.
+              </p>
+            </div>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <Button
+                variant="glow"
+                size="sm"
+                leftIcon={<Plus className="h-4 w-4" />}
+                onClick={() => addToast("info", "Add Shift", "Shift templates are active. Select any staff profile to assign them to shifts.")}
+              >
+                Add Shift
+              </Button>
+            </div>
+          </div>
+
+          {/* Metric Strip */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <Card variant="glass" hoverEffect className="min-w-0 p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Configured Shifts</span>
+                <div className="h-8 w-8 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                  <CalendarRange className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+                  <NumberFlow value={shifts.length || 3} />
+                </span>
+                <span className="text-[11px] text-slate-400">templates</span>
+              </div>
+            </Card>
+
+            <Card variant="glass" hoverEffect className="min-w-0 p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Morning Shift</span>
+                <div className="h-8 w-8 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                  <Clock className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-2xl font-black tracking-tight text-emerald-600 dark:text-emerald-400">
+                  <NumberFlow value={displayStaff.filter((s) => !s.shiftName || s.shiftName.toLowerCase().includes("morning")).length} />
+                </span>
+                <span className="text-[11px] text-slate-400">assigned</span>
+              </div>
+            </Card>
+
+            <Card variant="glass" hoverEffect className="min-w-0 p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Evening / Night</span>
+                <div className="h-8 w-8 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-600 dark:text-purple-400">
+                  <Coffee className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-2xl font-black tracking-tight text-purple-600 dark:text-purple-400">
+                  <NumberFlow value={displayStaff.filter((s) => s.shiftName && (s.shiftName.toLowerCase().includes("evening") || s.shiftName.toLowerCase().includes("night"))).length} />
+                </span>
+                <span className="text-[11px] text-slate-400">assigned</span>
+              </div>
+            </Card>
+
+            <Card variant="glass" hoverEffect className="min-w-0 p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Grace Standard</span>
+                <div className="h-8 w-8 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400">
+                  <AlertCircle className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-2xl font-black tracking-tight text-amber-600 dark:text-amber-400">
+                  15
+                </span>
+                <span className="text-[11px] text-slate-400">mins standard</span>
+              </div>
+            </Card>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {(shifts.length > 0
               ? shifts
@@ -2523,6 +2602,96 @@ export default function StaffPage() {
       {/* ── TAB 4: LEAVE MANAGEMENT ───────────────────────────────────────────── */}
       {activeTab === "leaves" && (
         <div className="space-y-6">
+          {/* Header & Breadcrumb */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mb-1.5 font-medium">
+                <span>Staff & Permissions</span>
+                <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Leave Management</span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
+                <CalendarCheck className="h-7 w-7 text-emerald-500" /> Leave Management & Approval Desk
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1">
+                Review pending time-off requests, statutory leave balances, and approval audit registers.
+              </p>
+            </div>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <Button
+                variant="glow"
+                size="sm"
+                leftIcon={<Plus className="h-4 w-4" />}
+                onClick={() => setIsApplyLeaveOpen(true)}
+              >
+                Apply Leave
+              </Button>
+            </div>
+          </div>
+
+          {/* Metric Strip */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <Card variant="glass" hoverEffect className="min-w-0 p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Pending Approvals</span>
+                <div className="h-8 w-8 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400">
+                  <CalendarCheck className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-2xl font-black tracking-tight text-amber-600 dark:text-amber-400">
+                  <NumberFlow value={leaves.filter((l) => l.status === "pending").length} />
+                </span>
+                <span className="text-[11px] text-slate-400">requests</span>
+              </div>
+            </Card>
+
+            <Card variant="glass" hoverEffect className="min-w-0 p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">On Leave Today</span>
+                <div className="h-8 w-8 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                  <Coffee className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-2xl font-black tracking-tight text-blue-600 dark:text-blue-400">
+                  <NumberFlow value={leaves.filter((l) => l.status === "approved" && l.startDate <= todayStr && l.endDate >= todayStr).length} />
+                </span>
+                <span className="text-[11px] text-slate-400">absent</span>
+              </div>
+            </Card>
+
+            <Card variant="glass" hoverEffect className="min-w-0 p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Casual Leave Quota</span>
+                <div className="h-8 w-8 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                  <Calendar className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-2xl font-black tracking-tight text-emerald-600 dark:text-emerald-400">
+                  {leaveBalance.casualTotal - leaveBalance.casualUsed}
+                </span>
+                <span className="text-[11px] text-slate-400">days left</span>
+              </div>
+            </Card>
+
+            <Card variant="glass" hoverEffect className="min-w-0 p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Sick Leave Quota</span>
+                <div className="h-8 w-8 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-600 dark:text-purple-400">
+                  <Shield className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-2xl font-black tracking-tight text-purple-600 dark:text-purple-400">
+                  {leaveBalance.sickTotal - leaveBalance.sickUsed}
+                </span>
+                <span className="text-[11px] text-slate-400">days left</span>
+              </div>
+            </Card>
+          </div>
+
           {/* Balances Summary Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
@@ -2672,21 +2841,22 @@ export default function StaffPage() {
       {/* ── TAB 5: PAYROLL & PAYSLIPS ─────────────────────────────────────────── */}
       {activeTab === "payroll" && (
         <div className="space-y-6">
-          {/* Payroll Control Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                <DollarSign className="h-6 w-6" />
+          {/* Header & Breadcrumb */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mb-1.5 font-medium">
+                <span>Staff & Permissions</span>
+                <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Payroll & Payslips</span>
               </div>
-              <div>
-                <p className="font-bold text-slate-900 dark:text-white">Monthly Payroll Processing Engine</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Calculates Basic, HRA, Overtime Pay, PF (~12% max 1800), and Professional Tax (₹200).
-                </p>
-              </div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
+                <DollarSign className="h-7 w-7 text-emerald-500" /> Indian Payroll & Digital Payslips
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1">
+                Automated salary calculation based on verified attendance, statutory EPF/ESI deductions, and digital payslips.
+              </p>
             </div>
-
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5 flex-wrap">
               <input
                 type="month"
                 value={selectedPayrollMonth}
@@ -2694,7 +2864,7 @@ export default function StaffPage() {
                   setSelectedPayrollMonth(e.target.value);
                   fetchPayroll(e.target.value);
                 }}
-                className="rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-2 outline-none"
+                className="rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-2 outline-none shadow-2xs"
               />
               <Button
                 variant="glow"
@@ -2705,6 +2875,69 @@ export default function StaffPage() {
                 Run Payroll
               </Button>
             </div>
+          </div>
+
+          {/* Metric Strip */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <Card variant="glass" hoverEffect className="min-w-0 p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Gross Payroll Outflow</span>
+                <div className="h-8 w-8 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                  <DollarSign className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+                  ₹{payrollRecords.reduce((acc, r) => acc + (r.grossEarnings || 0), 0).toLocaleString("en-IN")}
+                </span>
+                <span className="text-[11px] text-slate-400">gross</span>
+              </div>
+            </Card>
+
+            <Card variant="glass" hoverEffect className="min-w-0 p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Net Disbursed</span>
+                <div className="h-8 w-8 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                  <CreditCard className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-2xl font-black tracking-tight text-emerald-600 dark:text-emerald-400">
+                  ₹{payrollRecords.reduce((acc, r) => acc + (r.netPay || 0), 0).toLocaleString("en-IN")}
+                </span>
+                <span className="text-[11px] text-slate-400">net pay</span>
+              </div>
+            </Card>
+
+            <Card variant="glass" hoverEffect className="min-w-0 p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Total Deductions</span>
+                <div className="h-8 w-8 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-600 dark:text-rose-400">
+                  <FileText className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-2xl font-black tracking-tight text-rose-600 dark:text-rose-400">
+                  ₹{payrollRecords.reduce((acc, r) => acc + (r.deductions || 0), 0).toLocaleString("en-IN")}
+                </span>
+                <span className="text-[11px] text-slate-400">PF + PT</span>
+              </div>
+            </Card>
+
+            <Card variant="glass" hoverEffect className="min-w-0 p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Processed Slips</span>
+                <div className="h-8 w-8 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-600 dark:text-purple-400">
+                  <Award className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-2xl font-black tracking-tight text-purple-600 dark:text-purple-400">
+                  <NumberFlow value={payrollRecords.length} />
+                </span>
+                <span className="text-[11px] text-slate-400">generated</span>
+              </div>
+            </Card>
           </div>
 
           {/* Payroll Register Table */}
@@ -2801,6 +3034,94 @@ export default function StaffPage() {
       {/* ── TAB 6: HOLIDAYS CALENDAR ──────────────────────────────────────────── */}
       {activeTab === "holidays" && (
         <div className="space-y-6">
+          {/* Header & Breadcrumb */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mb-1.5 font-medium">
+                <span>Staff & Permissions</span>
+                <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Holidays Calendar</span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
+                <Award className="h-7 w-7 text-emerald-500" /> Company & Gazetted Holidays Calendar
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1">
+                Official gazetted Indian national holidays, regional festivals, and restaurant scheduled off-days.
+              </p>
+            </div>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <Button
+                variant="outline"
+                size="sm"
+                leftIcon={<Plus className="h-3.5 w-3.5" />}
+                onClick={() => addToast("info", "Add Holiday", "National gazetted holidays are synchronized for the current calendar year.")}
+              >
+                Add Custom Holiday
+              </Button>
+            </div>
+          </div>
+
+          {/* Metric Strip */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <Card variant="glass" hoverEffect className="min-w-0 p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Total Holidays</span>
+                <div className="h-8 w-8 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                  <Award className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+                  <NumberFlow value={holidays.length || 7} />
+                </span>
+                <span className="text-[11px] text-slate-400">scheduled</span>
+              </div>
+            </Card>
+
+            <Card variant="glass" hoverEffect className="min-w-0 p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Upcoming Holiday</span>
+                <div className="h-8 w-8 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                  <Calendar className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-sm font-bold truncate text-emerald-600 dark:text-emerald-400">
+                  {holidays.find((h) => h.date >= todayStr)?.name || "Diwali"}
+                </span>
+              </div>
+            </Card>
+
+            <Card variant="glass" hoverEffect className="min-w-0 p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">National Gazetted</span>
+                <div className="h-8 w-8 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-600 dark:text-purple-400">
+                  <Shield className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-2xl font-black tracking-tight text-purple-600 dark:text-purple-400">
+                  <NumberFlow value={holidays.filter((h) => h.type === "national").length || 3} />
+                </span>
+                <span className="text-[11px] text-slate-400">mandatory</span>
+              </div>
+            </Card>
+
+            <Card variant="glass" hoverEffect className="min-w-0 p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Festive & Custom</span>
+                <div className="h-8 w-8 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400">
+                  <Sparkles className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-2xl font-black tracking-tight text-amber-600 dark:text-amber-400">
+                  <NumberFlow value={holidays.filter((h) => h.type !== "national").length || 4} />
+                </span>
+                <span className="text-[11px] text-slate-400">observances</span>
+              </div>
+            </Card>
+          </div>
           <Card variant="glass">
             <CardHeader className="pb-3">
               <CardTitle className="text-base sm:text-lg">Official Holidays Calendar</CardTitle>
@@ -3581,3 +3902,12 @@ export default function StaffPage() {
     </div>
   );
 }
+
+export default function StaffPage() {
+  return (
+    <React.Suspense fallback={<div className="p-8 text-center text-slate-500 font-medium">Loading workforce workspace...</div>}>
+      <StaffPageContent />
+    </React.Suspense>
+  );
+}
+
