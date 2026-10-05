@@ -340,6 +340,7 @@ function StaffPageContent() {
   const [profileEmergPhoneTouched, setProfileEmergPhoneTouched] = React.useState(false);
 
   const [isGeofenceModalOpen, setIsGeofenceModalOpen] = React.useState(false);
+  const [isMyClockInModalOpen, setIsMyClockInModalOpen] = React.useState(false);
   const [geoLat, setGeoLat] = React.useState("28.6315");
   const [geoLng, setGeoLng] = React.useState("77.2167");
   const [geoRadius, setGeoRadius] = React.useState("100");
@@ -347,11 +348,13 @@ function StaffPageContent() {
   const [geoEnforce, setGeoEnforce] = React.useState(false);
 
   const [isApplyLeaveOpen, setIsApplyLeaveOpen] = React.useState(false);
+  const [leaveStaffId, setLeaveStaffId] = React.useState("");
   const [leaveType, setLeaveType] = React.useState("casual");
   const [leaveStart, setLeaveStart] = React.useState("");
   const [leaveEnd, setLeaveEnd] = React.useState("");
   const [leaveHalfDay, setLeaveHalfDay] = React.useState(false);
   const [leaveReason, setLeaveReason] = React.useState("");
+  const [leaveStatusFilter, setLeaveStatusFilter] = React.useState<"all" | "pending" | "approved" | "rejected">("all");
 
   const [isRejectModalOpen, setIsRejectModalOpen] = React.useState(false);
   const [rejectingLeaveId, setRejectingLeaveId] = React.useState("");
@@ -1298,16 +1301,11 @@ function StaffPageContent() {
           </div>
 
           <Card variant="glass">
-            <CardHeader className="flex flex-row items-center justify-between pb-3">
-              <div>
-                <CardTitle className="text-base sm:text-lg">Staff Roster & Statutory Metadata</CardTitle>
-                <CardDescription className="text-xs">
-                  Departments, shifts, CTC structures, bank verification, and emergency contacts.
-                </CardDescription>
-              </div>
-              <Button variant="outline" size="sm" onClick={fetchStaff} leftIcon={<RefreshCw className="h-3.5 w-3.5" />}>
-                Refresh
-              </Button>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base sm:text-lg">Staff Roster & Statutory Metadata</CardTitle>
+              <CardDescription className="text-xs">
+                Departments, shifts, CTC structures, bank verification, and emergency contacts.
+              </CardDescription>
             </CardHeader>
             <CardContent className="p-0 overflow-x-auto">
               <Table className="min-w-[750px]">
@@ -1318,7 +1316,6 @@ function StaffPageContent() {
                     <TableHead className="py-3.5">Role</TableHead>
                     <TableHead className="py-3.5 hidden md:table-cell">Shift</TableHead>
                     <TableHead className="py-3.5 hidden md:table-cell">Basic CTC</TableHead>
-                    <TableHead className="py-3.5">Today's Attendance</TableHead>
                     <TableHead className="py-3.5">Status</TableHead>
                     <TableHead className="py-3.5 text-right pr-6">Actions</TableHead>
                   </TableRow>
@@ -1340,14 +1337,13 @@ function StaffPageContent() {
                         <TableCell className="py-3.5"><div className="h-4 w-20 bg-slate-200 dark:bg-slate-800 rounded" /></TableCell>
                         <TableCell className="py-3.5 hidden md:table-cell"><div className="h-4 w-24 bg-slate-200 dark:bg-slate-800 rounded" /></TableCell>
                         <TableCell className="py-3.5 hidden md:table-cell"><div className="h-4 w-16 bg-slate-200 dark:bg-slate-800 rounded" /></TableCell>
-                        <TableCell className="py-3.5"><div className="h-5 w-24 bg-slate-200 dark:bg-slate-800 rounded-full" /></TableCell>
                         <TableCell className="py-3.5"><div className="h-5 w-14 bg-slate-200 dark:bg-slate-800 rounded-full" /></TableCell>
                         <TableCell className="py-3.5 text-right pr-6"><div className="h-7 w-16 bg-slate-200 dark:bg-slate-800 rounded ml-auto" /></TableCell>
                       </TableRow>
                     ))
                   ) : displayStaff.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="py-12">
+                      <TableCell colSpan={7} className="py-12">
                         <EmptyState
                           compact
                           icon={<Briefcase className="h-6 w-6 text-slate-400" />}
@@ -1420,57 +1416,6 @@ function StaffPageContent() {
                           : "Confidential"}
                       </TableCell>
                       <TableCell className="py-3.5">
-                        {(() => {
-                          const att = todayAttendance.find(
-                            (a) =>
-                              a.userId === member.id ||
-                              (member.employeeId && a.employeeId === member.employeeId) ||
-                              (a.employeeName && a.employeeName.toLowerCase() === member.name.toLowerCase())
-                          );
-
-                          if (!att) {
-                            return (
-                              <Badge variant="neutral" size="sm" dot>
-                                Not Clocked In
-                              </Badge>
-                            );
-                          }
-
-                          if (att.checkOutTime) {
-                            const time = new Date(att.checkOutTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-                            return (
-                              <Badge variant="neutral" size="sm" dot>
-                                Clocked Out ({time})
-                              </Badge>
-                            );
-                          }
-
-                          if (att.isOnBreak) {
-                            return (
-                              <Badge variant="warning" size="sm" dot>
-                                <Coffee className="w-3 h-3 mr-1 inline" /> On Break
-                              </Badge>
-                            );
-                          }
-
-                          if (att.checkInTime) {
-                            const time = new Date(att.checkInTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-                            const isLate = att.status === "late";
-                            return (
-                              <Badge variant={isLate ? "warning" : "success"} size="sm" dot>
-                                {isLate ? `Late (${time})` : `In (${time})`}
-                              </Badge>
-                            );
-                          }
-
-                          return (
-                            <Badge variant="neutral" size="sm" dot>
-                              {att.status || "Not Clocked In"}
-                            </Badge>
-                          );
-                        })()}
-                      </TableCell>
-                      <TableCell className="py-3.5">
                         <Badge variant={member.status === "active" ? "success" : "warning"} dot size="sm">
                           {member.status === "active" ? "Active" : "Invited"}
                         </Badge>
@@ -1538,6 +1483,14 @@ function StaffPageContent() {
               </p>
             </div>
             <div className="flex items-center gap-2.5 flex-wrap">
+              <Button
+                variant="outline"
+                size="sm"
+                leftIcon={<Clock className={`h-3.5 w-3.5 ${isClockedIn ? "text-emerald-500" : "text-slate-500"}`} />}
+                onClick={() => setIsMyClockInModalOpen(true)}
+              >
+                {isClockedIn ? (isOnBreak ? "On Break ☕" : "Clocked In") : "My Clock-In"}
+              </Button>
               <Button
                 variant="outline"
                 size="sm"
@@ -1639,96 +1592,72 @@ function StaffPageContent() {
             </Card>
           </div>
 
-          {/* Personal GPS Geofence Terminal for Current User */}
-          <Card variant="glass" className="border-emerald-500/20 bg-emerald-50/20 dark:bg-emerald-950/10">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                    <MapPin className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-base">Personal GPS Geofence Clock-in Terminal</CardTitle>
-                    <CardDescription className="text-xs">
-                      Workplace Radius: {geofence.radiusMeters}m &bull; {geofence.address}
-                    </CardDescription>
-                  </div>
-                </div>
-                <Badge variant={isInsideGeofence ? "success" : "danger"} dot size="sm">
-                  {isInsideGeofence ? "Inside Geofence" : "Outside Boundary"}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs">
-                <div>
-                  <p className="text-slate-500 dark:text-slate-400">Your Current Geolocation</p>
-                  <p className="font-semibold text-slate-900 dark:text-white">
-                    {currentCoords ? `${currentCoords.lat.toFixed(5)}, ${currentCoords.lng.toFixed(5)}` : "Detecting GPS..."}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-slate-500 dark:text-slate-400">Distance to Workplace</p>
-                  <p className={`font-bold ${isInsideGeofence ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
-                    {gpsDistance !== null ? `${gpsDistance} meters` : "Calculating..."}
-                  </p>
-                </div>
-              </div>
-
-              {/* Personal Clock Controls */}
-              <div className="flex items-center gap-3 flex-wrap">
-                {!isClockedIn ? (
-                  <Button
-                    variant="glow"
-                    size="default"
-                    className="flex-1 sm:flex-none"
-                    leftIcon={<CheckCircle2 className="h-4 w-4" />}
-                    isLoading={clockingIn}
-                    disabled={geofence.enforceGeofence && !isInsideGeofence}
-                    onClick={handleClockIn}
-                  >
-                    Clock In Now
-                  </Button>
-                ) : (
-                  <>
-                    <Button
-                      variant="secondary"
-                      size="default"
-                      className={isOnBreak ? "bg-amber-500 text-white hover:bg-amber-600" : ""}
-                      leftIcon={<Coffee className="h-4 w-4" />}
-                      isLoading={togglingBreak}
-                      onClick={handleToggleBreak}
-                    >
-                      {isOnBreak ? "Resume Work (End Break)" : "Take Break"}
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="default"
-                      leftIcon={<XCircle className="h-4 w-4" />}
-                      isLoading={clockingOut}
-                      onClick={handleClockOut}
-                    >
-                      Clock Out
-                    </Button>
-                  </>
-                )}
-              </div>
-
-              {geofence.enforceGeofence && !isInsideGeofence && !isClockedIn && (
-                <p className="text-[11px] text-rose-500 flex items-center gap-1.5 font-medium">
-                  <AlertCircle className="h-3.5 w-3.5" />
-                  Geofence enforcement active: You must be within {geofence.radiusMeters}m of the restaurant to clock in.
-                </p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Multi-Scale Period Navigator & Filter Bar */}
+          {/* Attendance Register Table & Timesheet Matrix */}
           <Card variant="glass">
-            <CardContent className="p-4 sm:p-5 space-y-4">
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-3 border-b border-slate-200 dark:border-slate-800">
+            <CardHeader className="space-y-3 pb-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                    <span>
+                      {attendancePeriod === "day"
+                        ? `Daily Attendance (${attendanceSelectedDate})`
+                        : attendancePeriod === "week"
+                        ? "Weekly Attendance Register"
+                        : attendancePeriod === "month"
+                        ? `Monthly Attendance (${attendanceSelectedMonth})`
+                        : attendancePeriod === "year"
+                        ? `Annual Attendance (${attendanceSelectedYear})`
+                        : "Custom Range Attendance"}
+                    </span>
+                    <Badge variant="neutral" size="sm">
+                      {attendanceViewMode === "matrix" ? `${attendanceStaffList.length} staff` : `${periodAttendance.length} records`}
+                    </Badge>
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    {attendanceViewMode === "matrix"
+                      ? "Staff timesheet calendar matrix. Click any day cell to view or mark attendance."
+                      : "Detailed punch timestamps, working hours, verification channel, and manager override notes."}
+                  </CardDescription>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* View Switcher: Matrix Grid vs Detailed Audit Log */}
+                  <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60">
+                    <button
+                      type="button"
+                      onClick={() => setAttendanceViewMode("matrix")}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                        attendanceViewMode === "matrix"
+                          ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs"
+                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                      }`}
+                    >
+                      <LayoutGrid className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">Timesheet</span> Grid
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAttendanceViewMode("table")}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                        attendanceViewMode === "table"
+                          ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs"
+                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                      }`}
+                    >
+                      <List className="h-3.5 w-3.5" />
+                      Audit Log
+                    </button>
+                  </div>
+
+                  <Button variant="outline" size="sm" onClick={fetchPeriodAttendance} leftIcon={<RefreshCw className={`h-3.5 w-3.5 ${attendanceLoading ? "animate-spin" : ""}`} />}>
+                    Refresh
+                  </Button>
+                </div>
+              </div>
+
+              {/* Integrated Period & Filter Toolbar */}
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-3 border-t border-slate-200/80 dark:border-slate-800/80">
                 {/* Period Selector Tabs */}
-                <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 self-start sm:self-auto overflow-x-auto max-w-full">
+                <div className="flex items-center gap-1 p-0.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 overflow-x-auto max-w-full">
                   {[
                     { id: "day", label: "Day", icon: Calendar },
                     { id: "week", label: "Week", icon: CalendarRange },
@@ -1750,32 +1679,33 @@ function StaffPageContent() {
                             setAttendanceViewMode("table");
                           }
                         }}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
                           isActive
-                            ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm"
+                            ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs"
                             : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
                         }`}
                       >
-                        <Icon className="h-3.5 w-3.5" />
+                        <Icon className="h-3 w-3" />
                         {p.label}
                       </button>
                     );
                   })}
                 </div>
 
-                {/* Date Navigator Controls */}
+                {/* Date Controls & Filters */}
                 <div className="flex items-center gap-2 flex-wrap">
                   {attendancePeriod === "day" && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                       <Input
                         type="date"
                         value={attendanceSelectedDate}
                         onChange={(e) => setAttendanceSelectedDate(e.target.value)}
-                        className="w-40 text-xs py-1.5 h-9"
+                        className="w-36 text-xs py-1 h-8"
                       />
                       <Button
                         variant="outline"
                         size="sm"
+                        className="h-8 text-xs px-2.5"
                         onClick={() => setAttendanceSelectedDate(new Date().toISOString().substring(0, 10))}
                       >
                         Today
@@ -1784,19 +1714,20 @@ function StaffPageContent() {
                   )}
 
                   {attendancePeriod === "week" && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                       <Button
                         variant="outline"
                         size="sm"
+                        className="h-8 text-xs px-2"
                         onClick={() => {
                           const d = new Date(attendanceSelectedDate || new Date());
                           d.setDate(d.getDate() - 7);
                           setAttendanceSelectedDate(d.toISOString().substring(0, 10));
                         }}
                       >
-                        &larr; Prev Week
+                        &larr; Prev
                       </Button>
-                      <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 px-2 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800">
+                      <span className="text-[11px] font-semibold text-slate-800 dark:text-slate-200 px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800">
                         {(() => {
                           const d = new Date(attendanceSelectedDate || new Date());
                           const day = d.getDay();
@@ -1804,23 +1735,25 @@ function StaffPageContent() {
                           const mon = new Date(d.setDate(diffToMon));
                           const sun = new Date(mon);
                           sun.setDate(mon.getDate() + 6);
-                          return `${mon.toLocaleDateString("en-IN", { day: "numeric", month: "short" })} – ${sun.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}`;
+                          return `${mon.toLocaleDateString("en-IN", { day: "numeric", month: "short" })} – ${sun.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`;
                         })()}
                       </span>
                       <Button
                         variant="outline"
                         size="sm"
+                        className="h-8 text-xs px-2"
                         onClick={() => {
                           const d = new Date(attendanceSelectedDate || new Date());
                           d.setDate(d.getDate() + 7);
                           setAttendanceSelectedDate(d.toISOString().substring(0, 10));
                         }}
                       >
-                        Next Week &rarr;
+                        Next &rarr;
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
+                        className="h-8 text-xs px-2"
                         onClick={() => setAttendanceSelectedDate(new Date().toISOString().substring(0, 10))}
                       >
                         This Week
@@ -1829,16 +1762,17 @@ function StaffPageContent() {
                   )}
 
                   {attendancePeriod === "month" && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                       <Input
                         type="month"
                         value={attendanceSelectedMonth}
                         onChange={(e) => setAttendanceSelectedMonth(e.target.value)}
-                        className="w-44 text-xs py-1.5 h-9"
+                        className="w-36 text-xs py-1 h-8"
                       />
                       <Button
                         variant="outline"
                         size="sm"
+                        className="h-8 text-xs px-2.5"
                         onClick={() => setAttendanceSelectedMonth(new Date().toISOString().substring(0, 7))}
                       >
                         This Month
@@ -1847,11 +1781,11 @@ function StaffPageContent() {
                   )}
 
                   {attendancePeriod === "year" && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                       <select
                         value={attendanceSelectedYear}
                         onChange={(e) => setAttendanceSelectedYear(e.target.value)}
-                        className="rounded-xl text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-2 outline-none h-9 text-slate-900 dark:text-white"
+                        className="rounded-xl text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2 py-1 outline-none h-8 text-slate-900 dark:text-white"
                       >
                         {[2026, 2025, 2024, 2023].map((yr) => (
                           <option key={yr} value={String(yr)}>
@@ -1862,6 +1796,7 @@ function StaffPageContent() {
                       <Button
                         variant="outline"
                         size="sm"
+                        className="h-8 text-xs px-2.5"
                         onClick={() => setAttendanceSelectedYear(String(new Date().getFullYear()))}
                       >
                         This Year
@@ -1870,38 +1805,28 @@ function StaffPageContent() {
                   )}
 
                   {attendancePeriod === "custom" && (
-                    <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex items-center gap-1.5">
                       <Input
                         type="date"
-                        placeholder="Start Date"
                         value={attendanceCustomStart}
                         onChange={(e) => setAttendanceCustomStart(e.target.value)}
-                        className="w-36 text-xs py-1.5 h-9"
+                        className="w-32 text-xs py-1 h-8"
                       />
                       <span className="text-xs text-slate-400">to</span>
                       <Input
                         type="date"
-                        placeholder="End Date"
                         value={attendanceCustomEnd}
                         onChange={(e) => setAttendanceCustomEnd(e.target.value)}
-                        className="w-36 text-xs py-1.5 h-9"
+                        className="w-32 text-xs py-1 h-8"
                       />
                     </div>
                   )}
-                </div>
-              </div>
 
-              {/* Filter Row */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-                {/* Department Filter */}
-                <div>
-                  <label className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block mb-1">
-                    Department
-                  </label>
+                  {/* Department Filter */}
                   <select
                     value={attendanceFilterDept}
                     onChange={(e) => setAttendanceFilterDept(e.target.value)}
-                    className="w-full rounded-xl text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-2 outline-none text-slate-900 dark:text-white"
+                    className="rounded-xl text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1 outline-none h-8 text-slate-900 dark:text-white"
                   >
                     <option value="all">All Departments</option>
                     {Array.from(new Set(displayStaff.map((s) => s.department).filter(Boolean))).map((dept) => (
@@ -1910,198 +1835,21 @@ function StaffPageContent() {
                       </option>
                     ))}
                   </select>
-                </div>
 
-                {/* Staff Member Filter */}
-                <div>
-                  <label className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block mb-1">
-                    Staff Member
-                  </label>
+                  {/* Staff Member Filter */}
                   <select
                     value={attendanceFilterStaff}
                     onChange={(e) => setAttendanceFilterStaff(e.target.value)}
-                    className="w-full rounded-xl text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-2 outline-none text-slate-900 dark:text-white"
+                    className="rounded-xl text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1 outline-none h-8 text-slate-900 dark:text-white max-w-[140px]"
                   >
                     <option value="all">All Staff ({displayStaff.length})</option>
                     {displayStaff.map((s) => (
                       <option key={s.id} value={s.id}>
-                        {s.name} ({s.employeeId || s.role})
+                        {s.name}
                       </option>
                     ))}
                   </select>
                 </div>
-
-                {/* Status Filter */}
-                <div>
-                  <label className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block mb-1">
-                    Attendance Status
-                  </label>
-                  <select
-                    value={attendanceFilterStatus}
-                    onChange={(e) => setAttendanceFilterStatus(e.target.value)}
-                    className="w-full rounded-xl text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-2 outline-none text-slate-900 dark:text-white"
-                  >
-                    <option value="all">All Statuses</option>
-                    <option value="present">Present (On-Time)</option>
-                    <option value="late">Late Arrival</option>
-                    <option value="half_day">Half Day</option>
-                    <option value="absent">Absent</option>
-                    <option value="leave">On Leave</option>
-                  </select>
-                </div>
-
-                {/* Refresh Roster Button */}
-                <div className="flex items-end">
-                  <Button
-                    variant="outline"
-                    className="w-full text-xs h-[38px]"
-                    onClick={fetchPeriodAttendance}
-                    isLoading={attendanceLoading}
-                    leftIcon={<RefreshCw className={`h-3.5 w-3.5 ${attendanceLoading ? "animate-spin" : ""}`} />}
-                  >
-                    Refresh View
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Period Summary KPI Metric Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-              <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-                Total Records
-              </p>
-              <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">
-                {attendanceLoading ? "—" : (attendanceSummary?.totalRecords ?? periodAttendance.length)}
-              </p>
-              <p className="text-[10px] text-slate-400 mt-1">
-                Headcount: {displayStaff.length} active
-              </p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-              <p className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">
-                Present & On-Time
-              </p>
-              <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
-                {attendanceLoading
-                  ? "—"
-                  : (attendanceSummary?.presentCount ?? periodAttendance.filter((r) => r.status === "present").length)}
-              </p>
-              <p className="text-[10px] text-emerald-600/80 dark:text-emerald-400/80 mt-1">
-                On-time rate:{" "}
-                {(() => {
-                  const p = attendanceSummary?.presentCount ?? periodAttendance.filter((r) => r.status === "present").length;
-                  const l = attendanceSummary?.lateCount ?? periodAttendance.filter((r) => r.status === "late").length;
-                  return p + l > 0 ? `${Math.round((p / (p + l)) * 100)}%` : "100%";
-                })()}
-              </p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-              <p className="text-[11px] font-medium text-amber-600 dark:text-amber-400 uppercase tracking-wide">
-                Late / Half-Day
-              </p>
-              <p className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1">
-                {attendanceLoading
-                  ? "—"
-                  : (attendanceSummary?.lateCount ?? periodAttendance.filter((r) => r.status === "late").length) +
-                    (attendanceSummary?.halfDayCount ?? periodAttendance.filter((r) => r.status === "half_day").length)}
-              </p>
-              <p className="text-[10px] text-slate-400 mt-1">
-                Late: {attendanceSummary?.lateCount ?? periodAttendance.filter((r) => r.status === "late").length} | Half: {attendanceSummary?.halfDayCount ?? periodAttendance.filter((r) => r.status === "half_day").length}
-              </p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-              <p className="text-[11px] font-medium text-rose-600 dark:text-rose-400 uppercase tracking-wide">
-                Absent / On Leave
-              </p>
-              <p className="text-2xl font-black text-rose-600 dark:text-rose-400 mt-1">
-                {attendanceLoading
-                  ? "—"
-                  : (attendanceSummary?.absentCount ?? periodAttendance.filter((r) => r.status === "absent").length) +
-                    (attendanceSummary?.leaveCount ?? periodAttendance.filter((r) => r.status === "leave").length)}
-              </p>
-              <p className="text-[10px] text-slate-400 mt-1">
-                Leaves: {attendanceSummary?.leaveCount ?? periodAttendance.filter((r) => r.status === "leave").length}
-              </p>
-            </div>
-
-            <div className="col-span-2 md:col-span-1 p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-              <p className="text-[11px] font-medium text-indigo-600 dark:text-indigo-400 uppercase tracking-wide">
-                Productive Hours
-              </p>
-              <p className="text-2xl font-black text-indigo-600 dark:text-indigo-400 mt-1">
-                {attendanceLoading
-                  ? "—"
-                  : (attendanceSummary?.totalWorkingHours ?? periodAttendance.reduce((a, b) => a + (b.workingHours || 0), 0)).toFixed(1)}h
-              </p>
-              <p className="text-[10px] text-slate-400 mt-1">
-                OT: {(attendanceSummary?.totalOvertimeHours ?? periodAttendance.reduce((a, b) => a + (b.overtimeHours || 0), 0)).toFixed(1)}h &bull; Overrides: {attendanceSummary?.manualOverrideCount ?? periodAttendance.filter((r) => r.isManualOverride).length}
-              </p>
-            </div>
-          </div>
-
-          {/* Attendance Register Table & Timesheet Matrix */}
-          <Card variant="glass">
-            <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3">
-              <div>
-                <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-                  <span>
-                    {attendancePeriod === "day"
-                      ? `Daily Attendance (${attendanceSelectedDate})`
-                      : attendancePeriod === "week"
-                      ? "Weekly Attendance Register"
-                      : attendancePeriod === "month"
-                      ? `Monthly Attendance (${attendanceSelectedMonth})`
-                      : attendancePeriod === "year"
-                      ? `Annual Attendance (${attendanceSelectedYear})`
-                      : "Custom Range Attendance"}
-                  </span>
-                  <Badge variant="neutral" size="sm">
-                    {attendanceViewMode === "matrix" ? `${attendanceStaffList.length} staff` : `${periodAttendance.length} records`}
-                  </Badge>
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  {attendanceViewMode === "matrix"
-                    ? "Staff timesheet calendar matrix. Click any day cell to view or mark attendance."
-                    : "Detailed punch timestamps, working hours, verification channel, and manager override notes."}
-                </CardDescription>
-              </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                {/* View Switcher: Matrix Grid vs Detailed Audit Log */}
-                <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60">
-                  <button
-                    type="button"
-                    onClick={() => setAttendanceViewMode("matrix")}
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
-                      attendanceViewMode === "matrix"
-                        ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs"
-                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
-                    }`}
-                  >
-                    <LayoutGrid className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">Timesheet</span> Grid
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setAttendanceViewMode("table")}
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
-                      attendanceViewMode === "table"
-                        ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs"
-                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
-                    }`}
-                  >
-                    <List className="h-3.5 w-3.5" />
-                    Audit Log
-                  </button>
-                </div>
-
-                <Button variant="outline" size="sm" onClick={fetchPeriodAttendance} leftIcon={<RefreshCw className={`h-3.5 w-3.5 ${attendanceLoading ? "animate-spin" : ""}`} />}>
-                  Refresh
-                </Button>
               </div>
             </CardHeader>
 
@@ -2624,12 +2372,12 @@ function StaffPageContent() {
                 leftIcon={<Plus className="h-4 w-4" />}
                 onClick={() => setIsApplyLeaveOpen(true)}
               >
-                Apply Leave
+                + Record Staff Leave
               </Button>
             </div>
           </div>
 
-          {/* Metric Strip */}
+          {/* Management Metric Strip */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <Card variant="glass" hoverEffect className="min-w-0 p-4">
               <div className="flex items-center justify-between">
@@ -2642,7 +2390,7 @@ function StaffPageContent() {
                 <span className="text-2xl font-black tracking-tight text-amber-600 dark:text-amber-400">
                   <NumberFlow value={leaves.filter((l) => l.status === "pending").length} />
                 </span>
-                <span className="text-[11px] text-slate-400">requests</span>
+                <span className="text-[11px] text-slate-400">action required</span>
               </div>
             </Card>
 
@@ -2663,86 +2411,68 @@ function StaffPageContent() {
 
             <Card variant="glass" hoverEffect className="min-w-0 p-4">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Casual Leave Quota</span>
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Approved This Month</span>
                 <div className="h-8 w-8 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-                  <Calendar className="h-4 w-4" />
+                  <CheckCircle2 className="h-4 w-4" />
                 </div>
               </div>
               <div className="mt-2 flex items-baseline gap-2">
                 <span className="text-2xl font-black tracking-tight text-emerald-600 dark:text-emerald-400">
-                  {leaveBalance.casualTotal - leaveBalance.casualUsed}
+                  <NumberFlow value={leaves.filter((l) => l.status === "approved" && l.startDate.startsWith(new Date().toISOString().substring(0, 7))).length} />
                 </span>
-                <span className="text-[11px] text-slate-400">days left</span>
+                <span className="text-[11px] text-slate-400">scheduled</span>
               </div>
             </Card>
 
             <Card variant="glass" hoverEffect className="min-w-0 p-4">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Sick Leave Quota</span>
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Processed Requests</span>
                 <div className="h-8 w-8 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-600 dark:text-purple-400">
                   <Shield className="h-4 w-4" />
                 </div>
               </div>
               <div className="mt-2 flex items-baseline gap-2">
                 <span className="text-2xl font-black tracking-tight text-purple-600 dark:text-purple-400">
-                  {leaveBalance.sickTotal - leaveBalance.sickUsed}
+                  <NumberFlow value={leaves.filter((l) => l.status !== "pending").length} />
                 </span>
-                <span className="text-[11px] text-slate-400">days left</span>
+                <span className="text-[11px] text-slate-400">completed</span>
               </div>
             </Card>
           </div>
 
-          {/* Balances Summary Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-500 dark:text-slate-400">Casual Leave (CL)</span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300">
-                  {leaveBalance.casualTotal - leaveBalance.casualUsed} Left
-                </span>
-              </div>
-              <p className="text-2xl font-bold text-slate-900 dark:text-white mt-2">
-                {leaveBalance.casualUsed} / {leaveBalance.casualTotal} <span className="text-xs font-normal text-slate-400">Days Taken</span>
-              </p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-500 dark:text-slate-400">Sick Leave (SL)</span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
-                  {leaveBalance.sickTotal - leaveBalance.sickUsed} Left
-                </span>
-              </div>
-              <p className="text-2xl font-bold text-slate-900 dark:text-white mt-2">
-                {leaveBalance.sickUsed} / {leaveBalance.sickTotal} <span className="text-xs font-normal text-slate-400">Days Taken</span>
-              </p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-500 dark:text-slate-400">Earned / Annual Leave (EL)</span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300">
-                  {leaveBalance.earnedTotal - leaveBalance.earnedUsed} Left
-                </span>
-              </div>
-              <p className="text-2xl font-bold text-slate-900 dark:text-white mt-2">
-                {leaveBalance.earnedUsed} / {leaveBalance.earnedTotal} <span className="text-xs font-normal text-slate-400">Days Taken</span>
-              </p>
-            </div>
-          </div>
-
           {/* Leave Requests Table */}
           <Card variant="glass">
-            <CardHeader className="flex flex-row items-center justify-between pb-3">
+            <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3">
               <div>
                 <CardTitle className="text-base sm:text-lg">Leave Applications & Approvals Queue</CardTitle>
                 <CardDescription className="text-xs">
                   Review, approve, or reject employee leave requests. Approvals automatically sync with payroll deductions.
                 </CardDescription>
               </div>
-              <Button variant="glow" size="sm" onClick={() => setIsApplyLeaveOpen(true)} leftIcon={<Plus className="h-3.5 w-3.5" />}>
-                Apply Leave
-              </Button>
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Filter Tabs: All, Pending, Approved, Rejected */}
+                <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60">
+                  {(["all", "pending", "approved", "rejected"] as const).map((st) => (
+                    <button
+                      key={st}
+                      type="button"
+                      onClick={() => setLeaveStatusFilter(st)}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold capitalize transition-all ${
+                        leaveStatusFilter === st
+                          ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs"
+                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                      }`}
+                    >
+                      <span>{st === "all" ? "All" : st}</span>
+                      {st === "pending" && leaves.filter((l) => l.status === "pending").length > 0 && (
+                        <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500/20 text-amber-700 dark:text-amber-300 font-bold">
+                          {leaves.filter((l) => l.status === "pending").length}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="p-0 overflow-x-auto">
               <Table className="min-w-[700px]">
@@ -2757,24 +2487,28 @@ function StaffPageContent() {
                   </TableRow>
                 </TableHeader>
                 <TableBody className="divide-y divide-slate-200 dark:divide-slate-800/60">
-                  {leaves.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="py-12">
-                        <EmptyState
-                          compact
-                          icon={<CalendarCheck className="h-6 w-6 text-slate-400" />}
-                          title="No leave applications yet"
-                          description="Staff leave requests submitted via WhatsApp or dashboard will show here."
-                          action={{
-                            label: "Apply Leave",
-                            icon: <Plus className="h-3.5 w-3.5" />,
-                            onClick: () => setIsApplyLeaveOpen(true),
-                          }}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    leaves.map((lv) => (
+                  {(() => {
+                    const filteredLeaves = leaves.filter((lv) => leaveStatusFilter === "all" || lv.status === leaveStatusFilter);
+                    if (filteredLeaves.length === 0) {
+                      return (
+                        <TableRow>
+                          <TableCell colSpan={6} className="py-12">
+                            <EmptyState
+                              compact
+                              icon={<CalendarCheck className="h-6 w-6 text-slate-400" />}
+                              title={leaveStatusFilter === "all" ? "No leave applications yet" : `No ${leaveStatusFilter} leave applications`}
+                              description="Staff leave requests submitted via WhatsApp or dashboard will show here."
+                              action={{
+                                label: "+ Record Staff Leave",
+                                icon: <Plus className="h-3.5 w-3.5" />,
+                                onClick: () => setIsApplyLeaveOpen(true),
+                              }}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      );
+                    }
+                    return filteredLeaves.map((lv) => (
                       <TableRow key={lv.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                         <TableCell className="py-3.5 pl-6">
                           <p className="font-semibold text-slate-900 dark:text-white">{lv.employeeName || "Employee"}</p>
@@ -2829,8 +2563,8 @@ function StaffPageContent() {
                           )}
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
+                    ));
+                  })()}
                 </TableBody>
               </Table>
             </CardContent>
@@ -3465,6 +3199,88 @@ function StaffPageContent() {
         </form>
       </Modal>
 
+      {/* ── MODAL: PERSONAL CLOCK-IN TERMINAL ────────────────────────────────── */}
+      <Modal
+        isOpen={isMyClockInModalOpen}
+        onClose={() => setIsMyClockInModalOpen(false)}
+        title="Personal Timeclock Terminal"
+        description="GPS-verified clock-in and work break management for your shift."
+      >
+        <div className="space-y-4">
+          <div className="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs">
+            <div>
+              <p className="text-slate-500 dark:text-slate-400">Workplace Boundary</p>
+              <p className="font-semibold text-slate-900 dark:text-white">
+                Radius: {geofence.radiusMeters}m &bull; {geofence.address}
+              </p>
+              <p className="text-[11px] text-slate-400 font-mono mt-0.5">
+                {currentCoords ? `GPS: ${currentCoords.lat.toFixed(5)}, ${currentCoords.lng.toFixed(5)}` : "Detecting GPS..."}
+              </p>
+            </div>
+            <div className="text-right">
+              <Badge variant={isInsideGeofence ? "success" : "danger"} dot size="sm">
+                {isInsideGeofence ? "Inside Geofence" : "Outside Boundary"}
+              </Badge>
+              <p className={`text-xs font-bold mt-1.5 ${isInsideGeofence ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                {gpsDistance !== null ? `${gpsDistance}m away` : "Calculating..."}
+              </p>
+            </div>
+          </div>
+
+          {geofence.enforceGeofence && !isInsideGeofence && !isClockedIn && (
+            <p className="text-xs text-rose-500 flex items-center gap-1.5 font-medium bg-rose-50 dark:bg-rose-950/40 p-2.5 rounded-xl border border-rose-200 dark:border-rose-900/60">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              Strict geofence enforcement active: You must be within {geofence.radiusMeters}m of the restaurant to clock in.
+            </p>
+          )}
+
+          <div className="flex items-center gap-3 pt-2">
+            {!isClockedIn ? (
+              <Button
+                variant="glow"
+                size="default"
+                className="w-full"
+                leftIcon={<CheckCircle2 className="h-4 w-4" />}
+                isLoading={clockingIn}
+                disabled={geofence.enforceGeofence && !isInsideGeofence}
+                onClick={async () => {
+                  await handleClockIn();
+                  setIsMyClockInModalOpen(false);
+                }}
+              >
+                Clock In Now
+              </Button>
+            ) : (
+              <>
+                <Button
+                  variant="secondary"
+                  size="default"
+                  className={`flex-1 ${isOnBreak ? "bg-amber-500 text-white hover:bg-amber-600" : ""}`}
+                  leftIcon={<Coffee className="h-4 w-4" />}
+                  isLoading={togglingBreak}
+                  onClick={handleToggleBreak}
+                >
+                  {isOnBreak ? "Resume Work" : "Take Break"}
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="default"
+                  className="flex-1"
+                  leftIcon={<XCircle className="h-4 w-4" />}
+                  isLoading={clockingOut}
+                  onClick={async () => {
+                    await handleClockOut();
+                    setIsMyClockInModalOpen(false);
+                  }}
+                >
+                  Clock Out
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      </Modal>
+
       {/* ── MODAL: GEOFENCE SETTINGS ─────────────────────────────────────────── */}
       <Modal
         isOpen={isGeofenceModalOpen}
@@ -3672,10 +3488,26 @@ function StaffPageContent() {
       <Modal
         isOpen={isApplyLeaveOpen}
         onClose={() => setIsApplyLeaveOpen(false)}
-        title="Apply for Leave"
-        description="Submit leave request for management approval. Balances update upon approval."
+        title="Record Staff Leave Request"
+        description="Log or submit a time-off request for review and automatic payroll deduction."
       >
         <form onSubmit={handleApplyLeave} className="space-y-4">
+          <div>
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 block">Staff Member</label>
+            <select
+              value={leaveStaffId}
+              onChange={(e) => setLeaveStaffId(e.target.value)}
+              className="w-full rounded-xl text-xs text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-2 outline-none"
+            >
+              <option value="">{currentUser?.name ? `${currentUser.name} (Myself)` : "Select staff member"}</option>
+              {displayStaff.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name} ({s.employeeId || s.role})
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div>
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 block">Leave Category</label>
             <select
@@ -3736,7 +3568,7 @@ function StaffPageContent() {
               Cancel
             </Button>
             <Button variant="glow" type="submit">
-              Submit Application
+              Record Leave
             </Button>
           </div>
         </form>
