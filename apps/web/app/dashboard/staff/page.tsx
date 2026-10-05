@@ -39,6 +39,8 @@ import {
   Award,
   ChevronDown,
   ChevronUp,
+  LayoutGrid,
+  List,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -122,6 +124,7 @@ interface AttendanceRecord {
   status: "present" | "late" | "half_day" | "absent" | "leave" | "holiday" | "weekly_off";
   workingHours: number;
   breakHours: number;
+  breakMinutes?: number;
   overtimeHours: number;
   isManualOverride?: boolean;
   markedByName?: string;
@@ -250,7 +253,8 @@ export default function StaffPage() {
   const [holidays, setHolidays] = React.useState<Holiday[]>([]);
 
   // ── Multi-Scale Attendance & Manager Override State ─────────────────────────
-  const [attendancePeriod, setAttendancePeriod] = React.useState<"day" | "week" | "month" | "year" | "custom">("day");
+  const [attendancePeriod, setAttendancePeriod] = React.useState<"day" | "week" | "month" | "year" | "custom">("month");
+  const [attendanceViewMode, setAttendanceViewMode] = React.useState<"matrix" | "table">("matrix");
   const [attendanceSelectedDate, setAttendanceSelectedDate] = React.useState<string>(new Date().toISOString().substring(0, 10));
   const [attendanceSelectedMonth, setAttendanceSelectedMonth] = React.useState<string>(new Date().toISOString().substring(0, 7));
   const [attendanceSelectedYear, setAttendanceSelectedYear] = React.useState<string>(String(new Date().getFullYear()));
@@ -1058,6 +1062,142 @@ export default function StaffPage() {
   // Display staff list directly
   const displayStaff = staffList;
 
+  // ── Monthly & Weekly Attendance Timesheet Matrix Computation ──────────────
+  const todayStr = new Date().toISOString().substring(0, 10);
+
+  const matrixDays = React.useMemo(() => {
+    if (attendancePeriod === "week") {
+      const d = new Date(attendanceSelectedDate || new Date());
+      const day = d.getDay();
+      const diffToMon = d.getDate() - day + (day === 0 ? -6 : 1);
+      const mon = new Date(d.setDate(diffToMon));
+      return Array.from({ length: 7 }, (_, i) => {
+        const cur = new Date(mon);
+        cur.setDate(mon.getDate() + i);
+        const dateStr = cur.toISOString().substring(0, 10);
+        const dayNum = cur.getDate();
+        const dayOfWeek = cur.getDay();
+        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+        const weekdayShort = cur.toLocaleDateString("en-US", { weekday: "short" });
+        const weekdayLetter = weekdayShort.charAt(0);
+        const isToday = dateStr === todayStr;
+        return { dayNum, dateStr, isWeekend, weekdayShort, weekdayLetter, isToday };
+      });
+    }
+
+    const parts = (attendanceSelectedMonth || new Date().toISOString().substring(0, 7)).split("-");
+    const y = parseInt(parts[0], 10) || new Date().getFullYear();
+    const m = parseInt(parts[1], 10) || new Date().getMonth() + 1;
+    const totalDays = new Date(y, m, 0).getDate();
+
+    return Array.from({ length: totalDays }, (_, i) => {
+      const dayNum = i + 1;
+      const dateStr = `${parts[0]}-${String(m).padStart(2, "0")}-${String(dayNum).padStart(2, "0")}`;
+      const dateObj = new Date(y, m - 1, dayNum);
+      const dayOfWeek = dateObj.getDay();
+      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+      const weekdayShort = dateObj.toLocaleDateString("en-US", { weekday: "short" });
+      const weekdayLetter = weekdayShort.charAt(0);
+      const isToday = dateStr === todayStr;
+      return { dayNum, dateStr, isWeekend, weekdayShort, weekdayLetter, isToday };
+    });
+  }, [attendancePeriod, attendanceSelectedMonth, attendanceSelectedDate, todayStr]);
+
+  const attendanceStaffList = React.useMemo(() => {
+    const staffMap = new Map<string, { id: string; name: string; employeeId: string; department: string; role: string }>();
+    for (const s of displayStaff) {
+      if (attendanceFilterStaff !== "all" && s.id !== attendanceFilterStaff) continue;
+      if (attendanceFilterDept !== "all" && s.department !== attendanceFilterDept) continue;
+      staffMap.set(s.id, {
+        id: s.id,
+        name: s.name,
+        employeeId: s.employeeId || "DF-EMP",
+        department: s.department || "Operations",
+        role: s.role || "Staff",
+      });
+    }
+    for (const rec of periodAttendance) {
+      if (rec.userId && !staffMap.has(rec.userId)) {
+        if (attendanceFilterStaff !== "all" && rec.userId !== attendanceFilterStaff) continue;
+        if (attendanceFilterDept !== "all" && rec.department !== attendanceFilterDept) continue;
+        staffMap.set(rec.userId, {
+          id: rec.userId,
+          name: rec.employeeName || "Staff Member",
+          employeeId: rec.employeeId || "DF-EMP",
+          department: rec.department || "Operations",
+          role: "Staff",
+        });
+      }
+    }
+    return Array.from(staffMap.values());
+  }, [displayStaff, periodAttendance, attendanceFilterStaff, attendanceFilterDept]);
+
+  const attendanceLookup = React.useMemo(() => {
+    const map = new Map<string, AttendanceRecord>();
+    for (const rec of periodAttendance) {
+      if (rec.userId && rec.date) {
+        map.set(`${rec.userId}_${rec.date}`, rec);
+      }
+    }
+    return map;
+  }, [periodAttendance]);
+
+  const staffStats = React.useMemo(() => {
+    const stats = new Map<string, { present: number; late: number; halfDay: number; absent: number; leave: number; totalHours: number }>();
+    for (const staff of attendanceStaffList) {
+      let present = 0;
+      let late = 0;
+      let halfDay = 0;
+      let absent = 0;
+      let leave = 0;
+      let totalHours = 0;
+
+      for (const d of matrixDays) {
+        const rec = attendanceLookup.get(`${staff.id}_${d.dateStr}`);
+        if (rec) {
+          if (rec.status === "present") present++;
+          else if (rec.status === "late") late++;
+          else if (rec.status === "half_day") halfDay++;
+          else if (rec.status === "absent") absent++;
+          else if (rec.status === "leave") leave++;
+
+          if (rec.workingHours) {
+            totalHours += rec.workingHours;
+          }
+        }
+      }
+      stats.set(staff.id, { present, late, halfDay, absent, leave, totalHours: Math.round(totalHours * 10) / 10 });
+    }
+    return stats;
+  }, [attendanceStaffList, matrixDays, attendanceLookup]);
+
+  const handleCellClick = (staffId: string, date: string) => {
+    setManualStaffId(staffId);
+    setManualDate(date);
+    const existing = attendanceLookup.get(`${staffId}_${date}`);
+    if (existing) {
+      setManualStatus(existing.status);
+      if (existing.checkInTime) {
+        const d = new Date(existing.checkInTime);
+        setManualCheckIn(d.toTimeString().substring(0, 5));
+      }
+      if (existing.checkOutTime) {
+        const d = new Date(existing.checkOutTime);
+        setManualCheckOut(d.toTimeString().substring(0, 5));
+      }
+      const breakMins = existing.breakMinutes ?? (existing.breakHours ? Math.round(existing.breakHours * 60) : 60);
+      setManualBreakMinutes(String(breakMins));
+      setManualReason(existing.manualReason || existing.notes || "Manager manual correction");
+    } else {
+      setManualStatus("present");
+      setManualCheckIn("09:00");
+      setManualCheckOut("18:00");
+      setManualBreakMinutes("60");
+      setManualReason("Staff WhatsApp unavailable / device failure");
+    }
+    setIsManualAttendanceOpen(true);
+  };
+
   // Geofence status calculation
   const isInsideGeofence = gpsDistance !== null ? gpsDistance <= geofence.radiusMeters : true;
 
@@ -1613,7 +1753,14 @@ export default function StaffPage() {
                       <button
                         key={p.id}
                         type="button"
-                        onClick={() => setAttendancePeriod(p.id as typeof attendancePeriod)}
+                        onClick={() => {
+                          setAttendancePeriod(p.id as typeof attendancePeriod);
+                          if (p.id === "month" || p.id === "week") {
+                            setAttendanceViewMode("matrix");
+                          } else if (p.id === "day") {
+                            setAttendanceViewMode("table");
+                          }
+                        }}
                         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
                           isActive
                             ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm"
@@ -1908,9 +2055,9 @@ export default function StaffPage() {
             </div>
           </div>
 
-          {/* Attendance Register Table */}
+          {/* Attendance Register Table & Timesheet Matrix */}
           <Card variant="glass">
-            <CardHeader className="flex flex-row items-center justify-between pb-3">
+            <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3">
               <div>
                 <CardTitle className="text-base sm:text-lg flex items-center gap-2">
                   <span>
@@ -1925,152 +2072,404 @@ export default function StaffPage() {
                       : "Custom Range Attendance"}
                   </span>
                   <Badge variant="neutral" size="sm">
-                    {periodAttendance.length} records
+                    {attendanceViewMode === "matrix" ? `${attendanceStaffList.length} staff` : `${periodAttendance.length} records`}
                   </Badge>
                 </CardTitle>
                 <CardDescription className="text-xs">
-                  Detailed punch timestamps, working hours, verification channel, and manager override notes.
+                  {attendanceViewMode === "matrix"
+                    ? "Staff timesheet calendar matrix. Click any day cell to view or mark attendance."
+                    : "Detailed punch timestamps, working hours, verification channel, and manager override notes."}
                 </CardDescription>
               </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={fetchPeriodAttendance} leftIcon={<RefreshCw className="h-3.5 w-3.5" />}>
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* View Switcher: Matrix Grid vs Detailed Audit Log */}
+                <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60">
+                  <button
+                    type="button"
+                    onClick={() => setAttendanceViewMode("matrix")}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                      attendanceViewMode === "matrix"
+                        ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                    }`}
+                  >
+                    <LayoutGrid className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">Timesheet</span> Grid
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAttendanceViewMode("table")}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                      attendanceViewMode === "table"
+                        ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                    }`}
+                  >
+                    <List className="h-3.5 w-3.5" />
+                    Audit Log
+                  </button>
+                </div>
+
+                <Button variant="outline" size="sm" onClick={fetchPeriodAttendance} leftIcon={<RefreshCw className={`h-3.5 w-3.5 ${attendanceLoading ? "animate-spin" : ""}`} />}>
                   Refresh
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="p-0 overflow-x-auto">
-              <Table className="min-w-[850px]">
-                <TableHeader className="sticky top-0 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm z-10">
-                  <TableRow className="text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
-                    <TableHead className="py-3.5 pl-6">Date</TableHead>
-                    <TableHead className="py-3.5">Staff Member</TableHead>
-                    <TableHead className="py-3.5">Department</TableHead>
-                    <TableHead className="py-3.5">Check-In</TableHead>
-                    <TableHead className="py-3.5">Check-Out</TableHead>
-                    <TableHead className="py-3.5">Working Hours</TableHead>
-                    <TableHead className="py-3.5">Status</TableHead>
-                    <TableHead className="py-3.5">Verification Source</TableHead>
-                    <TableHead className="py-3.5 text-right pr-6">Action</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody className="divide-y divide-slate-200 dark:divide-slate-800/60">
-                  {periodAttendance.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={9} className="py-12">
-                        <EmptyState
-                          compact
-                          icon={<Clock className="h-6 w-6 text-slate-400" />}
-                          title="No attendance records found for this period"
-                          description="Staff members can clock in via WhatsApp or GPS, or you can record attendance manually using 'Mark Staff Attendance'."
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    periodAttendance.map((rec) => (
-                      <TableRow key={rec.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                        <TableCell className="py-3.5 pl-6 font-mono text-xs text-slate-700 dark:text-slate-300">
-                          {rec.date}
-                        </TableCell>
-                        <TableCell className="py-3.5">
-                          <div className="flex items-center gap-2.5">
-                            <Avatar fallback={rec.employeeName} size="sm" />
-                            <div>
-                              <p className="font-semibold text-slate-900 dark:text-white text-xs">{rec.employeeName}</p>
-                              <p className="text-[10px] text-slate-400 font-mono">{rec.employeeId}</p>
+
+            {attendanceViewMode === "matrix" ? (
+              <div className="space-y-0">
+                {/* Visual Legend Bar */}
+                <div className="flex items-center justify-between px-5 py-2.5 bg-slate-50/80 dark:bg-slate-900/60 border-y border-slate-200 dark:border-slate-800 text-xs flex-wrap gap-2">
+                  <div className="flex items-center gap-2.5 sm:gap-4 flex-wrap text-[11px] text-slate-600 dark:text-slate-400 font-medium">
+                    <span className="font-bold text-slate-700 dark:text-slate-300">Status Key:</span>
+                    <span className="inline-flex items-center gap-1">
+                      <span className="w-5 h-5 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-bold flex items-center justify-center border border-emerald-500/30 text-[10px]">P</span>
+                      Present
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <span className="w-5 h-5 rounded bg-rose-500/15 text-rose-700 dark:text-rose-300 font-bold flex items-center justify-center border border-rose-500/30 text-[10px]">A</span>
+                      Absent
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <span className="w-5 h-5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 font-bold flex items-center justify-center border border-amber-500/30 text-[10px]">L</span>
+                      Late
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <span className="w-5 h-5 rounded bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 font-bold flex items-center justify-center border border-indigo-500/30 text-[10px]">HD</span>
+                      Half Day
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <span className="w-5 h-5 rounded bg-teal-500/15 text-teal-700 dark:text-teal-300 font-bold flex items-center justify-center border border-teal-500/30 text-[10px]">LV</span>
+                      Leave
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <span className="w-5 h-5 rounded bg-slate-200/60 dark:bg-slate-800 text-slate-500 font-medium flex items-center justify-center text-[9px]">OFF</span>
+                      Weekend
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400 italic">
+                    💡 Click any cell to view details or mark attendance
+                  </div>
+                </div>
+
+                {/* Timesheet Matrix Table */}
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse text-left text-xs">
+                    <thead>
+                      <tr className="bg-slate-100/90 dark:bg-slate-800/90 text-slate-600 dark:text-slate-300 text-[11px] font-semibold uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
+                        <th className="py-3 px-4 sticky left-0 z-20 bg-slate-100 dark:bg-slate-800 min-w-[200px] border-r border-slate-200 dark:border-slate-700 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
+                          Staff Member ({attendanceStaffList.length})
+                        </th>
+                        {matrixDays.map((d) => (
+                          <th
+                            key={d.dateStr}
+                            className={`py-2 px-1 text-center min-w-[36px] max-w-[40px] border-r border-slate-200/60 dark:border-slate-800/60 ${
+                              d.isToday
+                                ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-bold ring-1 ring-inset ring-emerald-500/40"
+                                : d.isWeekend
+                                ? "bg-slate-200/40 dark:bg-slate-800/40 text-slate-400"
+                                : ""
+                            }`}
+                          >
+                            <div className="text-[12px] font-mono leading-tight">{d.dayNum}</div>
+                            <div className="text-[9px] font-normal uppercase text-slate-400 dark:text-slate-500 leading-tight">
+                              {d.weekdayShort}
                             </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="py-3.5 text-xs text-slate-600 dark:text-slate-400">
-                          {rec.department || "Operations"}
-                        </TableCell>
-                        <TableCell className="py-3.5 font-mono text-xs text-slate-800 dark:text-slate-200">
-                          {rec.checkInTime ? new Date(rec.checkInTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—"}
-                        </TableCell>
-                        <TableCell className="py-3.5 font-mono text-xs text-slate-800 dark:text-slate-200">
-                          {rec.checkOutTime ? new Date(rec.checkOutTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : (rec.isOnBreak ? "On Break ☕" : "In Progress")}
-                        </TableCell>
-                        <TableCell className="py-3.5 font-semibold text-xs text-slate-900 dark:text-white">
-                          {rec.workingHours ? `${rec.workingHours}h` : "—"}
-                          {rec.overtimeHours > 0 && <span className="text-[10px] text-emerald-500 ml-1">(+{rec.overtimeHours} OT)</span>}
-                        </TableCell>
-                        <TableCell className="py-3.5">
-                          <Badge
-                            variant={
-                              rec.status === "present"
-                                ? "success"
-                                : rec.status === "late"
-                                ? "warning"
-                                : rec.status === "half_day"
-                                ? "warning"
-                                : rec.status === "leave"
-                                ? "info"
-                                : "danger"
-                            }
-                            dot
-                            size="sm"
-                          >
-                            {rec.status === "late"
-                              ? "Late"
-                              : rec.status === "present"
-                              ? "Present"
-                              : rec.status === "half_day"
-                              ? "Half Day"
-                              : rec.status === "leave"
-                              ? "Leave"
-                              : "Absent"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="py-3.5 text-xs">
-                          {rec.isManualOverride ? (
-                            <span
-                              title={rec.manualReason || rec.notes || "Marked by manager"}
-                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 font-semibold text-[10px]"
-                            >
-                              <UserCog className="h-3 w-3" />
-                              Manual ({rec.markedByName || "Manager"})
-                            </span>
-                          ) : rec.checkInDistance ? (
-                            <span className="inline-flex items-center gap-1 font-mono text-[11px] text-emerald-600 dark:text-emerald-400">
-                              <MapPin className="h-3 w-3" />
-                              GPS ({rec.checkInDistance.toFixed(0)}m)
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400">
-                              <MessageSquare className="h-3 w-3 text-emerald-500" />
-                              WhatsApp Bot
-                            </span>
-                          )}
-                        </TableCell>
-                        <TableCell className="py-3.5 text-right pr-6">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 text-xs px-2"
-                            onClick={() => {
-                              setManualStaffId(rec.userId);
-                              setManualDate(rec.date);
-                              setManualStatus(rec.status);
-                              if (rec.checkInTime) {
-                                const d = new Date(rec.checkInTime);
-                                setManualCheckIn(d.toTimeString().substring(0, 5));
-                              }
-                              if (rec.checkOutTime) {
-                                const d = new Date(rec.checkOutTime);
-                                setManualCheckOut(d.toTimeString().substring(0, 5));
-                              }
-                              setManualReason(rec.manualReason || "Manager manual correction");
-                              setIsManualAttendanceOpen(true);
-                            }}
-                          >
-                            <Edit2 className="h-3 w-3 mr-1" /> Edit
-                          </Button>
+                          </th>
+                        ))}
+                        <th className="py-3 px-2 text-center min-w-[36px] bg-emerald-50/60 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 font-bold border-l border-slate-200 dark:border-slate-800" title="Total Present Days">
+                          P
+                        </th>
+                        <th className="py-3 px-2 text-center min-w-[36px] bg-rose-50/60 dark:bg-rose-950/20 text-rose-700 dark:text-rose-400 font-bold" title="Total Absent Days">
+                          A
+                        </th>
+                        <th className="py-3 px-2 text-center min-w-[36px] bg-amber-50/60 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 font-bold" title="Total Late Days">
+                          L
+                        </th>
+                        <th className="py-3 px-2 text-center min-w-[36px] bg-indigo-50/60 dark:bg-indigo-950/20 text-indigo-700 dark:text-indigo-400 font-bold" title="Total Half Days">
+                          HD
+                        </th>
+                        <th className="py-3 px-2 text-center min-w-[36px] bg-teal-50/60 dark:bg-teal-950/20 text-teal-700 dark:text-teal-400 font-bold" title="Total Leave Days">
+                          LV
+                        </th>
+                        <th className="py-3 px-3 text-right min-w-[70px] bg-slate-100/90 dark:bg-slate-800/90 font-bold border-l border-slate-200 dark:border-slate-800" title="Total Working Hours">
+                          Hrs
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                      {attendanceStaffList.length === 0 ? (
+                        <tr>
+                          <td colSpan={matrixDays.length + 7} className="py-12">
+                            <EmptyState
+                              compact
+                              icon={<Clock className="h-6 w-6 text-slate-400" />}
+                              title="No staff members found"
+                              description="Try adjusting your department or staff filter to view attendance."
+                            />
+                          </td>
+                        </tr>
+                      ) : (
+                        attendanceStaffList.map((st) => {
+                          const stats = staffStats.get(st.id) || { present: 0, late: 0, halfDay: 0, absent: 0, leave: 0, totalHours: 0 };
+                          return (
+                            <tr key={st.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
+                              <td className="py-2.5 px-4 sticky left-0 z-10 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/90 border-r border-slate-200 dark:border-slate-800 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
+                                <div className="flex items-center gap-2.5">
+                                  <Avatar fallback={st.name} size="sm" />
+                                  <div className="min-w-0">
+                                    <p className="font-semibold text-slate-900 dark:text-white text-xs truncate max-w-[130px]">{st.name}</p>
+                                    <div className="flex items-center gap-1.5 mt-0.5">
+                                      <span className="text-[10px] text-slate-400 font-mono">{st.employeeId}</span>
+                                      <span className="text-[9px] px-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 truncate max-w-[70px]">
+                                        {st.department}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                              {matrixDays.map((d) => {
+                                const rec = attendanceLookup.get(`${st.id}_${d.dateStr}`);
+                                const isPast = d.dateStr <= todayStr;
+                                return (
+                                  <td
+                                    key={d.dateStr}
+                                    className={`py-1.5 px-0.5 text-center border-r border-slate-200/50 dark:border-slate-800/50 ${
+                                      d.isToday
+                                        ? "bg-emerald-500/5 dark:bg-emerald-500/10"
+                                        : d.isWeekend
+                                        ? "bg-slate-100/30 dark:bg-slate-900/40"
+                                        : ""
+                                    }`}
+                                  >
+                                    {rec ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleCellClick(st.id, d.dateStr)}
+                                        title={`${st.name} - ${d.dateStr}: ${
+                                          rec.status === "present"
+                                            ? "Present"
+                                            : rec.status === "late"
+                                            ? "Late"
+                                            : rec.status === "half_day"
+                                            ? "Half Day"
+                                            : rec.status === "leave"
+                                            ? "Leave"
+                                            : "Absent"
+                                        } (In: ${rec.checkInTime ? new Date(rec.checkInTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—"} | Out: ${
+                                          rec.checkOutTime ? new Date(rec.checkOutTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—"
+                                        } | ${rec.workingHours || 0}h) • Click to edit`}
+                                        className={`w-7 h-7 mx-auto rounded-md font-bold text-[11px] flex items-center justify-center transition-all hover:scale-110 cursor-pointer shadow-2xs ${
+                                          rec.status === "present"
+                                            ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 hover:border-emerald-500"
+                                            : rec.status === "absent"
+                                            ? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30 hover:border-rose-500"
+                                            : rec.status === "late"
+                                            ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 hover:border-amber-500"
+                                            : rec.status === "half_day"
+                                            ? "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 hover:border-indigo-500"
+                                            : "bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30 hover:border-teal-500"
+                                        }`}
+                                      >
+                                        {rec.status === "present"
+                                          ? "P"
+                                          : rec.status === "absent"
+                                          ? "A"
+                                          : rec.status === "late"
+                                          ? "L"
+                                          : rec.status === "half_day"
+                                          ? "HD"
+                                          : "LV"}
+                                      </button>
+                                    ) : isPast ? (
+                                      d.isWeekend ? (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleCellClick(st.id, d.dateStr)}
+                                          title={`${st.name} - ${d.dateStr}: Weekend • Click to record attendance`}
+                                          className="w-7 h-7 mx-auto rounded-md text-[9px] font-semibold text-slate-400 dark:text-slate-500 hover:bg-slate-200/60 dark:hover:bg-slate-800 flex items-center justify-center transition-colors"
+                                        >
+                                          OFF
+                                        </button>
+                                      ) : (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleCellClick(st.id, d.dateStr)}
+                                          title={`${st.name} - ${d.dateStr}: Not Recorded • Click to mark attendance`}
+                                          className="w-7 h-7 mx-auto rounded-md text-slate-300 dark:text-slate-600 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-500/10 flex items-center justify-center transition-colors border border-dashed border-transparent hover:border-emerald-500/30 text-xs"
+                                        >
+                                          —
+                                        </button>
+                                      )
+                                    ) : (
+                                      <span className="w-7 h-7 mx-auto flex items-center justify-center text-slate-300 dark:text-slate-700 text-xs">
+                                        —
+                                      </span>
+                                    )}
+                                  </td>
+                                );
+                              })}
+                              <td className="py-2.5 px-2 text-center font-bold text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-50/30 dark:bg-emerald-950/10 border-l border-slate-200 dark:border-slate-800">
+                                {stats.present}
+                              </td>
+                              <td className="py-2.5 px-2 text-center font-bold text-xs text-rose-600 dark:text-rose-400 bg-rose-50/30 dark:bg-rose-950/10">
+                                {stats.absent}
+                              </td>
+                              <td className="py-2.5 px-2 text-center font-bold text-xs text-amber-600 dark:text-amber-400 bg-amber-50/30 dark:bg-amber-950/10">
+                                {stats.late}
+                              </td>
+                              <td className="py-2.5 px-2 text-center font-bold text-xs text-indigo-600 dark:text-indigo-400 bg-indigo-50/30 dark:bg-indigo-950/10">
+                                {stats.halfDay}
+                              </td>
+                              <td className="py-2.5 px-2 text-center font-bold text-xs text-teal-600 dark:text-teal-400 bg-teal-50/30 dark:bg-teal-950/10">
+                                {stats.leave}
+                              </td>
+                              <td className="py-2.5 px-3 text-right font-mono font-bold text-xs text-slate-900 dark:text-white bg-slate-50/50 dark:bg-slate-800/50 border-l border-slate-200 dark:border-slate-800">
+                                {stats.totalHours.toFixed(1)}h
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : (
+              <CardContent className="p-0 overflow-x-auto">
+                <Table className="min-w-[850px]">
+                  <TableHeader className="sticky top-0 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm z-10">
+                    <TableRow className="text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
+                      <TableHead className="py-3.5 pl-6">Date</TableHead>
+                      <TableHead className="py-3.5">Staff Member</TableHead>
+                      <TableHead className="py-3.5">Department</TableHead>
+                      <TableHead className="py-3.5">Check-In</TableHead>
+                      <TableHead className="py-3.5">Check-Out</TableHead>
+                      <TableHead className="py-3.5">Working Hours</TableHead>
+                      <TableHead className="py-3.5">Status</TableHead>
+                      <TableHead className="py-3.5">Verification Source</TableHead>
+                      <TableHead className="py-3.5 text-right pr-6">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody className="divide-y divide-slate-200 dark:divide-slate-800/60">
+                    {periodAttendance.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={9} className="py-12">
+                          <EmptyState
+                            compact
+                            icon={<Clock className="h-6 w-6 text-slate-400" />}
+                            title="No attendance records found for this period"
+                            description="Staff members can clock in via WhatsApp or GPS, or you can record attendance manually using 'Mark Staff Attendance'."
+                          />
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
+                    ) : (
+                      periodAttendance.map((rec) => (
+                        <TableRow key={rec.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                          <TableCell className="py-3.5 pl-6 font-mono text-xs text-slate-700 dark:text-slate-300">
+                            {rec.date}
+                          </TableCell>
+                          <TableCell className="py-3.5">
+                            <div className="flex items-center gap-2.5">
+                              <Avatar fallback={rec.employeeName} size="sm" />
+                              <div>
+                                <p className="font-semibold text-slate-900 dark:text-white text-xs">{rec.employeeName}</p>
+                                <p className="text-[10px] text-slate-400 font-mono">{rec.employeeId}</p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-3.5 text-xs text-slate-600 dark:text-slate-400">
+                            {rec.department || "Operations"}
+                          </TableCell>
+                          <TableCell className="py-3.5 font-mono text-xs text-slate-800 dark:text-slate-200">
+                            {rec.checkInTime ? new Date(rec.checkInTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—"}
+                          </TableCell>
+                          <TableCell className="py-3.5 font-mono text-xs text-slate-800 dark:text-slate-200">
+                            {rec.checkOutTime ? new Date(rec.checkOutTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : (rec.isOnBreak ? "On Break ☕" : "In Progress")}
+                          </TableCell>
+                          <TableCell className="py-3.5 font-semibold text-xs text-slate-900 dark:text-white">
+                            {rec.workingHours ? `${rec.workingHours}h` : "—"}
+                            {rec.overtimeHours > 0 && <span className="text-[10px] text-emerald-500 ml-1">(+{rec.overtimeHours} OT)</span>}
+                          </TableCell>
+                          <TableCell className="py-3.5">
+                            <Badge
+                              variant={
+                                rec.status === "present"
+                                  ? "success"
+                                  : rec.status === "late"
+                                  ? "warning"
+                                  : rec.status === "half_day"
+                                  ? "warning"
+                                  : rec.status === "leave"
+                                  ? "info"
+                                  : "danger"
+                              }
+                              dot
+                              size="sm"
+                            >
+                              {rec.status === "late"
+                                ? "Late"
+                                : rec.status === "present"
+                                ? "Present"
+                                : rec.status === "half_day"
+                                ? "Half Day"
+                                : rec.status === "leave"
+                                ? "Leave"
+                                : "Absent"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="py-3.5 text-xs">
+                            {rec.isManualOverride ? (
+                              <span
+                                title={rec.manualReason || rec.notes || "Marked by manager"}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 font-semibold text-[10px]"
+                              >
+                                <UserCog className="h-3 w-3" />
+                                Manual ({rec.markedByName || "Manager"})
+                              </span>
+                            ) : rec.checkInDistance ? (
+                              <span className="inline-flex items-center gap-1 font-mono text-[11px] text-emerald-600 dark:text-emerald-400">
+                                <MapPin className="h-3 w-3" />
+                                GPS ({rec.checkInDistance.toFixed(0)}m)
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400">
+                                <MessageSquare className="h-3 w-3 text-emerald-500" />
+                                WhatsApp Bot
+                              </span>
+                            )}
+                          </TableCell>
+                          <TableCell className="py-3.5 text-right pr-6">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 text-xs px-2"
+                              onClick={() => {
+                                setManualStaffId(rec.userId);
+                                setManualDate(rec.date);
+                                setManualStatus(rec.status);
+                                if (rec.checkInTime) {
+                                  const d = new Date(rec.checkInTime);
+                                  setManualCheckIn(d.toTimeString().substring(0, 5));
+                                }
+                                if (rec.checkOutTime) {
+                                  const d = new Date(rec.checkOutTime);
+                                  setManualCheckOut(d.toTimeString().substring(0, 5));
+                                }
+                                setManualReason(rec.manualReason || "Manager manual correction");
+                                setIsManualAttendanceOpen(true);
+                              }}
+                            >
+                              <Edit2 className="h-3 w-3 mr-1" /> Edit
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            )}
           </Card>
         </div>
       )}

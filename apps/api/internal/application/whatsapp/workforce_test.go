@@ -257,8 +257,16 @@ func TestNumberedLeaveWorkflow(t *testing.T) {
 	if !strings.Contains(strings.ToLower(replyPayslip), "payslip") && !strings.Contains(replyPayslip, "Salary") {
 		t.Errorf("Expected reply to include Payslip or Salary info, got:\n%s", replyPayslip)
 	}
-	if !strings.Contains(replyPayslip, "Reply 0️⃣ for Back to Main Menu") {
-		t.Errorf("Expected reply to have 'Reply 0️⃣ for Back to Main Menu', got:\n%s", replyPayslip)
+	// 8. Test Option "6" (Attendance History)
+	replyAtt, err := svc.ProcessWorkforceMessage(context.Background(), staff, "6", "")
+	if err != nil {
+		t.Fatalf("ProcessWorkforceMessage('6' Attendance) failed: %v", err)
+	}
+	if !strings.Contains(replyAtt, "Attendance History") {
+		t.Errorf("Expected reply to include Attendance History, got:\n%s", replyAtt)
+	}
+	if !strings.Contains(replyAtt, "0️⃣ Back to Main Menu") {
+		t.Errorf("Expected reply to have '0️⃣ Back to Main Menu', got:\n%s", replyAtt)
 	}
 }
 

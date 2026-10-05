@@ -2214,7 +2214,9 @@ func (s *Service) ProcessWorkforceMessage(ctx context.Context, staff *domainuser
 				sb.WriteString(fmt.Sprintf("🕒 *Attendance History (Last 7 Days)*\n👤 *%s*\n\n", staff.Name))
 				for _, h := range history {
 					icon := "✅"
-					if h.Status == domainuser.AttendanceLate {
+					if h.Status == domainuser.AttendanceAbsent {
+						icon = "❌"
+					} else if h.Status == domainuser.AttendanceLate {
 						icon = "⚠️"
 					} else if h.Status == domainuser.AttendanceHalfDay {
 						icon = "🌓"
@@ -2237,6 +2239,8 @@ func (s *Service) ProcessWorkforceMessage(ctx context.Context, staff *domainuser
 				sb.WriteString("\nReply with a number:\n1️⃣ Clock In\n4️⃣ Leave Balances\n0️⃣ Back to Main Menu")
 				reply = sb.String()
 			}
+		} else {
+			reply = "🕒 *Attendance History (Last 7 Days)*\n\nNo records found for the past week.\n\nReply with a number:\n1️⃣ Clock In\n0️⃣ Back to Main Menu"
 		}
 	} else if buttonID == domainwa.BtnWFPayslip || lower == "payslip" || lower == "salary" || lower == "pay" || lower == "7" {
 		var p domainuser.PayrollRecord

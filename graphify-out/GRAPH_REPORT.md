@@ -1,7 +1,7 @@
 # Graph Report - DineFlow  (2026-10-05)
 
 ## Corpus Check
-- 344 files · ~696,114 words
+- 344 files · ~697,838 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 12 file(s) not represented in the graph (top: (none) 6, .example 2, .toml 1)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `72f979f0`
+- Built from commit: `6a4d52ca`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -664,9 +664,9 @@ _Questions this graph is uniquely positioned to answer:_
 - **Why does `react` connect `react` to `tenant-data-store.ts`, `video/page.tsx`, `toast.tsx`, `label.tsx`, `TubesCursor`, `spotlight-cursor.tsx`, `landing-customer-journey.tsx`, `staff/page.tsx`, `peeking-chef.tsx`, `ui/pricing.tsx`, `landing-workflow.tsx`, `cn`, `web/package.json`, `useToast`, `notifications/page.tsx`, `useAuthStore`, `app/layout.tsx`?**
   _High betweenness centrality (0.021) - this node is a cross-community bridge._
 - **Why does `Service` connect `Service` to `go_pkg_time`, `github.com/gin-gonic/gin.Context`, `handlers/whatsapp.go`, `MSG91Provider`, `testing.T`, `OpenWAProvider`, `BadRequest`, `go.mongodb.org/mongo-driver/v2/bson.ObjectID`, `main`?**
-  _High betweenness centrality (0.018) - this node is a cross-community bridge._
-- **Why does `RoomHandler` connect `BadRequest` to `Service`, `Service`, `Setup`, `context.Context`, `NotFound`, `handlers/room.go`, `go.mongodb.org/mongo-driver/v2/bson.ObjectID`?**
   _High betweenness centrality (0.017) - this node is a cross-community bridge._
+- **Why does `RoomHandler` connect `BadRequest` to `Service`, `Service`, `Setup`, `context.Context`, `NotFound`, `handlers/room.go`, `go.mongodb.org/mongo-driver/v2/bson.ObjectID`?**
+  _High betweenness centrality (0.016) - this node is a cross-community bridge._
 - **What connects `TestResult`, `github.com/dineflow/api`, `geminiRequest` to the rest of the system?**
   _831 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `OK` be split into smaller, more focused modules?**
