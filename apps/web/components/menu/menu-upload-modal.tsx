@@ -190,7 +190,8 @@ export function MenuUploadModal({
           imageBase64: base64Data,
           existingItems,
         });
-        if (apiRes.data && (apiRes.data.items || apiRes.data.data)) {
+        const itemsList = apiRes.data?.items || apiRes.data?.data;
+        if (Array.isArray(itemsList) && itemsList.length > 0) {
           data = apiRes.data;
         }
       } catch (apiErr) {
@@ -199,28 +200,44 @@ export function MenuUploadModal({
 
       // 2. Fallback to Next.js route (/api/menu/scan)
       if (!data || !data.items || data.items.length === 0) {
-        const res = await fetch("/api/menu/scan", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            imageBase64: base64Data,
-            existingItems,
-          }),
-        });
+        data = null;
+        let fallbackError = "";
+        try {
+          const res = await fetch("/api/menu/scan", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              imageBase64: base64Data,
+              existingItems,
+            }),
+          });
 
-        if (res.ok) {
-          data = await res.json();
-        } else {
-          let errDetail = `HTTP ${res.status}`;
-          try {
-            const errData = await res.json();
-            errDetail = errData.details || errData.error || errDetail;
-          } catch { /* ignore */ }
-          if (!data) {
-            setIsProcessing(false);
-            addToast("error", "AI Extraction Failed", `Gemini API error: ${errDetail}`);
-            return;
+          if (res.ok) {
+            data = await res.json();
+          } else {
+            let errDetail = `HTTP ${res.status}`;
+            try {
+              const errData = await res.json();
+              errDetail = errData.details || errData.error || errDetail;
+            } catch { /* ignore */ }
+            fallbackError = errDetail;
           }
+        } catch (fetchErr) {
+          fallbackError = fetchErr instanceof Error ? fetchErr.message : "Network error";
+        }
+
+        if (!data || !data.items || data.items.length === 0) {
+          setIsProcessing(false);
+          if (fallbackError) {
+            addToast("error", "AI Extraction Failed", `Gemini API error: ${fallbackError}`);
+          } else {
+            addToast(
+              "warning",
+              "No Items Detected",
+              "AI could not read menu items from this image. Try a clearer photo or higher resolution image."
+            );
+          }
+          return;
         }
       }
 

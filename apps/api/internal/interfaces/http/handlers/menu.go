@@ -543,7 +543,11 @@ func (h *MenuHandler) ScanMenu(c *gin.Context) {
 
 	if h.aiService != nil && req.ImageBase64 != "" {
 		dishes, err := h.aiService.ScanMenuWithVision(c.Request.Context(), req.ImageBase64)
-		if err == nil && len(dishes) > 0 {
+		if err != nil {
+			response.BadRequest(c, "AI_SCAN_FAILED", err.Error())
+			return
+		}
+		if len(dishes) > 0 {
 			response.OK(c, gin.H{
 				"status":  "success",
 				"success": true,

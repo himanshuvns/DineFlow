@@ -3366,7 +3366,7 @@
       "file_type": "code",
       "norm_label": "staffpage()",
       "source_file": "apps/web/app/dashboard/staff/page.tsx",
-      "source_location": "L3738"
+      "source_location": "L4079"
     },
     {
       "id": "apps_web_app_dashboard_staff_page_staffpagecontent",
@@ -15338,7 +15338,7 @@
       "file_type": "code",
       "norm_label": "manualattendanceinput",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L558"
+      "source_location": "L560"
     },
     {
       "id": "staff_service_invitestaff",
@@ -15349,7 +15349,7 @@
       "file_type": "code",
       "norm_label": ".invitestaff()",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L136"
+      "source_location": "L137"
     },
     {
       "id": "staff_service_markmanualattendance",
@@ -15360,7 +15360,7 @@
       "file_type": "code",
       "norm_label": ".markmanualattendance()",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L825"
+      "source_location": "L827"
     },
     {
       "id": "staff_service_updateemployeeprofile",
@@ -15371,7 +15371,7 @@
       "file_type": "code",
       "norm_label": ".updateemployeeprofile()",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L324"
+      "source_location": "L326"
     },
     {
       "id": "staff_service_updatestaff",
@@ -15382,7 +15382,7 @@
       "file_type": "code",
       "norm_label": ".updatestaff()",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L292"
+      "source_location": "L294"
     },
     {
       "id": "staff_updateemployeeprofileinput",
@@ -15393,7 +15393,7 @@
       "file_type": "code",
       "norm_label": "updateemployeeprofileinput",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L84"
+      "source_location": "L85"
     },
     {
       "id": "user_attendancerecord",
@@ -23985,7 +23985,7 @@
       "file_type": "code",
       "norm_label": "clockinrequest",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L548"
+      "source_location": "L550"
     },
     {
       "id": "staff_clockoutrequest",
@@ -23996,7 +23996,7 @@
       "file_type": "code",
       "norm_label": "clockoutrequest",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L553"
+      "source_location": "L555"
     },
     {
       "id": "docs_product_vision_problem_1_fragmented_software_stack",
@@ -30183,7 +30183,7 @@
       "file_type": "code",
       "norm_label": "attendancefilter",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L569"
+      "source_location": "L571"
     },
     {
       "id": "staff_attendancesummary",
@@ -30194,7 +30194,7 @@
       "file_type": "code",
       "norm_label": "attendancesummary",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L578"
+      "source_location": "L580"
     },
     {
       "id": "staff_notificationemitter",
@@ -30227,7 +30227,7 @@
       "file_type": "code",
       "norm_label": ".applyleave()",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1130"
+      "source_location": "L1132"
     },
     {
       "id": "staff_service_approveleave",
@@ -30238,7 +30238,7 @@
       "file_type": "code",
       "norm_label": ".approveleave()",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1222"
+      "source_location": "L1224"
     },
     {
       "id": "staff_service_clockin",
@@ -30249,7 +30249,7 @@
       "file_type": "code",
       "norm_label": ".clockin()",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L591"
+      "source_location": "L593"
     },
     {
       "id": "staff_service_clockout",
@@ -30260,7 +30260,7 @@
       "file_type": "code",
       "norm_label": ".clockout()",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L687"
+      "source_location": "L689"
     },
     {
       "id": "staff_service_createholiday",
@@ -30271,7 +30271,7 @@
       "file_type": "code",
       "norm_label": ".createholiday()",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1676"
+      "source_location": "L1678"
     },
     {
       "id": "staff_service_createshift",
@@ -30282,7 +30282,7 @@
       "file_type": "code",
       "norm_label": ".createshift()",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L529"
+      "source_location": "L531"
     },
     {
       "id": "staff_service_deletestaff",
@@ -30293,7 +30293,7 @@
       "file_type": "code",
       "norm_label": ".deletestaff()",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L389"
+      "source_location": "L391"
     },
     {
       "id": "staff_service_generatepaysliphtml",
@@ -30304,7 +30304,7 @@
       "file_type": "code",
       "norm_label": ".generatepaysliphtml()",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1515"
+      "source_location": "L1517"
     },
     {
       "id": "staff_service_getattendancehistory",
@@ -30315,7 +30315,7 @@
       "file_type": "code",
       "norm_label": ".getattendancehistory()",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1017"
+      "source_location": "L1019"
     },
     {
       "id": "staff_service_getattendancehistorywithfilter",
@@ -30326,7 +30326,7 @@
       "file_type": "code",
       "norm_label": ".getattendancehistorywithfilter()",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L971"
+      "source_location": "L973"
     },
     {
       "id": "staff_service_getattendancesummary",
@@ -30337,7 +30337,7 @@
       "file_type": "code",
       "norm_label": ".getattendancesummary()",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1026"
+      "source_location": "L1028"
     },
     {
       "id": "staff_service_getgeofence",
@@ -30348,7 +30348,7 @@
       "file_type": "code",
       "norm_label": ".getgeofence()",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L405"
+      "source_location": "L407"
     },
     {
       "id": "staff_service_getleavebalances",
@@ -30359,7 +30359,7 @@
       "file_type": "code",
       "norm_label": ".getleavebalances()",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1106"
+      "source_location": "L1108"
     },
     {
       "id": "staff_service_getpayslip",
@@ -30370,7 +30370,7 @@
       "file_type": "code",
       "norm_label": ".getpayslip()",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1504"
+      "source_location": "L1506"
     },
     {
       "id": "staff_service_gettodayattendance",
@@ -30381,7 +30381,7 @@
       "file_type": "code",
       "norm_label": ".gettodayattendance()",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L804"
+      "source_location": "L806"
     },
     {
       "id": "staff_service_initleavebalance",
@@ -30392,7 +30392,7 @@
       "file_type": "code",
       "norm_label": ".initleavebalance()",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1079"
+      "source_location": "L1081"
     },
     {
       "id": "staff_service_listholidays",
@@ -30403,7 +30403,7 @@
       "file_type": "code",
       "norm_label": ".listholidays()",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1636"
+      "source_location": "L1638"
     },
     {
       "id": "staff_service_listleaves",
@@ -30414,7 +30414,7 @@
       "file_type": "code",
       "norm_label": ".listleaves()",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1196"
+      "source_location": "L1198"
     },
     {
       "id": "staff_service_listpayslips",
@@ -30425,7 +30425,7 @@
       "file_type": "code",
       "norm_label": ".listpayslips()",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1478"
+      "source_location": "L1480"
     },
     {
       "id": "staff_service_listshifts",
@@ -30436,7 +30436,7 @@
       "file_type": "code",
       "norm_label": ".listshifts()",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L467"
+      "source_location": "L469"
     },
     {
       "id": "staff_service_liststaff",
@@ -30447,7 +30447,7 @@
       "file_type": "code",
       "norm_label": ".liststaff()",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L101"
+      "source_location": "L102"
     },
     {
       "id": "staff_service_rejectleave",
@@ -30458,7 +30458,7 @@
       "file_type": "code",
       "norm_label": ".rejectleave()",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1282"
+      "source_location": "L1284"
     },
     {
       "id": "staff_service_runpayroll",
@@ -30469,7 +30469,7 @@
       "file_type": "code",
       "norm_label": ".runpayroll()",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1330"
+      "source_location": "L1332"
     },
     {
       "id": "staff_service_setnotificationservice",
@@ -30491,7 +30491,7 @@
       "file_type": "code",
       "norm_label": ".togglebreak()",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L753"
+      "source_location": "L755"
     },
     {
       "id": "staff_service_updategeofence",
@@ -30502,7 +30502,7 @@
       "file_type": "code",
       "norm_label": ".updategeofence()",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L429"
+      "source_location": "L431"
     },
     {
       "id": "user_geofenceconfig",
@@ -36318,7 +36318,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/app/dashboard/staff/page.tsx",
-      "source_location": "L1016",
+      "source_location": "L1161",
       "weight": 1.0
     },
     {
@@ -36354,7 +36354,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/app/dashboard/staff/page.tsx",
-      "source_location": "L2920",
+      "source_location": "L3101",
       "weight": 1.0
     },
     {
@@ -36366,7 +36366,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/app/dashboard/staff/page.tsx",
-      "source_location": "L666",
+      "source_location": "L684",
       "weight": 1.0
     },
     {
@@ -36378,7 +36378,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/app/dashboard/staff/page.tsx",
-      "source_location": "L860",
+      "source_location": "L989",
       "weight": 1.0
     },
     {
@@ -36390,7 +36390,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/app/dashboard/staff/page.tsx",
-      "source_location": "L870",
+      "source_location": "L999",
       "weight": 1.0
     },
     {
@@ -50082,7 +50082,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1157",
+      "source_location": "L1159",
       "weight": 1.0
     },
     {
@@ -50094,24 +50094,12 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1224",
+      "source_location": "L1226",
       "weight": 1.0
     },
     {
       "source": "staff_service_clockin",
       "target": "staff_service_getgeofence",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L596",
-      "weight": 1.0
-    },
-    {
-      "source": "staff_service_clockin",
-      "target": "apps_api_internal_domain_user_user_calculatedistancemeters",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -50123,6 +50111,18 @@
     },
     {
       "source": "staff_service_clockin",
+      "target": "apps_api_internal_domain_user_user_calculatedistancemeters",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/api/internal/application/staff/service.go",
+      "source_location": "L600",
+      "weight": 1.0
+    },
+    {
+      "source": "staff_service_clockin",
       "target": "apps_api_internal_infrastructure_mongodb_scope_newscope",
       "relation": "calls",
       "_origin": "ast",
@@ -50130,7 +50130,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L606",
+      "source_location": "L608",
       "weight": 1.0
     },
     {
@@ -50142,7 +50142,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L635",
+      "source_location": "L637",
       "weight": 1.0
     },
     {
@@ -50154,7 +50154,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L692",
+      "source_location": "L694",
       "weight": 1.0
     },
     {
@@ -50166,7 +50166,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1684",
+      "source_location": "L1686",
       "weight": 1.0
     },
     {
@@ -50178,7 +50178,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L534",
+      "source_location": "L536",
       "weight": 1.0
     },
     {
@@ -50190,7 +50190,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L391",
+      "source_location": "L393",
       "weight": 1.0
     },
     {
@@ -50202,7 +50202,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1516",
+      "source_location": "L1518",
       "weight": 1.0
     },
     {
@@ -50214,7 +50214,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1018",
+      "source_location": "L1020",
       "weight": 1.0
     },
     {
@@ -50226,7 +50226,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L973",
+      "source_location": "L975",
       "weight": 1.0
     },
     {
@@ -50238,7 +50238,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1027",
+      "source_location": "L1029",
       "weight": 1.0
     },
     {
@@ -50250,7 +50250,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L407",
+      "source_location": "L409",
       "weight": 1.0
     },
     {
@@ -50262,7 +50262,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1109",
+      "source_location": "L1111",
       "weight": 1.0
     },
     {
@@ -50274,7 +50274,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1114",
+      "source_location": "L1116",
       "weight": 1.0
     },
     {
@@ -50286,7 +50286,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1506",
+      "source_location": "L1508",
       "weight": 1.0
     },
     {
@@ -50298,7 +50298,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L807",
+      "source_location": "L809",
       "weight": 1.0
     },
     {
@@ -50310,7 +50310,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1082",
+      "source_location": "L1084",
       "weight": 1.0
     },
     {
@@ -50322,7 +50322,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L141",
+      "source_location": "L142",
       "weight": 1.0
     },
     {
@@ -50334,7 +50334,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L173",
+      "source_location": "L174",
       "weight": 1.0
     },
     {
@@ -50346,7 +50346,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L178",
+      "source_location": "L179",
       "weight": 1.0
     },
     {
@@ -50358,7 +50358,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L234",
+      "source_location": "L235",
       "weight": 1.0
     },
     {
@@ -50370,7 +50370,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L265",
+      "source_location": "L267",
       "weight": 1.0
     },
     {
@@ -50382,7 +50382,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1642",
+      "source_location": "L1644",
       "weight": 1.0
     },
     {
@@ -50394,7 +50394,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1198",
+      "source_location": "L1200",
       "weight": 1.0
     },
     {
@@ -50406,7 +50406,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1480",
+      "source_location": "L1482",
       "weight": 1.0
     },
     {
@@ -50418,7 +50418,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L469",
+      "source_location": "L471",
       "weight": 1.0
     },
     {
@@ -50430,7 +50430,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L103",
+      "source_location": "L104",
       "weight": 1.0
     },
     {
@@ -50442,7 +50442,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L841",
+      "source_location": "L843",
       "weight": 1.0
     },
     {
@@ -50454,7 +50454,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L902",
+      "source_location": "L904",
       "weight": 1.0
     },
     {
@@ -50466,7 +50466,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1284",
+      "source_location": "L1286",
       "weight": 1.0
     },
     {
@@ -50478,7 +50478,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1335",
+      "source_location": "L1337",
       "weight": 1.0
     },
     {
@@ -50490,7 +50490,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1341",
+      "source_location": "L1343",
       "weight": 1.0
     },
     {
@@ -50502,7 +50502,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L758",
+      "source_location": "L760",
       "weight": 1.0
     },
     {
@@ -50514,7 +50514,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L326",
+      "source_location": "L328",
       "weight": 1.0
     },
     {
@@ -50526,7 +50526,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L335",
+      "source_location": "L337",
       "weight": 1.0
     },
     {
@@ -50538,7 +50538,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L431",
+      "source_location": "L433",
       "weight": 1.0
     },
     {
@@ -50550,7 +50550,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L462",
+      "source_location": "L464",
       "weight": 1.0
     },
     {
@@ -50562,7 +50562,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L294",
+      "source_location": "L296",
       "weight": 1.0
     },
     {
@@ -50574,7 +50574,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L303",
+      "source_location": "L305",
       "weight": 1.0
     },
     {
@@ -54990,7 +54990,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L570",
+      "source_location": "L572",
       "weight": 1.0
     },
     {
@@ -55014,7 +55014,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L81",
+      "source_location": "L82",
       "weight": 1.0
     },
     {
@@ -55026,7 +55026,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L559",
+      "source_location": "L561",
       "weight": 1.0
     },
     {
@@ -55038,7 +55038,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L563",
+      "source_location": "L565",
       "weight": 1.0
     },
     {
@@ -55074,7 +55074,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L91",
+      "source_location": "L92",
       "weight": 1.0
     },
     {
@@ -55086,7 +55086,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L92",
+      "source_location": "L93",
       "weight": 1.0
     },
     {
@@ -55098,7 +55098,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L94",
+      "source_location": "L95",
       "weight": 1.0
     },
     {
@@ -55110,7 +55110,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L95",
+      "source_location": "L96",
       "weight": 1.0
     },
     {
@@ -55122,7 +55122,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L96",
+      "source_location": "L97",
       "weight": 1.0
     },
     {
@@ -94925,7 +94925,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1130",
+      "source_location": "L1132",
       "weight": 1.0
     },
     {
@@ -94937,7 +94937,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1130",
+      "source_location": "L1132",
       "weight": 1.0
     },
     {
@@ -94949,7 +94949,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1222",
+      "source_location": "L1224",
       "weight": 1.0
     },
     {
@@ -94961,7 +94961,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1222",
+      "source_location": "L1224",
       "weight": 1.0
     },
     {
@@ -94973,7 +94973,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L591",
+      "source_location": "L593",
       "weight": 1.0
     },
     {
@@ -94985,7 +94985,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L591",
+      "source_location": "L593",
       "weight": 1.0
     },
     {
@@ -94997,7 +94997,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L687",
+      "source_location": "L689",
       "weight": 1.0
     },
     {
@@ -95009,7 +95009,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L687",
+      "source_location": "L689",
       "weight": 1.0
     },
     {
@@ -95021,7 +95021,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1676",
+      "source_location": "L1678",
       "weight": 1.0
     },
     {
@@ -95033,7 +95033,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1676",
+      "source_location": "L1678",
       "weight": 1.0
     },
     {
@@ -95045,7 +95045,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L529",
+      "source_location": "L531",
       "weight": 1.0
     },
     {
@@ -95057,7 +95057,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L529",
+      "source_location": "L531",
       "weight": 1.0
     },
     {
@@ -95069,7 +95069,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L389",
+      "source_location": "L391",
       "weight": 1.0
     },
     {
@@ -95081,7 +95081,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L389",
+      "source_location": "L391",
       "weight": 1.0
     },
     {
@@ -95093,7 +95093,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1515",
+      "source_location": "L1517",
       "weight": 1.0
     },
     {
@@ -95105,7 +95105,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1515",
+      "source_location": "L1517",
       "weight": 1.0
     },
     {
@@ -95117,7 +95117,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1017",
+      "source_location": "L1019",
       "weight": 1.0
     },
     {
@@ -95129,7 +95129,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1017",
+      "source_location": "L1019",
       "weight": 1.0
     },
     {
@@ -95141,7 +95141,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L971",
+      "source_location": "L973",
       "weight": 1.0
     },
     {
@@ -95153,7 +95153,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L971",
+      "source_location": "L973",
       "weight": 1.0
     },
     {
@@ -95165,7 +95165,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L971",
+      "source_location": "L973",
       "weight": 1.0
     },
     {
@@ -95177,7 +95177,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1026",
+      "source_location": "L1028",
       "weight": 1.0
     },
     {
@@ -95189,7 +95189,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1026",
+      "source_location": "L1028",
       "weight": 1.0
     },
     {
@@ -95201,7 +95201,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L405",
+      "source_location": "L407",
       "weight": 1.0
     },
     {
@@ -95213,7 +95213,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L405",
+      "source_location": "L407",
       "weight": 1.0
     },
     {
@@ -95225,7 +95225,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1106",
+      "source_location": "L1108",
       "weight": 1.0
     },
     {
@@ -95237,7 +95237,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1106",
+      "source_location": "L1108",
       "weight": 1.0
     },
     {
@@ -95249,7 +95249,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1504",
+      "source_location": "L1506",
       "weight": 1.0
     },
     {
@@ -95261,7 +95261,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1504",
+      "source_location": "L1506",
       "weight": 1.0
     },
     {
@@ -95273,7 +95273,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L804",
+      "source_location": "L806",
       "weight": 1.0
     },
     {
@@ -95285,7 +95285,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L804",
+      "source_location": "L806",
       "weight": 1.0
     },
     {
@@ -95297,7 +95297,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1079",
+      "source_location": "L1081",
       "weight": 1.0
     },
     {
@@ -95309,7 +95309,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1079",
+      "source_location": "L1081",
       "weight": 1.0
     },
     {
@@ -95321,7 +95321,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L136",
+      "source_location": "L137",
       "weight": 1.0
     },
     {
@@ -95333,7 +95333,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L136",
+      "source_location": "L137",
       "weight": 1.0
     },
     {
@@ -95345,7 +95345,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L136",
+      "source_location": "L137",
       "weight": 1.0
     },
     {
@@ -95357,7 +95357,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1636",
+      "source_location": "L1638",
       "weight": 1.0
     },
     {
@@ -95369,7 +95369,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1636",
+      "source_location": "L1638",
       "weight": 1.0
     },
     {
@@ -95381,7 +95381,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1196",
+      "source_location": "L1198",
       "weight": 1.0
     },
     {
@@ -95393,7 +95393,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1196",
+      "source_location": "L1198",
       "weight": 1.0
     },
     {
@@ -95405,7 +95405,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1478",
+      "source_location": "L1480",
       "weight": 1.0
     },
     {
@@ -95417,7 +95417,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1478",
+      "source_location": "L1480",
       "weight": 1.0
     },
     {
@@ -95429,7 +95429,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L467",
+      "source_location": "L469",
       "weight": 1.0
     },
     {
@@ -95441,7 +95441,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L467",
+      "source_location": "L469",
       "weight": 1.0
     },
     {
@@ -95453,7 +95453,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L101",
+      "source_location": "L102",
       "weight": 1.0
     },
     {
@@ -95465,7 +95465,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L101",
+      "source_location": "L102",
       "weight": 1.0
     },
     {
@@ -95477,7 +95477,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L825",
+      "source_location": "L827",
       "weight": 1.0
     },
     {
@@ -95489,7 +95489,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L825",
+      "source_location": "L827",
       "weight": 1.0
     },
     {
@@ -95501,7 +95501,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L825",
+      "source_location": "L827",
       "weight": 1.0
     },
     {
@@ -95513,7 +95513,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1282",
+      "source_location": "L1284",
       "weight": 1.0
     },
     {
@@ -95525,7 +95525,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1282",
+      "source_location": "L1284",
       "weight": 1.0
     },
     {
@@ -95537,7 +95537,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1330",
+      "source_location": "L1332",
       "weight": 1.0
     },
     {
@@ -95549,7 +95549,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1330",
+      "source_location": "L1332",
       "weight": 1.0
     },
     {
@@ -95573,7 +95573,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L753",
+      "source_location": "L755",
       "weight": 1.0
     },
     {
@@ -95585,7 +95585,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L753",
+      "source_location": "L755",
       "weight": 1.0
     },
     {
@@ -95597,7 +95597,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L324",
+      "source_location": "L326",
       "weight": 1.0
     },
     {
@@ -95609,7 +95609,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L324",
+      "source_location": "L326",
       "weight": 1.0
     },
     {
@@ -95621,7 +95621,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L324",
+      "source_location": "L326",
       "weight": 1.0
     },
     {
@@ -95633,7 +95633,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L429",
+      "source_location": "L431",
       "weight": 1.0
     },
     {
@@ -95645,7 +95645,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L429",
+      "source_location": "L431",
       "weight": 1.0
     },
     {
@@ -95657,7 +95657,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L292",
+      "source_location": "L294",
       "weight": 1.0
     },
     {
@@ -95669,7 +95669,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L292",
+      "source_location": "L294",
       "weight": 1.0
     },
     {
@@ -95681,7 +95681,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L292",
+      "source_location": "L294",
       "weight": 1.0
     },
     {
@@ -95693,7 +95693,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L292",
+      "source_location": "L294",
       "weight": 1.0
     },
     {
@@ -99497,7 +99497,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1130",
+      "source_location": "L1132",
       "weight": 1.0
     },
     {
@@ -99509,7 +99509,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1222",
+      "source_location": "L1224",
       "weight": 1.0
     },
     {
@@ -99521,7 +99521,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L591",
+      "source_location": "L593",
       "weight": 1.0
     },
     {
@@ -99533,7 +99533,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L687",
+      "source_location": "L689",
       "weight": 1.0
     },
     {
@@ -99545,7 +99545,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1676",
+      "source_location": "L1678",
       "weight": 1.0
     },
     {
@@ -99557,7 +99557,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L529",
+      "source_location": "L531",
       "weight": 1.0
     },
     {
@@ -99569,7 +99569,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1017",
+      "source_location": "L1019",
       "weight": 1.0
     },
     {
@@ -99581,7 +99581,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L971",
+      "source_location": "L973",
       "weight": 1.0
     },
     {
@@ -99593,7 +99593,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1026",
+      "source_location": "L1028",
       "weight": 1.0
     },
     {
@@ -99605,7 +99605,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L405",
+      "source_location": "L407",
       "weight": 1.0
     },
     {
@@ -99617,7 +99617,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1106",
+      "source_location": "L1108",
       "weight": 1.0
     },
     {
@@ -99629,7 +99629,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1504",
+      "source_location": "L1506",
       "weight": 1.0
     },
     {
@@ -99641,7 +99641,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L804",
+      "source_location": "L806",
       "weight": 1.0
     },
     {
@@ -99653,7 +99653,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L136",
+      "source_location": "L137",
       "weight": 1.0
     },
     {
@@ -99665,7 +99665,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1636",
+      "source_location": "L1638",
       "weight": 1.0
     },
     {
@@ -99677,7 +99677,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1196",
+      "source_location": "L1198",
       "weight": 1.0
     },
     {
@@ -99689,7 +99689,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1478",
+      "source_location": "L1480",
       "weight": 1.0
     },
     {
@@ -99701,7 +99701,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L467",
+      "source_location": "L469",
       "weight": 1.0
     },
     {
@@ -99713,7 +99713,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L101",
+      "source_location": "L102",
       "weight": 1.0
     },
     {
@@ -99725,7 +99725,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L825",
+      "source_location": "L827",
       "weight": 1.0
     },
     {
@@ -99737,7 +99737,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1282",
+      "source_location": "L1284",
       "weight": 1.0
     },
     {
@@ -99749,7 +99749,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1330",
+      "source_location": "L1332",
       "weight": 1.0
     },
     {
@@ -99761,7 +99761,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L753",
+      "source_location": "L755",
       "weight": 1.0
     },
     {
@@ -99773,7 +99773,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L324",
+      "source_location": "L326",
       "weight": 1.0
     },
     {
@@ -99785,7 +99785,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L429",
+      "source_location": "L431",
       "weight": 1.0
     },
     {
@@ -99797,7 +99797,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L292",
+      "source_location": "L294",
       "weight": 1.0
     },
     {
@@ -102692,7 +102692,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L548",
+      "source_location": "L550",
       "weight": 1.0
     },
     {
@@ -102703,7 +102703,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L553",
+      "source_location": "L555",
       "weight": 1.0
     },
     {
@@ -102714,7 +102714,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L558",
+      "source_location": "L560",
       "weight": 1.0
     },
     {
@@ -102725,7 +102725,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L569",
+      "source_location": "L571",
       "weight": 1.0
     },
     {
@@ -102736,7 +102736,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L578",
+      "source_location": "L580",
       "weight": 1.0
     },
     {
@@ -102758,7 +102758,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L84",
+      "source_location": "L85",
       "weight": 1.0
     },
     {
@@ -109127,7 +109127,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/web/app/dashboard/staff/page.tsx",
-      "source_location": "L3738",
+      "source_location": "L4079",
       "weight": 1.0
     },
     {
@@ -125553,24 +125553,24 @@
     },
     {
       "source": "staff_service",
-      "target": "staff_service_liststaff",
-      "relation": "method",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L101",
-      "weight": 1.0
-    },
-    {
-      "source": "staff_service",
       "target": "staff_service_getattendancehistory",
       "relation": "method",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1017",
+      "source_location": "L1019",
+      "weight": 1.0
+    },
+    {
+      "source": "staff_service",
+      "target": "staff_service_liststaff",
+      "relation": "method",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/api/internal/application/staff/service.go",
+      "source_location": "L102",
       "weight": 1.0
     },
     {
@@ -125581,7 +125581,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1026",
+      "source_location": "L1028",
       "weight": 1.0
     },
     {
@@ -125592,7 +125592,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1079",
+      "source_location": "L1081",
       "weight": 1.0
     },
     {
@@ -125603,7 +125603,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1106",
+      "source_location": "L1108",
       "weight": 1.0
     },
     {
@@ -125614,7 +125614,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1130",
+      "source_location": "L1132",
       "weight": 1.0
     },
     {
@@ -125625,7 +125625,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1196",
+      "source_location": "L1198",
       "weight": 1.0
     },
     {
@@ -125636,7 +125636,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1222",
+      "source_location": "L1224",
       "weight": 1.0
     },
     {
@@ -125647,7 +125647,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1282",
+      "source_location": "L1284",
       "weight": 1.0
     },
     {
@@ -125658,7 +125658,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1330",
+      "source_location": "L1332",
       "weight": 1.0
     },
     {
@@ -125669,7 +125669,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L136",
+      "source_location": "L137",
       "weight": 1.0
     },
     {
@@ -125680,7 +125680,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1478",
+      "source_location": "L1480",
       "weight": 1.0
     },
     {
@@ -125691,7 +125691,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1504",
+      "source_location": "L1506",
       "weight": 1.0
     },
     {
@@ -125702,7 +125702,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1515",
+      "source_location": "L1517",
       "weight": 1.0
     },
     {
@@ -125713,7 +125713,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1636",
+      "source_location": "L1638",
       "weight": 1.0
     },
     {
@@ -125724,7 +125724,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1676",
+      "source_location": "L1678",
       "weight": 1.0
     },
     {
@@ -125735,7 +125735,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L292",
+      "source_location": "L294",
       "weight": 1.0
     },
     {
@@ -125746,7 +125746,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L324",
+      "source_location": "L326",
       "weight": 1.0
     },
     {
@@ -125768,7 +125768,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L389",
+      "source_location": "L391",
       "weight": 1.0
     },
     {
@@ -125779,7 +125779,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L405",
+      "source_location": "L407",
       "weight": 1.0
     },
     {
@@ -125790,7 +125790,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L429",
+      "source_location": "L431",
       "weight": 1.0
     },
     {
@@ -125801,7 +125801,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L467",
+      "source_location": "L469",
       "weight": 1.0
     },
     {
@@ -125812,7 +125812,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L529",
+      "source_location": "L531",
       "weight": 1.0
     },
     {
@@ -125823,7 +125823,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L591",
+      "source_location": "L593",
       "weight": 1.0
     },
     {
@@ -125834,7 +125834,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L687",
+      "source_location": "L689",
       "weight": 1.0
     },
     {
@@ -125845,7 +125845,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L753",
+      "source_location": "L755",
       "weight": 1.0
     },
     {
@@ -125856,7 +125856,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L804",
+      "source_location": "L806",
       "weight": 1.0
     },
     {
@@ -125867,7 +125867,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L825",
+      "source_location": "L827",
       "weight": 1.0
     },
     {
@@ -125878,7 +125878,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L971",
+      "source_location": "L973",
       "weight": 1.0
     },
     {
@@ -126985,5 +126985,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "fc7586b866c48951776dcfb6a0f0edb7e8e58c26"
+  "built_at_commit": "e462fa0b434bbb56f71891dd56301b8c1e8222c0"
 }

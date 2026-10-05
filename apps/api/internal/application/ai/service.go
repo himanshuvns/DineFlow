@@ -19,9 +19,13 @@ import (
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
-const (
-	geminiEndpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent"
-)
+var geminiModels = []string{
+	"gemini-3.5-flash-lite",
+	"gemini-3.5-flash",
+	"gemini-flash-latest",
+	"gemini-3.7-flash",
+	"gemini-3.8-flash",
+}
 
 // Service wraps all AI capabilities for Phase 6.
 type Service struct {
@@ -275,45 +279,66 @@ Critical Instructions:
 		return nil, err
 	}
 
-	url := fmt.Sprintf("%s?key=%s", geminiEndpoint, s.geminiKey)
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
-	if err != nil {
-		return nil, err
+	var lastErr error
+	for _, model := range geminiModels {
+		url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s", model, s.geminiKey)
+		httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
+		if err != nil {
+			lastErr = err
+			continue
+		}
+		httpReq.Header.Set("Content-Type", "application/json")
+
+		resp, err := s.httpClient.Do(httpReq)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			b, _ := io.ReadAll(resp.Body)
+			resp.Body.Close()
+			lastErr = fmt.Errorf("%s returned HTTP %d: %s", model, resp.StatusCode, string(b))
+			continue
+		}
+
+		var gemResp geminiResponse
+		err = json.NewDecoder(resp.Body).Decode(&gemResp)
+		resp.Body.Close()
+		if err != nil {
+			lastErr = err
+			continue
+		}
+
+		if len(gemResp.Candidates) == 0 || len(gemResp.Candidates[0].Content.Parts) == 0 {
+			lastErr = fmt.Errorf("%s returned empty response", model)
+			continue
+		}
+
+		rawText := gemResp.Candidates[0].Content.Parts[0].Text
+		start := strings.Index(rawText, "[")
+		end := strings.LastIndex(rawText, "]")
+		if start == -1 || end == -1 || end < start {
+			lastErr = fmt.Errorf("%s returned no JSON array: %s", model, rawText)
+			continue
+		}
+
+		cleanJSON := rawText[start : end+1]
+		var dishes []ScannedDish
+		if err := json.Unmarshal([]byte(cleanJSON), &dishes); err != nil {
+			lastErr = fmt.Errorf("%s JSON unmarshal failed: %w", model, err)
+			continue
+		}
+
+		if len(dishes) > 0 {
+			return dishes, nil
+		}
 	}
-	httpReq.Header.Set("Content-Type", "application/json")
 
-	resp, err := s.httpClient.Do(httpReq)
-	if err != nil {
-		return nil, err
+	if lastErr != nil {
+		return nil, fmt.Errorf("all gemini vision models failed, last error: %w", lastErr)
 	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		b, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("gemini vision error %d: %s", resp.StatusCode, string(b))
-	}
-
-	var gemResp geminiResponse
-	if err := json.NewDecoder(resp.Body).Decode(&gemResp); err != nil {
-		return nil, err
-	}
-
-	if len(gemResp.Candidates) == 0 || len(gemResp.Candidates[0].Content.Parts) == 0 {
-		return nil, fmt.Errorf("empty gemini vision response")
-	}
-
-	rawText := gemResp.Candidates[0].Content.Parts[0].Text
-	rawText = strings.TrimPrefix(rawText, "```json")
-	rawText = strings.TrimPrefix(rawText, "```")
-	rawText = strings.TrimSuffix(rawText, "```")
-	rawText = strings.TrimSpace(rawText)
-
-	var dishes []ScannedDish
-	if err := json.Unmarshal([]byte(rawText), &dishes); err != nil {
-		return nil, fmt.Errorf("failed to parse extracted dishes: %w", err)
-	}
-
-	return dishes, nil
+	return nil, fmt.Errorf("gemini vision did not detect any menu items")
 }
 
 func mockScannedDishes() []ScannedDish {
@@ -366,41 +391,57 @@ func (s *Service) callGemini(ctx context.Context, systemPrompt, userPrompt strin
 		return "", 0, err
 	}
 
-	url := fmt.Sprintf("%s?key=%s", geminiEndpoint, s.geminiKey)
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
-	if err != nil {
-		return "", 0, err
+	var lastErr error
+	for _, model := range geminiModels {
+		url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s", model, s.geminiKey)
+		httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
+		if err != nil {
+			lastErr = err
+			continue
+		}
+		httpReq.Header.Set("Content-Type", "application/json")
+
+		resp, err := s.httpClient.Do(httpReq)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			b, _ := io.ReadAll(resp.Body)
+			resp.Body.Close()
+			lastErr = fmt.Errorf("%s returned HTTP %d: %s", model, resp.StatusCode, string(b))
+			continue
+		}
+
+		var gemResp geminiResponse
+		err = json.NewDecoder(resp.Body).Decode(&gemResp)
+		resp.Body.Close()
+		if err != nil {
+			lastErr = err
+			continue
+		}
+
+		if len(gemResp.Candidates) == 0 || len(gemResp.Candidates[0].Content.Parts) == 0 {
+			lastErr = fmt.Errorf("%s returned empty response", model)
+			continue
+		}
+
+		text := gemResp.Candidates[0].Content.Parts[0].Text
+		text = strings.TrimPrefix(text, "```json")
+		text = strings.TrimPrefix(text, "```")
+		text = strings.TrimSuffix(text, "```")
+		text = strings.TrimSpace(text)
+		start := strings.Index(text, "{")
+		end := strings.LastIndex(text, "}")
+		if start != -1 && end != -1 && end >= start {
+			text = text[start : end+1]
+		}
+
+		return text, gemResp.UsageMetadata.TotalTokenCount, nil
 	}
-	httpReq.Header.Set("Content-Type", "application/json")
 
-	resp, err := s.httpClient.Do(httpReq)
-	if err != nil {
-		return "", 0, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		b, _ := io.ReadAll(resp.Body)
-		return "", 0, fmt.Errorf("gemini API error %d: %s", resp.StatusCode, string(b))
-	}
-
-	var gemResp geminiResponse
-	if err := json.NewDecoder(resp.Body).Decode(&gemResp); err != nil {
-		return "", 0, err
-	}
-
-	if len(gemResp.Candidates) == 0 || len(gemResp.Candidates[0].Content.Parts) == 0 {
-		return "", 0, fmt.Errorf("empty gemini response")
-	}
-
-	text := gemResp.Candidates[0].Content.Parts[0].Text
-	// Strip markdown fences if model wraps JSON in ```json ... ```
-	text = strings.TrimPrefix(text, "```json")
-	text = strings.TrimPrefix(text, "```")
-	text = strings.TrimSuffix(text, "```")
-	text = strings.TrimSpace(text)
-
-	return text, gemResp.UsageMetadata.TotalTokenCount, nil
+	return "", 0, fmt.Errorf("all gemini models failed, last error: %w", lastErr)
 }
 
 // ─── Mock Implementations ──────────────────────────────────────────────────────
