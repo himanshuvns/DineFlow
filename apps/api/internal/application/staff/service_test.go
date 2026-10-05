@@ -130,3 +130,27 @@ func TestGeneratePayslipHTML_Structure(t *testing.T) {
 		t.Errorf("expected NetPay 45030, got %f", rec.NetPay)
 	}
 }
+
+func TestMarkManualAttendance_Validation(t *testing.T) {
+	svc := NewService(nil)
+	ctx := context.Background()
+	tid := bson.NewObjectID()
+	mid := bson.NewObjectID()
+
+	// Missing UserID
+	_, err := svc.MarkManualAttendance(ctx, tid, mid, ManualAttendanceInput{
+		Date: "2026-10-05",
+	})
+	if err == nil || err.Error() != "userId is required" {
+		t.Errorf("expected 'userId is required', got %v", err)
+	}
+
+	// Missing Date
+	uid := bson.NewObjectID()
+	_, err = svc.MarkManualAttendance(ctx, tid, mid, ManualAttendanceInput{
+		UserID: uid,
+	})
+	if err == nil || err.Error() != "date is required (YYYY-MM-DD)" {
+		t.Errorf("expected 'date is required (YYYY-MM-DD)', got %v", err)
+	}
+}

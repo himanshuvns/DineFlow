@@ -300,9 +300,13 @@ type AttendanceRecord struct {
 	WorkingHours    float64          `bson:"workingHours" json:"workingHours"`
 	BreakHours      float64          `bson:"breakHours" json:"breakHours"`
 	OvertimeHours   float64          `bson:"overtimeHours" json:"overtimeHours"`
-	Notes           string           `bson:"notes,omitempty" json:"notes,omitempty"`
-	CreatedAt       time.Time        `bson:"createdAt" json:"createdAt"`
-	UpdatedAt       time.Time        `bson:"updatedAt" json:"updatedAt"`
+	Notes            string           `bson:"notes,omitempty" json:"notes,omitempty"`
+	IsManualOverride bool             `bson:"isManualOverride" json:"isManualOverride"`
+	MarkedBy         *bson.ObjectID   `bson:"markedBy,omitempty" json:"markedBy,omitempty"`
+	MarkedByName     string           `bson:"markedByName,omitempty" json:"markedByName,omitempty"`
+	ManualReason     string           `bson:"manualReason,omitempty" json:"manualReason,omitempty"`
+	CreatedAt        time.Time        `bson:"createdAt" json:"createdAt"`
+	UpdatedAt        time.Time        `bson:"updatedAt" json:"updatedAt"`
 }
 
 type GeofenceConfig struct {

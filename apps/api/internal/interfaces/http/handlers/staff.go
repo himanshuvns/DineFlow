@@ -428,6 +428,37 @@ func (h *StaffHandler) GetTodayAttendance(c *gin.Context) {
 	response.OK(c, list)
 }
 
+// ManualAttendance godoc
+// POST /api/v1/staff/attendance/manual
+func (h *StaffHandler) ManualAttendance(c *gin.Context) {
+	tenantID := middleware.GetTenantID(c)
+	managerUserID := middleware.GetUserID(c)
+	if tenantID == "" || managerUserID == "" {
+		response.Unauthorized(c, "auth context missing")
+		return
+	}
+	tOID, err1 := bson.ObjectIDFromHex(tenantID)
+	mOID, err2 := bson.ObjectIDFromHex(managerUserID)
+	if err1 != nil || err2 != nil {
+		response.BadRequest(c, "INVALID_ID", "invalid tenant or manager ID")
+		return
+	}
+
+	var req staffapp.ManualAttendanceInput
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "INVALID_PAYLOAD", err.Error())
+		return
+	}
+
+	record, err := h.staffService.MarkManualAttendance(c.Request.Context(), tOID, mOID, req)
+	if err != nil {
+		response.BadRequest(c, "MANUAL_ATTENDANCE_FAILED", err.Error())
+		return
+	}
+
+	response.OK(c, record)
+}
+
 // GetAttendanceHistory godoc
 // GET /api/v1/staff/attendance/history
 func (h *StaffHandler) GetAttendanceHistory(c *gin.Context) {
@@ -453,14 +484,57 @@ func (h *StaffHandler) GetAttendanceHistory(c *gin.Context) {
 
 	startDate := c.Query("startDate")
 	endDate := c.Query("endDate")
+	department := c.Query("department")
+	status := c.Query("status")
+	limitStr := c.Query("limit")
+	limit := 1000
+	if limitStr != "" {
+		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
+			limit = l
+		}
+	}
 
-	list, err := h.staffService.GetAttendanceHistory(c.Request.Context(), tOID, uOID, startDate, endDate)
+	list, err := h.staffService.GetAttendanceHistoryWithFilter(c.Request.Context(), tOID, staffapp.AttendanceFilter{
+		UserID:     uOID,
+		StartDate:  startDate,
+		EndDate:    endDate,
+		Department: department,
+		Status:     status,
+		Limit:      limit,
+	})
 	if err != nil {
 		response.InternalError(c)
 		return
 	}
 
 	response.OK(c, list)
+}
+
+// GetAttendanceSummary godoc
+// GET /api/v1/staff/attendance/summary
+func (h *StaffHandler) GetAttendanceSummary(c *gin.Context) {
+	tenantID := middleware.GetTenantID(c)
+	if tenantID == "" {
+		response.Unauthorized(c, "tenant context missing")
+		return
+	}
+	tOID, err := bson.ObjectIDFromHex(tenantID)
+	if err != nil {
+		response.BadRequest(c, "INVALID_TENANT_ID", "invalid tenant ID")
+		return
+	}
+
+	startDate := c.Query("startDate")
+	endDate := c.Query("endDate")
+	department := c.Query("department")
+
+	summary, err := h.staffService.GetAttendanceSummary(c.Request.Context(), tOID, startDate, endDate, department)
+	if err != nil {
+		response.InternalError(c)
+		return
+	}
+
+	response.OK(c, summary)
 }
 
 // ── Leave Management ────────────────────────────────────────────────────────

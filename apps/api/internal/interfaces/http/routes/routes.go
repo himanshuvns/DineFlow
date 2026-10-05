@@ -140,8 +140,10 @@ func Setup(
 				staffGroup.POST("/attendance/clock-in", staffHandler.ClockIn)
 				staffGroup.POST("/attendance/clock-out", staffHandler.ClockOut)
 				staffGroup.POST("/attendance/break", staffHandler.ToggleBreak)
+				staffGroup.POST("/attendance/manual", middleware.OwnerOrManager(), staffHandler.ManualAttendance)
 				staffGroup.GET("/attendance/today", staffHandler.GetTodayAttendance)
 				staffGroup.GET("/attendance/history", staffHandler.GetAttendanceHistory)
+				staffGroup.GET("/attendance/summary", middleware.OwnerOrManager(), staffHandler.GetAttendanceSummary)
 
 				// Leaves
 				staffGroup.POST("/leaves", staffHandler.ApplyLeave)

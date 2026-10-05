@@ -28,6 +28,14 @@ import {
   Phone,
   MessageSquare,
   CalendarCheck,
+  CalendarRange,
+  Download,
+  UserCheck,
+  Filter,
+  SlidersHorizontal,
+  History,
+  UserCog,
+  Info,
   Award,
   ChevronDown,
   ChevronUp,
@@ -115,6 +123,10 @@ interface AttendanceRecord {
   workingHours: number;
   breakHours: number;
   overtimeHours: number;
+  isManualOverride?: boolean;
+  markedByName?: string;
+  manualReason?: string;
+  notes?: string;
 }
 
 interface GeofenceConfig {
@@ -237,6 +249,41 @@ export default function StaffPage() {
   const [payrollRecords, setPayrollRecords] = React.useState<PayrollRecord[]>([]);
   const [holidays, setHolidays] = React.useState<Holiday[]>([]);
 
+  // ── Multi-Scale Attendance & Manager Override State ─────────────────────────
+  const [attendancePeriod, setAttendancePeriod] = React.useState<"day" | "week" | "month" | "year" | "custom">("day");
+  const [attendanceSelectedDate, setAttendanceSelectedDate] = React.useState<string>(new Date().toISOString().substring(0, 10));
+  const [attendanceSelectedMonth, setAttendanceSelectedMonth] = React.useState<string>(new Date().toISOString().substring(0, 7));
+  const [attendanceSelectedYear, setAttendanceSelectedYear] = React.useState<string>(String(new Date().getFullYear()));
+  const [attendanceCustomStart, setAttendanceCustomStart] = React.useState<string>("");
+  const [attendanceCustomEnd, setAttendanceCustomEnd] = React.useState<string>("");
+  const [attendanceFilterDept, setAttendanceFilterDept] = React.useState<string>("all");
+  const [attendanceFilterStaff, setAttendanceFilterStaff] = React.useState<string>("all");
+  const [attendanceFilterStatus, setAttendanceFilterStatus] = React.useState<string>("all");
+  const [periodAttendance, setPeriodAttendance] = React.useState<AttendanceRecord[]>([]);
+  const [attendanceLoading, setAttendanceLoading] = React.useState<boolean>(false);
+  const [attendanceSummary, setAttendanceSummary] = React.useState<{
+    totalRecords: number;
+    presentCount: number;
+    lateCount: number;
+    halfDayCount: number;
+    absentCount: number;
+    leaveCount: number;
+    totalWorkingHours: number;
+    totalOvertimeHours: number;
+    manualOverrideCount: number;
+  } | null>(null);
+
+  // ── Manual Attendance Override Modal State ─────────────────────────────────
+  const [isManualAttendanceOpen, setIsManualAttendanceOpen] = React.useState(false);
+  const [manualStaffId, setManualStaffId] = React.useState("");
+  const [manualDate, setManualDate] = React.useState(new Date().toISOString().substring(0, 10));
+  const [manualStatus, setManualStatus] = React.useState<string>("present");
+  const [manualCheckIn, setManualCheckIn] = React.useState("09:00");
+  const [manualCheckOut, setManualCheckOut] = React.useState("18:00");
+  const [manualBreakMinutes, setManualBreakMinutes] = React.useState("60");
+  const [manualReason, setManualReason] = React.useState("Staff WhatsApp unavailable / device failure");
+  const [submittingManualAttendance, setSubmittingManualAttendance] = React.useState(false);
+
   // ── GPS Terminal State ──────────────────────────────────────────────────────
   const [currentCoords, setCurrentCoords] = React.useState<{ lat: number; lng: number } | null>(null);
   const [gpsDistance, setGpsDistance] = React.useState<number | null>(null);
@@ -337,6 +384,152 @@ export default function StaffPage() {
     }
   }, []);
 
+  const getPeriodDateRange = React.useCallback(() => {
+    let startDate = "";
+    let endDate = "";
+
+    if (attendancePeriod === "day") {
+      startDate = attendanceSelectedDate || new Date().toISOString().substring(0, 10);
+      endDate = startDate;
+    } else if (attendancePeriod === "week") {
+      const d = new Date(attendanceSelectedDate || new Date());
+      const day = d.getDay();
+      const diffToMon = d.getDate() - day + (day === 0 ? -6 : 1);
+      const mon = new Date(d.setDate(diffToMon));
+      const sun = new Date(mon);
+      sun.setDate(mon.getDate() + 6);
+      startDate = mon.toISOString().substring(0, 10);
+      endDate = sun.toISOString().substring(0, 10);
+    } else if (attendancePeriod === "month") {
+      const parts = (attendanceSelectedMonth || new Date().toISOString().substring(0, 7)).split("-");
+      const y = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10);
+      const firstDay = new Date(Date.UTC(y, m - 1, 1));
+      const lastDay = new Date(Date.UTC(y, m, 0));
+      startDate = firstDay.toISOString().substring(0, 10);
+      endDate = lastDay.toISOString().substring(0, 10);
+    } else if (attendancePeriod === "year") {
+      const yr = attendanceSelectedYear || String(new Date().getFullYear());
+      startDate = `${yr}-01-01`;
+      endDate = `${yr}-12-31`;
+    } else if (attendancePeriod === "custom") {
+      startDate = attendanceCustomStart;
+      endDate = attendanceCustomEnd;
+    }
+
+    return { startDate, endDate };
+  }, [attendancePeriod, attendanceSelectedDate, attendanceSelectedMonth, attendanceSelectedYear, attendanceCustomStart, attendanceCustomEnd]);
+
+  const fetchPeriodAttendance = React.useCallback(async () => {
+    setAttendanceLoading(true);
+    try {
+      const { startDate, endDate } = getPeriodDateRange();
+      const params = new URLSearchParams();
+      if (startDate) params.set("startDate", startDate);
+      if (endDate) params.set("endDate", endDate);
+      if (attendanceFilterStaff !== "all") params.set("userId", attendanceFilterStaff);
+      if (attendanceFilterDept !== "all") params.set("department", attendanceFilterDept);
+      if (attendanceFilterStatus !== "all") params.set("status", attendanceFilterStatus);
+      params.set("limit", "2000");
+
+      const [resHistory, resSummary] = await Promise.allSettled([
+        apiClient.get(`/staff/attendance/history?${params.toString()}`),
+        apiClient.get(`/staff/attendance/summary?startDate=${startDate}&endDate=${endDate}${attendanceFilterDept !== "all" ? `&department=${encodeURIComponent(attendanceFilterDept)}` : ""}`),
+      ]);
+
+      if (resHistory.status === "fulfilled" && resHistory.value.data?.data) {
+        setPeriodAttendance(resHistory.value.data.data);
+      }
+      if (resSummary.status === "fulfilled" && resSummary.value.data?.data) {
+        setAttendanceSummary(resSummary.value.data.data);
+      }
+    } catch (e) {
+      console.warn("Period attendance fetch error:", e);
+    } finally {
+      setAttendanceLoading(false);
+    }
+  }, [getPeriodDateRange, attendanceFilterStaff, attendanceFilterDept, attendanceFilterStatus]);
+
+  const handleSaveManualAttendance = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!manualStaffId) {
+      addToast("error", "Staff Member Required", "Please select a staff member to record attendance.");
+      return;
+    }
+    if (!manualDate) {
+      addToast("error", "Date Required", "Please select an attendance date.");
+      return;
+    }
+    setSubmittingManualAttendance(true);
+    try {
+      let checkInISO: string | undefined;
+      let checkOutISO: string | undefined;
+      if (manualCheckIn && (manualStatus === "present" || manualStatus === "late" || manualStatus === "half_day")) {
+        checkInISO = new Date(`${manualDate}T${manualCheckIn}:00Z`).toISOString();
+      }
+      if (manualCheckOut && (manualStatus === "present" || manualStatus === "late" || manualStatus === "half_day")) {
+        checkOutISO = new Date(`${manualDate}T${manualCheckOut}:00Z`).toISOString();
+      }
+
+      const res = await apiClient.post("/staff/attendance/manual", {
+        userId: manualStaffId,
+        date: manualDate,
+        status: manualStatus,
+        checkInTime: checkInISO,
+        checkOutTime: checkOutISO,
+        breakMinutes: parseInt(manualBreakMinutes || "0", 10),
+        reason: manualReason.trim() || "Manual manager override (WhatsApp unavailable)",
+      });
+
+      addToast(
+        "success",
+        "Attendance Recorded",
+        `Marked ${manualStatus.toUpperCase()} for ${res.data?.data?.employeeName || "staff"} on ${manualDate} (Manual Override).`
+      );
+      setIsManualAttendanceOpen(false);
+      fetchAttendance();
+      fetchPeriodAttendance();
+    } catch (err: unknown) {
+      const errorMsg =
+        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message ||
+        (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
+        "Failed to mark manual attendance.";
+      addToast("error", "Manual Attendance Failed", errorMsg);
+    } finally {
+      setSubmittingManualAttendance(false);
+    }
+  };
+
+  const handleExportAttendanceCSV = () => {
+    if (periodAttendance.length === 0) {
+      addToast("warning", "No Records", "No attendance records available for the selected period.");
+      return;
+    }
+    const headers = ["Date", "Employee ID", "Staff Name", "Department", "Check-In", "Check-Out", "Working Hours", "Overtime", "Status", "Verification Source", "Manager Notes"];
+    const rows = periodAttendance.map((r) => [
+      r.date,
+      r.employeeId || "",
+      `"${(r.employeeName || "").replace(/"/g, '""')}"`,
+      `"${(r.department || "Operations").replace(/"/g, '""')}"`,
+      r.checkInTime ? new Date(r.checkInTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "",
+      r.checkOutTime ? new Date(r.checkOutTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "",
+      r.workingHours || 0,
+      r.overtimeHours || 0,
+      r.status,
+      r.isManualOverride ? `Manual Override (${r.markedByName || "Manager"})` : r.checkInDistance ? `GPS (${r.checkInDistance.toFixed(0)}m)` : "WhatsApp Bot",
+      `"${(r.manualReason || r.notes || "").replace(/"/g, '""')}"`,
+    ]);
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `DineFlow_Attendance_${attendancePeriod}_${new Date().toISOString().substring(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    addToast("success", "Report Exported", `Downloaded ${periodAttendance.length} attendance records.`);
+  };
+
   const fetchGeofence = React.useCallback(async () => {
     try {
       const res = await apiClient.get("/staff/geofence");
@@ -419,9 +612,16 @@ export default function StaffPage() {
       fetchLeaveBalance(),
       fetchPayroll(selectedPayrollMonth),
       fetchHolidays(),
+      fetchPeriodAttendance(),
     ]);
     setLoading(false);
-  }, [fetchStaff, fetchAttendance, fetchGeofence, fetchShifts, fetchLeaves, fetchLeaveBalance, fetchPayroll, fetchHolidays, selectedPayrollMonth]);
+  }, [fetchStaff, fetchAttendance, fetchPeriodAttendance, fetchGeofence, fetchShifts, fetchLeaves, fetchLeaveBalance, fetchPayroll, fetchHolidays, selectedPayrollMonth]);
+
+  React.useEffect(() => {
+    if (activeTab === "attendance") {
+      fetchPeriodAttendance();
+    }
+  }, [activeTab, fetchPeriodAttendance]);
 
   React.useEffect(() => {
     loadAll();
@@ -1260,203 +1460,610 @@ export default function StaffPage() {
         </div>
       )}
 
-      {/* ── TAB 2: LIVE ATTENDANCE & GEOFENCING ────────────────────────────────── */}
+      {/* ── TAB 2: LIVE ATTENDANCE & MULTI-SCALE ROSTER INTELLIGENCE ─────────── */}
       {activeTab === "attendance" && (
         <div className="space-y-6">
-          {/* Quick Attendance Terminal */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card variant="glass" className="md:col-span-2 border-emerald-500/20 bg-emerald-50/20 dark:bg-emerald-950/10">
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                      <MapPin className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-base">GPS Geofence Clock-in Terminal</CardTitle>
-                      <CardDescription className="text-xs">
-                        Workplace Radius: {geofence.radiusMeters}m &bull; {geofence.address}
-                      </CardDescription>
-                    </div>
-                  </div>
-                  <Badge variant={isInsideGeofence ? "success" : "danger"} dot size="sm">
-                    {isInsideGeofence ? "Inside Geofence" : "Outside Boundary"}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs">
-                  <div>
-                    <p className="text-slate-500 dark:text-slate-400">Your Current Geolocation</p>
-                    <p className="font-semibold text-slate-900 dark:text-white">
-                      {currentCoords ? `${currentCoords.lat.toFixed(5)}, ${currentCoords.lng.toFixed(5)}` : "Detecting GPS..."}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-slate-500 dark:text-slate-400">Distance to Workplace</p>
-                    <p className={`font-bold ${isInsideGeofence ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
-                      {gpsDistance !== null ? `${gpsDistance} meters` : "Calculating..."}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Clock-in / Out / Break Control Buttons */}
-                <div className="flex items-center gap-3 flex-wrap">
-                  {!isClockedIn ? (
-                    <Button
-                      variant="glow"
-                      size="default"
-                      className="flex-1 sm:flex-none"
-                      leftIcon={<CheckCircle2 className="h-4 w-4" />}
-                      isLoading={clockingIn}
-                      disabled={geofence.enforceGeofence && !isInsideGeofence}
-                      onClick={handleClockIn}
-                    >
-                      Clock In Now
-                    </Button>
-                  ) : (
-                    <>
-                      <Button
-                        variant="secondary"
-                        size="default"
-                        className={isOnBreak ? "bg-amber-500 text-white hover:bg-amber-600" : ""}
-                        leftIcon={<Coffee className="h-4 w-4" />}
-                        isLoading={togglingBreak}
-                        onClick={handleToggleBreak}
-                      >
-                        {isOnBreak ? "Resume Work (End Break)" : "Take Break"}
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="default"
-                        leftIcon={<XCircle className="h-4 w-4" />}
-                        isLoading={clockingOut}
-                        onClick={handleClockOut}
-                      >
-                        Clock Out
-                      </Button>
-                    </>
-                  )}
-
-                  <Button
-                    variant="outline"
-                    size="default"
-                    leftIcon={<Navigation className="h-4 w-4 text-emerald-500" />}
-                    onClick={() => setIsGeofenceModalOpen(true)}
-                  >
-                    Adjust Geofence
-                  </Button>
-                </div>
-
-                {geofence.enforceGeofence && !isInsideGeofence && !isClockedIn && (
-                  <p className="text-[11px] text-rose-500 flex items-center gap-1.5 font-medium">
-                    <AlertCircle className="h-3.5 w-3.5" />
-                    Geofence enforcement active: You must be within {geofence.radiusMeters}m of the restaurant to clock in.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Today's Metrics */}
-            <div className="space-y-3">
-              <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                <p className="text-xs text-slate-500 dark:text-slate-400">Total Clocked In Today</p>
-                <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
-                  {loading && staffList.length === 0 ? (
-                    "—"
-                  ) : (
-                    <>
-                      <NumberFlow value={todayAttendance.filter((a) => a.checkInTime).length} /> / {displayStaff.length}
-                    </>
-                  )}
-                </p>
-                <div className="mt-2 text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                  <CheckCircle2 className="h-3 w-3" /> Real-time active workforce
-                </div>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                <p className="text-xs text-slate-500 dark:text-slate-400">Late Arrivals Today</p>
-                <p className="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-1">
-                  <NumberFlow value={todayAttendance.filter((a) => a.status === "late").length} />
-                </p>
-                <p className="text-[11px] text-slate-400 mt-1">Grace period: 15 mins</p>
-              </div>
+          {/* Header Action Bar */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div>
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Clock className="h-5 w-5 text-emerald-500" /> Workforce Attendance & Roster
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Real-time clock-in stamps, manager overrides on behalf of staff, and multi-scale period attendance analysis.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Button
+                variant="glow"
+                size="sm"
+                leftIcon={<UserCheck className="h-4 w-4" />}
+                onClick={() => {
+                  setManualStaffId(displayStaff[0]?.id || "");
+                  setManualDate(new Date().toISOString().substring(0, 10));
+                  setManualStatus("present");
+                  setManualCheckIn("09:00");
+                  setManualCheckOut("18:00");
+                  setManualBreakMinutes("60");
+                  setManualReason("Staff WhatsApp unavailable / device failure");
+                  setIsManualAttendanceOpen(true);
+                }}
+              >
+                Mark Staff Attendance
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                leftIcon={<Download className="h-4 w-4" />}
+                onClick={handleExportAttendanceCSV}
+              >
+                Export CSV
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                leftIcon={<Navigation className="h-4 w-4 text-emerald-500" />}
+                onClick={() => setIsGeofenceModalOpen(true)}
+              >
+                Adjust Geofence
+              </Button>
             </div>
           </div>
 
-          {/* Today's Attendance Register Table */}
+          {/* Personal GPS Geofence Terminal for Current User */}
+          <Card variant="glass" className="border-emerald-500/20 bg-emerald-50/20 dark:bg-emerald-950/10">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                    <MapPin className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">Personal GPS Geofence Clock-in Terminal</CardTitle>
+                    <CardDescription className="text-xs">
+                      Workplace Radius: {geofence.radiusMeters}m &bull; {geofence.address}
+                    </CardDescription>
+                  </div>
+                </div>
+                <Badge variant={isInsideGeofence ? "success" : "danger"} dot size="sm">
+                  {isInsideGeofence ? "Inside Geofence" : "Outside Boundary"}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs">
+                <div>
+                  <p className="text-slate-500 dark:text-slate-400">Your Current Geolocation</p>
+                  <p className="font-semibold text-slate-900 dark:text-white">
+                    {currentCoords ? `${currentCoords.lat.toFixed(5)}, ${currentCoords.lng.toFixed(5)}` : "Detecting GPS..."}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-slate-500 dark:text-slate-400">Distance to Workplace</p>
+                  <p className={`font-bold ${isInsideGeofence ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                    {gpsDistance !== null ? `${gpsDistance} meters` : "Calculating..."}
+                  </p>
+                </div>
+              </div>
+
+              {/* Personal Clock Controls */}
+              <div className="flex items-center gap-3 flex-wrap">
+                {!isClockedIn ? (
+                  <Button
+                    variant="glow"
+                    size="default"
+                    className="flex-1 sm:flex-none"
+                    leftIcon={<CheckCircle2 className="h-4 w-4" />}
+                    isLoading={clockingIn}
+                    disabled={geofence.enforceGeofence && !isInsideGeofence}
+                    onClick={handleClockIn}
+                  >
+                    Clock In Now
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      variant="secondary"
+                      size="default"
+                      className={isOnBreak ? "bg-amber-500 text-white hover:bg-amber-600" : ""}
+                      leftIcon={<Coffee className="h-4 w-4" />}
+                      isLoading={togglingBreak}
+                      onClick={handleToggleBreak}
+                    >
+                      {isOnBreak ? "Resume Work (End Break)" : "Take Break"}
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="default"
+                      leftIcon={<XCircle className="h-4 w-4" />}
+                      isLoading={clockingOut}
+                      onClick={handleClockOut}
+                    >
+                      Clock Out
+                    </Button>
+                  </>
+                )}
+              </div>
+
+              {geofence.enforceGeofence && !isInsideGeofence && !isClockedIn && (
+                <p className="text-[11px] text-rose-500 flex items-center gap-1.5 font-medium">
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  Geofence enforcement active: You must be within {geofence.radiusMeters}m of the restaurant to clock in.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Multi-Scale Period Navigator & Filter Bar */}
+          <Card variant="glass">
+            <CardContent className="p-4 sm:p-5 space-y-4">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-3 border-b border-slate-200 dark:border-slate-800">
+                {/* Period Selector Tabs */}
+                <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 self-start sm:self-auto overflow-x-auto max-w-full">
+                  {[
+                    { id: "day", label: "Day", icon: Calendar },
+                    { id: "week", label: "Week", icon: CalendarRange },
+                    { id: "month", label: "Month", icon: CalendarCheck },
+                    { id: "year", label: "Year", icon: Clock },
+                    { id: "custom", label: "Custom", icon: SlidersHorizontal },
+                  ].map((p) => {
+                    const Icon = p.icon;
+                    const isActive = attendancePeriod === p.id;
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => setAttendancePeriod(p.id as typeof attendancePeriod)}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
+                          isActive
+                            ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm"
+                            : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                        }`}
+                      >
+                        <Icon className="h-3.5 w-3.5" />
+                        {p.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Date Navigator Controls */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  {attendancePeriod === "day" && (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="date"
+                        value={attendanceSelectedDate}
+                        onChange={(e) => setAttendanceSelectedDate(e.target.value)}
+                        className="w-40 text-xs py-1.5 h-9"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setAttendanceSelectedDate(new Date().toISOString().substring(0, 10))}
+                      >
+                        Today
+                      </Button>
+                    </div>
+                  )}
+
+                  {attendancePeriod === "week" && (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const d = new Date(attendanceSelectedDate || new Date());
+                          d.setDate(d.getDate() - 7);
+                          setAttendanceSelectedDate(d.toISOString().substring(0, 10));
+                        }}
+                      >
+                        &larr; Prev Week
+                      </Button>
+                      <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 px-2 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800">
+                        {(() => {
+                          const d = new Date(attendanceSelectedDate || new Date());
+                          const day = d.getDay();
+                          const diffToMon = d.getDate() - day + (day === 0 ? -6 : 1);
+                          const mon = new Date(d.setDate(diffToMon));
+                          const sun = new Date(mon);
+                          sun.setDate(mon.getDate() + 6);
+                          return `${mon.toLocaleDateString("en-IN", { day: "numeric", month: "short" })} – ${sun.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}`;
+                        })()}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const d = new Date(attendanceSelectedDate || new Date());
+                          d.setDate(d.getDate() + 7);
+                          setAttendanceSelectedDate(d.toISOString().substring(0, 10));
+                        }}
+                      >
+                        Next Week &rarr;
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setAttendanceSelectedDate(new Date().toISOString().substring(0, 10))}
+                      >
+                        This Week
+                      </Button>
+                    </div>
+                  )}
+
+                  {attendancePeriod === "month" && (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="month"
+                        value={attendanceSelectedMonth}
+                        onChange={(e) => setAttendanceSelectedMonth(e.target.value)}
+                        className="w-44 text-xs py-1.5 h-9"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setAttendanceSelectedMonth(new Date().toISOString().substring(0, 7))}
+                      >
+                        This Month
+                      </Button>
+                    </div>
+                  )}
+
+                  {attendancePeriod === "year" && (
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={attendanceSelectedYear}
+                        onChange={(e) => setAttendanceSelectedYear(e.target.value)}
+                        className="rounded-xl text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-2 outline-none h-9 text-slate-900 dark:text-white"
+                      >
+                        {[2026, 2025, 2024, 2023].map((yr) => (
+                          <option key={yr} value={String(yr)}>
+                            Year {yr}
+                          </option>
+                        ))}
+                      </select>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setAttendanceSelectedYear(String(new Date().getFullYear()))}
+                      >
+                        This Year
+                      </Button>
+                    </div>
+                  )}
+
+                  {attendancePeriod === "custom" && (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Input
+                        type="date"
+                        placeholder="Start Date"
+                        value={attendanceCustomStart}
+                        onChange={(e) => setAttendanceCustomStart(e.target.value)}
+                        className="w-36 text-xs py-1.5 h-9"
+                      />
+                      <span className="text-xs text-slate-400">to</span>
+                      <Input
+                        type="date"
+                        placeholder="End Date"
+                        value={attendanceCustomEnd}
+                        onChange={(e) => setAttendanceCustomEnd(e.target.value)}
+                        className="w-36 text-xs py-1.5 h-9"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Filter Row */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                {/* Department Filter */}
+                <div>
+                  <label className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block mb-1">
+                    Department
+                  </label>
+                  <select
+                    value={attendanceFilterDept}
+                    onChange={(e) => setAttendanceFilterDept(e.target.value)}
+                    className="w-full rounded-xl text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-2 outline-none text-slate-900 dark:text-white"
+                  >
+                    <option value="all">All Departments</option>
+                    {Array.from(new Set(displayStaff.map((s) => s.department).filter(Boolean))).map((dept) => (
+                      <option key={dept} value={dept!}>
+                        {dept}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Staff Member Filter */}
+                <div>
+                  <label className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block mb-1">
+                    Staff Member
+                  </label>
+                  <select
+                    value={attendanceFilterStaff}
+                    onChange={(e) => setAttendanceFilterStaff(e.target.value)}
+                    className="w-full rounded-xl text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-2 outline-none text-slate-900 dark:text-white"
+                  >
+                    <option value="all">All Staff ({displayStaff.length})</option>
+                    {displayStaff.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name} ({s.employeeId || s.role})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Status Filter */}
+                <div>
+                  <label className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block mb-1">
+                    Attendance Status
+                  </label>
+                  <select
+                    value={attendanceFilterStatus}
+                    onChange={(e) => setAttendanceFilterStatus(e.target.value)}
+                    className="w-full rounded-xl text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-2 outline-none text-slate-900 dark:text-white"
+                  >
+                    <option value="all">All Statuses</option>
+                    <option value="present">Present (On-Time)</option>
+                    <option value="late">Late Arrival</option>
+                    <option value="half_day">Half Day</option>
+                    <option value="absent">Absent</option>
+                    <option value="leave">On Leave</option>
+                  </select>
+                </div>
+
+                {/* Refresh Roster Button */}
+                <div className="flex items-end">
+                  <Button
+                    variant="outline"
+                    className="w-full text-xs h-[38px]"
+                    onClick={fetchPeriodAttendance}
+                    isLoading={attendanceLoading}
+                    leftIcon={<RefreshCw className={`h-3.5 w-3.5 ${attendanceLoading ? "animate-spin" : ""}`} />}
+                  >
+                    Refresh View
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Period Summary KPI Metric Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+              <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                Total Records
+              </p>
+              <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">
+                {attendanceLoading ? "—" : (attendanceSummary?.totalRecords ?? periodAttendance.length)}
+              </p>
+              <p className="text-[10px] text-slate-400 mt-1">
+                Headcount: {displayStaff.length} active
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+              <p className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">
+                Present & On-Time
+              </p>
+              <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
+                {attendanceLoading
+                  ? "—"
+                  : (attendanceSummary?.presentCount ?? periodAttendance.filter((r) => r.status === "present").length)}
+              </p>
+              <p className="text-[10px] text-emerald-600/80 dark:text-emerald-400/80 mt-1">
+                On-time rate:{" "}
+                {(() => {
+                  const p = attendanceSummary?.presentCount ?? periodAttendance.filter((r) => r.status === "present").length;
+                  const l = attendanceSummary?.lateCount ?? periodAttendance.filter((r) => r.status === "late").length;
+                  return p + l > 0 ? `${Math.round((p / (p + l)) * 100)}%` : "100%";
+                })()}
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+              <p className="text-[11px] font-medium text-amber-600 dark:text-amber-400 uppercase tracking-wide">
+                Late / Half-Day
+              </p>
+              <p className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1">
+                {attendanceLoading
+                  ? "—"
+                  : (attendanceSummary?.lateCount ?? periodAttendance.filter((r) => r.status === "late").length) +
+                    (attendanceSummary?.halfDayCount ?? periodAttendance.filter((r) => r.status === "half_day").length)}
+              </p>
+              <p className="text-[10px] text-slate-400 mt-1">
+                Late: {attendanceSummary?.lateCount ?? periodAttendance.filter((r) => r.status === "late").length} | Half: {attendanceSummary?.halfDayCount ?? periodAttendance.filter((r) => r.status === "half_day").length}
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+              <p className="text-[11px] font-medium text-rose-600 dark:text-rose-400 uppercase tracking-wide">
+                Absent / On Leave
+              </p>
+              <p className="text-2xl font-black text-rose-600 dark:text-rose-400 mt-1">
+                {attendanceLoading
+                  ? "—"
+                  : (attendanceSummary?.absentCount ?? periodAttendance.filter((r) => r.status === "absent").length) +
+                    (attendanceSummary?.leaveCount ?? periodAttendance.filter((r) => r.status === "leave").length)}
+              </p>
+              <p className="text-[10px] text-slate-400 mt-1">
+                Leaves: {attendanceSummary?.leaveCount ?? periodAttendance.filter((r) => r.status === "leave").length}
+              </p>
+            </div>
+
+            <div className="col-span-2 md:col-span-1 p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+              <p className="text-[11px] font-medium text-indigo-600 dark:text-indigo-400 uppercase tracking-wide">
+                Productive Hours
+              </p>
+              <p className="text-2xl font-black text-indigo-600 dark:text-indigo-400 mt-1">
+                {attendanceLoading
+                  ? "—"
+                  : (attendanceSummary?.totalWorkingHours ?? periodAttendance.reduce((a, b) => a + (b.workingHours || 0), 0)).toFixed(1)}h
+              </p>
+              <p className="text-[10px] text-slate-400 mt-1">
+                OT: {(attendanceSummary?.totalOvertimeHours ?? periodAttendance.reduce((a, b) => a + (b.overtimeHours || 0), 0)).toFixed(1)}h &bull; Overrides: {attendanceSummary?.manualOverrideCount ?? periodAttendance.filter((r) => r.isManualOverride).length}
+              </p>
+            </div>
+          </div>
+
+          {/* Attendance Register Table */}
           <Card variant="glass">
             <CardHeader className="flex flex-row items-center justify-between pb-3">
               <div>
-                <CardTitle className="text-base sm:text-lg">Today&apos;s Attendance Register</CardTitle>
+                <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                  <span>
+                    {attendancePeriod === "day"
+                      ? `Daily Attendance (${attendanceSelectedDate})`
+                      : attendancePeriod === "week"
+                      ? "Weekly Attendance Register"
+                      : attendancePeriod === "month"
+                      ? `Monthly Attendance (${attendanceSelectedMonth})`
+                      : attendancePeriod === "year"
+                      ? `Annual Attendance (${attendanceSelectedYear})`
+                      : "Custom Range Attendance"}
+                  </span>
+                  <Badge variant="neutral" size="sm">
+                    {periodAttendance.length} records
+                  </Badge>
+                </CardTitle>
                 <CardDescription className="text-xs">
-                  Real-time clock-in/out stamps, break timers, and GPS distances for {new Date().toLocaleDateString("en-IN", { dateStyle: "long" })}.
+                  Detailed punch timestamps, working hours, verification channel, and manager override notes.
                 </CardDescription>
               </div>
-              <Button variant="outline" size="sm" onClick={fetchAttendance} leftIcon={<RefreshCw className="h-3.5 w-3.5" />}>
-                Refresh
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={fetchPeriodAttendance} leftIcon={<RefreshCw className="h-3.5 w-3.5" />}>
+                  Refresh
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="p-0 overflow-x-auto">
-              <Table className="min-w-[700px]">
+              <Table className="min-w-[850px]">
                 <TableHeader className="sticky top-0 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm z-10">
                   <TableRow className="text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
-                    <TableHead className="py-3.5 pl-6">Staff Member</TableHead>
+                    <TableHead className="py-3.5 pl-6">Date</TableHead>
+                    <TableHead className="py-3.5">Staff Member</TableHead>
                     <TableHead className="py-3.5">Department</TableHead>
                     <TableHead className="py-3.5">Check-In</TableHead>
                     <TableHead className="py-3.5">Check-Out</TableHead>
                     <TableHead className="py-3.5">Working Hours</TableHead>
                     <TableHead className="py-3.5">Status</TableHead>
-                    <TableHead className="py-3.5 text-right pr-6">GPS Distance</TableHead>
+                    <TableHead className="py-3.5">Verification Source</TableHead>
+                    <TableHead className="py-3.5 text-right pr-6">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody className="divide-y divide-slate-200 dark:divide-slate-800/60">
-                  {todayAttendance.length === 0 ? (
+                  {periodAttendance.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="py-12">
+                      <TableCell colSpan={9} className="py-12">
                         <EmptyState
                           compact
                           icon={<Clock className="h-6 w-6 text-slate-400" />}
-                          title="No check-ins recorded yet today"
-                          description="Staff members can clock in using GPS or the WhatsApp Workforce Assistant."
+                          title="No attendance records found for this period"
+                          description="Staff members can clock in via WhatsApp or GPS, or you can record attendance manually using 'Mark Staff Attendance'."
                         />
                       </TableCell>
                     </TableRow>
                   ) : (
-                    todayAttendance.map((rec) => (
+                    periodAttendance.map((rec) => (
                       <TableRow key={rec.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                        <TableCell className="py-3.5 pl-6">
+                        <TableCell className="py-3.5 pl-6 font-mono text-xs text-slate-700 dark:text-slate-300">
+                          {rec.date}
+                        </TableCell>
+                        <TableCell className="py-3.5">
                           <div className="flex items-center gap-2.5">
                             <Avatar fallback={rec.employeeName} size="sm" />
                             <div>
-                              <p className="font-semibold text-slate-900 dark:text-white">{rec.employeeName}</p>
+                              <p className="font-semibold text-slate-900 dark:text-white text-xs">{rec.employeeName}</p>
                               <p className="text-[10px] text-slate-400 font-mono">{rec.employeeId}</p>
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell className="py-3.5 text-slate-600 dark:text-slate-400">{rec.department || "Operations"}</TableCell>
-                        <TableCell className="py-3.5 font-mono text-slate-800 dark:text-slate-200">
+                        <TableCell className="py-3.5 text-xs text-slate-600 dark:text-slate-400">
+                          {rec.department || "Operations"}
+                        </TableCell>
+                        <TableCell className="py-3.5 font-mono text-xs text-slate-800 dark:text-slate-200">
                           {rec.checkInTime ? new Date(rec.checkInTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—"}
                         </TableCell>
-                        <TableCell className="py-3.5 font-mono text-slate-800 dark:text-slate-200">
+                        <TableCell className="py-3.5 font-mono text-xs text-slate-800 dark:text-slate-200">
                           {rec.checkOutTime ? new Date(rec.checkOutTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : (rec.isOnBreak ? "On Break ☕" : "In Progress")}
                         </TableCell>
-                        <TableCell className="py-3.5 font-semibold text-slate-900 dark:text-white">
-                          {rec.workingHours ? `${rec.workingHours} hrs` : "—"}
+                        <TableCell className="py-3.5 font-semibold text-xs text-slate-900 dark:text-white">
+                          {rec.workingHours ? `${rec.workingHours}h` : "—"}
                           {rec.overtimeHours > 0 && <span className="text-[10px] text-emerald-500 ml-1">(+{rec.overtimeHours} OT)</span>}
                         </TableCell>
                         <TableCell className="py-3.5">
                           <Badge
-                            variant={rec.status === "present" ? "success" : rec.status === "late" ? "warning" : "neutral"}
+                            variant={
+                              rec.status === "present"
+                                ? "success"
+                                : rec.status === "late"
+                                ? "warning"
+                                : rec.status === "half_day"
+                                ? "warning"
+                                : rec.status === "leave"
+                                ? "info"
+                                : "danger"
+                            }
                             dot
                             size="sm"
                           >
-                            {rec.status === "late" ? "Late" : "Present"}
+                            {rec.status === "late"
+                              ? "Late"
+                              : rec.status === "present"
+                              ? "Present"
+                              : rec.status === "half_day"
+                              ? "Half Day"
+                              : rec.status === "leave"
+                              ? "Leave"
+                              : "Absent"}
                           </Badge>
                         </TableCell>
-                        <TableCell className="py-3.5 text-right pr-6 font-mono text-[11px] text-slate-500">
-                          {rec.checkInDistance ? `${rec.checkInDistance.toFixed(0)}m` : "—"}
+                        <TableCell className="py-3.5 text-xs">
+                          {rec.isManualOverride ? (
+                            <span
+                              title={rec.manualReason || rec.notes || "Marked by manager"}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 font-semibold text-[10px]"
+                            >
+                              <UserCog className="h-3 w-3" />
+                              Manual ({rec.markedByName || "Manager"})
+                            </span>
+                          ) : rec.checkInDistance ? (
+                            <span className="inline-flex items-center gap-1 font-mono text-[11px] text-emerald-600 dark:text-emerald-400">
+                              <MapPin className="h-3 w-3" />
+                              GPS ({rec.checkInDistance.toFixed(0)}m)
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400">
+                              <MessageSquare className="h-3 w-3 text-emerald-500" />
+                              WhatsApp Bot
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className="py-3.5 text-right pr-6">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-xs px-2"
+                            onClick={() => {
+                              setManualStaffId(rec.userId);
+                              setManualDate(rec.date);
+                              setManualStatus(rec.status);
+                              if (rec.checkInTime) {
+                                const d = new Date(rec.checkInTime);
+                                setManualCheckIn(d.toTimeString().substring(0, 5));
+                              }
+                              if (rec.checkOutTime) {
+                                const d = new Date(rec.checkOutTime);
+                                setManualCheckOut(d.toTimeString().substring(0, 5));
+                              }
+                              setManualReason(rec.manualReason || "Manager manual correction");
+                              setIsManualAttendanceOpen(true);
+                            }}
+                          >
+                            <Edit2 className="h-3 w-3 mr-1" /> Edit
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))
@@ -2222,6 +2829,121 @@ export default function StaffPage() {
                 Save Geofence
               </Button>
             </div>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ── MODAL: MANUAL ATTENDANCE OVERRIDE ───────────────────────────────── */}
+      <Modal
+        isOpen={isManualAttendanceOpen}
+        onClose={() => setIsManualAttendanceOpen(false)}
+        title="Mark Staff Attendance (Manager Override)"
+        description="Record or override attendance on behalf of a team member when WhatsApp is unavailable or device fails."
+      >
+        <form onSubmit={handleSaveManualAttendance} className="space-y-4">
+          <div>
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 block">
+              Staff Member <span className="text-rose-500">*</span>
+            </label>
+            <select
+              value={manualStaffId}
+              onChange={(e) => setManualStaffId(e.target.value)}
+              required
+              className="w-full rounded-xl text-xs text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-2.5 outline-none"
+            >
+              <option value="">Select Staff Member...</option>
+              {displayStaff.map((st) => (
+                <option key={st.id} value={st.id}>
+                  {st.name} &bull; {st.role.toUpperCase()} ({st.employeeId || "No ID"}) &bull; {st.department || "Operations"}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="Attendance Date"
+              type="date"
+              value={manualDate}
+              onChange={(e) => setManualDate(e.target.value)}
+              required
+            />
+            <div>
+              <label className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 block">
+                Status <span className="text-rose-500">*</span>
+              </label>
+              <select
+                value={manualStatus}
+                onChange={(e) => setManualStatus(e.target.value)}
+                className="w-full rounded-xl text-xs text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-2 outline-none h-10"
+              >
+                <option value="present">Present (On-Time)</option>
+                <option value="late">Late Arrival</option>
+                <option value="half_day">Half Day (4h)</option>
+                <option value="absent">Absent (Unexcused)</option>
+                <option value="leave">On Leave</option>
+              </select>
+            </div>
+          </div>
+
+          {(manualStatus === "present" || manualStatus === "late" || manualStatus === "half_day") && (
+            <div className="grid grid-cols-3 gap-3 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+              <Input
+                label="Check-In Time"
+                type="time"
+                value={manualCheckIn}
+                onChange={(e) => setManualCheckIn(e.target.value)}
+              />
+              <Input
+                label="Check-Out Time"
+                type="time"
+                value={manualCheckOut}
+                onChange={(e) => setManualCheckOut(e.target.value)}
+              />
+              <div>
+                <label className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 block">
+                  Break Duration
+                </label>
+                <select
+                  value={manualBreakMinutes}
+                  onChange={(e) => setManualBreakMinutes(e.target.value)}
+                  className="w-full rounded-xl text-xs text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-2 outline-none h-10"
+                >
+                  <option value="0">0 mins (No Break)</option>
+                  <option value="30">30 mins</option>
+                  <option value="45">45 mins</option>
+                  <option value="60">60 mins (Standard)</option>
+                  <option value="90">90 mins</option>
+                </select>
+              </div>
+            </div>
+          )}
+
+          <Input
+            label="Manager Override Reason"
+            value={manualReason}
+            onChange={(e) => setManualReason(e.target.value)}
+            placeholder="e.g. Staff's WhatsApp unavailable / battery dead / phone glitch"
+            required
+          />
+
+          <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-[11px] text-amber-800 dark:text-amber-300 flex items-start gap-2">
+            <Info className="h-4 w-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+            <div>
+              <p className="font-semibold">Compliance & Audit Trail Notice</p>
+              <p className="text-[10px] text-amber-700 dark:text-amber-400 mt-0.5">
+                This entry will be logged under your manager account with the reason specified above. GPS geofencing will be exempted for this manual override.
+              </p>
+            </div>
+          </div>
+
+          <div className="pt-2 flex justify-end gap-2">
+            <Button variant="secondary" type="button" onClick={() => setIsManualAttendanceOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="glow" type="submit" isLoading={submittingManualAttendance}>
+              Save Attendance Record
+            </Button>
           </div>
         </form>
       </Modal>

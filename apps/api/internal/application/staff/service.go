@@ -555,6 +555,39 @@ type ClockOutRequest struct {
 	Longitude float64 `json:"longitude"`
 }
 
+type ManualAttendanceInput struct {
+	UserID       bson.ObjectID `json:"userId"`
+	Date         string        `json:"date"`                   // YYYY-MM-DD
+	Status       string        `json:"status"`                 // present, late, half_day, absent, leave, holiday, weekly_off
+	CheckInTime  *time.Time    `json:"checkInTime,omitempty"`  // optional check-in timestamp
+	CheckOutTime *time.Time    `json:"checkOutTime,omitempty"` // optional check-out timestamp
+	WorkingHours *float64      `json:"workingHours,omitempty"` // optional hours override
+	BreakMinutes int           `json:"breakMinutes,omitempty"` // optional break minutes
+	Reason       string        `json:"reason"`                 // required note explaining manager override
+}
+
+type AttendanceFilter struct {
+	UserID     *bson.ObjectID `json:"userId,omitempty"`
+	StartDate  string         `json:"startDate,omitempty"`
+	EndDate    string         `json:"endDate,omitempty"`
+	Department string         `json:"department,omitempty"`
+	Status     string         `json:"status,omitempty"`
+	Limit      int            `json:"limit,omitempty"`
+}
+
+type AttendanceSummary struct {
+	TotalRecords        int                       `json:"totalRecords"`
+	PresentCount        int                       `json:"presentCount"`
+	LateCount           int                       `json:"lateCount"`
+	HalfDayCount        int                       `json:"halfDayCount"`
+	AbsentCount         int                       `json:"absentCount"`
+	LeaveCount          int                       `json:"leaveCount"`
+	TotalWorkingHours   float64                   `json:"totalWorkingHours"`
+	TotalOvertimeHours  float64                   `json:"totalOvertimeHours"`
+	ManualOverrideCount int                       `json:"manualOverrideCount"`
+	DailyBreakdown      map[string]map[string]int `json:"dailyBreakdown"`
+}
+
 func (s *Service) ClockIn(ctx context.Context, tenantID, userID bson.ObjectID, lat, lng float64) (*domainuser.AttendanceRecord, error) {
 	now := time.Now().UTC()
 	today := now.Format("2006-01-02")
@@ -789,22 +822,183 @@ func (s *Service) GetTodayAttendance(ctx context.Context, tenantID bson.ObjectID
 	return list, nil
 }
 
-func (s *Service) GetAttendanceHistory(ctx context.Context, tenantID bson.ObjectID, userID *bson.ObjectID, startDate, endDate string) ([]domainuser.AttendanceRecord, error) {
+func (s *Service) MarkManualAttendance(ctx context.Context, tenantID, managerUserID bson.ObjectID, input ManualAttendanceInput) (*domainuser.AttendanceRecord, error) {
+	if input.UserID.IsZero() {
+		return nil, errors.New("userId is required")
+	}
+	if input.Date == "" {
+		return nil, errors.New("date is required (YYYY-MM-DD)")
+	}
+	if input.Status == "" {
+		input.Status = string(domainuser.AttendancePresent)
+	}
+	if input.Reason == "" {
+		input.Reason = "Manual override by management"
+	}
+
+	// 1. Fetch Staff User Profile
+	uColl := s.db.Collection("users")
+	uScope := mongoinfra.NewScope(uColl, tenantID)
+	var staffUser domainuser.User
+	if err := uScope.FindByID(ctx, input.UserID, &staffUser); err != nil {
+		return nil, errors.New("staff member not found")
+	}
+
+	// 2. Fetch Manager Profile
+	var managerUser domainuser.User
+	if err := uScope.FindByID(ctx, managerUserID, &managerUser); err != nil || managerUser.Name == "" {
+		managerUser.Name = "Management"
+	}
+
+	now := time.Now().UTC()
+
+	checkIn := input.CheckInTime
+	checkOut := input.CheckOutTime
+
+	// Default check-in time for present/late if not explicitly supplied
+	if checkIn == nil && (input.Status == string(domainuser.AttendancePresent) || input.Status == string(domainuser.AttendanceLate) || input.Status == string(domainuser.AttendanceHalfDay)) {
+		parsedDate, err := time.Parse("2006-01-02", input.Date)
+		if err == nil {
+			defaultIn := time.Date(parsedDate.Year(), parsedDate.Month(), parsedDate.Day(), 9, 0, 0, 0, time.UTC)
+			checkIn = &defaultIn
+		}
+	}
+
+	var workingHours float64
+	var breakHours float64
+	var overtimeHours float64
+
+	if input.BreakMinutes > 0 {
+		breakHours = math.Round(float64(input.BreakMinutes)/60.0*100) / 100
+	}
+
+	if input.WorkingHours != nil && *input.WorkingHours >= 0 {
+		workingHours = *input.WorkingHours
+	} else if checkIn != nil && checkOut != nil {
+		diff := checkOut.Sub(*checkIn).Hours()
+		if diff > breakHours {
+			workingHours = math.Round((diff-breakHours)*100) / 100
+		} else {
+			workingHours = math.Round(diff*100) / 100
+		}
+	} else if input.Status == string(domainuser.AttendanceHalfDay) {
+		workingHours = 4.0
+	} else if input.Status == string(domainuser.AttendancePresent) && checkOut != nil {
+		workingHours = 8.0
+	}
+
+	if workingHours > 8.0 {
+		overtimeHours = math.Round((workingHours-8.0)*100) / 100
+	}
+
+	// 3. Upsert into attendance collection
+	attColl := s.db.Collection("attendance")
+	attScope := mongoinfra.NewScope(attColl, tenantID)
+
+	var existing domainuser.AttendanceRecord
+	err := attScope.FindOne(ctx, bson.M{"userId": input.UserID, "date": input.Date}, &existing)
+
+	if err == nil {
+		existing.Status = domainuser.AttendanceStatus(input.Status)
+		if checkIn != nil {
+			existing.CheckInTime = checkIn
+		}
+		if checkOut != nil {
+			existing.CheckOutTime = checkOut
+		}
+		existing.WorkingHours = workingHours
+		existing.BreakHours = breakHours
+		existing.OvertimeHours = overtimeHours
+		existing.IsManualOverride = true
+		existing.MarkedBy = &managerUserID
+		existing.MarkedByName = managerUser.Name
+		existing.ManualReason = input.Reason
+		existing.Notes = fmt.Sprintf("Manager override (%s): %s", managerUser.Name, input.Reason)
+		existing.UpdatedAt = now
+
+		_, err = attScope.UpdateByID(ctx, existing.ID, bson.M{
+			"$set": bson.M{
+				"status":           existing.Status,
+				"checkInTime":      existing.CheckInTime,
+				"checkOutTime":     existing.CheckOutTime,
+				"workingHours":     existing.WorkingHours,
+				"breakHours":       existing.BreakHours,
+				"overtimeHours":    existing.OvertimeHours,
+				"isManualOverride": true,
+				"markedBy":         existing.MarkedBy,
+				"markedByName":     existing.MarkedByName,
+				"manualReason":     existing.ManualReason,
+				"notes":            existing.Notes,
+				"updatedAt":        now,
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
+		return &existing, nil
+	}
+
+	record := domainuser.AttendanceRecord{
+		ID:               bson.NewObjectID(),
+		TenantID:         tenantID,
+		UserID:           input.UserID,
+		EmployeeID:       staffUser.EmployeeID,
+		EmployeeName:     staffUser.Name,
+		Department:       staffUser.Department,
+		Date:             input.Date,
+		CheckInTime:      checkIn,
+		CheckOutTime:     checkOut,
+		WorkingHours:     workingHours,
+		BreakHours:       breakHours,
+		OvertimeHours:    overtimeHours,
+		Status:           domainuser.AttendanceStatus(input.Status),
+		IsManualOverride: true,
+		MarkedBy:         &managerUserID,
+		MarkedByName:     managerUser.Name,
+		ManualReason:     input.Reason,
+		Notes:            fmt.Sprintf("Manager override (%s): %s", managerUser.Name, input.Reason),
+		CreatedAt:        now,
+		UpdatedAt:        now,
+	}
+
+	if _, err := attScope.InsertOne(ctx, &record); err != nil {
+		return nil, err
+	}
+
+	return &record, nil
+}
+
+func (s *Service) GetAttendanceHistoryWithFilter(ctx context.Context, tenantID bson.ObjectID, filter AttendanceFilter) ([]domainuser.AttendanceRecord, error) {
 	coll := s.db.Collection("attendance")
 	scope := mongoinfra.NewScope(coll, tenantID)
 
-	filter := bson.M{}
-	if userID != nil && !userID.IsZero() {
-		filter["userId"] = *userID
+	query := bson.M{}
+	if filter.UserID != nil && !filter.UserID.IsZero() {
+		query["userId"] = *filter.UserID
 	}
-	if startDate != "" && endDate != "" {
-		filter["date"] = bson.M{"$gte": startDate, "$lte": endDate}
-	} else if startDate != "" {
-		filter["date"] = bson.M{"$gte": startDate}
+	if filter.Department != "" {
+		query["department"] = filter.Department
+	}
+	if filter.Status != "" {
+		query["status"] = filter.Status
+	}
+	if filter.StartDate != "" && filter.EndDate != "" {
+		query["date"] = bson.M{"$gte": filter.StartDate, "$lte": filter.EndDate}
+	} else if filter.StartDate != "" {
+		query["date"] = bson.M{"$gte": filter.StartDate}
+	} else if filter.EndDate != "" {
+		query["date"] = bson.M{"$lte": filter.EndDate}
 	}
 
-	opts := options.Find().SetSort(bson.D{{Key: "date", Value: -1}, {Key: "checkInTime", Value: -1}}).SetLimit(100)
-	cursor, err := scope.Find(ctx, filter, opts)
+	limit := filter.Limit
+	if limit <= 0 {
+		limit = 1000
+	} else if limit > 5000 {
+		limit = 5000
+	}
+
+	opts := options.Find().SetSort(bson.D{{Key: "date", Value: -1}, {Key: "checkInTime", Value: -1}}).SetLimit(int64(limit))
+	cursor, err := scope.Find(ctx, query, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -818,6 +1012,66 @@ func (s *Service) GetAttendanceHistory(ctx context.Context, tenantID bson.Object
 		list = []domainuser.AttendanceRecord{}
 	}
 	return list, nil
+}
+
+func (s *Service) GetAttendanceHistory(ctx context.Context, tenantID bson.ObjectID, userID *bson.ObjectID, startDate, endDate string) ([]domainuser.AttendanceRecord, error) {
+	return s.GetAttendanceHistoryWithFilter(ctx, tenantID, AttendanceFilter{
+		UserID:    userID,
+		StartDate: startDate,
+		EndDate:   endDate,
+		Limit:     1000,
+	})
+}
+
+func (s *Service) GetAttendanceSummary(ctx context.Context, tenantID bson.ObjectID, startDate, endDate, department string) (*AttendanceSummary, error) {
+	records, err := s.GetAttendanceHistoryWithFilter(ctx, tenantID, AttendanceFilter{
+		StartDate:  startDate,
+		EndDate:    endDate,
+		Department: department,
+		Limit:      5000,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	summary := &AttendanceSummary{
+		TotalRecords:   len(records),
+		DailyBreakdown: make(map[string]map[string]int),
+	}
+
+	for _, r := range records {
+		switch r.Status {
+		case domainuser.AttendancePresent:
+			summary.PresentCount++
+		case domainuser.AttendanceLate:
+			summary.LateCount++
+		case domainuser.AttendanceHalfDay:
+			summary.HalfDayCount++
+		case domainuser.AttendanceAbsent:
+			summary.AbsentCount++
+		case domainuser.AttendanceOnLeave:
+			summary.LeaveCount++
+		}
+
+		summary.TotalWorkingHours += r.WorkingHours
+		summary.TotalOvertimeHours += r.OvertimeHours
+
+		if r.IsManualOverride {
+			summary.ManualOverrideCount++
+		}
+
+		if r.Date != "" {
+			if _, exists := summary.DailyBreakdown[r.Date]; !exists {
+				summary.DailyBreakdown[r.Date] = make(map[string]int)
+			}
+			summary.DailyBreakdown[r.Date][string(r.Status)]++
+		}
+	}
+
+	summary.TotalWorkingHours = math.Round(summary.TotalWorkingHours*100) / 100
+	summary.TotalOvertimeHours = math.Round(summary.TotalOvertimeHours*100) / 100
+
+	return summary, nil
 }
 
 // ── Leave Management ────────────────────────────────────────────────────────
