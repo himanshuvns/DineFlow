@@ -640,6 +640,76 @@ func (h *WhatsAppHandler) PublicWorkforceCheckIn(c *gin.Context) {
 	response.OK(c, res)
 }
 
+// LookupStaff godoc
+// GET /api/v1/public/workforce/lookup-staff
+func (h *WhatsAppHandler) LookupStaff(c *gin.Context) {
+	phone := c.Query("phone")
+	if phone == "" {
+		response.BadRequest(c, "MISSING_PHONE", "phone query parameter is required")
+		return
+	}
+
+	staff, err := h.waService.FindStaffByPhone(c.Request.Context(), phone)
+	if err != nil || staff == nil {
+		response.OK(c, gin.H{
+			"isStaff": false,
+		})
+		return
+	}
+
+	shiftName := staff.ShiftName
+	if shiftName == "" {
+		shiftName = "General Shift (09:00 - 18:00)"
+	}
+
+	response.OK(c, gin.H{
+		"isStaff": true,
+		"staff": gin.H{
+			"id":          staff.ID.Hex(),
+			"tenantId":    staff.TenantID.Hex(),
+			"name":        staff.Name,
+			"role":        string(staff.Role),
+			"department":  staff.Department,
+			"phone":       staff.Phone,
+			"employeeId":  staff.EmployeeID,
+			"shiftName":   shiftName,
+			"salaryBasic": staff.Salary.Basic,
+		},
+	})
+}
+
+// GetActiveOrderByPhone godoc
+// GET /api/v1/public/orders/by-phone
+func (h *WhatsAppHandler) GetActiveOrderByPhone(c *gin.Context) {
+	phone := c.Query("phone")
+	if phone == "" {
+		response.BadRequest(c, "MISSING_PHONE", "phone query parameter is required")
+		return
+	}
+
+	ord, err := h.waService.GetActiveOrderByPhone(c.Request.Context(), phone)
+	if err != nil || ord == nil {
+		response.OK(c, gin.H{
+			"hasOrder": false,
+		})
+		return
+	}
+
+	response.OK(c, gin.H{
+		"hasOrder": true,
+		"order": gin.H{
+			"id":          ord.ID.Hex(),
+			"orderNumber": ord.OrderNumber,
+			"status":      string(ord.Status),
+			"tableName":   ord.TableName,
+			"roomNumber":  ord.RoomNumber,
+			"totalAmount": ord.TotalAmount,
+			"itemsCount":  len(ord.Items),
+			"createdAt":   ord.CreatedAt,
+		},
+	})
+}
+
 // ── OpenWA Session Management Endpoints ─────────────────────────────────────
 
 func (h *WhatsAppHandler) updateGatewayURL(c *gin.Context) {

@@ -301,24 +301,25 @@ export default function StaffPage() {
 
   const fetchStaff = React.useCallback(async () => {
     try {
-      // 1. Fetch from local Next.js route first (fastest latency)
+      // 1. Fetch from Go API (primary source of truth in MongoDB)
       try {
-        const localRes = await fetch("/api/staff");
-        if (localRes.ok) {
-          const localData = await localRes.json();
-          const list = localData?.data || localData?.staff;
-          if (Array.isArray(list) && list.length > 0) {
-            setStaffList(list);
-            return;
-          }
+        const res = await apiClient.get("/staff");
+        if (res.data?.data && Array.isArray(res.data.data) && res.data.data.length > 0) {
+          setStaffList(res.data.data);
+          return;
         }
-      } catch (localErr) {
-        console.warn("Local staff fetch fallback:", localErr);
+      } catch (apiErr) {
+        console.warn("Go API staff fetch fallback:", apiErr);
       }
 
-      const res = await apiClient.get("/staff");
-      if (res.data?.data && Array.isArray(res.data.data)) {
-        setStaffList(res.data.data);
+      // 2. Fallback to /api/staff (local Next.js storage)
+      const localRes = await fetch("/api/staff");
+      if (localRes.ok) {
+        const localData = await localRes.json();
+        const list = localData?.data || localData?.staff;
+        if (Array.isArray(list) && list.length > 0) {
+          setStaffList(list);
+        }
       }
     } catch (e) {
       console.warn("Staff fetch fallback:", e);
@@ -424,7 +425,12 @@ export default function StaffPage() {
 
   React.useEffect(() => {
     loadAll();
-  }, [loadAll]);
+    const interval = setInterval(() => {
+      fetchAttendance();
+      fetchStaff();
+    }, 20000);
+    return () => clearInterval(interval);
+  }, [loadAll, fetchAttendance, fetchStaff]);
 
   // Read ?tab= from URL on initial mount if provided
   React.useEffect(() => {
@@ -1053,6 +1059,7 @@ export default function StaffPage() {
                     <TableHead className="py-3.5">Role</TableHead>
                     <TableHead className="py-3.5 hidden md:table-cell">Shift</TableHead>
                     <TableHead className="py-3.5 hidden md:table-cell">Basic CTC</TableHead>
+                    <TableHead className="py-3.5">Today's Attendance</TableHead>
                     <TableHead className="py-3.5">Status</TableHead>
                     <TableHead className="py-3.5 text-right pr-6">Actions</TableHead>
                   </TableRow>
@@ -1074,13 +1081,14 @@ export default function StaffPage() {
                         <TableCell className="py-3.5"><div className="h-4 w-20 bg-slate-200 dark:bg-slate-800 rounded" /></TableCell>
                         <TableCell className="py-3.5 hidden md:table-cell"><div className="h-4 w-24 bg-slate-200 dark:bg-slate-800 rounded" /></TableCell>
                         <TableCell className="py-3.5 hidden md:table-cell"><div className="h-4 w-16 bg-slate-200 dark:bg-slate-800 rounded" /></TableCell>
+                        <TableCell className="py-3.5"><div className="h-5 w-24 bg-slate-200 dark:bg-slate-800 rounded-full" /></TableCell>
                         <TableCell className="py-3.5"><div className="h-5 w-14 bg-slate-200 dark:bg-slate-800 rounded-full" /></TableCell>
                         <TableCell className="py-3.5 text-right pr-6"><div className="h-7 w-16 bg-slate-200 dark:bg-slate-800 rounded ml-auto" /></TableCell>
                       </TableRow>
                     ))
                   ) : displayStaff.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="py-12">
+                      <TableCell colSpan={8} className="py-12">
                         <EmptyState
                           compact
                           icon={<Briefcase className="h-6 w-6 text-slate-400" />}
@@ -1151,6 +1159,57 @@ export default function StaffPage() {
                         {currentUser?.role !== "manager" || (member.role !== "owner" && member.role !== "manager")
                           ? `₹${(member.salary?.basic || 25000).toLocaleString("en-IN")}/mo`
                           : "Confidential"}
+                      </TableCell>
+                      <TableCell className="py-3.5">
+                        {(() => {
+                          const att = todayAttendance.find(
+                            (a) =>
+                              a.userId === member.id ||
+                              (member.employeeId && a.employeeId === member.employeeId) ||
+                              (a.employeeName && a.employeeName.toLowerCase() === member.name.toLowerCase())
+                          );
+
+                          if (!att) {
+                            return (
+                              <Badge variant="neutral" size="sm" dot>
+                                Not Clocked In
+                              </Badge>
+                            );
+                          }
+
+                          if (att.checkOutTime) {
+                            const time = new Date(att.checkOutTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+                            return (
+                              <Badge variant="neutral" size="sm" dot>
+                                Clocked Out ({time})
+                              </Badge>
+                            );
+                          }
+
+                          if (att.isOnBreak) {
+                            return (
+                              <Badge variant="warning" size="sm" dot>
+                                <Coffee className="w-3 h-3 mr-1 inline" /> On Break
+                              </Badge>
+                            );
+                          }
+
+                          if (att.checkInTime) {
+                            const time = new Date(att.checkInTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+                            const isLate = att.status === "late";
+                            return (
+                              <Badge variant={isLate ? "warning" : "success"} size="sm" dot>
+                                {isLate ? `Late (${time})` : `In (${time})`}
+                              </Badge>
+                            );
+                          }
+
+                          return (
+                            <Badge variant="neutral" size="sm" dot>
+                              {att.status || "Not Clocked In"}
+                            </Badge>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell className="py-3.5">
                         <Badge variant={member.status === "active" ? "success" : "warning"} dot size="sm">

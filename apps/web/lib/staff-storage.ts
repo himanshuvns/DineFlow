@@ -1,8 +1,4 @@
-/**
- * Staff, Attendance, and Leave Storage for DineFlow
- * Provides centralized in-memory & localStorage staff management,
- * phone number normalization, and signed check-in link generation.
- */
+import crypto from "crypto";
 
 export interface StaffMember {
   id: string;
@@ -11,6 +7,7 @@ export interface StaffMember {
   department: string;
   phone: string;
   employeeId: string;
+  tenantId?: string;
   email?: string;
   leaveBalance?: {
     casual: number;
@@ -117,6 +114,19 @@ export const INITIAL_STAFF_MEMBERS: StaffMember[] = [
     shiftName: "Morning Shift",
     shiftHours: "07:00 - 15:30",
     salaryBasic: 18000,
+  },
+  {
+    id: "st-aastha",
+    name: "Aastha",
+    role: "waiter",
+    department: "Floor Service",
+    phone: "+91 76520 58844",
+    employeeId: "DF-EMP-1005",
+    email: "aastha@dineflow.app",
+    leaveBalance: { casual: 10, sick: 7, earned: 12 },
+    shiftName: "Morning Shift",
+    shiftHours: "08:00 - 16:30",
+    salaryBasic: 22000,
   },
 ];
 
@@ -239,17 +249,86 @@ export function recordLeaveRequest(
   return rec;
 }
 
+function toHex24(val?: string): string {
+  if (val && /^[0-9a-fA-F]{24}$/.test(val)) {
+    return val.toLowerCase();
+  }
+  const hash = crypto.createHash("md5").update(val || "default").digest("hex");
+  return hash.slice(0, 24);
+}
+
 /**
- * Generates an anti-tamper signed mobile GPS check-in link for WhatsApp dispatches.
+ * Generates an anti-tamper HMAC-SHA256 signed mobile GPS check-in link for WhatsApp dispatches.
+ * Strictly complies with Go API ValidateCheckInToken payload:
+ * tenantID|userID|employeeID|action|expiresAt
  */
 export function generateCheckInSignedUrl(staff: StaffMember, action: "clock_in" | "clock_out" = "clock_in"): string {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://dine.rovixatech.com";
-  const params = new URLSearchParams({
-    action: action,
-    emp: staff.employeeId || staff.id,
-    name: staff.name,
-    role: staff.role,
-    t: Date.now().toString(),
-  });
-  return `${baseUrl}/m/check-in?token=${encodeURIComponent(Buffer.from(params.toString()).toString("base64"))}`;
+  const secret = process.env.JWT_ACCESS_SECRET || process.env.WHATSAPP_VERIFY_TOKEN || "dineflow_jwt_access_secret_key_prod_64char_minimum_padding_string";
+
+  const tenantHex = toHex24(staff.tenantId || "65f000000000000000000001");
+  const userHex = toHex24(staff.id || staff.employeeId || staff.phone);
+  const employeeId = staff.employeeId || `DF-EMP-${normalizePhone(staff.phone).slice(-4) || "1001"}`;
+  const expiresAt = Math.floor(Date.now() / 1000) + 15 * 60; // 15 mins
+
+  const payload = `${tenantHex}|${userHex}|${employeeId}|${action}|${expiresAt}`;
+  const sig = crypto.createHmac("sha256", secret).update(payload).digest("hex");
+  const encodedPayload = Buffer.from(payload).toString("base64url");
+  const token = `${encodedPayload}.${sig}`;
+
+  return `${baseUrl}/m/check-in?token=${token}`;
+}
+
+/**
+ * Asynchronously checks live MongoDB/Go API for staff membership by phone,
+ * and falls back to local in-memory storage. Caches live hits in memory.
+ */
+export async function findStaffByPhoneAsync(phone: string): Promise<StaffMember | undefined> {
+  const norm = normalizePhone(phone);
+  if (!norm) return undefined;
+
+  // 1. Fast in-memory check
+  const inMemory = findStaffByPhone(phone);
+  if (inMemory) return inMemory;
+
+  // 2. Live API / MongoDB query
+  try {
+    const apiBase =
+      (typeof window === "undefined" ? process.env.INTERNAL_API_URL : null) ||
+      process.env.NEXT_PUBLIC_API_URL ||
+      "https://dine.rovixatech.com/api/v1";
+
+    const cleanBase = apiBase.replace(/\/+$/, "");
+    const res = await fetch(`${cleanBase}/workforce/lookup-staff?phone=${encodeURIComponent(phone)}`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      signal: AbortSignal.timeout(3000),
+    });
+
+    if (res.ok) {
+      const json = await res.json();
+      if (json.data?.isStaff && json.data.staff) {
+        const s = json.data.staff;
+        const mapped: StaffMember = {
+          id: s.id,
+          name: s.name,
+          role: s.role || "waiter",
+          department: s.department || "Floor Service",
+          phone: s.phone || phone,
+          employeeId: s.employeeId || `DF-EMP-${norm.slice(-4)}`,
+          tenantId: s.tenantId,
+          shiftName: s.shiftName || "Morning Shift",
+          shiftHours: "08:00 - 16:30",
+          salaryBasic: s.salaryBasic || 22000,
+          leaveBalance: { casual: 8, sick: 5, earned: 10 },
+        };
+        enrollStaff(mapped);
+        return mapped;
+      }
+    }
+  } catch (err) {
+    console.warn("[findStaffByPhoneAsync] Live lookup error:", err);
+  }
+
+  return undefined;
 }

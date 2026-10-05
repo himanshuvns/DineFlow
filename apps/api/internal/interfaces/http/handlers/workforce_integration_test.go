@@ -29,6 +29,8 @@ func setupTestRouter() (*gin.Engine, *appwa.Service) {
 		v1.POST("/whatsapp/webhook", waHandler.HandleWebhook)
 		v1.GET("/workforce/verify-token", waHandler.VerifyCheckInToken)
 		v1.POST("/workforce/check-in", waHandler.PublicWorkforceCheckIn)
+		v1.GET("/workforce/lookup-staff", waHandler.LookupStaff)
+		v1.GET("/orders/by-phone", waHandler.GetActiveOrderByPhone)
 	}
 
 	return r, waService
@@ -132,3 +134,64 @@ func TestDualModeWebhookRouter(t *testing.T) {
 		t.Error("Expected IsWorkforce to be false for customer")
 	}
 }
+
+func TestLookupStaffHandler(t *testing.T) {
+	router, _ := setupTestRouter()
+
+	// Missing phone -> 400
+	req, _ := http.NewRequest(http.MethodGet, "/api/v1/workforce/lookup-staff", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("Expected 400 for missing phone, got %d", w.Code)
+	}
+
+	// Unknown phone -> 200 with isStaff: false
+	req2, _ := http.NewRequest(http.MethodGet, "/api/v1/workforce/lookup-staff?phone=1234567890", nil)
+	w2 := httptest.NewRecorder()
+	router.ServeHTTP(w2, req2)
+	if w2.Code != http.StatusOK {
+		t.Errorf("Expected 200 for lookup, got %d", w2.Code)
+	}
+
+	var resp struct {
+		Data struct {
+			IsStaff bool `json:"isStaff"`
+		} `json:"data"`
+	}
+	_ = json.Unmarshal(w2.Body.Bytes(), &resp)
+	if resp.Data.IsStaff {
+		t.Error("Expected isStaff: false for unknown phone")
+	}
+}
+
+func TestGetActiveOrderByPhoneHandler(t *testing.T) {
+	router, _ := setupTestRouter()
+
+	// Missing phone -> 400
+	req, _ := http.NewRequest(http.MethodGet, "/api/v1/orders/by-phone", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("Expected 400 for missing phone, got %d", w.Code)
+	}
+
+	// Unknown phone -> 200 with hasOrder: false
+	req2, _ := http.NewRequest(http.MethodGet, "/api/v1/orders/by-phone?phone=1234567890", nil)
+	w2 := httptest.NewRecorder()
+	router.ServeHTTP(w2, req2)
+	if w2.Code != http.StatusOK {
+		t.Errorf("Expected 200 for order lookup, got %d", w2.Code)
+	}
+
+	var resp struct {
+		Data struct {
+			HasOrder bool `json:"hasOrder"`
+		} `json:"data"`
+	}
+	_ = json.Unmarshal(w2.Body.Bytes(), &resp)
+	if resp.Data.HasOrder {
+		t.Error("Expected hasOrder: false for unknown phone")
+	}
+}
+

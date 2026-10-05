@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getWhatsAppLogs, getTasksStore } from "@/lib/room-tasks";
 import {
   findStaffByPhone,
+  findStaffByPhoneAsync,
   recordAttendance,
   recordLeaveRequest,
   generateCheckInSignedUrl,
@@ -218,10 +219,124 @@ function handleStaffFlow(staff: StaffMember, text: string): string {
   );
 }
 
+async function fetchDynamicMenu(): Promise<string> {
+  const apiBase =
+    (typeof window === "undefined" ? process.env.INTERNAL_API_URL : null) ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    "https://dine.rovixatech.com/api/v1";
+  const cleanBase = apiBase.replace(/\/+$/, "");
+  const orderUrl = process.env.NEXT_PUBLIC_APP_URL || "https://dine.rovixatech.com";
+
+  try {
+    const res = await fetch(`${cleanBase}/public/m/the-grand-bistro`, {
+      signal: AbortSignal.timeout(3000),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const categories = data?.data?.categories || data?.categories || [];
+      const sampleItems: string[] = [];
+
+      for (const cat of categories) {
+        for (const item of cat.items || []) {
+          if (item.isAvailable !== false && sampleItems.length < 5) {
+            sampleItems.push(`• *${item.name}* — ₹${item.price}`);
+          }
+        }
+      }
+
+      if (sampleItems.length > 0) {
+        return (
+          `🍽️ *Today's Specials at DineFlow:*\n\n` +
+          sampleItems.join("\n") +
+          `\n\n📱 *Browse Full Interactive Digital Menu & Order Online*:\n` +
+          `${orderUrl}\n\n` +
+          `Reply with any dish name to order or reply *2* to track an active order!`
+        );
+      }
+    }
+  } catch (err) {
+    console.warn("[WhatsApp Webhook] Dynamic menu fetch fallback:", err);
+  }
+
+  return (
+    `🍽️ *Today's Specials at DineFlow:*\n\n` +
+    `• *Truffle Mushroom Risotto* — ₹850\n` +
+    `• *Wood-Fired Margherita Pizza* — ₹750\n` +
+    `• *Belgian Dark Chocolate Fondant* — ₹450\n` +
+    `• *Crispy Calamari Fritti* — ₹620\n` +
+    `• *Signature Masala Chai & Tarts* — ₹280\n\n` +
+    `📱 *Browse Full Interactive Digital Menu*:\n` +
+    `${orderUrl}\n\n` +
+    `Reply with any dish name to order or reply *2* to track an active order!`
+  );
+}
+
+async function fetchDynamicOrderStatus(customerPhone: string, text: string): Promise<string> {
+  const apiBase =
+    (typeof window === "undefined" ? process.env.INTERNAL_API_URL : null) ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    "https://dine.rovixatech.com/api/v1";
+  const cleanBase = apiBase.replace(/\/+$/, "");
+  const orderUrl = process.env.NEXT_PUBLIC_APP_URL || "https://dine.rovixatech.com";
+
+  try {
+    const res = await fetch(`${cleanBase}/public/orders/by-phone?phone=${encodeURIComponent(customerPhone)}`, {
+      signal: AbortSignal.timeout(3000),
+    });
+    if (res.ok) {
+      const json = await res.json();
+      if (json.data?.hasOrder && json.data.order) {
+        const ord = json.data.order;
+        const loc = ord.tableName ? `Table ${ord.tableName}` : ord.roomNumber ? `Room ${ord.roomNumber}` : "Dine-in";
+        let statusText = "In Kitchen Preparation 🍳";
+        if (ord.status === "ready") statusText = "Ready for Service 🔔";
+        if (ord.status === "served") statusText = "Delivered to Table ✨";
+        if (ord.status === "completed") statusText = "Completed / Paid ✅";
+
+        return (
+          `🛵 *Live Order Tracker #${ord.orderNumber}*\n\n` +
+          `🍳 Status: *${statusText}*\n` +
+          `📍 Delivery Point: ${loc}\n` +
+          `💰 Total Amount: ₹${ord.totalAmount}\n` +
+          `📦 Items: ${ord.itemsCount || 1} items\n\n` +
+          `📱 *Live Tracking & Bill Link*:\n` +
+          `${orderUrl}\n\n` +
+          `Our floor steward will serve your items piping hot!`
+        );
+      }
+    }
+  } catch (err) {
+    console.warn("[WhatsApp Webhook] Dynamic order fetch fallback:", err);
+  }
+
+  const orderNumMatch = text.match(/ord-?[0-9a-z]+/i);
+  const orderNum = orderNumMatch ? orderNumMatch[0].toUpperCase() : null;
+
+  if (orderNum) {
+    return (
+      `🛵 *Live Order Tracker #${orderNum}*\n\n` +
+      `🍳 Status: *In Kitchen Preparation*\n` +
+      `⏱️ Estimated Delivery: *~10 minutes*\n` +
+      `📍 Location: Dining Area\n\n` +
+      `📱 *Live tracking link*:\n` +
+      `${orderUrl}\n\n` +
+      `Our floor steward will serve your items piping hot!`
+    );
+  }
+
+  return (
+    `🛵 *Live Order Tracker*\n\n` +
+    `No active in-progress order was found associated with your number (+${customerPhone}).\n\n` +
+    `💡 *To place a fresh order*:\n` +
+    `Reply *1* to view the menu or visit ${orderUrl}\n\n` +
+    `If you have an existing order ID, reply with e.g. *ORD-1024* to look it up directly.`
+  );
+}
+
 /**
  * Generates automated reply for CUSTOMER / GUEST
  */
-function handleCustomerFlow(text: string, guestName: string): string {
+async function handleCustomerFlow(text: string, guestName: string, customerPhone: string): Promise<string> {
   const lower = text.toLowerCase().trim();
 
   // 1. Menu & Specials
@@ -236,33 +351,12 @@ function handleCustomerFlow(text: string, guestName: string): string {
     lower.includes("chocolate") ||
     lower.includes("price")
   ) {
-    return (
-      `🍽️ *Today's Specials at DineFlow:*\n\n` +
-      `• *Truffle Mushroom Risotto* — ₹850\n` +
-      `• *Wood-Fired Margherita Pizza* — ₹750\n` +
-      `• *Belgian Dark Chocolate Fondant* — ₹450\n` +
-      `• *Crispy Calamari Fritti* — ₹620\n` +
-      `• *Signature Masala Chai & Tarts* — ₹280\n\n` +
-      `📱 *Browse Full Interactive Digital Menu*:\n` +
-      `https://dine.rovixatech.com\n\n` +
-      `Reply with any item name to order or reply *2* to track an active order!`
-    );
+    return await fetchDynamicMenu();
   }
 
   // 2. Order Tracking
   if (lower === "2" || lower.includes("order") || lower.includes("track") || lower.includes("status") || lower.includes("ord-")) {
-    const orderNumMatch = text.match(/ord-?[0-9a-z]+/i);
-    const orderNum = orderNumMatch ? orderNumMatch[0].toUpperCase() : "ORD-8821";
-    return (
-      `🛵 *Live Order Tracker #${orderNum}*\n\n` +
-      `🍳 Status: *In Kitchen Preparation*\n` +
-      `⏱️ Estimated Delivery: *~12 minutes*\n` +
-      `📍 Location: Table 14\n` +
-      `💰 Total: ₹1,170.00 (Confirmed)\n\n` +
-      `📱 *Live tracking link*:\n` +
-      `https://dine.rovixatech.com\n\n` +
-      `Our floor steward will serve your items piping hot!`
-    );
+    return await fetchDynamicOrderStatus(customerPhone, text);
   }
 
   // 3. Table / Room Steward Assistance
@@ -361,7 +455,7 @@ export async function POST(req: NextRequest) {
             console.log(`[Meta Inbound Message] From: ${from}, PhoneID: ${phoneId}, Text: "${text}"`);
 
             // 1. Dual-Persona Lookup: Check if sender is Staff or Customer
-            const matchedStaff = findStaffByPhone(from);
+            const matchedStaff = await findStaffByPhoneAsync(from);
             const isStaff = !!matchedStaff;
 
             let replyText = "";
@@ -372,7 +466,7 @@ export async function POST(req: NextRequest) {
               replyText = handleStaffFlow(matchedStaff, text);
             } else {
               senderType = "customer";
-              replyText = handleCustomerFlow(text, contactName);
+              replyText = await handleCustomerFlow(text, contactName, from);
             }
 
             // 2. Record Inbound Message in Log Store
