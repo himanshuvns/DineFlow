@@ -3366,7 +3366,7 @@
       "file_type": "code",
       "norm_label": "staffpage()",
       "source_file": "apps/web/app/dashboard/staff/page.tsx",
-      "source_location": "L3906"
+      "source_location": "L3738"
     },
     {
       "id": "apps_web_app_dashboard_staff_page_staffpagecontent",
@@ -36318,7 +36318,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/app/dashboard/staff/page.tsx",
-      "source_location": "L1013",
+      "source_location": "L1016",
       "weight": 1.0
     },
     {
@@ -36354,7 +36354,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/app/dashboard/staff/page.tsx",
-      "source_location": "L3186",
+      "source_location": "L2920",
       "weight": 1.0
     },
     {
@@ -36366,7 +36366,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/app/dashboard/staff/page.tsx",
-      "source_location": "L663",
+      "source_location": "L666",
       "weight": 1.0
     },
     {
@@ -36378,7 +36378,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/app/dashboard/staff/page.tsx",
-      "source_location": "L857",
+      "source_location": "L860",
       "weight": 1.0
     },
     {
@@ -36390,7 +36390,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/app/dashboard/staff/page.tsx",
-      "source_location": "L867",
+      "source_location": "L870",
       "weight": 1.0
     },
     {
@@ -109127,7 +109127,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/web/app/dashboard/staff/page.tsx",
-      "source_location": "L3906",
+      "source_location": "L3738",
       "weight": 1.0
     },
     {
@@ -126985,5 +126985,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "b0ae0558090399db7950b5da588c847b4ae190c9"
+  "built_at_commit": "fc7586b866c48951776dcfb6a0f0edb7e8e58c26"
 }

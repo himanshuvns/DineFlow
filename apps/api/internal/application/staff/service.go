@@ -78,6 +78,7 @@ type InviteStaffInput struct {
 	Role           domainuser.Role            `json:"role"`
 	Department     string                     `json:"department"`
 	EmploymentType string                     `json:"employmentType"`
+	ShiftName      string                     `json:"shiftName"`
 	Salary         domainuser.SalaryStructure `json:"salary"`
 }
 
@@ -236,6 +237,7 @@ func (s *Service) InviteStaff(ctx context.Context, tenantID bson.ObjectID, input
 			EmployeeID:     empID,
 			Department:     input.Department,
 			EmploymentType: input.EmploymentType,
+			ShiftName:      input.ShiftName,
 			Salary:         input.Salary,
 			JoiningDate:    &now,
 			Auth: domainuser.Auth{

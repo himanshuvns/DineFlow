@@ -317,6 +317,7 @@ function StaffPageContent() {
   const [inviteRole, setInviteRole] = React.useState("waiter");
   const [inviteDepartment, setInviteDepartment] = React.useState("Floor Service");
   const [inviteType, setInviteType] = React.useState("full_time");
+  const [inviteShiftName, setInviteShiftName] = React.useState("Morning Shift (09:00 - 18:00)");
   const [inviteSalary, setInviteSalary] = React.useState("20000");
   const [invitePhoneTouched, setInvitePhoneTouched] = React.useState(false);
 
@@ -346,6 +347,23 @@ function StaffPageContent() {
   const [geoRadius, setGeoRadius] = React.useState("100");
   const [geoAddress, setGeoAddress] = React.useState("Connaught Place, New Delhi");
   const [geoEnforce, setGeoEnforce] = React.useState(false);
+
+  // Shift Creation Modal State
+  const [isAddShiftOpen, setIsAddShiftOpen] = React.useState(false);
+  const [newShiftName, setNewShiftName] = React.useState("");
+  const [newShiftStart, setNewShiftStart] = React.useState("09:00");
+  const [newShiftEnd, setNewShiftEnd] = React.useState("18:00");
+  const [newShiftGrace, setNewShiftGrace] = React.useState("15");
+  const [newShiftBreak, setNewShiftBreak] = React.useState("60");
+  const [newShiftIsDefault, setNewShiftIsDefault] = React.useState(false);
+  const [creatingShift, setCreatingShift] = React.useState(false);
+
+  // Holiday Creation Modal State
+  const [isAddHolidayOpen, setIsAddHolidayOpen] = React.useState(false);
+  const [newHolidayName, setNewHolidayName] = React.useState("");
+  const [newHolidayDate, setNewHolidayDate] = React.useState("");
+  const [newHolidayType, setNewHolidayType] = React.useState<"national" | "state" | "restaurant">("restaurant");
+  const [creatingHoliday, setCreatingHoliday] = React.useState(false);
 
   const [isApplyLeaveOpen, setIsApplyLeaveOpen] = React.useState(false);
   const [leaveStaffId, setLeaveStaffId] = React.useState("");
@@ -844,6 +862,117 @@ function StaffPageContent() {
     }
   };
 
+  // ── Shift Management Actions ────────────────────────────────────────────────
+
+  const handleCreateShift = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newShiftName.trim()) {
+      addToast("warning", "Shift Name Required", "Please enter a name for the shift.");
+      return;
+    }
+    setCreatingShift(true);
+    try {
+      await apiClient.post("/staff/shifts", {
+        name: newShiftName.trim(),
+        startTime: newShiftStart,
+        endTime: newShiftEnd,
+        graceMinutes: parseInt(newShiftGrace, 10) || 15,
+        breakMinutes: parseInt(newShiftBreak, 10) || 60,
+        isDefault: newShiftIsDefault,
+      });
+      addToast("success", "Shift Created", `Shift "${newShiftName.trim()}" has been configured successfully.`);
+      setIsAddShiftOpen(false);
+      setNewShiftName("");
+      setNewShiftStart("09:00");
+      setNewShiftEnd("18:00");
+      setNewShiftGrace("15");
+      setNewShiftBreak("60");
+      setNewShiftIsDefault(false);
+      await fetchShifts();
+    } catch (err: unknown) {
+      const errorMsg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || "Failed to create shift.";
+      addToast("error", "Shift Creation Failed", errorMsg);
+    } finally {
+      setCreatingShift(false);
+    }
+  };
+
+  // ── Holiday Management Actions ──────────────────────────────────────────────
+
+  const handleCreateHoliday = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newHolidayName.trim()) {
+      addToast("warning", "Holiday Name Required", "Please enter the holiday name.");
+      return;
+    }
+    if (!newHolidayDate) {
+      addToast("warning", "Holiday Date Required", "Please select a date for the holiday.");
+      return;
+    }
+    setCreatingHoliday(true);
+    try {
+      await apiClient.post("/staff/holidays", {
+        name: newHolidayName.trim(),
+        date: newHolidayDate,
+        type: newHolidayType,
+      });
+      addToast("success", "Holiday Created", `Holiday "${newHolidayName.trim()}" has been scheduled.`);
+      setIsAddHolidayOpen(false);
+      setNewHolidayName("");
+      setNewHolidayDate("");
+      setNewHolidayType("restaurant");
+      await fetchHolidays();
+    } catch (err: unknown) {
+      const errorMsg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || "Failed to create holiday.";
+      addToast("error", "Holiday Creation Failed", errorMsg);
+    } finally {
+      setCreatingHoliday(false);
+    }
+  };
+
+  // ── Shift Options & Roster Helpers ──────────────────────────────────────────
+
+  const allShiftOptions = React.useMemo(() => {
+    const list: { value: string; label: string }[] = [];
+    const seen = new Set<string>();
+
+    shifts.forEach((s) => {
+      const formatted = s.name.includes("(") ? s.name : `${s.name} (${s.startTime} - ${s.endTime})`;
+      const key = formatted.toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        list.push({ value: formatted, label: formatted });
+      }
+    });
+
+    const defaults = [
+      "Morning Shift (09:00 - 18:00)",
+      "Evening Shift (14:00 - 23:00)",
+      "Night Shift (22:00 - 07:00)",
+    ];
+    defaults.forEach((def) => {
+      const defKey = def.toLowerCase();
+      const defBase = def.split(" (")[0].toLowerCase();
+      if (!Array.from(seen).some((k) => k.includes(defBase))) {
+        seen.add(defKey);
+        list.push({ value: def, label: def });
+      }
+    });
+
+    return list;
+  }, [shifts]);
+
+  const isStaffInShift = React.useCallback((staffShiftName: string | undefined, shift: Shift) => {
+    if (!staffShiftName || staffShiftName.trim() === "") {
+      return Boolean(shift.isDefault);
+    }
+    const cleanStaff = staffShiftName.toLowerCase();
+    const cleanShift = shift.name.toLowerCase();
+    const shiftBase = cleanShift.split(" (")[0].trim();
+    const staffBase = cleanStaff.split(" (")[0].trim();
+    return cleanStaff.includes(cleanShift) || cleanShift.includes(cleanStaff) || cleanStaff.includes(shiftBase) || cleanShift.includes(staffBase);
+  }, []);
+
   // ── Staff Profile & Invite Actions ─────────────────────────────────────────
 
   const handleSendInvite = async (e: React.FormEvent) => {
@@ -887,6 +1016,7 @@ function StaffPageContent() {
               role: inviteRole,
               department: inviteDepartment,
               employmentType: inviteType,
+              shiftName: inviteShiftName,
             }),
           });
         } catch (apiErr) {
@@ -901,6 +1031,7 @@ function StaffPageContent() {
         role: inviteRole,
         department: inviteDepartment,
         employmentType: inviteType,
+        shiftName: inviteShiftName,
         salary: {
           basic: parseFloat(inviteSalary) || 20000,
           hra: Math.round((parseFloat(inviteSalary) || 20000) * 0.4),
@@ -918,6 +1049,7 @@ function StaffPageContent() {
       setInviteName("");
       setInvitePhone("");
       setInviteEmail("");
+      setInviteShiftName(allShiftOptions[0]?.value || "Morning Shift (09:00 - 18:00)");
       setInvitePhoneTouched(false);
       fetchStaff();
     } catch (err: unknown) {
@@ -965,7 +1097,20 @@ function StaffPageContent() {
     setProfileEmail(member.email || "");
     setProfileDepartment(member.department || (member.role === "owner" || member.role === "manager" ? "Management" : "Floor Service"));
     setProfileEmpType(member.employmentType || "full_time");
-    setProfileShiftName(member.shiftName || "Morning Shift (09:00 - 18:00)");
+
+    const existing = member.shiftName?.trim();
+    if (existing) {
+      const match = allShiftOptions.find(
+        (o) =>
+          o.value.toLowerCase() === existing.toLowerCase() ||
+          o.value.toLowerCase().includes(existing.toLowerCase()) ||
+          existing.toLowerCase().includes(o.value.toLowerCase())
+      );
+      setProfileShiftName(match ? match.value : existing);
+    } else {
+      setProfileShiftName(allShiftOptions[0]?.value || "Morning Shift (09:00 - 18:00)");
+    }
+
     setProfileBasic(member.salary?.basic?.toString() || "20000");
     setProfileHra(member.salary?.hra?.toString() || "8000");
     setProfileOvertimeRate(member.salary?.overtimeRate?.toString() || "150");
@@ -2234,7 +2379,7 @@ function StaffPageContent() {
                 variant="glow"
                 size="sm"
                 leftIcon={<Plus className="h-4 w-4" />}
-                onClick={() => addToast("info", "Add Shift", "Shift templates are active. Select any staff profile to assign them to shifts.")}
+                onClick={() => setIsAddShiftOpen(true)}
               >
                 Add Shift
               </Button>
@@ -2312,37 +2457,65 @@ function StaffPageContent() {
                   { id: "s2", name: "Evening Shift", startTime: "14:00", endTime: "23:00", graceMinutes: 15, breakMinutes: 45, isDefault: false },
                   { id: "s3", name: "Night Shift", startTime: "22:00", endTime: "07:00", graceMinutes: 15, breakMinutes: 60, isDefault: false },
                 ]
-            ).map((sh) => (
-              <Card key={sh.id} variant="glass" className={sh.isDefault ? "border-emerald-500/30" : ""}>
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-base">{sh.name}</CardTitle>
-                    {sh.isDefault && <Badge variant="success" size="sm">Default</Badge>}
-                  </div>
-                  <CardDescription className="text-xs">
-                    Standard shift hours with automated late arrival detection.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
-                    <span className="text-slate-500">Working Hours</span>
-                    <span className="font-bold text-slate-900 dark:text-white font-mono text-sm">
-                      {sh.startTime} – {sh.endTime}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/40 text-center">
-                      <p className="text-slate-400 text-[10px]">Grace Period</p>
-                      <p className="font-semibold text-slate-800 dark:text-slate-200">{sh.graceMinutes} mins</p>
+            ).map((sh) => {
+              const assignedStaff = displayStaff.filter((s) => isStaffInShift(s.shiftName, sh));
+              return (
+                <Card key={sh.id} variant="glass" className={sh.isDefault ? "border-emerald-500/30" : ""}>
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-base">{sh.name}</CardTitle>
+                      <div className="flex items-center gap-1.5">
+                        {sh.isDefault && <Badge variant="success" size="sm">Default</Badge>}
+                        <Badge variant="neutral" size="sm">{assignedStaff.length} staff</Badge>
+                      </div>
                     </div>
-                    <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/40 text-center">
-                      <p className="text-slate-400 text-[10px]">Break Allowance</p>
-                      <p className="font-semibold text-slate-800 dark:text-slate-200">{sh.breakMinutes} mins</p>
+                    <CardDescription className="text-xs">
+                      Standard shift hours with automated late arrival detection.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
+                      <span className="text-slate-500">Working Hours</span>
+                      <span className="font-bold text-slate-900 dark:text-white font-mono text-sm">
+                        {sh.startTime} – {sh.endTime}
+                      </span>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/40 text-center">
+                        <p className="text-slate-400 text-[10px]">Grace Period</p>
+                        <p className="font-semibold text-slate-800 dark:text-slate-200">{sh.graceMinutes} mins</p>
+                      </div>
+                      <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/40 text-center">
+                        <p className="text-slate-400 text-[10px]">Break Allowance</p>
+                        <p className="font-semibold text-slate-800 dark:text-slate-200">{sh.breakMinutes} mins</p>
+                      </div>
+                    </div>
+                    {assignedStaff.length > 0 && (
+                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800/60">
+                        <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1.5">
+                          Assigned Staff ({assignedStaff.length}):
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {assignedStaff.slice(0, 4).map((member) => (
+                            <span
+                              key={member.id}
+                              className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                            >
+                              {member.name}
+                            </span>
+                          ))}
+                          {assignedStaff.length > 4 && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] text-slate-500 dark:text-slate-400">
+                              +{assignedStaff.length - 4} more
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
       )}
@@ -2785,10 +2958,10 @@ function StaffPageContent() {
             </div>
             <div className="flex items-center gap-2.5 flex-wrap">
               <Button
-                variant="outline"
+                variant="glow"
                 size="sm"
                 leftIcon={<Plus className="h-3.5 w-3.5" />}
-                onClick={() => addToast("info", "Add Holiday", "National gazetted holidays are synchronized for the current calendar year.")}
+                onClick={() => setIsAddHolidayOpen(true)}
               >
                 Add Custom Holiday
               </Button>
@@ -2874,20 +3047,28 @@ function StaffPageContent() {
                   </TableRow>
                 </TableHeader>
                 <TableBody className="divide-y divide-slate-200 dark:divide-slate-800/60">
-                  {holidays.map((h) => (
-                    <TableRow key={h.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                      <TableCell className="py-3.5 pl-6 font-semibold text-slate-900 dark:text-white">{h.name}</TableCell>
-                      <TableCell className="py-3.5 font-mono text-slate-700 dark:text-slate-300">{h.date}</TableCell>
-                      <TableCell className="py-3.5 capitalize">
-                        <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[10px] font-medium">
-                          {h.type}
-                        </span>
-                      </TableCell>
-                      <TableCell className="py-3.5 text-right pr-6">
-                        <Badge variant="info" size="sm">Scheduled</Badge>
+                  {holidays.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="py-8 text-center text-xs text-slate-500 dark:text-slate-400">
+                        No custom or gazetted holidays found. Click &quot;Add Custom Holiday&quot; above to schedule one.
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    holidays.map((h) => (
+                      <TableRow key={h.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                        <TableCell className="py-3.5 pl-6 font-semibold text-slate-900 dark:text-white">{h.name}</TableCell>
+                        <TableCell className="py-3.5 font-mono text-slate-700 dark:text-slate-300">{h.date}</TableCell>
+                        <TableCell className="py-3.5 capitalize">
+                          <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[10px] font-medium">
+                            {h.type}
+                          </span>
+                        </TableCell>
+                        <TableCell className="py-3.5 text-right pr-6">
+                          <Badge variant="info" size="sm">Scheduled</Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -3008,6 +3189,23 @@ function StaffPageContent() {
             />
           </div>
 
+          <div>
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+              Assigned Shift
+            </label>
+            <select
+              value={inviteShiftName}
+              onChange={(e) => setInviteShiftName(e.target.value)}
+              className="w-full rounded-xl text-xs text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-2 outline-none"
+            >
+              {allShiftOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-slate-700 dark:text-slate-300">
             <span className="font-bold text-emerald-700 dark:text-emerald-400">Login Credentials:</span> Initial password will be <code className="px-1.5 py-0.5 rounded bg-white dark:bg-slate-900 border border-emerald-500/30 font-mono font-bold text-emerald-600 dark:text-emerald-400">DineFlow@2026</code>. The member can log in at <span className="font-semibold text-slate-900 dark:text-white">/login</span> using their mobile number and change their password anytime.
           </div>
@@ -3099,12 +3297,25 @@ function StaffPageContent() {
             </div>
           </div>
 
-          <Input
-            label="Assigned Shift"
-            value={profileShiftName}
-            onChange={(e) => setProfileShiftName(e.target.value)}
-            placeholder="Morning Shift (09:00 - 18:00)"
-          />
+          <div>
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+              Assigned Shift
+            </label>
+            <select
+              value={profileShiftName}
+              onChange={(e) => setProfileShiftName(e.target.value)}
+              className="w-full rounded-xl text-xs text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-2.5 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+            >
+              {allShiftOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+              {profileShiftName && !allShiftOptions.some((o) => o.value === profileShiftName) && (
+                <option value={profileShiftName}>{profileShiftName}</option>
+              )}
+            </select>
+          </div>
 
           <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 space-y-3">
             <p className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
@@ -3730,6 +3941,136 @@ function StaffPageContent() {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* ── MODAL: CREATE SHIFT ───────────────────────────────────────────────── */}
+      <Modal
+        isOpen={isAddShiftOpen}
+        onClose={() => setIsAddShiftOpen(false)}
+        title="Create New Shift"
+        description="Define shift timings, grace allowances, and automated late detection for team rosters."
+      >
+        <form onSubmit={handleCreateShift} className="space-y-4">
+          <Input
+            label="Shift Name"
+            placeholder="e.g. Afternoon Shift or Breakfast Rush"
+            value={newShiftName}
+            onChange={(e) => setNewShiftName(e.target.value)}
+            required
+          />
+
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="Start Time"
+              type="time"
+              value={newShiftStart}
+              onChange={(e) => setNewShiftStart(e.target.value)}
+              required
+            />
+            <Input
+              label="End Time"
+              type="time"
+              value={newShiftEnd}
+              onChange={(e) => setNewShiftEnd(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="Grace Period (Minutes)"
+              type="number"
+              min="0"
+              max="120"
+              value={newShiftGrace}
+              onChange={(e) => setNewShiftGrace(e.target.value)}
+              helperText="Allowed late arrival tolerance"
+            />
+            <Input
+              label="Break Allowance (Minutes)"
+              type="number"
+              min="0"
+              max="240"
+              value={newShiftBreak}
+              onChange={(e) => setNewShiftBreak(e.target.value)}
+              helperText="Allowed meal & rest break time"
+            />
+          </div>
+
+          <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+            <div>
+              <p className="text-xs font-semibold text-slate-900 dark:text-white">Default Shift for New Staff</p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                Automatically assign this shift to newly enrolled team members.
+              </p>
+            </div>
+            <input
+              type="checkbox"
+              checked={newShiftIsDefault}
+              onChange={(e) => setNewShiftIsDefault(e.target.checked)}
+              className="h-4 w-4 rounded accent-emerald-500 cursor-pointer"
+            />
+          </div>
+
+          <div className="pt-2 flex justify-end gap-2">
+            <Button variant="secondary" type="button" onClick={() => setIsAddShiftOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="glow" type="submit" isLoading={creatingShift} leftIcon={<Clock className="h-4 w-4" />}>
+              Create Shift
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ── MODAL: CREATE CUSTOM HOLIDAY ───────────────────────────────────────── */}
+      <Modal
+        isOpen={isAddHolidayOpen}
+        onClose={() => setIsAddHolidayOpen(false)}
+        title="Schedule Custom Holiday"
+        description="Add a restaurant off-day, festival observance, or regional holiday to the workforce calendar."
+      >
+        <form onSubmit={handleCreateHoliday} className="space-y-4">
+          <Input
+            label="Holiday Name"
+            placeholder="e.g. Restaurant Annual Day, Founders Day"
+            value={newHolidayName}
+            onChange={(e) => setNewHolidayName(e.target.value)}
+            required
+          />
+
+          <Input
+            label="Holiday Date"
+            type="date"
+            value={newHolidayDate}
+            onChange={(e) => setNewHolidayDate(e.target.value)}
+            required
+          />
+
+          <div>
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+              Holiday Classification
+            </label>
+            <select
+              value={newHolidayType}
+              onChange={(e) => setNewHolidayType(e.target.value as "national" | "state" | "restaurant")}
+              className="w-full rounded-xl text-xs text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-2.5 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+            >
+              <option value="restaurant">Restaurant Off-Day / Custom Closure</option>
+              <option value="national">National Gazetted Holiday</option>
+              <option value="state">State / Regional Festival</option>
+            </select>
+          </div>
+
+          <div className="pt-2 flex justify-end gap-2">
+            <Button variant="secondary" type="button" onClick={() => setIsAddHolidayOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="glow" type="submit" isLoading={creatingHoliday} leftIcon={<Award className="h-4 w-4" />}>
+              Schedule Holiday
+            </Button>
+          </div>
+        </form>
       </Modal>
     </div>
   );
