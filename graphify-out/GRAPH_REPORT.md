@@ -1,7 +1,7 @@
 # Graph Report - DineFlow  (2026-10-05)
 
 ## Corpus Check
-- 341 files · ~689,798 words
+- 341 files · ~689,806 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 12 file(s) not represented in the graph (top: (none) 6, .example 2, .toml 1)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `36e960e5`
+- Built from commit: `cb474cda`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -631,7 +631,7 @@ Nodes (5): AIHandler, OrderHandler, Auth(), RateLimit(), Setup()
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `react` connect `react` to `video/page.tsx`, `cn`, `toast.tsx`, `TubesCursor`, `spotlight-cursor.tsx`, `landing-customer-journey.tsx`, `tenant-data-store.ts`, `peeking-chef.tsx`, `[orderId]/page.tsx`, `staff/page.tsx`, `ui/pricing.tsx`, `landing-workflow.tsx`, `[roomId]/page.tsx`, `web/package.json`, `useToast`, `notification-store.ts`, `useAuthStore`, `app/layout.tsx`?**
-  _High betweenness centrality (0.023) - this node is a cross-community bridge._
+  _High betweenness centrality (0.022) - this node is a cross-community bridge._
 - **Why does `RoomHandler` connect `github.com/gin-gonic/gin.Context` to `Service`, `time.Time`, `go.mongodb.org/mongo-driver/v2/bson.ObjectID`, `BadRequest`, `Service`, `handlers/room.go`, `Setup`?**
   _High betweenness centrality (0.013) - this node is a cross-community bridge._
 - **Why does `Hub` connect `Hub` to `go.mongodb.org/mongo-driver/v2/bson.ObjectID`, `OpenWAProvider`, `BadRequest`, `Order`, `Setup`?**

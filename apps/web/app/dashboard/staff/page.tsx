@@ -306,8 +306,9 @@ export default function StaffPage() {
         const localRes = await fetch("/api/staff");
         if (localRes.ok) {
           const localData = await localRes.json();
-          if (localData?.staff && Array.isArray(localData.staff) && localData.staff.length > 0) {
-            setStaffList(localData.staff);
+          const list = localData?.data || localData?.staff;
+          if (Array.isArray(list) && list.length > 0) {
+            setStaffList(list);
             return;
           }
         }

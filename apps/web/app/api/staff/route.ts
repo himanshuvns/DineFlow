@@ -9,6 +9,7 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       data: staff,
+      staff: staff,
       count: staff.length,
     });
   } catch (err: unknown) {
