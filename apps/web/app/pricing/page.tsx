@@ -25,7 +25,7 @@ import { useToast } from "@/components/ui/toast";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 interface PlanTier {
-  id: "free" | "starter" | "growth" | "hotel_pro";
+  id: "starter" | "growth" | "hotel_pro" | "enterprise";
   name: string;
   tagline: string;
   monthlyPrice: number;
@@ -43,72 +43,54 @@ interface PlanTier {
 
 const PLANS: PlanTier[] = [
   {
-    id: "free",
-    name: "Free",
-    tagline: "For pop-ups, food trucks & trial operators",
-    monthlyPrice: 0,
-    annualMonthlyPrice: 0,
-    limits: {
-      tables: "5 Tables",
-      dishes: "30 Dishes",
-      staff: "2 Staff seats",
-      locations: "1 Location",
-    },
-    features: [
-      "Contactless QR digital menu",
-      "Real-time guest mobile ordering",
-      "Standard web management portal",
-      "Community support",
-      "Zero commission on orders",
-    ],
-  },
-  {
     id: "starter",
     name: "Starter",
-    tagline: "Essential tools for bustling bistros & cafes",
+    tagline: "Essential tools for bustling bistros & cafes (14-Day Free Trial)",
     monthlyPrice: 999,
     annualMonthlyPrice: 799,
     limits: {
-      tables: "20 Tables",
+      tables: "10 Tables",
       dishes: "100 Dishes",
       staff: "5 Staff seats",
       locations: "1 Location",
     },
     features: [
-      "Everything in Free, plus:",
-      "Custom branded QR stands & exports",
+      "14-Day Full Free Trial (No upfront charge)",
+      "Up to 10 Tables & 100 Dishes",
+      "Contactless QR digital menu & ordering",
+      "Single Kitchen KDS with audio alerts",
       "Direct WhatsApp order receipt alerts",
-      "Sales analytics & CSV download",
-      "Inventory item availability toggles",
+      "Sales analytics & daily CSV download",
       "14-Day zero-disruption grace period",
     ],
   },
   {
     id: "growth",
-    name: "Growth",
-    tagline: "Full-scale dining room & kitchen automation",
+    name: "Growth Pro",
+    tagline: "Full-scale dining room, kitchen automation & AI reviews",
     monthlyPrice: 2999,
     annualMonthlyPrice: 2399,
     popular: true,
     limits: {
-      tables: "100 Tables",
+      tables: "50 Tables",
       dishes: "Unlimited Dishes",
-      staff: "25 Staff seats",
+      staff: "20 Staff seats",
       locations: "3 Locations",
     },
     features: [
       "Everything in Starter, plus:",
+      "Up to 50 Tables & 20 Staff seats",
+      "⭐ AI Google Maps Review Smart QR & Copilot",
       "Multi-station Kitchen Display (KDS)",
       "Automated Meta Cloud WhatsApp bot",
-      "Multi-course kitchen routing",
-      "Live order audio chimes & notifications",
+      "GPS Geofenced staff attendance & payroll",
+      "Gemini AI Brand Logo & Demand Studio",
       "Priority 24/7 WhatsApp & phone SLA",
-      "14-Day zero-disruption grace period",
     ],
   },
   {
     id: "hotel_pro",
-    name: "Hotel Pro",
+    name: "Hotel Pro PMS",
     tagline: "Luxury hospitality, in-room dining & suites",
     monthlyPrice: 7999,
     annualMonthlyPrice: 6399,
@@ -120,30 +102,56 @@ const PLANS: PlanTier[] = [
       locations: "Multi-Property",
     },
     features: [
-      "Everything in Growth, plus:",
+      "Everything in Growth Pro, plus:",
+      "Unlimited Tables & Up to 150 Suites",
+      "⭐ AI Google Maps Review Smart QR Stand",
       "Hotel In-Room Dining module",
       "Guest Digital DND & Butler calling",
-      "Room service delivery routing",
-      "Banquet & pool deck station support",
+      "Consolidated Room Folio billing & checkout",
+      "Multi-Property centralized management",
       "99.95% uptime SLA with dedicated TAM",
-      "Custom POS / PMS integrations",
-      "14-Day zero-disruption grace period",
+    ],
+  },
+  {
+    id: "enterprise",
+    name: "Enterprise Custom",
+    tagline: "National restaurant chains, hotel groups & franchises",
+    monthlyPrice: 14999,
+    annualMonthlyPrice: 11999,
+    limits: {
+      tables: "Unlimited Multi-Branch",
+      dishes: "Unlimited Dishes",
+      staff: "Unlimited Staff",
+      locations: "Unlimited Outlets",
+    },
+    features: [
+      "Everything in Hotel Pro, plus:",
+      "Unlimited Multi-Branch & Properties",
+      "Custom ERP/SAP & POS API Connector",
+      "White-label Custom Domain & SSL",
+      "Dedicated Database & 99.99% Financial SLA",
     ],
   },
 ];
 
 const COMPARISON_ROWS = [
-  { feature: "Active Tables / Guest Rooms", free: "5", starter: "20", growth: "100", hotel_pro: "Unlimited" },
-  { feature: "Menu Dishes & Modifiers", free: "30", starter: "100", growth: "Unlimited", hotel_pro: "Unlimited" },
-  { feature: "Staff User Accounts", free: "2", starter: "5", growth: "25", hotel_pro: "Unlimited" },
-  { feature: "Locations / Properties", free: "1", starter: "1", growth: "3", hotel_pro: "Unlimited" },
-  { feature: "Contactless QR Menus", free: true, starter: true, growth: true, hotel_pro: true },
-  { feature: "WhatsApp Order Notifications", free: false, starter: true, growth: true, hotel_pro: true },
-  { feature: "Interactive Kitchen Display (KDS)", free: false, starter: false, growth: true, hotel_pro: true },
-  { feature: "Hotel In-Room Dining & Suites", free: false, starter: false, growth: false, hotel_pro: true },
-  { feature: "Guest Digital DND & Butler Call", free: false, starter: false, growth: false, hotel_pro: true },
-  { feature: "14-Day Protection Grace Period", free: true, starter: true, growth: true, hotel_pro: true },
-  { feature: "Platform Transaction Fee", free: "0%", starter: "0%", growth: "0%", hotel_pro: "0%" },
+  { feature: "Active Tables / Guest Rooms", starter: "10", growth: "50", hotel_pro: "Unlimited", enterprise: "Unlimited" },
+  { feature: "Menu Dishes & Modifiers", starter: "100", growth: "Unlimited", hotel_pro: "Unlimited", enterprise: "Unlimited" },
+  { feature: "Staff User Accounts", starter: "5", growth: "20", hotel_pro: "Unlimited", enterprise: "Unlimited" },
+  { feature: "Locations / Properties", starter: "1", growth: "3", hotel_pro: "Multi-Property", enterprise: "Unlimited" },
+  { feature: "14-Day Free Trial", starter: "14-Day Free Trial", growth: "Available", hotel_pro: "Available", enterprise: "Custom Pilot" },
+  { feature: "Contactless QR Menus & Ordering", starter: true, growth: true, hotel_pro: true, enterprise: true },
+  { feature: "Single Kitchen KDS Display", starter: true, growth: true, hotel_pro: true, enterprise: true },
+  { feature: "WhatsApp Order Notifications", starter: true, growth: true, hotel_pro: true, enterprise: true },
+  { feature: "Multi-Station Kitchen Routing", starter: false, growth: true, hotel_pro: true, enterprise: true },
+  { feature: "⭐ AI Google Maps Review Smart QR", starter: false, growth: true, hotel_pro: true, enterprise: true },
+  { feature: "GPS Attendance & Indian Payroll", starter: false, growth: true, hotel_pro: true, enterprise: true },
+  { feature: "Gemini AI Brand Logo Studio", starter: false, growth: true, hotel_pro: true, enterprise: true },
+  { feature: "Hotel In-Room Dining & Suites", starter: false, growth: false, hotel_pro: true, enterprise: true },
+  { feature: "Guest Digital DND & Folio Billing", starter: false, growth: false, hotel_pro: true, enterprise: true },
+  { feature: "White-label Custom Domain", starter: false, growth: false, hotel_pro: false, enterprise: true },
+  { feature: "14-Day Protection Grace Period", starter: true, growth: true, hotel_pro: true, enterprise: true },
+  { feature: "Platform Transaction Fee", starter: "0%", growth: "0%", hotel_pro: "0%", enterprise: "0%" },
 ];
 
 export default function PricingPage() {
@@ -223,8 +231,8 @@ export default function PricingPage() {
             buttonText:
               tenant?.plan === plan.id
                 ? "Active Plan"
-                : plan.monthlyPrice === 0
-                ? "Get Started Free"
+                : plan.id === "starter"
+                ? "Start 14-Day Free Trial"
                 : `Choose ${plan.name}`,
             href: "/register",
             isPopular: !!plan.popular,
@@ -280,17 +288,17 @@ export default function PricingPage() {
             <TableHeader>
               <TableRow className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/70">
                 <TableHead className="p-4 text-slate-700 dark:text-slate-400 font-semibold w-1/3">Feature</TableHead>
-                <TableHead className="p-4 text-center font-bold text-slate-900 dark:text-white">Free</TableHead>
-                <TableHead className="p-4 text-center font-bold text-slate-900 dark:text-white">Starter</TableHead>
-                <TableHead className="p-4 text-center font-bold text-emerald-700 dark:text-emerald-400">Growth</TableHead>
-                <TableHead className="p-4 text-center font-bold text-amber-700 dark:text-amber-400">Hotel Pro</TableHead>
+                <TableHead className="p-4 text-center font-bold text-slate-900 dark:text-white">Starter (14d Trial)</TableHead>
+                <TableHead className="p-4 text-center font-bold text-emerald-700 dark:text-emerald-400">Growth Pro</TableHead>
+                <TableHead className="p-4 text-center font-bold text-amber-700 dark:text-amber-400">Hotel Pro PMS</TableHead>
+                <TableHead className="p-4 text-center font-bold text-purple-700 dark:text-purple-400">Enterprise</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody className="divide-y divide-slate-200 dark:divide-slate-800/60">
               {COMPARISON_ROWS.map((row, idx) => (
                 <TableRow key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                   <TableCell className="p-4 text-slate-800 dark:text-slate-200 font-medium">{row.feature}</TableCell>
-                  {["free", "starter", "growth", "hotel_pro"].map((tier) => {
+                  {["starter", "growth", "hotel_pro", "enterprise"].map((tier) => {
                     const val = row[tier as keyof typeof row];
                     return (
                       <TableCell key={tier} className="p-4 text-center text-slate-700 dark:text-slate-300">

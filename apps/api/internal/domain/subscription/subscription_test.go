@@ -21,14 +21,25 @@ func TestPlanLimits(t *testing.T) {
 	assert.True(t, subFree.CanAddMenuItem(29))
 	assert.False(t, subFree.CanAddMenuItem(30)) // Hard limit 30 items on Free
 
+	subStarter := &Subscription{
+		TenantID: bson.NewObjectID(),
+		Plan:     PlanStarter,
+		Status:   StatusActive,
+	}
+
+	assert.True(t, subStarter.CanAddTable(9))
+	assert.False(t, subStarter.CanAddTable(10)) // Hard limit 10 tables on Starter
+	assert.True(t, subStarter.CanAddMenuItem(99))
+	assert.False(t, subStarter.CanAddMenuItem(100)) // Hard limit 100 items on Starter
+
 	subGrowth := &Subscription{
 		TenantID: bson.NewObjectID(),
 		Plan:     PlanGrowth,
 		Status:   StatusActive,
 	}
 
-	assert.True(t, subGrowth.CanAddTable(99))
-	assert.False(t, subGrowth.CanAddTable(100)) // Max 100 tables on Growth
+	assert.True(t, subGrowth.CanAddTable(49))
+	assert.False(t, subGrowth.CanAddTable(50)) // Max 50 tables on Growth
 	assert.True(t, subGrowth.CanAddMenuItem(500)) // Unlimited items on Growth
 
 	subHotel := &Subscription{

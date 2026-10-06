@@ -127,12 +127,12 @@ export default function SettingsPage() {
 
   // Resource usage metrics
   const usage = {
-    free: { tables: { used: 4, max: 5 }, dishes: { used: 24, max: 30 }, staff: { used: 2, max: 2 }, price: 0 },
-    starter: { tables: { used: 14, max: 20 }, dishes: { used: 68, max: 100 }, staff: { used: 4, max: 5 }, price: 999 },
-    growth: { tables: { used: 38, max: 100 }, dishes: { used: 142, max: 9999 }, staff: { used: 11, max: 25 }, price: 2999 },
+    free: { tables: { used: 4, max: 10 }, dishes: { used: 24, max: 100 }, staff: { used: 2, max: 5 }, price: 0 },
+    starter: { tables: { used: 7, max: 10 }, dishes: { used: 68, max: 100 }, staff: { used: 4, max: 5 }, price: 999 },
+    growth: { tables: { used: 28, max: 50 }, dishes: { used: 142, max: 9999 }, staff: { used: 11, max: 20 }, price: 2999 },
     hotel_pro: { tables: { used: 120, max: 9999 }, dishes: { used: 280, max: 9999 }, staff: { used: 34, max: 9999 }, price: 7999 },
   }[currentPlan as "free" | "starter" | "growth" | "hotel_pro"] || {
-    tables: { used: 14, max: 20 },
+    tables: { used: 7, max: 10 },
     dishes: { used: 48, max: 100 },
     staff: { used: 3, max: 5 },
     price: 999,
@@ -859,9 +859,9 @@ export default function SettingsPage() {
         <div className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {[
-              { id: "starter" as const, name: "Starter", price: "₹999/mo", desc: "20 Tables, 100 Dishes, 5 Staff" },
-              { id: "growth" as const, name: "Growth", price: "₹2,999/mo", desc: "100 Tables, Unlimited Dishes, 25 Staff" },
-              { id: "hotel_pro" as const, name: "Hotel Pro", price: "₹7,999/mo", desc: "Unlimited Rooms & Tables, In-Room Dining" },
+              { id: "starter" as const, name: "Starter", price: "₹999/mo", desc: "10 Tables, 100 Dishes, 5 Staff (14-Day Free Trial)" },
+              { id: "growth" as const, name: "Growth Pro", price: "₹2,999/mo", desc: "50 Tables, Unlimited Dishes, 20 Staff, AI Review QR" },
+              { id: "hotel_pro" as const, name: "Hotel Pro PMS", price: "₹7,999/mo", desc: "Unlimited Rooms & Tables, In-Room Dining, Folio PMS, AI Review QR" },
             ].map((p) => {
               const isSelected = targetUpgradePlan === p.id;
               const isCurrent = currentPlan === p.id;

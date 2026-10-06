@@ -16,18 +16,19 @@ DineFlow uses a **tiered subscription model** with four plans designed to grow w
 
 ### Plan Comparison Table
 
-| Feature | 🆓 Free | 🚀 Starter | 📈 Growth | 🏨 Hotel Pro |
+| Feature | 🆓 Free / Trial | 🚀 Starter | 📈 Growth Pro | 🏨 Hotel Pro |
 |---|:---:|:---:|:---:|:---:|
-| **Price (Monthly)** | ₹0 | ₹999 | ₹2,999 | ₹7,999 |
+| **Price (Monthly)** | ₹0 (14-day trial) | ₹999 | ₹2,999 | ₹7,999 |
 | **Price (Annual, per month)** | ₹0 | ₹799 | ₹2,399 | ₹6,399 |
 | **Annual Discount** | — | 20% | 20% | 20% |
-| **Tables / QR Codes** | 5 | 20 | 100 | Unlimited |
-| **Menu Items** | 30 | 100 | Unlimited | Unlimited |
-| **Staff Members** | 2 | 5 | 25 | Unlimited |
+| **Tables / QR Codes** | Up to 10 (Trial) | Up to 10 | Up to 50 | Unlimited |
+| **Menu Items** | 100 (Trial) | 100 | Unlimited | Unlimited |
+| **Staff Members** | 5 | 5 | 20 | Unlimited |
 | **Locations** | 1 | 1 | 3 | Unlimited |
-| **Orders per month** | 200 | Unlimited | Unlimited | Unlimited |
-| **Menu Categories** | 5 | 15 | Unlimited | Unlimited |
-| **QR Code Downloads** | ✅ PNG only | ✅ PNG + PDF | ✅ Branded | ✅ White-label |
+| **Orders per month** | Unlimited (Trial) | Unlimited | Unlimited | Unlimited |
+| **Menu Categories** | Unlimited | 15 | Unlimited | Unlimited |
+| **QR Code Downloads** | ✅ Standard | ✅ PNG + PDF | ✅ Branded dynamic | ✅ White-label multi-room |
+| **AI Google Maps Review QR** | ❌ Locked | ❌ Locked | ✅ Stand QR + AI Generator | ✅ Multi-point + Room QR |
 | **Kitchen Display System** | ✅ Basic | ✅ Full | ✅ Full | ✅ Multi-station |
 | **WhatsApp Notifications** | ❌ | ✅ Order confirm | ✅ All events | ✅ All events |
 | **Analytics** | ✅ Basic (7 days) | ✅ Standard (30 days) | ✅ Advanced (1 year) | ✅ Full (All-time) |
@@ -49,49 +50,55 @@ DineFlow uses a **tiered subscription model** with four plans designed to grow w
 
 ## Plan Definitions
 
-### 🆓 Free — "Just Getting Started"
+### 🆓 Free Trial — "14-Day Full Experience"
 
-**Target**: Food trucks, first-timers, pop-ups, businesses evaluating DineFlow.
+**Target**: Food trucks, first-timers, cafes evaluating DineFlow.
 
-**Positioning**: No cost, no risk. Get your QR code and first order in 15 minutes.
+**Positioning**: 14 days completely free. Test with up to 10 tables and 100 items with zero credit card required.
 
 **Hard Limits**:
-- 5 tables (hard cap — creating a 6th table returns `HTTP 403 PLAN_LIMIT_EXCEEDED`)
-- 30 menu items
-- 200 orders/month (after limit, ordering page shows "Ordering temporarily unavailable. Contact the restaurant.")
-- Data older than 90 days is archived (readable, not queryable in analytics)
+- 10 tables cap
+- 100 menu items
+- 5 staff members
+- 1 location
 
 ---
 
-### 🚀 Starter — "Open for Business" — ₹999/month
+### 🚀 Starter — "Open for Business" — ₹999/month (or ₹799/mo annual)
 
-**Target**: Cafés, small restaurants, ghost kitchens with 1 location.
+**Target**: Cafés, quick-service diners, ghost kitchens with 1 location.
 
-**Positioning**: Everything you need to run a real restaurant. Under ₹1000/month.
+**Positioning**: Everything you need to run a high-efficiency restaurant. 14-day free trial included.
 
-**Key Unlocks over Free**:
-- 20 tables (4× more)
-- WhatsApp order confirmations (high-value feature)
+**Key Limits & Unlocks**:
+- Up to 10 tables
+- Up to 100 menu items
+- Up to 5 staff accounts
+- 1 location
+- WhatsApp order confirmations
 - Floor plan builder
-- Thermal printer integration
+- Thermal printer integration & Cloud KDS
 - Standard analytics (30 days)
 
 ---
 
-### 📈 Growth — "Scaling Up" — ₹2,999/month
+### 📈 Growth Pro — "Scaling Up" — ₹2,999/month (or ₹2,399/mo annual)
 
-**Target**: Established restaurants, 2–3 location chains, serious cloud kitchens.
+**Target**: High-volume restaurants, casual dining, 2–3 location chains, serious cloud kitchens.
 
-**Positioning**: Unlimited menus, staff, and advanced features. The operator's plan.
+**Positioning**: Unlimited dishes, up to 50 tables, 20 staff, and smart AI Google Maps review acceleration.
 
 **Key Unlocks over Starter**:
-- Unlimited tables, menu items, staff
-- Multi-location support (up to 3)
+- Up to 50 tables (5× Starter)
+- Unlimited menu items & categories
+- Up to 20 staff accounts
+- Multi-location support (up to 3 outlets)
+- **AI Google Maps Review Smart QR Stand**: Reception/cashier QR where customers rate & AI suggests personalized Google review text (with private manager shield for 1–3 stars)
 - Custom subdomain (e.g., `order.pizzapalace.com`)
-- Branded QR codes with logo
+- Branded QR codes with restaurant logo & styling
 - Advanced analytics (1-year history, heatmaps, item performance)
 - CSV export
-- AI features (Phase 6)
+- Priority Email & Chat Support
 
 ---
 

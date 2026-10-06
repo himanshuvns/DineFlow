@@ -44,6 +44,7 @@ type PlanLimits struct {
 	HasMultiKDS       bool    `json:"hasMultiKDS"`
 	HasWhatsAppAlerts bool    `json:"hasWhatsAppAlerts"`
 	HasWhiteLabel     bool    `json:"hasWhiteLabel"`
+	HasSmartReviewQR  bool    `json:"hasSmartReviewQR"`
 }
 
 var PlanMatrix = map[PlanTier]PlanLimits{
@@ -58,9 +59,10 @@ var PlanMatrix = map[PlanTier]PlanLimits{
 		HasMultiKDS:       false,
 		HasWhatsAppAlerts: false,
 		HasWhiteLabel:     false,
+		HasSmartReviewQR:  false,
 	},
 	PlanStarter: {
-		MaxTables:         20,
+		MaxTables:         10,
 		MaxMenuItems:      100,
 		MaxStaff:          5,
 		MaxLocations:      1,
@@ -70,11 +72,12 @@ var PlanMatrix = map[PlanTier]PlanLimits{
 		HasMultiKDS:       false,
 		HasWhatsAppAlerts: true,
 		HasWhiteLabel:     false,
+		HasSmartReviewQR:  false,
 	},
 	PlanGrowth: {
-		MaxTables:         100,
+		MaxTables:         50,
 		MaxMenuItems:      -1,
-		MaxStaff:          25,
+		MaxStaff:          20,
 		MaxLocations:      3,
 		MonthlyPriceINR:   2999,
 		AnnualPriceINR:    2399,
@@ -82,6 +85,7 @@ var PlanMatrix = map[PlanTier]PlanLimits{
 		HasMultiKDS:       true,
 		HasWhatsAppAlerts: true,
 		HasWhiteLabel:     false,
+		HasSmartReviewQR:  true,
 	},
 	PlanHotelPro: {
 		MaxTables:         -1,
@@ -94,6 +98,7 @@ var PlanMatrix = map[PlanTier]PlanLimits{
 		HasMultiKDS:       true,
 		HasWhatsAppAlerts: true,
 		HasWhiteLabel:     true,
+		HasSmartReviewQR:  true,
 	},
 }
 

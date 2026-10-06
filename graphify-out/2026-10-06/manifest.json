@@ -468,10 +468,10 @@
     "semantic_hash": ""
   },
   "apps/web/app/api/ai/generate-logo/route.ts": {
-    "mtime": 1789551664.3708842,
-    "seen": 1789625093.700981,
-    "ast_hash": "bbd6040d1872ddd56c44156874fb726f",
-    "semantic_hash": "bbd6040d1872ddd56c44156874fb726f"
+    "mtime": 1791285218.8571496,
+    "seen": 1791285382.100208,
+    "ast_hash": "472fbfa818e1018e840138ab305b445a",
+    "semantic_hash": ""
   },
   "apps/web/app/api/menu/order/[orderId]/route.ts": {
     "mtime": 1791108311.8705091,
@@ -816,9 +816,9 @@
     "semantic_hash": "e5cc98a7e4a8690acc322d34de257c38"
   },
   "apps/web/components/settings/gemini-logo-modal.tsx": {
-    "mtime": 1791108261.0830615,
-    "seen": 1791108568.02306,
-    "ast_hash": "b8b66104ea8e714b2d3ae9200f4d77f4",
+    "mtime": 1791285315.4219654,
+    "seen": 1791285382.100283,
+    "ast_hash": "7a616c070e43bcd48c23d8d43ce2d1fa",
     "semantic_hash": ""
   },
   "apps/web/components/theme-provider.tsx": {

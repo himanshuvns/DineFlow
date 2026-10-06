@@ -56,3 +56,4 @@ coverage/
 uploads/
 tmp/
 .env*
+graphify-out/cache/
