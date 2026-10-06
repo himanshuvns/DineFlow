@@ -62,12 +62,13 @@ jobs:
           SSH_KEY: ${{ secrets.DINEFLOW_SSH_KEY }}
           SERVER_IP: ${{ secrets.DINEFLOW_SERVER_IP }}
           SERVER_USER: ${{ secrets.DINEFLOW_SERVER_USER }}
+          GEMINI_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           mkdir -p ~/.ssh
           echo "$SSH_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H "$SERVER_IP" >> ~/.ssh/known_hosts 2>/dev/null || true
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa "$SERVER_USER@$SERVER_IP" "cd /opt/dineflow && git fetch origin main && git reset --hard origin/main && chmod +x deploy/*.sh && ./deploy/deploy.sh" 2>&1 | tee deploy.log
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa "$SERVER_USER@$SERVER_IP" "cd /opt/dineflow && git fetch origin main && git reset --hard origin/main && chmod +x deploy/*.sh && GEMINI_API_KEY=\"\$GEMINI_KEY\" ./deploy/deploy.sh" 2>&1 | tee deploy.log
         continue-on-error: true
 
       - name: Publish Deploy Log to Issue

@@ -222,9 +222,16 @@ type ScannedDish struct {
 	SpicyLevel  int     `json:"spicyLevel"`
 }
 
-func (s *Service) ScanMenuWithVision(ctx context.Context, imageBase64 string) ([]ScannedDish, error) {
-	if s.IsMockMode() {
-		return mockScannedDishes(), nil
+func (s *Service) ScanMenuWithVision(ctx context.Context, imageBase64 string, customKey ...string) ([]ScannedDish, error) {
+	key := s.geminiKey
+	if len(customKey) > 0 && strings.TrimSpace(customKey[0]) != "" {
+		key = strings.TrimSpace(customKey[0])
+	}
+	if key == "" {
+		key = os.Getenv("GEMINI_API_KEY")
+	}
+	if key == "" {
+		return nil, fmt.Errorf("GEMINI_API_KEY is not configured on the backend server")
 	}
 
 	cleanB64 := imageBase64
@@ -238,8 +245,8 @@ func (s *Service) ScanMenuWithVision(ctx context.Context, imageBase64 string) ([
 	}
 	cleanB64 = strings.TrimSpace(cleanB64)
 
-	prompt := `You are an expert Indian restaurant menu digitizer.
-Analyze this restaurant menu image and extract EVERY single food item across all columns and sections.
+	prompt := `You are an expert restaurant menu digitizer.
+Analyze this restaurant menu document/image and extract EVERY single food item across all columns, sections, and pages.
 Return ONLY a valid JSON array of objects with this schema:
 [
   {
@@ -286,7 +293,7 @@ Critical Instructions:
 
 	var lastErr error
 	for _, model := range geminiModels {
-		url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s", model, s.geminiKey)
+		url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s", model, key)
 		httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
 		if err != nil {
 			lastErr = err

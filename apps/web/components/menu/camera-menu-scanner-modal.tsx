@@ -230,6 +230,7 @@ export function CameraMenuScannerModal({
 
     try {
       let rawDishes: any[] = [];
+      const clientApiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 
       // 1. Try Go backend API endpoint (/api/v1/menu/scan) via apiClient
       try {
@@ -237,6 +238,7 @@ export function CameraMenuScannerModal({
           imageBase64: pagesToProcess[0]?.dataUrl,
           imagesBase64: pagesToProcess.map((p) => p.dataUrl),
           existingItems,
+          geminiKey: clientApiKey,
         });
         const fromApi = parseItemsFromResponse(apiRes.data);
         if (fromApi.length > 0) {
@@ -256,6 +258,7 @@ export function CameraMenuScannerModal({
             body: JSON.stringify({
               imagesBase64: pagesToProcess.map((p) => p.dataUrl),
               existingItems,
+              geminiKey: clientApiKey,
             }),
           });
 

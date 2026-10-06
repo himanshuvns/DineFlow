@@ -391,7 +391,7 @@
       "file_type": "code",
       "norm_label": "rawmenuitem",
       "source_file": "apps/web/app/api/menu/scan/route.ts",
-      "source_location": "L46"
+      "source_location": "L47"
     },
     {
       "id": "apps_web_app_api_menu_scan_route_scanmenurequestbody",
@@ -2886,7 +2886,7 @@
       "file_type": "code",
       "norm_label": "callgeminivision()",
       "source_file": "apps/web/app/api/menu/scan/route.ts",
-      "source_location": "L56"
+      "source_location": "L57"
     },
     {
       "id": "apps_web_app_api_menu_scan_route_post",
@@ -2898,7 +2898,7 @@
       "file_type": "code",
       "norm_label": "post()",
       "source_file": "apps/web/app/api/menu/scan/route.ts",
-      "source_location": "L123"
+      "source_location": "L124"
     },
     {
       "id": "apps_web_components_menu_menu_upload_modal_menuuploadmodal",
@@ -7026,17 +7026,6 @@
       "source_location": "L115"
     },
     {
-      "id": "ai_scanneddish",
-      "label": "ScannedDish",
-      "_origin": "ast",
-      "community": 10,
-      "community_name": "Service",
-      "file_type": "code",
-      "norm_label": "scanneddish",
-      "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L218"
-    },
-    {
       "id": "ai_service",
       "label": "Service",
       "_origin": "ast",
@@ -7056,7 +7045,7 @@
       "file_type": "code",
       "norm_label": ".callgemini()",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L388"
+      "source_location": "L392"
     },
     {
       "id": "ai_service_chatbotreply",
@@ -7067,7 +7056,7 @@
       "file_type": "code",
       "norm_label": ".chatbotreply()",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L156"
+      "source_location": "L153"
     },
     {
       "id": "ai_service_generatemenudescription",
@@ -7078,7 +7067,7 @@
       "file_type": "code",
       "norm_label": ".generatemenudescription()",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L58"
+      "source_location": "L55"
     },
     {
       "id": "ai_service_getdemandforecast",
@@ -7089,7 +7078,7 @@
       "file_type": "code",
       "norm_label": ".getdemandforecast()",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L124"
+      "source_location": "L121"
     },
     {
       "id": "ai_service_getpricingalerts",
@@ -7100,7 +7089,7 @@
       "file_type": "code",
       "norm_label": ".getpricingalerts()",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L189"
+      "source_location": "L186"
     },
     {
       "id": "ai_service_getupsellsuggestions",
@@ -7111,7 +7100,7 @@
       "file_type": "code",
       "norm_label": ".getupsellsuggestions()",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L96"
+      "source_location": "L93"
     },
     {
       "id": "ai_service_ismockmode",
@@ -7122,18 +7111,7 @@
       "file_type": "code",
       "norm_label": ".ismockmode()",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L54"
-    },
-    {
-      "id": "ai_service_scanmenuwithvision",
-      "label": ".ScanMenuWithVision()",
-      "_origin": "ast",
-      "community": 10,
-      "community_name": "Service",
-      "file_type": "code",
-      "norm_label": ".scanmenuwithvision()",
-      "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L228"
+      "source_location": "L51"
     },
     {
       "id": "ai_upsellrequest",
@@ -7177,7 +7155,7 @@
       "file_type": "code",
       "norm_label": "mockchatbot()",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L526"
+      "source_location": "L530"
     },
     {
       "id": "apps_api_internal_application_ai_service_mockforecast",
@@ -7188,7 +7166,7 @@
       "file_type": "code",
       "norm_label": "mockforecast()",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L476"
+      "source_location": "L480"
     },
     {
       "id": "apps_api_internal_application_ai_service_mockmenudescription",
@@ -7199,7 +7177,7 @@
       "file_type": "code",
       "norm_label": "mockmenudescription()",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L457"
+      "source_location": "L461"
     },
     {
       "id": "apps_api_internal_application_ai_service_mockpricingalerts",
@@ -7210,18 +7188,7 @@
       "file_type": "code",
       "norm_label": "mockpricingalerts()",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L556"
-    },
-    {
-      "id": "apps_api_internal_application_ai_service_mockscanneddishes",
-      "label": "mockScannedDishes()",
-      "_origin": "ast",
-      "community": 10,
-      "community_name": "Service",
-      "file_type": "code",
-      "norm_label": "mockscanneddishes()",
-      "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L352"
+      "source_location": "L560"
     },
     {
       "id": "apps_api_internal_application_ai_service_mockupsell",
@@ -7232,7 +7199,7 @@
       "file_type": "code",
       "norm_label": "mockupsell()",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L466"
+      "source_location": "L470"
     },
     {
       "id": "apps_api_internal_domain_ai_ai",
@@ -7695,6 +7662,17 @@
       "source_location": "L37"
     },
     {
+      "id": "whatsapp_service_dispatchmetainteractive",
+      "label": ".dispatchMetaInteractive()",
+      "_origin": "ast",
+      "community": 115,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": ".dispatchmetainteractive()",
+      "source_file": "apps/api/internal/application/whatsapp/service.go",
+      "source_location": "L248"
+    },
+    {
       "id": "whatsapp_service_generatecheckintoken",
       "label": ".GenerateCheckInToken()",
       "_origin": "ast",
@@ -7770,6 +7748,17 @@
       "norm_label": ".getsigningsecret()",
       "source_file": "apps/api/internal/application/whatsapp/service.go",
       "source_location": "L1290"
+    },
+    {
+      "id": "whatsapp_service_getwabastatus",
+      "label": ".GetWABAStatus()",
+      "_origin": "ast",
+      "community": 115,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": ".getwabastatus()",
+      "source_file": "apps/api/internal/application/whatsapp/service.go",
+      "source_location": "L411"
     },
     {
       "id": "whatsapp_service_restartopenwasession",
@@ -7967,7 +7956,7 @@
       "file_type": "code",
       "norm_label": "gemini_models",
       "source_file": "apps/web/app/api/menu/scan/route.ts",
-      "source_location": "L16"
+      "source_location": "L17"
     },
     {
       "id": "apps_web_app_api_menu_scan_route_maxduration",
@@ -9182,6 +9171,17 @@
       "source_location": "L585"
     },
     {
+      "id": "apps_api_internal_domain_whatsapp_whatsapp_getstandardtemplates",
+      "label": "GetStandardTemplates()",
+      "_origin": "ast",
+      "community": 128,
+      "community_name": ".SendInvoiceViaWhatsApp",
+      "file_type": "code",
+      "norm_label": "getstandardtemplates()",
+      "source_file": "apps/api/internal/domain/whatsapp/whatsapp.go",
+      "source_location": "L296"
+    },
+    {
       "id": "apps_api_internal_domain_whatsapp_whatsapp_interpolatetemplate",
       "label": "InterpolateTemplate()",
       "_origin": "ast",
@@ -9191,6 +9191,17 @@
       "norm_label": "interpolatetemplate()",
       "source_file": "apps/api/internal/domain/whatsapp/whatsapp.go",
       "source_location": "L379"
+    },
+    {
+      "id": "apps_api_internal_domain_whatsapp_whatsapp_test_testgetstandardtemplates",
+      "label": "TestGetStandardTemplates()",
+      "_origin": "ast",
+      "community": 128,
+      "community_name": ".SendInvoiceViaWhatsApp",
+      "file_type": "code",
+      "norm_label": "testgetstandardtemplates()",
+      "source_file": "apps/api/internal/domain/whatsapp/whatsapp_test.go",
+      "source_location": "L111"
     },
     {
       "id": "whatsapp_customerinvoice",
@@ -9291,18 +9302,6 @@
       "norm_label": "product_requirements.md",
       "source_file": "docs/PRODUCT_REQUIREMENTS.md",
       "source_location": "L1"
-    },
-    {
-      "id": "docs_product_requirements_1_user_personas",
-      "label": "1. User Personas",
-      "_origin": "ast",
-      "community": 129,
-      "community_name": "2. Functional Requirements",
-      "file_type": "document",
-      "node_kind": "heading",
-      "norm_label": "1. user personas",
-      "source_file": "docs/PRODUCT_REQUIREMENTS.md",
-      "source_location": "L5"
     },
     {
       "id": "docs_product_requirements_2_10_staff_management",
@@ -9473,90 +9472,6 @@
       "source_location": "L49"
     },
     {
-      "id": "docs_product_requirements_3_1_performance",
-      "label": "3.1 Performance",
-      "_origin": "ast",
-      "community": 129,
-      "community_name": "2. Functional Requirements",
-      "file_type": "document",
-      "node_kind": "heading",
-      "norm_label": "3.1 performance",
-      "source_file": "docs/PRODUCT_REQUIREMENTS.md",
-      "source_location": "L229"
-    },
-    {
-      "id": "docs_product_requirements_3_2_scalability",
-      "label": "3.2 Scalability",
-      "_origin": "ast",
-      "community": 129,
-      "community_name": "2. Functional Requirements",
-      "file_type": "document",
-      "node_kind": "heading",
-      "norm_label": "3.2 scalability",
-      "source_file": "docs/PRODUCT_REQUIREMENTS.md",
-      "source_location": "L239"
-    },
-    {
-      "id": "docs_product_requirements_3_3_reliability",
-      "label": "3.3 Reliability",
-      "_origin": "ast",
-      "community": 129,
-      "community_name": "2. Functional Requirements",
-      "file_type": "document",
-      "node_kind": "heading",
-      "norm_label": "3.3 reliability",
-      "source_file": "docs/PRODUCT_REQUIREMENTS.md",
-      "source_location": "L249"
-    },
-    {
-      "id": "docs_product_requirements_3_4_security",
-      "label": "3.4 Security",
-      "_origin": "ast",
-      "community": 129,
-      "community_name": "2. Functional Requirements",
-      "file_type": "document",
-      "node_kind": "heading",
-      "norm_label": "3.4 security",
-      "source_file": "docs/PRODUCT_REQUIREMENTS.md",
-      "source_location": "L258"
-    },
-    {
-      "id": "docs_product_requirements_3_5_accessibility",
-      "label": "3.5 Accessibility",
-      "_origin": "ast",
-      "community": 129,
-      "community_name": "2. Functional Requirements",
-      "file_type": "document",
-      "node_kind": "heading",
-      "norm_label": "3.5 accessibility",
-      "source_file": "docs/PRODUCT_REQUIREMENTS.md",
-      "source_location": "L268"
-    },
-    {
-      "id": "docs_product_requirements_3_6_internationalisation",
-      "label": "3.6 Internationalisation",
-      "_origin": "ast",
-      "community": 129,
-      "community_name": "2. Functional Requirements",
-      "file_type": "document",
-      "node_kind": "heading",
-      "norm_label": "3.6 internationalisation",
-      "source_file": "docs/PRODUCT_REQUIREMENTS.md",
-      "source_location": "L275"
-    },
-    {
-      "id": "docs_product_requirements_3_non_functional_requirements",
-      "label": "3. Non-Functional Requirements",
-      "_origin": "ast",
-      "community": 129,
-      "community_name": "2. Functional Requirements",
-      "file_type": "document",
-      "node_kind": "heading",
-      "norm_label": "3. non-functional requirements",
-      "source_file": "docs/PRODUCT_REQUIREMENTS.md",
-      "source_location": "L227"
-    },
-    {
       "id": "docs_product_requirements_4_user_journeys",
       "label": "4. User Journeys",
       "_origin": "ast",
@@ -9627,66 +9542,6 @@
       "norm_label": "journey 4 \u2014 hotel room service",
       "source_file": "docs/PRODUCT_REQUIREMENTS.md",
       "source_location": "L336"
-    },
-    {
-      "id": "docs_product_requirements_persona_1_riya_restaurant_owner",
-      "label": "Persona 1 \u2014 Riya (Restaurant Owner)",
-      "_origin": "ast",
-      "community": 129,
-      "community_name": "2. Functional Requirements",
-      "file_type": "document",
-      "node_kind": "heading",
-      "norm_label": "persona 1 \u2014 riya (restaurant owner)",
-      "source_file": "docs/PRODUCT_REQUIREMENTS.md",
-      "source_location": "L7"
-    },
-    {
-      "id": "docs_product_requirements_persona_2_arjun_hotel_operations_manager",
-      "label": "Persona 2 \u2014 Arjun (Hotel Operations Manager)",
-      "_origin": "ast",
-      "community": 129,
-      "community_name": "2. Functional Requirements",
-      "file_type": "document",
-      "node_kind": "heading",
-      "norm_label": "persona 2 \u2014 arjun (hotel operations manager)",
-      "source_file": "docs/PRODUCT_REQUIREMENTS.md",
-      "source_location": "L15"
-    },
-    {
-      "id": "docs_product_requirements_persona_3_chef_meena_head_chef_kitchen_staff",
-      "label": "Persona 3 \u2014 Chef Meena (Head Chef / Kitchen Staff)",
-      "_origin": "ast",
-      "community": 129,
-      "community_name": "2. Functional Requirements",
-      "file_type": "document",
-      "node_kind": "heading",
-      "norm_label": "persona 3 \u2014 chef meena (head chef / kitchen staff)",
-      "source_file": "docs/PRODUCT_REQUIREMENTS.md",
-      "source_location": "L23"
-    },
-    {
-      "id": "docs_product_requirements_persona_4_kai_food_truck_operator",
-      "label": "Persona 4 \u2014 Kai (Food Truck Operator)",
-      "_origin": "ast",
-      "community": 129,
-      "community_name": "2. Functional Requirements",
-      "file_type": "document",
-      "node_kind": "heading",
-      "norm_label": "persona 4 \u2014 kai (food truck operator)",
-      "source_file": "docs/PRODUCT_REQUIREMENTS.md",
-      "source_location": "L31"
-    },
-    {
-      "id": "docs_product_requirements_persona_5_priya_customer_guest",
-      "label": "Persona 5 \u2014 Priya (Customer / Guest)",
-      "_origin": "ast",
-      "community": 129,
-      "community_name": "2. Functional Requirements",
-      "file_type": "document",
-      "node_kind": "heading",
-      "norm_label": "persona 5 \u2014 priya (customer / guest)",
-      "source_file": "docs/PRODUCT_REQUIREMENTS.md",
-      "source_location": "L39"
     },
     {
       "id": "apps_web_app_auth_forgot_password_page",
@@ -10212,7 +10067,7 @@
       "file_type": "code",
       "norm_label": "geminirequest",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L364"
+      "source_location": "L368"
     },
     {
       "id": "ai_geminiresponse",
@@ -10223,95 +10078,29 @@
       "file_type": "code",
       "norm_label": "geminiresponse",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L373"
+      "source_location": "L377"
     },
     {
-      "id": "apps_api_cmd_security_audit_main",
-      "label": "security-audit/main.go",
+      "id": "ai_scanneddish",
+      "label": "ScannedDish",
       "_origin": "ast",
       "community": 134,
       "community_name": "ai/service.go",
       "file_type": "code",
-      "norm_label": "security-audit/main.go",
-      "source_file": "apps/api/cmd/security-audit/main.go",
-      "source_location": "L1"
+      "norm_label": "scanneddish",
+      "source_file": "apps/api/internal/application/ai/service.go",
+      "source_location": "L215"
     },
     {
-      "id": "apps_api_cmd_security_audit_main_main",
-      "label": "main()",
+      "id": "ai_service_scanmenuwithvision",
+      "label": ".ScanMenuWithVision()",
       "_origin": "ast",
       "community": 134,
       "community_name": "ai/service.go",
       "file_type": "code",
-      "norm_label": "main()",
-      "source_file": "apps/api/cmd/security-audit/main.go",
-      "source_location": "L25"
-    },
-    {
-      "id": "apps_api_cmd_security_audit_main_testcorsorigindefense",
-      "label": "testCORSOriginDefense()",
-      "_origin": "ast",
-      "community": 134,
-      "community_name": "ai/service.go",
-      "file_type": "code",
-      "norm_label": "testcorsorigindefense()",
-      "source_file": "apps/api/cmd/security-audit/main.go",
-      "source_location": "L162"
-    },
-    {
-      "id": "apps_api_cmd_security_audit_main_testmetawebhookhmacsignature",
-      "label": "testMetaWebhookHMACSignature()",
-      "_origin": "ast",
-      "community": 134,
-      "community_name": "ai/service.go",
-      "file_type": "code",
-      "norm_label": "testmetawebhookhmacsignature()",
-      "source_file": "apps/api/cmd/security-audit/main.go",
-      "source_location": "L199"
-    },
-    {
-      "id": "apps_api_cmd_security_audit_main_testnosqlinjectioninbody",
-      "label": "testNoSQLInjectionInBody()",
-      "_origin": "ast",
-      "community": 134,
-      "community_name": "ai/service.go",
-      "file_type": "code",
-      "norm_label": "testnosqlinjectioninbody()",
-      "source_file": "apps/api/cmd/security-audit/main.go",
-      "source_location": "L79"
-    },
-    {
-      "id": "apps_api_cmd_security_audit_main_testnosqlinjectioninqueryparams",
-      "label": "testNoSQLInjectionInQueryParams()",
-      "_origin": "ast",
-      "community": 134,
-      "community_name": "ai/service.go",
-      "file_type": "code",
-      "norm_label": "testnosqlinjectioninqueryparams()",
-      "source_file": "apps/api/cmd/security-audit/main.go",
-      "source_location": "L99"
-    },
-    {
-      "id": "apps_api_cmd_security_audit_main_testrequestidtracing",
-      "label": "testRequestIDTracing()",
-      "_origin": "ast",
-      "community": 134,
-      "community_name": "ai/service.go",
-      "file_type": "code",
-      "norm_label": "testrequestidtracing()",
-      "source_file": "apps/api/cmd/security-audit/main.go",
-      "source_location": "L144"
-    },
-    {
-      "id": "apps_api_cmd_security_audit_main_testsecurityheaders",
-      "label": "testSecurityHeaders()",
-      "_origin": "ast",
-      "community": 134,
-      "community_name": "ai/service.go",
-      "file_type": "code",
-      "norm_label": "testsecurityheaders()",
-      "source_file": "apps/api/cmd/security-audit/main.go",
-      "source_location": "L117"
+      "norm_label": ".scanmenuwithvision()",
+      "source_file": "apps/api/internal/application/ai/service.go",
+      "source_location": "L225"
     },
     {
       "id": "apps_api_cmd_test_gemini_main",
@@ -10358,6 +10147,39 @@
       "source_location": "L1"
     },
     {
+      "id": "apps_api_internal_application_ai_service_mockscanneddishes",
+      "label": "mockScannedDishes()",
+      "_origin": "ast",
+      "community": 134,
+      "community_name": "ai/service.go",
+      "file_type": "code",
+      "norm_label": "mockscanneddishes()",
+      "source_file": "apps/api/internal/application/ai/service.go",
+      "source_location": "L356"
+    },
+    {
+      "id": "apps_api_internal_infrastructure_realtime_hub",
+      "label": "hub.go",
+      "_origin": "ast",
+      "community": 134,
+      "community_name": "ai/service.go",
+      "file_type": "code",
+      "norm_label": "hub.go",
+      "source_file": "apps/api/internal/infrastructure/realtime/hub.go",
+      "source_location": "L1"
+    },
+    {
+      "id": "apps_api_internal_infrastructure_realtime_hub_gethub",
+      "label": "GetHub()",
+      "_origin": "ast",
+      "community": 134,
+      "community_name": "ai/service.go",
+      "file_type": "code",
+      "norm_label": "gethub()",
+      "source_file": "apps/api/internal/infrastructure/realtime/hub.go",
+      "source_location": "L37"
+    },
+    {
       "id": "apps_api_internal_interfaces_http_handlers_whatsapp",
       "label": "handlers/whatsapp.go",
       "_origin": "ast",
@@ -10400,61 +10222,6 @@
       "norm_label": "verifyopenwasignature()",
       "source_file": "apps/api/internal/interfaces/http/handlers/whatsapp.go",
       "source_location": "L49"
-    },
-    {
-      "id": "apps_api_internal_interfaces_http_middleware_security",
-      "label": "security.go",
-      "_origin": "ast",
-      "community": 134,
-      "community_name": "ai/service.go",
-      "file_type": "code",
-      "norm_label": "security.go",
-      "source_file": "apps/api/internal/interfaces/http/middleware/security.go",
-      "source_location": "L1"
-    },
-    {
-      "id": "apps_api_internal_interfaces_http_middleware_security_hasoperatorinjection",
-      "label": "hasOperatorInjection()",
-      "_origin": "ast",
-      "community": 134,
-      "community_name": "ai/service.go",
-      "file_type": "code",
-      "norm_label": "hasoperatorinjection()",
-      "source_file": "apps/api/internal/interfaces/http/middleware/security.go",
-      "source_location": "L127"
-    },
-    {
-      "id": "apps_api_internal_interfaces_http_middleware_security_nosqlsanitizer",
-      "label": "NoSQLSanitizer()",
-      "_origin": "ast",
-      "community": 134,
-      "community_name": "ai/service.go",
-      "file_type": "code",
-      "norm_label": "nosqlsanitizer()",
-      "source_file": "apps/api/internal/interfaces/http/middleware/security.go",
-      "source_location": "L65"
-    },
-    {
-      "id": "apps_api_internal_interfaces_http_middleware_security_requestid",
-      "label": "RequestID()",
-      "_origin": "ast",
-      "community": 134,
-      "community_name": "ai/service.go",
-      "file_type": "code",
-      "norm_label": "requestid()",
-      "source_file": "apps/api/internal/interfaces/http/middleware/security.go",
-      "source_location": "L29"
-    },
-    {
-      "id": "apps_api_internal_interfaces_http_middleware_security_securityheaders",
-      "label": "SecurityHeaders()",
-      "_origin": "ast",
-      "community": 134,
-      "community_name": "ai/service.go",
-      "file_type": "code",
-      "norm_label": "securityheaders()",
-      "source_file": "apps/api/internal/interfaces/http/middleware/security.go",
-      "source_location": "L16"
     },
     {
       "id": "apps_api_internal_messaging_meta",
@@ -10501,6 +10268,17 @@
       "source_location": "L34"
     },
     {
+      "id": "apps_api_pkg_logger_logger",
+      "label": "logger.go",
+      "_origin": "ast",
+      "community": 134,
+      "community_name": "ai/service.go",
+      "file_type": "code",
+      "norm_label": "logger.go",
+      "source_file": "apps/api/pkg/logger/logger.go",
+      "source_location": "L1"
+    },
+    {
       "id": "messaging_metacloudconfig",
       "label": "MetaCloudConfig",
       "_origin": "ast",
@@ -10523,14 +10301,36 @@
       "source_location": "L17"
     },
     {
-      "id": "security_audit_testresult",
-      "label": "TestResult",
+      "id": "realtime_eventtype",
+      "label": "EventType",
       "_origin": "ast",
       "community": 134,
       "community_name": "ai/service.go",
       "file_type": "code",
-      "norm_label": "testresult",
-      "source_file": "apps/api/cmd/security-audit/main.go",
+      "norm_label": "eventtype",
+      "source_file": "apps/api/internal/infrastructure/realtime/hub.go",
+      "source_location": "L10"
+    },
+    {
+      "id": "realtime_notificationevent",
+      "label": "NotificationEvent",
+      "_origin": "ast",
+      "community": 134,
+      "community_name": "ai/service.go",
+      "file_type": "code",
+      "norm_label": "notificationevent",
+      "source_file": "apps/api/internal/infrastructure/realtime/hub.go",
+      "source_location": "L100"
+    },
+    {
+      "id": "realtime_orderevent",
+      "label": "OrderEvent",
+      "_origin": "ast",
+      "community": 134,
+      "community_name": "ai/service.go",
+      "file_type": "code",
+      "norm_label": "orderevent",
+      "source_file": "apps/api/internal/infrastructure/realtime/hub.go",
       "source_location": "L19"
     },
     {
@@ -10666,182 +10466,6 @@
       "source_location": "L1"
     },
     {
-      "id": "apps_api_pkg_otp_msg91_provider_go_config",
-      "label": "Config",
-      "_origin": "ast",
-      "community": 136,
-      "community_name": "MSG91Provider",
-      "file_type": "code",
-      "norm_label": "config",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "apps_api_pkg_otp_msg91_provider_go_redis_client",
-      "label": "redis.Client",
-      "_origin": "ast",
-      "community": 136,
-      "community_name": "MSG91Provider",
-      "file_type": "code",
-      "norm_label": "redis.client",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "apps_api_pkg_otp_msg91_provider_newmsg91provider",
-      "label": "NewMSG91Provider()",
-      "_origin": "ast",
-      "community": 136,
-      "community_name": "MSG91Provider",
-      "file_type": "code",
-      "norm_label": "newmsg91provider()",
-      "source_file": "apps/api/pkg/otp/msg91_provider.go",
-      "source_location": "L28"
-    },
-    {
-      "id": "apps_api_pkg_otp_provider_test_testmsg91providerfallback",
-      "label": "TestMSG91ProviderFallback()",
-      "_origin": "ast",
-      "community": 136,
-      "community_name": "MSG91Provider",
-      "file_type": "code",
-      "norm_label": "testmsg91providerfallback()",
-      "source_file": "apps/api/pkg/otp/provider_test.go",
-      "source_location": "L76"
-    },
-    {
-      "id": "go_type_net_http_client",
-      "label": "net/http.Client",
-      "_origin": "ast",
-      "community": 136,
-      "community_name": "MSG91Provider",
-      "file_type": "code",
-      "norm_label": "net/http.client",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "otp_msg91provider",
-      "label": "MSG91Provider",
-      "_origin": "ast",
-      "community": 136,
-      "community_name": "MSG91Provider",
-      "file_type": "code",
-      "norm_label": "msg91provider",
-      "source_file": "apps/api/pkg/otp/msg91_provider.go",
-      "source_location": "L19"
-    },
-    {
-      "id": "otp_msg91provider_name",
-      "label": ".Name()",
-      "_origin": "ast",
-      "community": 136,
-      "community_name": "MSG91Provider",
-      "file_type": "code",
-      "norm_label": ".name()",
-      "source_file": "apps/api/pkg/otp/msg91_provider.go",
-      "source_location": "L38"
-    },
-    {
-      "id": "otp_msg91provider_sendotp",
-      "label": ".SendOTP()",
-      "_origin": "ast",
-      "community": 136,
-      "community_name": "MSG91Provider",
-      "file_type": "code",
-      "norm_label": ".sendotp()",
-      "source_file": "apps/api/pkg/otp/msg91_provider.go",
-      "source_location": "L43"
-    },
-    {
-      "id": "otp_msg91provider_verifyotp",
-      "label": ".VerifyOTP()",
-      "_origin": "ast",
-      "community": 136,
-      "community_name": "MSG91Provider",
-      "file_type": "code",
-      "norm_label": ".verifyotp()",
-      "source_file": "apps/api/pkg/otp/msg91_provider.go",
-      "source_location": "L107"
-    },
-    {
-      "id": "whatsapp_campaign",
-      "label": "Campaign",
-      "_origin": "ast",
-      "community": 137,
-      "community_name": "Campaign",
-      "file_type": "code",
-      "norm_label": "campaign",
-      "source_file": "apps/api/internal/domain/whatsapp/whatsapp.go",
-      "source_location": "L172"
-    },
-    {
-      "id": "whatsapp_campaignstats",
-      "label": "CampaignStats",
-      "_origin": "ast",
-      "community": 137,
-      "community_name": "Campaign",
-      "file_type": "code",
-      "norm_label": "campaignstats",
-      "source_file": "apps/api/internal/domain/whatsapp/whatsapp.go",
-      "source_location": "L164"
-    },
-    {
-      "id": "whatsapp_campaignstatus",
-      "label": "CampaignStatus",
-      "_origin": "ast",
-      "community": 137,
-      "community_name": "Campaign",
-      "file_type": "code",
-      "norm_label": "campaignstatus",
-      "source_file": "apps/api/internal/domain/whatsapp/whatsapp.go",
-      "source_location": "L133"
-    },
-    {
-      "id": "whatsapp_campaigntype",
-      "label": "CampaignType",
-      "_origin": "ast",
-      "community": 137,
-      "community_name": "Campaign",
-      "file_type": "code",
-      "norm_label": "campaigntype",
-      "source_file": "apps/api/internal/domain/whatsapp/whatsapp.go",
-      "source_location": "L143"
-    },
-    {
-      "id": "whatsapp_service_createcampaign",
-      "label": ".CreateCampaign()",
-      "_origin": "ast",
-      "community": 137,
-      "community_name": "Campaign",
-      "file_type": "code",
-      "norm_label": ".createcampaign()",
-      "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L890"
-    },
-    {
-      "id": "whatsapp_service_listcampaigns",
-      "label": ".ListCampaigns()",
-      "_origin": "ast",
-      "community": 137,
-      "community_name": "Campaign",
-      "file_type": "code",
-      "norm_label": ".listcampaigns()",
-      "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L915"
-    },
-    {
-      "id": "whatsapp_targetsegment",
-      "label": "TargetSegment",
-      "_origin": "ast",
-      "community": 137,
-      "community_name": "Campaign",
-      "file_type": "code",
-      "norm_label": "targetsegment",
-      "source_file": "apps/api/internal/domain/whatsapp/whatsapp.go",
-      "source_location": "L153"
-    },
-    {
       "id": "apps_web_components_ui_spotlight_cursor",
       "label": "spotlight-cursor.tsx",
       "_origin": "ast",
@@ -10908,6 +10532,17 @@
       "source_location": "L339"
     },
     {
+      "id": "apps_api_internal_application_whatsapp_commands_go_whatsapp_service",
+      "label": "Service",
+      "_origin": "ast",
+      "community": 139,
+      "community_name": "go.mongodb.org/mongo-driver/v2/bson.ObjectID",
+      "file_type": "code",
+      "norm_label": "service",
+      "source_file": "apps/api/internal/application/whatsapp/commands.go",
+      "source_location": "L17"
+    },
+    {
       "id": "apps_api_internal_domain_notification_notification",
       "label": "notification/notification.go",
       "_origin": "ast",
@@ -10937,17 +10572,6 @@
       "community_name": "go.mongodb.org/mongo-driver/v2/bson.ObjectID",
       "file_type": "code",
       "norm_label": "go.mongodb.org/mongo-driver/v2/bson.objectid",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "go_type_time_time",
-      "label": "time.Time",
-      "_origin": "ast",
-      "community": 139,
-      "community_name": "go.mongodb.org/mongo-driver/v2/bson.ObjectID",
-      "file_type": "code",
-      "norm_label": "time.time",
       "source_file": "",
       "source_location": ""
     },
@@ -11271,72 +10895,6 @@
       "source_location": "L178"
     },
     {
-      "id": "redis_ratelimitresult",
-      "label": "RateLimitResult",
-      "_origin": "ast",
-      "community": 139,
-      "community_name": "go.mongodb.org/mongo-driver/v2/bson.ObjectID",
-      "file_type": "code",
-      "norm_label": "ratelimitresult",
-      "source_file": "apps/api/internal/infrastructure/redis/client.go",
-      "source_location": "L63"
-    },
-    {
-      "id": "room_checkininput",
-      "label": "CheckInInput",
-      "_origin": "ast",
-      "community": 139,
-      "community_name": "go.mongodb.org/mongo-driver/v2/bson.ObjectID",
-      "file_type": "code",
-      "norm_label": "checkininput",
-      "source_file": "apps/api/internal/application/room/service.go",
-      "source_location": "L30"
-    },
-    {
-      "id": "room_roompreference",
-      "label": "RoomPreference",
-      "_origin": "ast",
-      "community": 139,
-      "community_name": "go.mongodb.org/mongo-driver/v2/bson.ObjectID",
-      "file_type": "code",
-      "norm_label": "roompreference",
-      "source_file": "apps/api/internal/domain/room/preference.go",
-      "source_location": "L11"
-    },
-    {
-      "id": "room_roompreference_validate",
-      "label": ".Validate()",
-      "_origin": "ast",
-      "community": 139,
-      "community_name": "go.mongodb.org/mongo-driver/v2/bson.ObjectID",
-      "file_type": "code",
-      "norm_label": ".validate()",
-      "source_file": "apps/api/internal/domain/room/preference.go",
-      "source_location": "L21"
-    },
-    {
-      "id": "staff_service_createholiday",
-      "label": ".CreateHoliday()",
-      "_origin": "ast",
-      "community": 139,
-      "community_name": "go.mongodb.org/mongo-driver/v2/bson.ObjectID",
-      "file_type": "code",
-      "norm_label": ".createholiday()",
-      "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1678"
-    },
-    {
-      "id": "staff_service_listholidays",
-      "label": ".ListHolidays()",
-      "_origin": "ast",
-      "community": 139,
-      "community_name": "go.mongodb.org/mongo-driver/v2/bson.ObjectID",
-      "file_type": "code",
-      "norm_label": ".listholidays()",
-      "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L1638"
-    },
-    {
       "id": "subscription_invoice",
       "label": "Invoice",
       "_origin": "ast",
@@ -11359,28 +10917,6 @@
       "source_location": "L219"
     },
     {
-      "id": "user_holiday",
-      "label": "Holiday",
-      "_origin": "ast",
-      "community": 139,
-      "community_name": "go.mongodb.org/mongo-driver/v2/bson.ObjectID",
-      "file_type": "code",
-      "norm_label": "holiday",
-      "source_file": "apps/api/internal/domain/user/user.go",
-      "source_location": "L417"
-    },
-    {
-      "id": "whatsapp_service_dispatchmetainteractive",
-      "label": ".dispatchMetaInteractive()",
-      "_origin": "ast",
-      "community": 139,
-      "community_name": "go.mongodb.org/mongo-driver/v2/bson.ObjectID",
-      "file_type": "code",
-      "norm_label": ".dispatchmetainteractive()",
-      "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L248"
-    },
-    {
       "id": "whatsapp_service_findconfigbyverifytoken",
       "label": ".FindConfigByVerifyToken()",
       "_origin": "ast",
@@ -11392,15 +10928,26 @@
       "source_location": "L458"
     },
     {
-      "id": "whatsapp_service_getwabastatus",
-      "label": ".GetWABAStatus()",
+      "id": "whatsapp_service_logwebhookevent",
+      "label": ".LogWebhookEvent()",
       "_origin": "ast",
       "community": 139,
       "community_name": "go.mongodb.org/mongo-driver/v2/bson.ObjectID",
       "file_type": "code",
-      "norm_label": ".getwabastatus()",
-      "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L411"
+      "norm_label": ".logwebhookevent()",
+      "source_file": "apps/api/internal/application/whatsapp/commands.go",
+      "source_location": "L109"
+    },
+    {
+      "id": "whatsapp_service_processrulebasedcommand",
+      "label": ".ProcessRuleBasedCommand()",
+      "_origin": "ast",
+      "community": 139,
+      "community_name": "go.mongodb.org/mongo-driver/v2/bson.ObjectID",
+      "file_type": "code",
+      "norm_label": ".processrulebasedcommand()",
+      "source_file": "apps/api/internal/application/whatsapp/commands.go",
+      "source_location": "L17"
     },
     {
       "id": "whatsapp_service_updatewabaconfig",
@@ -11577,6 +11124,94 @@
       "norm_label": "testmarkmanualattendance_validation()",
       "source_file": "apps/api/internal/application/staff/service_test.go",
       "source_location": "L134"
+    },
+    {
+      "id": "apps_api_internal_application_whatsapp_openwa_integration_test",
+      "label": "openwa_integration_test.go",
+      "_origin": "ast",
+      "community": 14,
+      "community_name": "testing.T",
+      "file_type": "code",
+      "norm_label": "openwa_integration_test.go",
+      "source_file": "apps/api/internal/application/whatsapp/openwa_integration_test.go",
+      "source_location": "L1"
+    },
+    {
+      "id": "apps_api_internal_application_whatsapp_openwa_integration_test_testordernotificationsandadminalerts",
+      "label": "TestOrderNotificationsAndAdminAlerts()",
+      "_origin": "ast",
+      "community": 14,
+      "community_name": "testing.T",
+      "file_type": "code",
+      "norm_label": "testordernotificationsandadminalerts()",
+      "source_file": "apps/api/internal/application/whatsapp/openwa_integration_test.go",
+      "source_location": "L41"
+    },
+    {
+      "id": "apps_api_internal_application_whatsapp_openwa_integration_test_testrulebasedcommands",
+      "label": "TestRuleBasedCommands()",
+      "_origin": "ast",
+      "community": 14,
+      "community_name": "testing.T",
+      "file_type": "code",
+      "norm_label": "testrulebasedcommands()",
+      "source_file": "apps/api/internal/application/whatsapp/openwa_integration_test.go",
+      "source_location": "L12"
+    },
+    {
+      "id": "apps_api_internal_application_whatsapp_service_newservice",
+      "label": "NewService()",
+      "_origin": "ast",
+      "community": 14,
+      "community_name": "testing.T",
+      "file_type": "code",
+      "norm_label": "newservice()",
+      "source_file": "apps/api/internal/application/whatsapp/service.go",
+      "source_location": "L56"
+    },
+    {
+      "id": "apps_api_internal_application_whatsapp_workforce_test",
+      "label": "workforce_test.go",
+      "_origin": "ast",
+      "community": 14,
+      "community_name": "testing.T",
+      "file_type": "code",
+      "norm_label": "workforce_test.go",
+      "source_file": "apps/api/internal/application/whatsapp/workforce_test.go",
+      "source_location": "L1"
+    },
+    {
+      "id": "apps_api_internal_application_whatsapp_workforce_test_testnumberedleaveworkflow",
+      "label": "TestNumberedLeaveWorkflow()",
+      "_origin": "ast",
+      "community": 14,
+      "community_name": "testing.T",
+      "file_type": "code",
+      "norm_label": "testnumberedleaveworkflow()",
+      "source_file": "apps/api/internal/application/whatsapp/workforce_test.go",
+      "source_location": "L152"
+    },
+    {
+      "id": "apps_api_internal_application_whatsapp_workforce_test_testworkforcecheckinmessageformat",
+      "label": "TestWorkforceCheckInMessageFormat()",
+      "_origin": "ast",
+      "community": 14,
+      "community_name": "testing.T",
+      "file_type": "code",
+      "norm_label": "testworkforcecheckinmessageformat()",
+      "source_file": "apps/api/internal/application/whatsapp/workforce_test.go",
+      "source_location": "L83"
+    },
+    {
+      "id": "apps_api_internal_application_whatsapp_workforce_test_testworkforcetokens",
+      "label": "TestWorkforceTokens()",
+      "_origin": "ast",
+      "community": 14,
+      "community_name": "testing.T",
+      "file_type": "code",
+      "norm_label": "testworkforcetokens()",
+      "source_file": "apps/api/internal/application/whatsapp/workforce_test.go",
+      "source_location": "L15"
     },
     {
       "id": "apps_api_internal_domain_menu_menu_test",
@@ -12041,6 +11676,17 @@
       "source_location": "L12"
     },
     {
+      "id": "apps_api_internal_messaging_mock_newmockprovider",
+      "label": "NewMockProvider()",
+      "_origin": "ast",
+      "community": 14,
+      "community_name": "testing.T",
+      "file_type": "code",
+      "norm_label": "newmockprovider()",
+      "source_file": "apps/api/internal/messaging/mock.go",
+      "source_location": "L30"
+    },
+    {
       "id": "apps_api_internal_messaging_provider_test",
       "label": "messaging/provider_test.go",
       "_origin": "ast",
@@ -12162,66 +11808,154 @@
       "source_location": ""
     },
     {
-      "id": "apps_api_internal_application_auth_service_generateslug",
-      "label": "generateSlug()",
+      "id": "apps_api_cmd_security_audit_main",
+      "label": "security-audit/main.go",
       "_origin": "ast",
-      "community": 140,
-      "community_name": ".Register",
+      "community": 141,
+      "community_name": "security-audit/main.go",
       "file_type": "code",
-      "norm_label": "generateslug()",
-      "source_file": "apps/api/internal/application/auth/service.go",
-      "source_location": "L876"
+      "norm_label": "security-audit/main.go",
+      "source_file": "apps/api/cmd/security-audit/main.go",
+      "source_location": "L1"
     },
     {
-      "id": "apps_api_internal_application_auth_service_validatepasswordcomplexity",
-      "label": "ValidatePasswordComplexity()",
+      "id": "apps_api_cmd_security_audit_main_main",
+      "label": "main()",
       "_origin": "ast",
-      "community": 140,
-      "community_name": ".Register",
+      "community": 141,
+      "community_name": "security-audit/main.go",
       "file_type": "code",
-      "norm_label": "validatepasswordcomplexity()",
-      "source_file": "apps/api/internal/application/auth/service.go",
-      "source_location": "L43"
+      "norm_label": "main()",
+      "source_file": "apps/api/cmd/security-audit/main.go",
+      "source_location": "L25"
     },
     {
-      "id": "auth_registerrequest",
-      "label": "RegisterRequest",
+      "id": "apps_api_cmd_security_audit_main_testcorsorigindefense",
+      "label": "testCORSOriginDefense()",
       "_origin": "ast",
-      "community": 140,
-      "community_name": ".Register",
+      "community": 141,
+      "community_name": "security-audit/main.go",
       "file_type": "code",
-      "norm_label": "registerrequest",
-      "source_file": "apps/api/internal/application/auth/service.go",
-      "source_location": "L71"
+      "norm_label": "testcorsorigindefense()",
+      "source_file": "apps/api/cmd/security-audit/main.go",
+      "source_location": "L162"
     },
     {
-      "id": "auth_service_register",
-      "label": ".Register()",
+      "id": "apps_api_cmd_security_audit_main_testmetawebhookhmacsignature",
+      "label": "testMetaWebhookHMACSignature()",
       "_origin": "ast",
-      "community": 140,
-      "community_name": ".Register",
+      "community": 141,
+      "community_name": "security-audit/main.go",
       "file_type": "code",
-      "norm_label": ".register()",
-      "source_file": "apps/api/internal/application/auth/service.go",
-      "source_location": "L151"
+      "norm_label": "testmetawebhookhmacsignature()",
+      "source_file": "apps/api/cmd/security-audit/main.go",
+      "source_location": "L199"
     },
     {
-      "id": "auth_service_resetpassword",
-      "label": ".ResetPassword()",
+      "id": "apps_api_cmd_security_audit_main_testnosqlinjectioninbody",
+      "label": "testNoSQLInjectionInBody()",
       "_origin": "ast",
-      "community": 140,
-      "community_name": ".Register",
+      "community": 141,
+      "community_name": "security-audit/main.go",
       "file_type": "code",
-      "norm_label": ".resetpassword()",
-      "source_file": "apps/api/internal/application/auth/service.go",
-      "source_location": "L714"
+      "norm_label": "testnosqlinjectioninbody()",
+      "source_file": "apps/api/cmd/security-audit/main.go",
+      "source_location": "L79"
+    },
+    {
+      "id": "apps_api_cmd_security_audit_main_testnosqlinjectioninqueryparams",
+      "label": "testNoSQLInjectionInQueryParams()",
+      "_origin": "ast",
+      "community": 141,
+      "community_name": "security-audit/main.go",
+      "file_type": "code",
+      "norm_label": "testnosqlinjectioninqueryparams()",
+      "source_file": "apps/api/cmd/security-audit/main.go",
+      "source_location": "L99"
+    },
+    {
+      "id": "apps_api_cmd_security_audit_main_testrequestidtracing",
+      "label": "testRequestIDTracing()",
+      "_origin": "ast",
+      "community": 141,
+      "community_name": "security-audit/main.go",
+      "file_type": "code",
+      "norm_label": "testrequestidtracing()",
+      "source_file": "apps/api/cmd/security-audit/main.go",
+      "source_location": "L144"
+    },
+    {
+      "id": "apps_api_cmd_security_audit_main_testsecurityheaders",
+      "label": "testSecurityHeaders()",
+      "_origin": "ast",
+      "community": 141,
+      "community_name": "security-audit/main.go",
+      "file_type": "code",
+      "norm_label": "testsecurityheaders()",
+      "source_file": "apps/api/cmd/security-audit/main.go",
+      "source_location": "L117"
+    },
+    {
+      "id": "apps_api_internal_interfaces_http_middleware_security",
+      "label": "security.go",
+      "_origin": "ast",
+      "community": 141,
+      "community_name": "security-audit/main.go",
+      "file_type": "code",
+      "norm_label": "security.go",
+      "source_file": "apps/api/internal/interfaces/http/middleware/security.go",
+      "source_location": "L1"
+    },
+    {
+      "id": "apps_api_internal_interfaces_http_middleware_security_hasoperatorinjection",
+      "label": "hasOperatorInjection()",
+      "_origin": "ast",
+      "community": 141,
+      "community_name": "security-audit/main.go",
+      "file_type": "code",
+      "norm_label": "hasoperatorinjection()",
+      "source_file": "apps/api/internal/interfaces/http/middleware/security.go",
+      "source_location": "L127"
+    },
+    {
+      "id": "apps_api_internal_interfaces_http_middleware_security_nosqlsanitizer",
+      "label": "NoSQLSanitizer()",
+      "_origin": "ast",
+      "community": 141,
+      "community_name": "security-audit/main.go",
+      "file_type": "code",
+      "norm_label": "nosqlsanitizer()",
+      "source_file": "apps/api/internal/interfaces/http/middleware/security.go",
+      "source_location": "L65"
+    },
+    {
+      "id": "apps_api_internal_interfaces_http_middleware_security_requestid",
+      "label": "RequestID()",
+      "_origin": "ast",
+      "community": 141,
+      "community_name": "security-audit/main.go",
+      "file_type": "code",
+      "norm_label": "requestid()",
+      "source_file": "apps/api/internal/interfaces/http/middleware/security.go",
+      "source_location": "L29"
+    },
+    {
+      "id": "apps_api_internal_interfaces_http_middleware_security_securityheaders",
+      "label": "SecurityHeaders()",
+      "_origin": "ast",
+      "community": 141,
+      "community_name": "security-audit/main.go",
+      "file_type": "code",
+      "norm_label": "securityheaders()",
+      "source_file": "apps/api/internal/interfaces/http/middleware/security.go",
+      "source_location": "L16"
     },
     {
       "id": "apps_api_pkg_token_token",
       "label": "token.go",
       "_origin": "ast",
       "community": 141,
-      "community_name": "token.go",
+      "community_name": "security-audit/main.go",
       "file_type": "code",
       "norm_label": "token.go",
       "source_file": "apps/api/pkg/token/token.go",
@@ -12232,33 +11966,33 @@
       "label": "NewMaker()",
       "_origin": "ast",
       "community": 141,
-      "community_name": "token.go",
+      "community_name": "security-audit/main.go",
       "file_type": "code",
       "norm_label": "newmaker()",
       "source_file": "apps/api/pkg/token/token.go",
       "source_location": "L38"
     },
     {
-      "id": "apps_api_pkg_token_token_test",
-      "label": "token_test.go",
-      "_origin": "ast",
-      "community": 141,
-      "community_name": "token.go",
-      "file_type": "code",
-      "norm_label": "token_test.go",
-      "source_file": "apps/api/pkg/token/token_test.go",
-      "source_location": "L1"
-    },
-    {
       "id": "apps_api_pkg_token_token_test_testtokenmaker",
       "label": "TestTokenMaker()",
       "_origin": "ast",
       "community": 141,
-      "community_name": "token.go",
+      "community_name": "security-audit/main.go",
       "file_type": "code",
       "norm_label": "testtokenmaker()",
       "source_file": "apps/api/pkg/token/token_test.go",
       "source_location": "L10"
+    },
+    {
+      "id": "security_audit_testresult",
+      "label": "TestResult",
+      "_origin": "ast",
+      "community": 141,
+      "community_name": "security-audit/main.go",
+      "file_type": "code",
+      "norm_label": "testresult",
+      "source_file": "apps/api/cmd/security-audit/main.go",
+      "source_location": "L19"
     },
     {
       "id": "apps_web_lib_design_system",
@@ -12402,17 +12136,6 @@
       "norm_label": "topitemmetric",
       "source_file": "apps/api/internal/application/analytics/service.go",
       "source_location": "L41"
-    },
-    {
-      "id": "apps_api_internal_application_whatsapp_commands_go_whatsapp_service",
-      "label": "Service",
-      "_origin": "ast",
-      "community": 143,
-      "community_name": "context.Context",
-      "file_type": "code",
-      "norm_label": "service",
-      "source_file": "apps/api/internal/application/whatsapp/commands.go",
-      "source_location": "L17"
     },
     {
       "id": "apps_api_internal_infrastructure_redis_client_go_redis_client",
@@ -12743,28 +12466,6 @@
       "norm_label": "resend.client",
       "source_file": "",
       "source_location": ""
-    },
-    {
-      "id": "whatsapp_service_logwebhookevent",
-      "label": ".LogWebhookEvent()",
-      "_origin": "ast",
-      "community": 143,
-      "community_name": "context.Context",
-      "file_type": "code",
-      "norm_label": ".logwebhookevent()",
-      "source_file": "apps/api/internal/application/whatsapp/commands.go",
-      "source_location": "L109"
-    },
-    {
-      "id": "whatsapp_service_processrulebasedcommand",
-      "label": ".ProcessRuleBasedCommand()",
-      "_origin": "ast",
-      "community": 143,
-      "community_name": "context.Context",
-      "file_type": "code",
-      "norm_label": ".processrulebasedcommand()",
-      "source_file": "apps/api/internal/application/whatsapp/commands.go",
-      "source_location": "L17"
     },
     {
       "id": "agents_agents_dineflow_orchestrator",
@@ -14323,6 +14024,61 @@
       "source_location": "L10"
     },
     {
+      "id": "apps_api_pkg_otp_msg91_provider_go_config",
+      "label": "Config",
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "OpenWAProvider",
+      "file_type": "code",
+      "norm_label": "config",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "apps_api_pkg_otp_msg91_provider_go_redis_client",
+      "label": "redis.Client",
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "OpenWAProvider",
+      "file_type": "code",
+      "norm_label": "redis.client",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "apps_api_pkg_otp_msg91_provider_newmsg91provider",
+      "label": "NewMSG91Provider()",
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "OpenWAProvider",
+      "file_type": "code",
+      "norm_label": "newmsg91provider()",
+      "source_file": "apps/api/pkg/otp/msg91_provider.go",
+      "source_location": "L28"
+    },
+    {
+      "id": "apps_api_pkg_otp_provider_test_testmsg91providerfallback",
+      "label": "TestMSG91ProviderFallback()",
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "OpenWAProvider",
+      "file_type": "code",
+      "norm_label": "testmsg91providerfallback()",
+      "source_file": "apps/api/pkg/otp/provider_test.go",
+      "source_location": "L76"
+    },
+    {
+      "id": "go_type_net_http_client",
+      "label": "net/http.Client",
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "OpenWAProvider",
+      "file_type": "code",
+      "norm_label": "net/http.client",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
       "id": "go_type_net_http_request",
       "label": "net/http.Request",
       "_origin": "ast",
@@ -14717,6 +14473,28 @@
       "norm_label": "sentmessage",
       "source_file": "apps/api/internal/messaging/mock.go",
       "source_location": "L11"
+    },
+    {
+      "id": "otp_msg91provider",
+      "label": "MSG91Provider",
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "OpenWAProvider",
+      "file_type": "code",
+      "norm_label": "msg91provider",
+      "source_file": "apps/api/pkg/otp/msg91_provider.go",
+      "source_location": "L19"
+    },
+    {
+      "id": "otp_msg91provider_name",
+      "label": ".Name()",
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "OpenWAProvider",
+      "file_type": "code",
+      "norm_label": ".name()",
+      "source_file": "apps/api/pkg/otp/msg91_provider.go",
+      "source_location": "L38"
     },
     {
       "id": "whatsapp_service_getopenwasessionstatus",
@@ -15630,7 +15408,7 @@
       "file_type": "code",
       "norm_label": ".scanmenu()",
       "source_file": "apps/api/internal/interfaces/http/handlers/menu.go",
-      "source_location": "L537"
+      "source_location": "L538"
     },
     {
       "id": "handlers_menuhandler_toggleavailability",
@@ -18009,28 +17787,6 @@
       "source_location": "L29"
     },
     {
-      "id": "apps_api_internal_infrastructure_realtime_hub",
-      "label": "hub.go",
-      "_origin": "ast",
-      "community": 26,
-      "community_name": "main",
-      "file_type": "code",
-      "norm_label": "hub.go",
-      "source_file": "apps/api/internal/infrastructure/realtime/hub.go",
-      "source_location": "L1"
-    },
-    {
-      "id": "apps_api_internal_infrastructure_realtime_hub_gethub",
-      "label": "GetHub()",
-      "_origin": "ast",
-      "community": 26,
-      "community_name": "main",
-      "file_type": "code",
-      "norm_label": "gethub()",
-      "source_file": "apps/api/internal/infrastructure/realtime/hub.go",
-      "source_location": "L37"
-    },
-    {
       "id": "apps_api_internal_infrastructure_realtime_hub_go_realtime_hub",
       "label": "Hub",
       "_origin": "ast",
@@ -18040,17 +17796,6 @@
       "norm_label": "hub",
       "source_file": "apps/api/internal/infrastructure/realtime/hub.go",
       "source_location": "L26"
-    },
-    {
-      "id": "apps_api_internal_interfaces_http_handlers_analytics_newanalyticshandler",
-      "label": "NewAnalyticsHandler()",
-      "_origin": "ast",
-      "community": 26,
-      "community_name": "main",
-      "file_type": "code",
-      "norm_label": "newanalyticshandler()",
-      "source_file": "apps/api/internal/interfaces/http/handlers/analytics.go",
-      "source_location": "L19"
     },
     {
       "id": "apps_api_internal_interfaces_http_handlers_notification_newnotificationhandler",
@@ -18084,17 +17829,6 @@
       "norm_label": "newtenanthandler()",
       "source_file": "apps/api/internal/interfaces/http/handlers/tenant.go",
       "source_location": "L21"
-    },
-    {
-      "id": "apps_api_pkg_logger_logger",
-      "label": "logger.go",
-      "_origin": "ast",
-      "community": 26,
-      "community_name": "main",
-      "file_type": "code",
-      "norm_label": "logger.go",
-      "source_file": "apps/api/pkg/logger/logger.go",
-      "source_location": "L1"
     },
     {
       "id": "apps_api_pkg_logger_logger_new",
@@ -18207,17 +17941,6 @@
       "source_location": "L71"
     },
     {
-      "id": "realtime_eventtype",
-      "label": "EventType",
-      "_origin": "ast",
-      "community": 26,
-      "community_name": "main",
-      "file_type": "code",
-      "norm_label": "eventtype",
-      "source_file": "apps/api/internal/infrastructure/realtime/hub.go",
-      "source_location": "L10"
-    },
-    {
       "id": "realtime_hub_broadcast",
       "label": ".Broadcast()",
       "_origin": "ast",
@@ -18271,28 +17994,6 @@
       "norm_label": ".unregister()",
       "source_file": "apps/api/internal/infrastructure/realtime/hub.go",
       "source_location": "L58"
-    },
-    {
-      "id": "realtime_notificationevent",
-      "label": "NotificationEvent",
-      "_origin": "ast",
-      "community": 26,
-      "community_name": "main",
-      "file_type": "code",
-      "norm_label": "notificationevent",
-      "source_file": "apps/api/internal/infrastructure/realtime/hub.go",
-      "source_location": "L100"
-    },
-    {
-      "id": "realtime_orderevent",
-      "label": "OrderEvent",
-      "_origin": "ast",
-      "community": 26,
-      "community_name": "main",
-      "file_type": "code",
-      "norm_label": "orderevent",
-      "source_file": "apps/api/internal/infrastructure/realtime/hub.go",
-      "source_location": "L19"
     },
     {
       "id": "apps_web_app_dashboard_notifications_page",
@@ -20759,191 +20460,345 @@
       "source_location": "L291"
     },
     {
-      "id": "apps_api_pkg_otp_firebase_test_provider_go_config",
-      "label": "Config",
+      "id": "apps_api_internal_application_staff_service_cleanphonenumber",
+      "label": "cleanPhoneNumber()",
       "_origin": "ast",
       "community": 39,
-      "community_name": "redisKey",
+      "community_name": "time.Time",
       "file_type": "code",
-      "norm_label": "config",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "apps_api_pkg_otp_firebase_test_provider_go_redis_client",
-      "label": "redis.Client",
-      "_origin": "ast",
-      "community": 39,
-      "community_name": "redisKey",
-      "file_type": "code",
-      "norm_label": "redis.client",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "apps_api_pkg_otp_firebase_test_provider_newfirebasetestprovider",
-      "label": "NewFirebaseTestProvider()",
-      "_origin": "ast",
-      "community": 39,
-      "community_name": "redisKey",
-      "file_type": "code",
-      "norm_label": "newfirebasetestprovider()",
-      "source_file": "apps/api/pkg/otp/firebase_test_provider.go",
-      "source_location": "L19"
-    },
-    {
-      "id": "apps_api_pkg_otp_otp_generatecode",
-      "label": "GenerateCode()",
-      "_origin": "ast",
-      "community": 39,
-      "community_name": "redisKey",
-      "file_type": "code",
-      "norm_label": "generatecode()",
-      "source_file": "apps/api/pkg/otp/otp.go",
-      "source_location": "L89"
-    },
-    {
-      "id": "apps_api_pkg_otp_otp_go_redis_client",
-      "label": "redis.Client",
-      "_origin": "ast",
-      "community": 39,
-      "community_name": "redisKey",
-      "file_type": "code",
-      "norm_label": "redis.client",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "apps_api_pkg_otp_otp_newservice",
-      "label": "NewService()",
-      "_origin": "ast",
-      "community": 39,
-      "community_name": "redisKey",
-      "file_type": "code",
-      "norm_label": "newservice()",
-      "source_file": "apps/api/pkg/otp/otp.go",
-      "source_location": "L24"
-    },
-    {
-      "id": "apps_api_pkg_otp_otp_rediskey",
-      "label": "redisKey()",
-      "_origin": "ast",
-      "community": 39,
-      "community_name": "redisKey",
-      "file_type": "code",
-      "norm_label": "rediskey()",
-      "source_file": "apps/api/pkg/otp/otp.go",
-      "source_location": "L84"
-    },
-    {
-      "id": "apps_api_pkg_otp_otp_test_testgeneratecode",
-      "label": "TestGenerateCode()",
-      "_origin": "ast",
-      "community": 39,
-      "community_name": "redisKey",
-      "file_type": "code",
-      "norm_label": "testgeneratecode()",
-      "source_file": "apps/api/pkg/otp/otp_test.go",
-      "source_location": "L10"
-    },
-    {
-      "id": "otp_firebasetestprovider",
-      "label": "FirebaseTestProvider",
-      "_origin": "ast",
-      "community": 39,
-      "community_name": "redisKey",
-      "file_type": "code",
-      "norm_label": "firebasetestprovider",
-      "source_file": "apps/api/pkg/otp/firebase_test_provider.go",
-      "source_location": "L13"
-    },
-    {
-      "id": "otp_firebasetestprovider_name",
-      "label": ".Name()",
-      "_origin": "ast",
-      "community": 39,
-      "community_name": "redisKey",
-      "file_type": "code",
-      "norm_label": ".name()",
-      "source_file": "apps/api/pkg/otp/firebase_test_provider.go",
-      "source_location": "L38"
-    },
-    {
-      "id": "otp_firebasetestprovider_sendotp",
-      "label": ".SendOTP()",
-      "_origin": "ast",
-      "community": 39,
-      "community_name": "redisKey",
-      "file_type": "code",
-      "norm_label": ".sendotp()",
-      "source_file": "apps/api/pkg/otp/firebase_test_provider.go",
+      "norm_label": "cleanphonenumber()",
+      "source_file": "apps/api/internal/application/staff/service.go",
       "source_location": "L43"
     },
     {
-      "id": "otp_firebasetestprovider_verifyotp",
-      "label": ".VerifyOTP()",
+      "id": "apps_api_internal_domain_user_user",
+      "label": "user.go",
       "_origin": "ast",
       "community": 39,
-      "community_name": "redisKey",
+      "community_name": "time.Time",
       "file_type": "code",
-      "norm_label": ".verifyotp()",
-      "source_file": "apps/api/pkg/otp/firebase_test_provider.go",
-      "source_location": "L72"
+      "norm_label": "user.go",
+      "source_file": "apps/api/internal/domain/user/user.go",
+      "source_location": "L1"
     },
     {
-      "id": "otp_service",
-      "label": "Service",
+      "id": "apps_api_internal_domain_user_user_calculatedistancemeters",
+      "label": "CalculateDistanceMeters()",
       "_origin": "ast",
       "community": 39,
-      "community_name": "redisKey",
+      "community_name": "time.Time",
       "file_type": "code",
-      "norm_label": "service",
-      "source_file": "apps/api/pkg/otp/otp.go",
-      "source_location": "L19"
+      "norm_label": "calculatedistancemeters()",
+      "source_file": "apps/api/internal/domain/user/user.go",
+      "source_location": "L429"
     },
     {
-      "id": "otp_service_generate",
-      "label": ".Generate()",
+      "id": "apps_api_internal_domain_user_user_defaultpermissionsforrole",
+      "label": "DefaultPermissionsForRole()",
       "_origin": "ast",
       "community": 39,
-      "community_name": "redisKey",
+      "community_name": "time.Time",
       "file_type": "code",
-      "norm_label": ".generate()",
-      "source_file": "apps/api/pkg/otp/otp.go",
-      "source_location": "L30"
+      "norm_label": "defaultpermissionsforrole()",
+      "source_file": "apps/api/internal/domain/user/user.go",
+      "source_location": "L149"
     },
     {
-      "id": "otp_service_invalidate",
-      "label": ".Invalidate()",
+      "id": "apps_api_internal_domain_user_user_go_user_publicprofile",
+      "label": "PublicProfile",
       "_origin": "ast",
       "community": 39,
-      "community_name": "redisKey",
+      "community_name": "time.Time",
       "file_type": "code",
-      "norm_label": ".invalidate()",
-      "source_file": "apps/api/pkg/otp/otp.go",
+      "norm_label": "publicprofile",
+      "source_file": "apps/api/internal/domain/user/user.go",
+      "source_location": "L219"
+    },
+    {
+      "id": "apps_api_internal_domain_user_user_go_user_user",
+      "label": "User",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "time.Time",
+      "file_type": "code",
+      "norm_label": "user",
+      "source_file": "apps/api/internal/domain/user/user.go",
+      "source_location": "L118"
+    },
+    {
+      "id": "apps_api_internal_domain_user_user_isplatformrole",
+      "label": "IsPlatformRole()",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "time.Time",
+      "file_type": "code",
+      "norm_label": "isplatformrole()",
+      "source_file": "apps/api/internal/domain/user/user.go",
+      "source_location": "L31"
+    },
+    {
+      "id": "apps_api_internal_domain_user_user_test_testcalculatedistancemeters",
+      "label": "TestCalculateDistanceMeters()",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "time.Time",
+      "file_type": "code",
+      "norm_label": "testcalculatedistancemeters()",
+      "source_file": "apps/api/internal/domain/user/user_test.go",
+      "source_location": "L11"
+    },
+    {
+      "id": "go_type_time_time",
+      "label": "time.Time",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "time.Time",
+      "file_type": "code",
+      "norm_label": "time.time",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "handlers_updatestaffrequest",
+      "label": "UpdateStaffRequest",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "time.Time",
+      "file_type": "code",
+      "norm_label": "updatestaffrequest",
+      "source_file": "apps/api/internal/interfaces/http/handlers/staff.go",
+      "source_location": "L96"
+    },
+    {
+      "id": "redis_ratelimitresult",
+      "label": "RateLimitResult",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "time.Time",
+      "file_type": "code",
+      "norm_label": "ratelimitresult",
+      "source_file": "apps/api/internal/infrastructure/redis/client.go",
+      "source_location": "L63"
+    },
+    {
+      "id": "room_roompreference",
+      "label": "RoomPreference",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "time.Time",
+      "file_type": "code",
+      "norm_label": "roompreference",
+      "source_file": "apps/api/internal/domain/room/preference.go",
+      "source_location": "L11"
+    },
+    {
+      "id": "room_roompreference_validate",
+      "label": ".Validate()",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "time.Time",
+      "file_type": "code",
+      "norm_label": ".validate()",
+      "source_file": "apps/api/internal/domain/room/preference.go",
+      "source_location": "L21"
+    },
+    {
+      "id": "staff_invitestaffinput",
+      "label": "InviteStaffInput",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "time.Time",
+      "file_type": "code",
+      "norm_label": "invitestaffinput",
+      "source_file": "apps/api/internal/application/staff/service.go",
+      "source_location": "L74"
+    },
+    {
+      "id": "staff_service_invitestaff",
+      "label": ".InviteStaff()",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "time.Time",
+      "file_type": "code",
+      "norm_label": ".invitestaff()",
+      "source_file": "apps/api/internal/application/staff/service.go",
+      "source_location": "L137"
+    },
+    {
+      "id": "staff_service_updateemployeeprofile",
+      "label": ".UpdateEmployeeProfile()",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "time.Time",
+      "file_type": "code",
+      "norm_label": ".updateemployeeprofile()",
+      "source_file": "apps/api/internal/application/staff/service.go",
+      "source_location": "L326"
+    },
+    {
+      "id": "staff_service_updatestaff",
+      "label": ".UpdateStaff()",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "time.Time",
+      "file_type": "code",
+      "norm_label": ".updatestaff()",
+      "source_file": "apps/api/internal/application/staff/service.go",
+      "source_location": "L294"
+    },
+    {
+      "id": "staff_updateemployeeprofileinput",
+      "label": "UpdateEmployeeProfileInput",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "time.Time",
+      "file_type": "code",
+      "norm_label": "updateemployeeprofileinput",
+      "source_file": "apps/api/internal/application/staff/service.go",
+      "source_location": "L85"
+    },
+    {
+      "id": "user_auth",
+      "label": "Auth",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "time.Time",
+      "file_type": "code",
+      "norm_label": "auth",
+      "source_file": "apps/api/internal/domain/user/user.go",
       "source_location": "L73"
     },
     {
-      "id": "otp_service_ttl",
-      "label": ".TTL()",
+      "id": "user_bankdetails",
+      "label": "BankDetails",
       "_origin": "ast",
       "community": 39,
-      "community_name": "redisKey",
+      "community_name": "time.Time",
       "file_type": "code",
-      "norm_label": ".ttl()",
-      "source_file": "apps/api/pkg/otp/otp.go",
-      "source_location": "L78"
+      "norm_label": "bankdetails",
+      "source_file": "apps/api/internal/domain/user/user.go",
+      "source_location": "L104"
     },
     {
-      "id": "otp_service_verify",
-      "label": ".Verify()",
+      "id": "user_breaklog",
+      "label": "BreakLog",
       "_origin": "ast",
       "community": 39,
-      "community_name": "redisKey",
+      "community_name": "time.Time",
       "file_type": "code",
-      "norm_label": ".verify()",
-      "source_file": "apps/api/pkg/otp/otp.go",
-      "source_location": "L46"
+      "norm_label": "breaklog",
+      "source_file": "apps/api/internal/domain/user/user.go",
+      "source_location": "L276"
+    },
+    {
+      "id": "user_emergencycontact",
+      "label": "EmergencyContact",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "time.Time",
+      "file_type": "code",
+      "norm_label": "emergencycontact",
+      "source_file": "apps/api/internal/domain/user/user.go",
+      "source_location": "L111"
+    },
+    {
+      "id": "user_notificationprefs",
+      "label": "NotificationPrefs",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "time.Time",
+      "file_type": "code",
+      "norm_label": "notificationprefs",
+      "source_file": "apps/api/internal/domain/user/user.go",
+      "source_location": "L84"
+    },
+    {
+      "id": "user_payrollrecord",
+      "label": "PayrollRecord",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "time.Time",
+      "file_type": "code",
+      "norm_label": "payrollrecord",
+      "source_file": "apps/api/internal/domain/user/user.go",
+      "source_location": "L390"
+    },
+    {
+      "id": "user_permissions",
+      "label": "Permissions",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "time.Time",
+      "file_type": "code",
+      "norm_label": "permissions",
+      "source_file": "apps/api/internal/domain/user/user.go",
+      "source_location": "L50"
+    },
+    {
+      "id": "user_refreshtoken",
+      "label": "RefreshToken",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "time.Time",
+      "file_type": "code",
+      "norm_label": "refreshtoken",
+      "source_file": "apps/api/internal/domain/user/user.go",
+      "source_location": "L64"
+    },
+    {
+      "id": "user_role",
+      "label": "Role",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "time.Time",
+      "file_type": "code",
+      "norm_label": "role",
+      "source_file": "apps/api/internal/domain/user/user.go",
+      "source_location": "L11"
+    },
+    {
+      "id": "user_salarystructure",
+      "label": "SalaryStructure",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "time.Time",
+      "file_type": "code",
+      "norm_label": "salarystructure",
+      "source_file": "apps/api/internal/domain/user/user.go",
+      "source_location": "L97"
+    },
+    {
+      "id": "user_status",
+      "label": "Status",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "time.Time",
+      "file_type": "code",
+      "norm_label": "status",
+      "source_file": "apps/api/internal/domain/user/user.go",
+      "source_location": "L41"
+    },
+    {
+      "id": "user_user_islocked",
+      "label": ".IsLocked()",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "time.Time",
+      "file_type": "code",
+      "norm_label": ".islocked()",
+      "source_file": "apps/api/internal/domain/user/user.go",
+      "source_location": "L211"
+    },
+    {
+      "id": "user_user_topublic",
+      "label": ".ToPublic()",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "time.Time",
+      "file_type": "code",
+      "norm_label": ".topublic()",
+      "source_file": "apps/api/internal/domain/user/user.go",
+      "source_location": "L240"
     },
     {
       "id": "apps_web_app_api_staff_route",
@@ -22492,202 +22347,88 @@
       "source_location": "L336"
     },
     {
-      "id": "apps_api_cmd_server_seed_seeddefaultdata",
-      "label": "seedDefaultData()",
+      "id": "docs_product_requirements_3_1_performance",
+      "label": "3.1 Performance",
       "_origin": "ast",
       "community": 45,
-      "community_name": "tenant/tenant.go",
-      "file_type": "code",
-      "norm_label": "seeddefaultdata()",
-      "source_file": "apps/api/cmd/server/seed.go",
-      "source_location": "L21"
+      "community_name": "3. Non-Functional Requirements",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "3.1 performance",
+      "source_file": "docs/PRODUCT_REQUIREMENTS.md",
+      "source_location": "L229"
     },
     {
-      "id": "apps_api_cmd_server_seed_seedplatformdata",
-      "label": "seedPlatformData()",
+      "id": "docs_product_requirements_3_2_scalability",
+      "label": "3.2 Scalability",
       "_origin": "ast",
       "community": 45,
-      "community_name": "tenant/tenant.go",
-      "file_type": "code",
-      "norm_label": "seedplatformdata()",
-      "source_file": "apps/api/cmd/server/seed.go",
-      "source_location": "L505"
+      "community_name": "3. Non-Functional Requirements",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "3.2 scalability",
+      "source_file": "docs/PRODUCT_REQUIREMENTS.md",
+      "source_location": "L239"
     },
     {
-      "id": "apps_api_internal_domain_tenant_tenant",
-      "label": "tenant/tenant.go",
+      "id": "docs_product_requirements_3_3_reliability",
+      "label": "3.3 Reliability",
       "_origin": "ast",
       "community": 45,
-      "community_name": "tenant/tenant.go",
-      "file_type": "code",
-      "norm_label": "tenant/tenant.go",
-      "source_file": "apps/api/internal/domain/tenant/tenant.go",
-      "source_location": "L1"
+      "community_name": "3. Non-Functional Requirements",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "3.3 reliability",
+      "source_file": "docs/PRODUCT_REQUIREMENTS.md",
+      "source_location": "L249"
     },
     {
-      "id": "apps_api_internal_domain_tenant_tenant_featuresforplan",
-      "label": "FeaturesForPlan()",
+      "id": "docs_product_requirements_3_4_security",
+      "label": "3.4 Security",
       "_origin": "ast",
       "community": 45,
-      "community_name": "tenant/tenant.go",
-      "file_type": "code",
-      "norm_label": "featuresforplan()",
-      "source_file": "apps/api/internal/domain/tenant/tenant.go",
-      "source_location": "L158"
+      "community_name": "3. Non-Functional Requirements",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "3.4 security",
+      "source_file": "docs/PRODUCT_REQUIREMENTS.md",
+      "source_location": "L258"
     },
     {
-      "id": "apps_api_internal_domain_tenant_tenant_go_tenant_businesstype",
-      "label": "BusinessType",
+      "id": "docs_product_requirements_3_5_accessibility",
+      "label": "3.5 Accessibility",
       "_origin": "ast",
       "community": 45,
-      "community_name": "tenant/tenant.go",
-      "file_type": "code",
-      "norm_label": "businesstype",
-      "source_file": "apps/api/internal/domain/tenant/tenant.go",
-      "source_location": "L10"
+      "community_name": "3. Non-Functional Requirements",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "3.5 accessibility",
+      "source_file": "docs/PRODUCT_REQUIREMENTS.md",
+      "source_location": "L268"
     },
     {
-      "id": "apps_api_internal_domain_tenant_tenant_go_tenant_tenant",
-      "label": "Tenant",
+      "id": "docs_product_requirements_3_6_internationalisation",
+      "label": "3.6 Internationalisation",
       "_origin": "ast",
       "community": 45,
-      "community_name": "tenant/tenant.go",
-      "file_type": "code",
-      "norm_label": "tenant",
-      "source_file": "apps/api/internal/domain/tenant/tenant.go",
-      "source_location": "L132"
+      "community_name": "3. Non-Functional Requirements",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "3.6 internationalisation",
+      "source_file": "docs/PRODUCT_REQUIREMENTS.md",
+      "source_location": "L275"
     },
     {
-      "id": "apps_api_internal_domain_tenant_tenant_limitsforplan",
-      "label": "LimitsForPlan()",
+      "id": "docs_product_requirements_3_non_functional_requirements",
+      "label": "3. Non-Functional Requirements",
       "_origin": "ast",
       "community": 45,
-      "community_name": "tenant/tenant.go",
-      "file_type": "code",
-      "norm_label": "limitsforplan()",
-      "source_file": "apps/api/internal/domain/tenant/tenant.go",
-      "source_location": "L190"
-    },
-    {
-      "id": "tenant_address",
-      "label": "Address",
-      "_origin": "ast",
-      "community": 45,
-      "community_name": "tenant/tenant.go",
-      "file_type": "code",
-      "norm_label": "address",
-      "source_file": "apps/api/internal/domain/tenant/tenant.go",
-      "source_location": "L48"
-    },
-    {
-      "id": "tenant_contact",
-      "label": "Contact",
-      "_origin": "ast",
-      "community": 45,
-      "community_name": "tenant/tenant.go",
-      "file_type": "code",
-      "norm_label": "contact",
-      "source_file": "apps/api/internal/domain/tenant/tenant.go",
-      "source_location": "L41"
-    },
-    {
-      "id": "tenant_dayhours",
-      "label": "DayHours",
-      "_origin": "ast",
-      "community": 45,
-      "community_name": "tenant/tenant.go",
-      "file_type": "code",
-      "norm_label": "dayhours",
-      "source_file": "apps/api/internal/domain/tenant/tenant.go",
-      "source_location": "L58"
-    },
-    {
-      "id": "tenant_features",
-      "label": "Features",
-      "_origin": "ast",
-      "community": 45,
-      "community_name": "tenant/tenant.go",
-      "file_type": "code",
-      "norm_label": "features",
-      "source_file": "apps/api/internal/domain/tenant/tenant.go",
-      "source_location": "L88"
-    },
-    {
-      "id": "tenant_limits",
-      "label": "Limits",
-      "_origin": "ast",
-      "community": 45,
-      "community_name": "tenant/tenant.go",
-      "file_type": "code",
-      "norm_label": "limits",
-      "source_file": "apps/api/internal/domain/tenant/tenant.go",
-      "source_location": "L107"
-    },
-    {
-      "id": "tenant_onboarding",
-      "label": "Onboarding",
-      "_origin": "ast",
-      "community": 45,
-      "community_name": "tenant/tenant.go",
-      "file_type": "code",
-      "norm_label": "onboarding",
-      "source_file": "apps/api/internal/domain/tenant/tenant.go",
-      "source_location": "L125"
-    },
-    {
-      "id": "tenant_onboardingsteps",
-      "label": "OnboardingSteps",
-      "_origin": "ast",
-      "community": 45,
-      "community_name": "tenant/tenant.go",
-      "file_type": "code",
-      "norm_label": "onboardingsteps",
-      "source_file": "apps/api/internal/domain/tenant/tenant.go",
-      "source_location": "L116"
-    },
-    {
-      "id": "tenant_operatinghours",
-      "label": "OperatingHours",
-      "_origin": "ast",
-      "community": 45,
-      "community_name": "tenant/tenant.go",
-      "file_type": "code",
-      "norm_label": "operatinghours",
-      "source_file": "apps/api/internal/domain/tenant/tenant.go",
-      "source_location": "L65"
-    },
-    {
-      "id": "tenant_plan",
-      "label": "Plan",
-      "_origin": "ast",
-      "community": 45,
-      "community_name": "tenant/tenant.go",
-      "file_type": "code",
-      "norm_label": "plan",
-      "source_file": "apps/api/internal/domain/tenant/tenant.go",
-      "source_location": "L22"
-    },
-    {
-      "id": "tenant_settings",
-      "label": "Settings",
-      "_origin": "ast",
-      "community": 45,
-      "community_name": "tenant/tenant.go",
-      "file_type": "code",
-      "norm_label": "settings",
-      "source_file": "apps/api/internal/domain/tenant/tenant.go",
-      "source_location": "L76"
-    },
-    {
-      "id": "tenant_status",
-      "label": "Status",
-      "_origin": "ast",
-      "community": 45,
-      "community_name": "tenant/tenant.go",
-      "file_type": "code",
-      "norm_label": "status",
-      "source_file": "apps/api/internal/domain/tenant/tenant.go",
-      "source_location": "L32"
+      "community_name": "3. Non-Functional Requirements",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "3. non-functional requirements",
+      "source_file": "docs/PRODUCT_REQUIREMENTS.md",
+      "source_location": "L227"
     },
     {
       "id": "docs_api_strategy_api_design_principles",
@@ -23484,6 +23225,17 @@
       "source_location": "L1"
     },
     {
+      "id": "apps_api_internal_messaging_mock",
+      "label": "mock.go",
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "go_pkg_time",
+      "file_type": "code",
+      "norm_label": "mock.go",
+      "source_file": "apps/api/internal/messaging/mock.go",
+      "source_location": "L1"
+    },
+    {
       "id": "apps_api_internal_messaging_provider",
       "label": "messaging/provider.go",
       "_origin": "ast",
@@ -23627,100 +23379,109 @@
       "source_location": "L555"
     },
     {
-      "id": "docs_product_vision_problem_1_fragmented_software_stack",
-      "label": "Problem 1 \u2014 Fragmented Software Stack",
+      "id": "docs_product_requirements_1_user_personas",
+      "label": "1. User Personas",
       "_origin": "ast",
       "community": 50,
-      "community_name": "Problems Solved",
+      "community_name": "1. User Personas",
       "file_type": "document",
       "node_kind": "heading",
-      "norm_label": "problem 1 \u2014 fragmented software stack",
-      "source_file": "docs/PRODUCT_VISION.md",
-      "source_location": "L54"
+      "norm_label": "1. user personas",
+      "source_file": "docs/PRODUCT_REQUIREMENTS.md",
+      "source_location": "L5"
     },
     {
-      "id": "docs_product_vision_problem_2_high_cost_of_entry",
-      "label": "Problem 2 \u2014 High Cost of Entry",
+      "id": "docs_product_requirements_persona_1_riya_restaurant_owner",
+      "label": "Persona 1 \u2014 Riya (Restaurant Owner)",
       "_origin": "ast",
       "community": 50,
-      "community_name": "Problems Solved",
+      "community_name": "1. User Personas",
       "file_type": "document",
       "node_kind": "heading",
-      "norm_label": "problem 2 \u2014 high cost of entry",
-      "source_file": "docs/PRODUCT_VISION.md",
-      "source_location": "L57"
+      "norm_label": "persona 1 \u2014 riya (restaurant owner)",
+      "source_file": "docs/PRODUCT_REQUIREMENTS.md",
+      "source_location": "L7"
     },
     {
-      "id": "docs_product_vision_problem_3_app_download_friction",
-      "label": "Problem 3 \u2014 App Download Friction",
+      "id": "docs_product_requirements_persona_2_arjun_hotel_operations_manager",
+      "label": "Persona 2 \u2014 Arjun (Hotel Operations Manager)",
       "_origin": "ast",
       "community": 50,
-      "community_name": "Problems Solved",
+      "community_name": "1. User Personas",
       "file_type": "document",
       "node_kind": "heading",
-      "norm_label": "problem 3 \u2014 app download friction",
-      "source_file": "docs/PRODUCT_VISION.md",
-      "source_location": "L60"
+      "norm_label": "persona 2 \u2014 arjun (hotel operations manager)",
+      "source_file": "docs/PRODUCT_REQUIREMENTS.md",
+      "source_location": "L15"
     },
     {
-      "id": "docs_product_vision_problem_4_whatsapp_chaos",
-      "label": "Problem 4 \u2014 WhatsApp Chaos",
+      "id": "docs_product_requirements_persona_3_chef_meena_head_chef_kitchen_staff",
+      "label": "Persona 3 \u2014 Chef Meena (Head Chef / Kitchen Staff)",
       "_origin": "ast",
       "community": 50,
-      "community_name": "Problems Solved",
+      "community_name": "1. User Personas",
       "file_type": "document",
       "node_kind": "heading",
-      "norm_label": "problem 4 \u2014 whatsapp chaos",
-      "source_file": "docs/PRODUCT_VISION.md",
-      "source_location": "L63"
+      "norm_label": "persona 3 \u2014 chef meena (head chef / kitchen staff)",
+      "source_file": "docs/PRODUCT_REQUIREMENTS.md",
+      "source_location": "L23"
     },
     {
-      "id": "docs_product_vision_problem_5_no_real_time_kitchen_visibility",
-      "label": "Problem 5 \u2014 No Real-time Kitchen Visibility",
+      "id": "docs_product_requirements_persona_4_kai_food_truck_operator",
+      "label": "Persona 4 \u2014 Kai (Food Truck Operator)",
       "_origin": "ast",
       "community": 50,
-      "community_name": "Problems Solved",
+      "community_name": "1. User Personas",
       "file_type": "document",
       "node_kind": "heading",
-      "norm_label": "problem 5 \u2014 no real-time kitchen visibility",
-      "source_file": "docs/PRODUCT_VISION.md",
-      "source_location": "L66"
+      "norm_label": "persona 4 \u2014 kai (food truck operator)",
+      "source_file": "docs/PRODUCT_REQUIREMENTS.md",
+      "source_location": "L31"
     },
     {
-      "id": "docs_product_vision_problem_6_hotels_lack_f_b_cohesion",
-      "label": "Problem 6 \u2014 Hotels Lack F&B Cohesion",
+      "id": "docs_product_requirements_persona_5_priya_customer_guest",
+      "label": "Persona 5 \u2014 Priya (Customer / Guest)",
       "_origin": "ast",
       "community": 50,
-      "community_name": "Problems Solved",
+      "community_name": "1. User Personas",
       "file_type": "document",
       "node_kind": "heading",
-      "norm_label": "problem 6 \u2014 hotels lack f&b cohesion",
-      "source_file": "docs/PRODUCT_VISION.md",
-      "source_location": "L69"
+      "norm_label": "persona 5 \u2014 priya (customer / guest)",
+      "source_file": "docs/PRODUCT_REQUIREMENTS.md",
+      "source_location": "L39"
     },
     {
-      "id": "docs_product_vision_problem_7_no_data_for_decision_making",
-      "label": "Problem 7 \u2014 No Data for Decision Making",
+      "id": "apps_api_cmd_server_seed_seeddefaultdata",
+      "label": "seedDefaultData()",
       "_origin": "ast",
-      "community": 50,
-      "community_name": "Problems Solved",
-      "file_type": "document",
-      "node_kind": "heading",
-      "norm_label": "problem 7 \u2014 no data for decision making",
-      "source_file": "docs/PRODUCT_VISION.md",
-      "source_location": "L72"
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": "seeddefaultdata()",
+      "source_file": "apps/api/cmd/server/seed.go",
+      "source_location": "L21"
     },
     {
-      "id": "docs_product_vision_problems_solved",
-      "label": "Problems Solved",
+      "id": "apps_api_cmd_server_seed_seedplatformdata",
+      "label": "seedPlatformData()",
       "_origin": "ast",
-      "community": 50,
-      "community_name": "Problems Solved",
-      "file_type": "document",
-      "node_kind": "heading",
-      "norm_label": "problems solved",
-      "source_file": "docs/PRODUCT_VISION.md",
-      "source_location": "L52"
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": "seedplatformdata()",
+      "source_file": "apps/api/cmd/server/seed.go",
+      "source_location": "L505"
+    },
+    {
+      "id": "apps_api_internal_application_auth_service_generateslug",
+      "label": "generateSlug()",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": "generateslug()",
+      "source_file": "apps/api/internal/application/auth/service.go",
+      "source_location": "L876"
     },
     {
       "id": "apps_api_internal_application_auth_service_newservice",
@@ -23734,6 +23495,72 @@
       "source_location": "L134"
     },
     {
+      "id": "apps_api_internal_application_auth_service_validatepasswordcomplexity",
+      "label": "ValidatePasswordComplexity()",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": "validatepasswordcomplexity()",
+      "source_file": "apps/api/internal/application/auth/service.go",
+      "source_location": "L43"
+    },
+    {
+      "id": "apps_api_internal_domain_tenant_tenant",
+      "label": "tenant/tenant.go",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": "tenant/tenant.go",
+      "source_file": "apps/api/internal/domain/tenant/tenant.go",
+      "source_location": "L1"
+    },
+    {
+      "id": "apps_api_internal_domain_tenant_tenant_featuresforplan",
+      "label": "FeaturesForPlan()",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": "featuresforplan()",
+      "source_file": "apps/api/internal/domain/tenant/tenant.go",
+      "source_location": "L158"
+    },
+    {
+      "id": "apps_api_internal_domain_tenant_tenant_go_tenant_businesstype",
+      "label": "BusinessType",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": "businesstype",
+      "source_file": "apps/api/internal/domain/tenant/tenant.go",
+      "source_location": "L10"
+    },
+    {
+      "id": "apps_api_internal_domain_tenant_tenant_go_tenant_tenant",
+      "label": "Tenant",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": "tenant",
+      "source_file": "apps/api/internal/domain/tenant/tenant.go",
+      "source_location": "L132"
+    },
+    {
+      "id": "apps_api_internal_domain_tenant_tenant_limitsforplan",
+      "label": "LimitsForPlan()",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": "limitsforplan()",
+      "source_file": "apps/api/internal/domain/tenant/tenant.go",
+      "source_location": "L190"
+    },
+    {
       "id": "apps_api_internal_interfaces_http_handlers_auth_newauthhandler",
       "label": "NewAuthHandler()",
       "_origin": "ast",
@@ -23743,6 +23570,94 @@
       "norm_label": "newauthhandler()",
       "source_file": "apps/api/internal/interfaces/http/handlers/auth.go",
       "source_location": "L21"
+    },
+    {
+      "id": "apps_api_pkg_otp_firebase_test_provider_go_config",
+      "label": "Config",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": "config",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "apps_api_pkg_otp_firebase_test_provider_go_redis_client",
+      "label": "redis.Client",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": "redis.client",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "apps_api_pkg_otp_firebase_test_provider_newfirebasetestprovider",
+      "label": "NewFirebaseTestProvider()",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": "newfirebasetestprovider()",
+      "source_file": "apps/api/pkg/otp/firebase_test_provider.go",
+      "source_location": "L19"
+    },
+    {
+      "id": "apps_api_pkg_otp_otp_generatecode",
+      "label": "GenerateCode()",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": "generatecode()",
+      "source_file": "apps/api/pkg/otp/otp.go",
+      "source_location": "L89"
+    },
+    {
+      "id": "apps_api_pkg_otp_otp_go_redis_client",
+      "label": "redis.Client",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": "redis.client",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "apps_api_pkg_otp_otp_newservice",
+      "label": "NewService()",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": "newservice()",
+      "source_file": "apps/api/pkg/otp/otp.go",
+      "source_location": "L24"
+    },
+    {
+      "id": "apps_api_pkg_otp_otp_rediskey",
+      "label": "redisKey()",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": "rediskey()",
+      "source_file": "apps/api/pkg/otp/otp.go",
+      "source_location": "L84"
+    },
+    {
+      "id": "apps_api_pkg_otp_otp_test_testgeneratecode",
+      "label": "TestGenerateCode()",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": "testgeneratecode()",
+      "source_file": "apps/api/pkg/otp/otp_test.go",
+      "source_location": "L10"
     },
     {
       "id": "apps_api_pkg_otp_provider_go_otp_otpprovider",
@@ -23765,6 +23680,17 @@
       "norm_label": "normalizephone()",
       "source_file": "apps/api/pkg/otp/provider.go",
       "source_location": "L54"
+    },
+    {
+      "id": "apps_api_pkg_token_token_go_token_maker",
+      "label": "Maker",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": "maker",
+      "source_file": "apps/api/pkg/token/token.go",
+      "source_location": "L30"
     },
     {
       "id": "auth_authresponse",
@@ -23798,6 +23724,17 @@
       "norm_label": "loginrequest",
       "source_file": "apps/api/internal/application/auth/service.go",
       "source_location": "L93"
+    },
+    {
+      "id": "auth_registerrequest",
+      "label": "RegisterRequest",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": "registerrequest",
+      "source_file": "apps/api/internal/application/auth/service.go",
+      "source_location": "L71"
     },
     {
       "id": "auth_service",
@@ -23899,6 +23836,17 @@
       "source_location": "L562"
     },
     {
+      "id": "auth_service_register",
+      "label": ".Register()",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": ".register()",
+      "source_file": "apps/api/internal/application/auth/service.go",
+      "source_location": "L151"
+    },
+    {
       "id": "auth_service_resendotp",
       "label": ".ResendOTP()",
       "_origin": "ast",
@@ -23908,6 +23856,17 @@
       "norm_label": ".resendotp()",
       "source_file": "apps/api/internal/application/auth/service.go",
       "source_location": "L534"
+    },
+    {
+      "id": "auth_service_resetpassword",
+      "label": ".ResetPassword()",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": ".resetpassword()",
+      "source_file": "apps/api/internal/application/auth/service.go",
+      "source_location": "L714"
     },
     {
       "id": "auth_service_resetpasswordwithotp",
@@ -23987,114 +23946,345 @@
       "source_location": ""
     },
     {
-      "id": "apps_api_internal_application_whatsapp_openwa_integration_test",
-      "label": "openwa_integration_test.go",
+      "id": "jwt_registeredclaims",
+      "label": "jwt.RegisteredClaims",
       "_origin": "ast",
-      "community": 52,
-      "community_name": "workforce_test.go",
+      "community": 51,
+      "community_name": "Service",
       "file_type": "code",
-      "norm_label": "openwa_integration_test.go",
-      "source_file": "apps/api/internal/application/whatsapp/openwa_integration_test.go",
-      "source_location": "L1"
+      "norm_label": "jwt.registeredclaims",
+      "source_file": "",
+      "source_location": ""
     },
     {
-      "id": "apps_api_internal_application_whatsapp_openwa_integration_test_testordernotificationsandadminalerts",
-      "label": "TestOrderNotificationsAndAdminAlerts()",
+      "id": "otp_firebasetestprovider",
+      "label": "FirebaseTestProvider",
       "_origin": "ast",
-      "community": 52,
-      "community_name": "workforce_test.go",
+      "community": 51,
+      "community_name": "Service",
       "file_type": "code",
-      "norm_label": "testordernotificationsandadminalerts()",
-      "source_file": "apps/api/internal/application/whatsapp/openwa_integration_test.go",
+      "norm_label": "firebasetestprovider",
+      "source_file": "apps/api/pkg/otp/firebase_test_provider.go",
+      "source_location": "L13"
+    },
+    {
+      "id": "otp_firebasetestprovider_name",
+      "label": ".Name()",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": ".name()",
+      "source_file": "apps/api/pkg/otp/firebase_test_provider.go",
+      "source_location": "L38"
+    },
+    {
+      "id": "otp_firebasetestprovider_sendotp",
+      "label": ".SendOTP()",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": ".sendotp()",
+      "source_file": "apps/api/pkg/otp/firebase_test_provider.go",
+      "source_location": "L43"
+    },
+    {
+      "id": "otp_firebasetestprovider_verifyotp",
+      "label": ".VerifyOTP()",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": ".verifyotp()",
+      "source_file": "apps/api/pkg/otp/firebase_test_provider.go",
+      "source_location": "L72"
+    },
+    {
+      "id": "otp_msg91provider_sendotp",
+      "label": ".SendOTP()",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": ".sendotp()",
+      "source_file": "apps/api/pkg/otp/msg91_provider.go",
+      "source_location": "L43"
+    },
+    {
+      "id": "otp_msg91provider_verifyotp",
+      "label": ".VerifyOTP()",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": ".verifyotp()",
+      "source_file": "apps/api/pkg/otp/msg91_provider.go",
+      "source_location": "L107"
+    },
+    {
+      "id": "otp_service",
+      "label": "Service",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": "service",
+      "source_file": "apps/api/pkg/otp/otp.go",
+      "source_location": "L19"
+    },
+    {
+      "id": "otp_service_generate",
+      "label": ".Generate()",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": ".generate()",
+      "source_file": "apps/api/pkg/otp/otp.go",
+      "source_location": "L30"
+    },
+    {
+      "id": "otp_service_invalidate",
+      "label": ".Invalidate()",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": ".invalidate()",
+      "source_file": "apps/api/pkg/otp/otp.go",
+      "source_location": "L73"
+    },
+    {
+      "id": "otp_service_ttl",
+      "label": ".TTL()",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": ".ttl()",
+      "source_file": "apps/api/pkg/otp/otp.go",
+      "source_location": "L78"
+    },
+    {
+      "id": "otp_service_verify",
+      "label": ".Verify()",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": ".verify()",
+      "source_file": "apps/api/pkg/otp/otp.go",
+      "source_location": "L46"
+    },
+    {
+      "id": "tenant_address",
+      "label": "Address",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": "address",
+      "source_file": "apps/api/internal/domain/tenant/tenant.go",
+      "source_location": "L48"
+    },
+    {
+      "id": "tenant_contact",
+      "label": "Contact",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": "contact",
+      "source_file": "apps/api/internal/domain/tenant/tenant.go",
       "source_location": "L41"
     },
     {
-      "id": "apps_api_internal_application_whatsapp_openwa_integration_test_testrulebasedcommands",
-      "label": "TestRuleBasedCommands()",
+      "id": "tenant_dayhours",
+      "label": "DayHours",
       "_origin": "ast",
-      "community": 52,
-      "community_name": "workforce_test.go",
+      "community": 51,
+      "community_name": "Service",
       "file_type": "code",
-      "norm_label": "testrulebasedcommands()",
-      "source_file": "apps/api/internal/application/whatsapp/openwa_integration_test.go",
+      "norm_label": "dayhours",
+      "source_file": "apps/api/internal/domain/tenant/tenant.go",
+      "source_location": "L58"
+    },
+    {
+      "id": "tenant_features",
+      "label": "Features",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": "features",
+      "source_file": "apps/api/internal/domain/tenant/tenant.go",
+      "source_location": "L88"
+    },
+    {
+      "id": "tenant_limits",
+      "label": "Limits",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": "limits",
+      "source_file": "apps/api/internal/domain/tenant/tenant.go",
+      "source_location": "L107"
+    },
+    {
+      "id": "tenant_onboarding",
+      "label": "Onboarding",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": "onboarding",
+      "source_file": "apps/api/internal/domain/tenant/tenant.go",
+      "source_location": "L125"
+    },
+    {
+      "id": "tenant_onboardingsteps",
+      "label": "OnboardingSteps",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": "onboardingsteps",
+      "source_file": "apps/api/internal/domain/tenant/tenant.go",
+      "source_location": "L116"
+    },
+    {
+      "id": "tenant_operatinghours",
+      "label": "OperatingHours",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": "operatinghours",
+      "source_file": "apps/api/internal/domain/tenant/tenant.go",
+      "source_location": "L65"
+    },
+    {
+      "id": "tenant_plan",
+      "label": "Plan",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": "plan",
+      "source_file": "apps/api/internal/domain/tenant/tenant.go",
+      "source_location": "L22"
+    },
+    {
+      "id": "tenant_settings",
+      "label": "Settings",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": "settings",
+      "source_file": "apps/api/internal/domain/tenant/tenant.go",
+      "source_location": "L76"
+    },
+    {
+      "id": "tenant_status",
+      "label": "Status",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": "status",
+      "source_file": "apps/api/internal/domain/tenant/tenant.go",
+      "source_location": "L32"
+    },
+    {
+      "id": "token_claims",
+      "label": "Claims",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": "claims",
+      "source_file": "apps/api/pkg/token/token.go",
+      "source_location": "L20"
+    },
+    {
+      "id": "token_maker_create",
+      "label": ".create()",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": ".create()",
+      "source_file": "apps/api/pkg/token/token.go",
+      "source_location": "L57"
+    },
+    {
+      "id": "token_maker_createaccesstoken",
+      "label": ".CreateAccessToken()",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": ".createaccesstoken()",
+      "source_file": "apps/api/pkg/token/token.go",
+      "source_location": "L48"
+    },
+    {
+      "id": "token_maker_createrefreshtoken",
+      "label": ".CreateRefreshToken()",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": ".createrefreshtoken()",
+      "source_file": "apps/api/pkg/token/token.go",
+      "source_location": "L53"
+    },
+    {
+      "id": "token_maker_verify",
+      "label": ".verify()",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": ".verify()",
+      "source_file": "apps/api/pkg/token/token.go",
+      "source_location": "L90"
+    },
+    {
+      "id": "token_maker_verifyaccesstoken",
+      "label": ".VerifyAccessToken()",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": ".verifyaccesstoken()",
+      "source_file": "apps/api/pkg/token/token.go",
+      "source_location": "L81"
+    },
+    {
+      "id": "token_maker_verifyrefreshtoken",
+      "label": ".VerifyRefreshToken()",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": ".verifyrefreshtoken()",
+      "source_file": "apps/api/pkg/token/token.go",
+      "source_location": "L86"
+    },
+    {
+      "id": "token_tokentype",
+      "label": "TokenType",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": "tokentype",
+      "source_file": "apps/api/pkg/token/token.go",
       "source_location": "L12"
-    },
-    {
-      "id": "apps_api_internal_application_whatsapp_service_newservice",
-      "label": "NewService()",
-      "_origin": "ast",
-      "community": 52,
-      "community_name": "workforce_test.go",
-      "file_type": "code",
-      "norm_label": "newservice()",
-      "source_file": "apps/api/internal/application/whatsapp/service.go",
-      "source_location": "L56"
-    },
-    {
-      "id": "apps_api_internal_application_whatsapp_workforce_test",
-      "label": "workforce_test.go",
-      "_origin": "ast",
-      "community": 52,
-      "community_name": "workforce_test.go",
-      "file_type": "code",
-      "norm_label": "workforce_test.go",
-      "source_file": "apps/api/internal/application/whatsapp/workforce_test.go",
-      "source_location": "L1"
-    },
-    {
-      "id": "apps_api_internal_application_whatsapp_workforce_test_testnumberedleaveworkflow",
-      "label": "TestNumberedLeaveWorkflow()",
-      "_origin": "ast",
-      "community": 52,
-      "community_name": "workforce_test.go",
-      "file_type": "code",
-      "norm_label": "testnumberedleaveworkflow()",
-      "source_file": "apps/api/internal/application/whatsapp/workforce_test.go",
-      "source_location": "L152"
-    },
-    {
-      "id": "apps_api_internal_application_whatsapp_workforce_test_testworkforcecheckinmessageformat",
-      "label": "TestWorkforceCheckInMessageFormat()",
-      "_origin": "ast",
-      "community": 52,
-      "community_name": "workforce_test.go",
-      "file_type": "code",
-      "norm_label": "testworkforcecheckinmessageformat()",
-      "source_file": "apps/api/internal/application/whatsapp/workforce_test.go",
-      "source_location": "L83"
-    },
-    {
-      "id": "apps_api_internal_application_whatsapp_workforce_test_testworkforcetokens",
-      "label": "TestWorkforceTokens()",
-      "_origin": "ast",
-      "community": 52,
-      "community_name": "workforce_test.go",
-      "file_type": "code",
-      "norm_label": "testworkforcetokens()",
-      "source_file": "apps/api/internal/application/whatsapp/workforce_test.go",
-      "source_location": "L15"
-    },
-    {
-      "id": "apps_api_internal_messaging_mock",
-      "label": "mock.go",
-      "_origin": "ast",
-      "community": 52,
-      "community_name": "workforce_test.go",
-      "file_type": "code",
-      "norm_label": "mock.go",
-      "source_file": "apps/api/internal/messaging/mock.go",
-      "source_location": "L1"
-    },
-    {
-      "id": "apps_api_internal_messaging_mock_newmockprovider",
-      "label": "NewMockProvider()",
-      "_origin": "ast",
-      "community": 52,
-      "community_name": "workforce_test.go",
-      "file_type": "code",
-      "norm_label": "newmockprovider()",
-      "source_file": "apps/api/internal/messaging/mock.go",
-      "source_location": "L30"
     },
     {
       "id": "apps_web_postcss_config",
@@ -24286,22 +24476,11 @@
       "source_location": "L9"
     },
     {
-      "id": "apps_api_internal_infrastructure_mongodb_scope_newscope",
-      "label": "NewScope()",
-      "_origin": "ast",
-      "community": 56,
-      "community_name": "NewScope",
-      "file_type": "code",
-      "norm_label": "newscope()",
-      "source_file": "apps/api/internal/infrastructure/mongodb/scope.go",
-      "source_location": "L29"
-    },
-    {
       "id": "apps_api_internal_interfaces_http_handlers_table_newtablehandler",
       "label": "NewTableHandler()",
       "_origin": "ast",
       "community": 56,
-      "community_name": "NewScope",
+      "community_name": "Service",
       "file_type": "code",
       "norm_label": "newtablehandler()",
       "source_file": "apps/api/internal/interfaces/http/handlers/table.go",
@@ -24312,249 +24491,18 @@
       "label": "UpdateTableStatusRequest",
       "_origin": "ast",
       "community": 56,
-      "community_name": "NewScope",
+      "community_name": "Service",
       "file_type": "code",
       "norm_label": "updatetablestatusrequest",
       "source_file": "apps/api/internal/interfaces/http/handlers/table.go",
       "source_location": "L176"
     },
     {
-      "id": "menu_category",
-      "label": "Category",
-      "_origin": "ast",
-      "community": 56,
-      "community_name": "NewScope",
-      "file_type": "code",
-      "norm_label": "category",
-      "source_file": "apps/api/internal/domain/menu/menu.go",
-      "source_location": "L24"
-    },
-    {
-      "id": "menu_category_validate",
-      "label": ".Validate()",
-      "_origin": "ast",
-      "community": 56,
-      "community_name": "NewScope",
-      "file_type": "code",
-      "norm_label": ".validate()",
-      "source_file": "apps/api/internal/domain/menu/menu.go",
-      "source_location": "L87"
-    },
-    {
-      "id": "menu_menuitem",
-      "label": "MenuItem",
-      "_origin": "ast",
-      "community": 56,
-      "community_name": "NewScope",
-      "file_type": "code",
-      "norm_label": "menuitem",
-      "source_file": "apps/api/internal/domain/menu/menu.go",
-      "source_location": "L60"
-    },
-    {
-      "id": "menu_menuitem_validate",
-      "label": ".Validate()",
-      "_origin": "ast",
-      "community": 56,
-      "community_name": "NewScope",
-      "file_type": "code",
-      "norm_label": ".validate()",
-      "source_file": "apps/api/internal/domain/menu/menu.go",
-      "source_location": "L98"
-    },
-    {
-      "id": "menu_publiccategorysection",
-      "label": "PublicCategorySection",
-      "_origin": "ast",
-      "community": 56,
-      "community_name": "NewScope",
-      "file_type": "code",
-      "norm_label": "publiccategorysection",
-      "source_file": "apps/api/internal/application/menu/service.go",
-      "source_location": "L374"
-    },
-    {
-      "id": "menu_publicmenuresponse",
-      "label": "PublicMenuResponse",
-      "_origin": "ast",
-      "community": 56,
-      "community_name": "NewScope",
-      "file_type": "code",
-      "norm_label": "publicmenuresponse",
-      "source_file": "apps/api/internal/application/menu/service.go",
-      "source_location": "L369"
-    },
-    {
-      "id": "menu_service",
-      "label": "Service",
-      "_origin": "ast",
-      "community": 56,
-      "community_name": "NewScope",
-      "file_type": "code",
-      "norm_label": "service",
-      "source_file": "apps/api/internal/application/menu/service.go",
-      "source_location": "L18"
-    },
-    {
-      "id": "menu_service_bulkcreateitems",
-      "label": ".BulkCreateItems()",
-      "_origin": "ast",
-      "community": 56,
-      "community_name": "NewScope",
-      "file_type": "code",
-      "norm_label": ".bulkcreateitems()",
-      "source_file": "apps/api/internal/application/menu/service.go",
-      "source_location": "L296"
-    },
-    {
-      "id": "menu_service_bulkdeleteitems",
-      "label": ".BulkDeleteItems()",
-      "_origin": "ast",
-      "community": 56,
-      "community_name": "NewScope",
-      "file_type": "code",
-      "norm_label": ".bulkdeleteitems()",
-      "source_file": "apps/api/internal/application/menu/service.go",
-      "source_location": "L356"
-    },
-    {
-      "id": "menu_service_bulkupdateitems",
-      "label": ".BulkUpdateItems()",
-      "_origin": "ast",
-      "community": 56,
-      "community_name": "NewScope",
-      "file_type": "code",
-      "norm_label": ".bulkupdateitems()",
-      "source_file": "apps/api/internal/application/menu/service.go",
-      "source_location": "L344"
-    },
-    {
-      "id": "menu_service_createcategory",
-      "label": ".CreateCategory()",
-      "_origin": "ast",
-      "community": 56,
-      "community_name": "NewScope",
-      "file_type": "code",
-      "norm_label": ".createcategory()",
-      "source_file": "apps/api/internal/application/menu/service.go",
-      "source_location": "L49"
-    },
-    {
-      "id": "menu_service_createitem",
-      "label": ".CreateItem()",
-      "_origin": "ast",
-      "community": 56,
-      "community_name": "NewScope",
-      "file_type": "code",
-      "norm_label": ".createitem()",
-      "source_file": "apps/api/internal/application/menu/service.go",
-      "source_location": "L191"
-    },
-    {
-      "id": "menu_service_deletecategory",
-      "label": ".DeleteCategory()",
-      "_origin": "ast",
-      "community": 56,
-      "community_name": "NewScope",
-      "file_type": "code",
-      "norm_label": ".deletecategory()",
-      "source_file": "apps/api/internal/application/menu/service.go",
-      "source_location": "L120"
-    },
-    {
-      "id": "menu_service_deleteitem",
-      "label": ".DeleteItem()",
-      "_origin": "ast",
-      "community": 56,
-      "community_name": "NewScope",
-      "file_type": "code",
-      "norm_label": ".deleteitem()",
-      "source_file": "apps/api/internal/application/menu/service.go",
-      "source_location": "L283"
-    },
-    {
-      "id": "menu_service_findorcreatecategorybyname",
-      "label": ".FindOrCreateCategoryByName()",
-      "_origin": "ast",
-      "community": 56,
-      "community_name": "NewScope",
-      "file_type": "code",
-      "norm_label": ".findorcreatecategorybyname()",
-      "source_file": "apps/api/internal/application/menu/service.go",
-      "source_location": "L87"
-    },
-    {
-      "id": "menu_service_getpublicmenubyslug",
-      "label": ".GetPublicMenuBySlug()",
-      "_origin": "ast",
-      "community": 56,
-      "community_name": "NewScope",
-      "file_type": "code",
-      "norm_label": ".getpublicmenubyslug()",
-      "source_file": "apps/api/internal/application/menu/service.go",
-      "source_location": "L379"
-    },
-    {
-      "id": "menu_service_listcategories",
-      "label": ".ListCategories()",
-      "_origin": "ast",
-      "community": 56,
-      "community_name": "NewScope",
-      "file_type": "code",
-      "norm_label": ".listcategories()",
-      "source_file": "apps/api/internal/application/menu/service.go",
-      "source_location": "L28"
-    },
-    {
-      "id": "menu_service_listitems",
-      "label": ".ListItems()",
-      "_origin": "ast",
-      "community": 56,
-      "community_name": "NewScope",
-      "file_type": "code",
-      "norm_label": ".listitems()",
-      "source_file": "apps/api/internal/application/menu/service.go",
-      "source_location": "L148"
-    },
-    {
-      "id": "menu_service_toggleavailability",
-      "label": ".ToggleAvailability()",
-      "_origin": "ast",
-      "community": 56,
-      "community_name": "NewScope",
-      "file_type": "code",
-      "norm_label": ".toggleavailability()",
-      "source_file": "apps/api/internal/application/menu/service.go",
-      "source_location": "L263"
-    },
-    {
-      "id": "menu_service_updatecategory",
-      "label": ".UpdateCategory()",
-      "_origin": "ast",
-      "community": 56,
-      "community_name": "NewScope",
-      "file_type": "code",
-      "norm_label": ".updatecategory()",
-      "source_file": "apps/api/internal/application/menu/service.go",
-      "source_location": "L64"
-    },
-    {
-      "id": "menu_service_updateitem",
-      "label": ".UpdateItem()",
-      "_origin": "ast",
-      "community": 56,
-      "community_name": "NewScope",
-      "file_type": "code",
-      "norm_label": ".updateitem()",
-      "source_file": "apps/api/internal/application/menu/service.go",
-      "source_location": "L220"
-    },
-    {
       "id": "table_service",
       "label": "Service",
       "_origin": "ast",
       "community": 56,
-      "community_name": "NewScope",
+      "community_name": "Service",
       "file_type": "code",
       "norm_label": "service",
       "source_file": "apps/api/internal/application/table/service.go",
@@ -24565,7 +24513,7 @@
       "label": ".CreateRoomsBulk()",
       "_origin": "ast",
       "community": 56,
-      "community_name": "NewScope",
+      "community_name": "Service",
       "file_type": "code",
       "norm_label": ".createroomsbulk()",
       "source_file": "apps/api/internal/application/table/service.go",
@@ -24576,7 +24524,7 @@
       "label": ".CreateTable()",
       "_origin": "ast",
       "community": 56,
-      "community_name": "NewScope",
+      "community_name": "Service",
       "file_type": "code",
       "norm_label": ".createtable()",
       "source_file": "apps/api/internal/application/table/service.go",
@@ -24587,7 +24535,7 @@
       "label": ".DeleteTable()",
       "_origin": "ast",
       "community": 56,
-      "community_name": "NewScope",
+      "community_name": "Service",
       "file_type": "code",
       "norm_label": ".deletetable()",
       "source_file": "apps/api/internal/application/table/service.go",
@@ -24598,7 +24546,7 @@
       "label": ".FindTableByIdentifier()",
       "_origin": "ast",
       "community": 56,
-      "community_name": "NewScope",
+      "community_name": "Service",
       "file_type": "code",
       "norm_label": ".findtablebyidentifier()",
       "source_file": "apps/api/internal/application/table/service.go",
@@ -24609,7 +24557,7 @@
       "label": ".GetPublicTable()",
       "_origin": "ast",
       "community": 56,
-      "community_name": "NewScope",
+      "community_name": "Service",
       "file_type": "code",
       "norm_label": ".getpublictable()",
       "source_file": "apps/api/internal/application/table/service.go",
@@ -24620,7 +24568,7 @@
       "label": ".GetTableByQRSlug()",
       "_origin": "ast",
       "community": 56,
-      "community_name": "NewScope",
+      "community_name": "Service",
       "file_type": "code",
       "norm_label": ".gettablebyqrslug()",
       "source_file": "apps/api/internal/application/table/service.go",
@@ -24631,7 +24579,7 @@
       "label": ".ListRooms()",
       "_origin": "ast",
       "community": 56,
-      "community_name": "NewScope",
+      "community_name": "Service",
       "file_type": "code",
       "norm_label": ".listrooms()",
       "source_file": "apps/api/internal/application/table/service.go",
@@ -24642,7 +24590,7 @@
       "label": ".ListTables()",
       "_origin": "ast",
       "community": 56,
-      "community_name": "NewScope",
+      "community_name": "Service",
       "file_type": "code",
       "norm_label": ".listtables()",
       "source_file": "apps/api/internal/application/table/service.go",
@@ -24653,7 +24601,7 @@
       "label": ".ResolveTableID()",
       "_origin": "ast",
       "community": 56,
-      "community_name": "NewScope",
+      "community_name": "Service",
       "file_type": "code",
       "norm_label": ".resolvetableid()",
       "source_file": "apps/api/internal/application/table/service.go",
@@ -24664,7 +24612,7 @@
       "label": ".ToggleDND()",
       "_origin": "ast",
       "community": 56,
-      "community_name": "NewScope",
+      "community_name": "Service",
       "file_type": "code",
       "norm_label": ".togglednd()",
       "source_file": "apps/api/internal/application/table/service.go",
@@ -24675,7 +24623,7 @@
       "label": ".UpdateStatus()",
       "_origin": "ast",
       "community": 56,
-      "community_name": "NewScope",
+      "community_name": "Service",
       "file_type": "code",
       "norm_label": ".updatestatus()",
       "source_file": "apps/api/internal/application/table/service.go",
@@ -24686,7 +24634,7 @@
       "label": "Table",
       "_origin": "ast",
       "community": 56,
-      "community_name": "NewScope",
+      "community_name": "Service",
       "file_type": "code",
       "norm_label": "table",
       "source_file": "apps/api/internal/domain/table/table.go",
@@ -24697,7 +24645,7 @@
       "label": ".GetCustomerQRURL()",
       "_origin": "ast",
       "community": 56,
-      "community_name": "NewScope",
+      "community_name": "Service",
       "file_type": "code",
       "norm_label": ".getcustomerqrurl()",
       "source_file": "apps/api/internal/domain/table/table.go",
@@ -24708,7 +24656,7 @@
       "label": ".Validate()",
       "_origin": "ast",
       "community": 56,
-      "community_name": "NewScope",
+      "community_name": "Service",
       "file_type": "code",
       "norm_label": ".validate()",
       "source_file": "apps/api/internal/domain/table/table.go",
@@ -24719,7 +24667,7 @@
       "label": "TableStatus",
       "_origin": "ast",
       "community": 56,
-      "community_name": "NewScope",
+      "community_name": "Service",
       "file_type": "code",
       "norm_label": "tablestatus",
       "source_file": "apps/api/internal/domain/table/table.go",
@@ -26498,6 +26446,102 @@
       "source_location": "L29"
     },
     {
+      "id": "docs_product_vision_problem_1_fragmented_software_stack",
+      "label": "Problem 1 \u2014 Fragmented Software Stack",
+      "_origin": "ast",
+      "community": 64,
+      "community_name": "DineFlow \u2014 Product Vision",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "problem 1 \u2014 fragmented software stack",
+      "source_file": "docs/PRODUCT_VISION.md",
+      "source_location": "L54"
+    },
+    {
+      "id": "docs_product_vision_problem_2_high_cost_of_entry",
+      "label": "Problem 2 \u2014 High Cost of Entry",
+      "_origin": "ast",
+      "community": 64,
+      "community_name": "DineFlow \u2014 Product Vision",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "problem 2 \u2014 high cost of entry",
+      "source_file": "docs/PRODUCT_VISION.md",
+      "source_location": "L57"
+    },
+    {
+      "id": "docs_product_vision_problem_3_app_download_friction",
+      "label": "Problem 3 \u2014 App Download Friction",
+      "_origin": "ast",
+      "community": 64,
+      "community_name": "DineFlow \u2014 Product Vision",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "problem 3 \u2014 app download friction",
+      "source_file": "docs/PRODUCT_VISION.md",
+      "source_location": "L60"
+    },
+    {
+      "id": "docs_product_vision_problem_4_whatsapp_chaos",
+      "label": "Problem 4 \u2014 WhatsApp Chaos",
+      "_origin": "ast",
+      "community": 64,
+      "community_name": "DineFlow \u2014 Product Vision",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "problem 4 \u2014 whatsapp chaos",
+      "source_file": "docs/PRODUCT_VISION.md",
+      "source_location": "L63"
+    },
+    {
+      "id": "docs_product_vision_problem_5_no_real_time_kitchen_visibility",
+      "label": "Problem 5 \u2014 No Real-time Kitchen Visibility",
+      "_origin": "ast",
+      "community": 64,
+      "community_name": "DineFlow \u2014 Product Vision",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "problem 5 \u2014 no real-time kitchen visibility",
+      "source_file": "docs/PRODUCT_VISION.md",
+      "source_location": "L66"
+    },
+    {
+      "id": "docs_product_vision_problem_6_hotels_lack_f_b_cohesion",
+      "label": "Problem 6 \u2014 Hotels Lack F&B Cohesion",
+      "_origin": "ast",
+      "community": 64,
+      "community_name": "DineFlow \u2014 Product Vision",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "problem 6 \u2014 hotels lack f&b cohesion",
+      "source_file": "docs/PRODUCT_VISION.md",
+      "source_location": "L69"
+    },
+    {
+      "id": "docs_product_vision_problem_7_no_data_for_decision_making",
+      "label": "Problem 7 \u2014 No Data for Decision Making",
+      "_origin": "ast",
+      "community": 64,
+      "community_name": "DineFlow \u2014 Product Vision",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "problem 7 \u2014 no data for decision making",
+      "source_file": "docs/PRODUCT_VISION.md",
+      "source_location": "L72"
+    },
+    {
+      "id": "docs_product_vision_problems_solved",
+      "label": "Problems Solved",
+      "_origin": "ast",
+      "community": 64,
+      "community_name": "DineFlow \u2014 Product Vision",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "problems solved",
+      "source_file": "docs/PRODUCT_VISION.md",
+      "source_location": "L52"
+    },
+    {
       "id": "docs_product_vision_product_metrics",
       "label": "Product Metrics",
       "_origin": "ast",
@@ -27171,26 +27215,48 @@
       "source_location": "L1"
     },
     {
-      "id": "apps_api_internal_domain_whatsapp_whatsapp_getstandardtemplates",
-      "label": "GetStandardTemplates()",
+      "id": "whatsapp_campaign",
+      "label": "Campaign",
       "_origin": "ast",
       "community": 7,
       "community_name": "whatsapp/whatsapp.go",
       "file_type": "code",
-      "norm_label": "getstandardtemplates()",
+      "norm_label": "campaign",
       "source_file": "apps/api/internal/domain/whatsapp/whatsapp.go",
-      "source_location": "L296"
+      "source_location": "L172"
     },
     {
-      "id": "apps_api_internal_domain_whatsapp_whatsapp_test_testgetstandardtemplates",
-      "label": "TestGetStandardTemplates()",
+      "id": "whatsapp_campaignstats",
+      "label": "CampaignStats",
       "_origin": "ast",
       "community": 7,
       "community_name": "whatsapp/whatsapp.go",
       "file_type": "code",
-      "norm_label": "testgetstandardtemplates()",
-      "source_file": "apps/api/internal/domain/whatsapp/whatsapp_test.go",
-      "source_location": "L111"
+      "norm_label": "campaignstats",
+      "source_file": "apps/api/internal/domain/whatsapp/whatsapp.go",
+      "source_location": "L164"
+    },
+    {
+      "id": "whatsapp_campaignstatus",
+      "label": "CampaignStatus",
+      "_origin": "ast",
+      "community": 7,
+      "community_name": "whatsapp/whatsapp.go",
+      "file_type": "code",
+      "norm_label": "campaignstatus",
+      "source_file": "apps/api/internal/domain/whatsapp/whatsapp.go",
+      "source_location": "L133"
+    },
+    {
+      "id": "whatsapp_campaigntype",
+      "label": "CampaignType",
+      "_origin": "ast",
+      "community": 7,
+      "community_name": "whatsapp/whatsapp.go",
+      "file_type": "code",
+      "norm_label": "campaigntype",
+      "source_file": "apps/api/internal/domain/whatsapp/whatsapp.go",
+      "source_location": "L143"
     },
     {
       "id": "whatsapp_chatbotsession",
@@ -27378,6 +27444,39 @@
       "norm_label": "outboundinteractivepayload",
       "source_file": "apps/api/internal/domain/whatsapp/whatsapp.go",
       "source_location": "L552"
+    },
+    {
+      "id": "whatsapp_service_createcampaign",
+      "label": ".CreateCampaign()",
+      "_origin": "ast",
+      "community": 7,
+      "community_name": "whatsapp/whatsapp.go",
+      "file_type": "code",
+      "norm_label": ".createcampaign()",
+      "source_file": "apps/api/internal/application/whatsapp/service.go",
+      "source_location": "L890"
+    },
+    {
+      "id": "whatsapp_service_listcampaigns",
+      "label": ".ListCampaigns()",
+      "_origin": "ast",
+      "community": 7,
+      "community_name": "whatsapp/whatsapp.go",
+      "file_type": "code",
+      "norm_label": ".listcampaigns()",
+      "source_file": "apps/api/internal/application/whatsapp/service.go",
+      "source_location": "L915"
+    },
+    {
+      "id": "whatsapp_targetsegment",
+      "label": "TargetSegment",
+      "_origin": "ast",
+      "community": 7,
+      "community_name": "whatsapp/whatsapp.go",
+      "file_type": "code",
+      "norm_label": "targetsegment",
+      "source_file": "apps/api/internal/domain/whatsapp/whatsapp.go",
+      "source_location": "L153"
     },
     {
       "id": "whatsapp_templatedefinition",
@@ -28854,116 +28953,6 @@
       "source_location": "L32"
     },
     {
-      "id": "apps_api_pkg_token_token_go_token_maker",
-      "label": "Maker",
-      "_origin": "ast",
-      "community": 79,
-      "community_name": "Maker",
-      "file_type": "code",
-      "norm_label": "maker",
-      "source_file": "apps/api/pkg/token/token.go",
-      "source_location": "L30"
-    },
-    {
-      "id": "jwt_registeredclaims",
-      "label": "jwt.RegisteredClaims",
-      "_origin": "ast",
-      "community": 79,
-      "community_name": "Maker",
-      "file_type": "code",
-      "norm_label": "jwt.registeredclaims",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "token_claims",
-      "label": "Claims",
-      "_origin": "ast",
-      "community": 79,
-      "community_name": "Maker",
-      "file_type": "code",
-      "norm_label": "claims",
-      "source_file": "apps/api/pkg/token/token.go",
-      "source_location": "L20"
-    },
-    {
-      "id": "token_maker_create",
-      "label": ".create()",
-      "_origin": "ast",
-      "community": 79,
-      "community_name": "Maker",
-      "file_type": "code",
-      "norm_label": ".create()",
-      "source_file": "apps/api/pkg/token/token.go",
-      "source_location": "L57"
-    },
-    {
-      "id": "token_maker_createaccesstoken",
-      "label": ".CreateAccessToken()",
-      "_origin": "ast",
-      "community": 79,
-      "community_name": "Maker",
-      "file_type": "code",
-      "norm_label": ".createaccesstoken()",
-      "source_file": "apps/api/pkg/token/token.go",
-      "source_location": "L48"
-    },
-    {
-      "id": "token_maker_createrefreshtoken",
-      "label": ".CreateRefreshToken()",
-      "_origin": "ast",
-      "community": 79,
-      "community_name": "Maker",
-      "file_type": "code",
-      "norm_label": ".createrefreshtoken()",
-      "source_file": "apps/api/pkg/token/token.go",
-      "source_location": "L53"
-    },
-    {
-      "id": "token_maker_verify",
-      "label": ".verify()",
-      "_origin": "ast",
-      "community": 79,
-      "community_name": "Maker",
-      "file_type": "code",
-      "norm_label": ".verify()",
-      "source_file": "apps/api/pkg/token/token.go",
-      "source_location": "L90"
-    },
-    {
-      "id": "token_maker_verifyaccesstoken",
-      "label": ".VerifyAccessToken()",
-      "_origin": "ast",
-      "community": 79,
-      "community_name": "Maker",
-      "file_type": "code",
-      "norm_label": ".verifyaccesstoken()",
-      "source_file": "apps/api/pkg/token/token.go",
-      "source_location": "L81"
-    },
-    {
-      "id": "token_maker_verifyrefreshtoken",
-      "label": ".VerifyRefreshToken()",
-      "_origin": "ast",
-      "community": 79,
-      "community_name": "Maker",
-      "file_type": "code",
-      "norm_label": ".verifyrefreshtoken()",
-      "source_file": "apps/api/pkg/token/token.go",
-      "source_location": "L86"
-    },
-    {
-      "id": "token_tokentype",
-      "label": "TokenType",
-      "_origin": "ast",
-      "community": 79,
-      "community_name": "Maker",
-      "file_type": "code",
-      "norm_label": "tokentype",
-      "source_file": "apps/api/pkg/token/token.go",
-      "source_location": "L12"
-    },
-    {
       "id": "apps_api_internal_domain_room_room",
       "label": "room/room.go",
       "_origin": "ast",
@@ -28984,6 +28973,17 @@
       "norm_label": "validateandnormalizeindianphone()",
       "source_file": "apps/api/internal/domain/room/room.go",
       "source_location": "L125"
+    },
+    {
+      "id": "room_checkininput",
+      "label": "CheckInInput",
+      "_origin": "ast",
+      "community": 8,
+      "community_name": "Service",
+      "file_type": "code",
+      "norm_label": "checkininput",
+      "source_file": "apps/api/internal/application/room/service.go",
+      "source_location": "L30"
     },
     {
       "id": "room_extensionstatus",
@@ -29968,121 +29968,264 @@
       "source_location": "L23"
     },
     {
-      "id": "apps_api_internal_application_staff_service_cleanphonenumber",
-      "label": "cleanPhoneNumber()",
+      "id": "apps_api_internal_infrastructure_mongodb_scope_newscope",
+      "label": "NewScope()",
       "_origin": "ast",
       "community": 86,
-      "community_name": "Service",
+      "community_name": "NewScope",
       "file_type": "code",
-      "norm_label": "cleanphonenumber()",
-      "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L43"
-    },
-    {
-      "id": "apps_api_internal_domain_user_user",
-      "label": "user.go",
-      "_origin": "ast",
-      "community": 86,
-      "community_name": "Service",
-      "file_type": "code",
-      "norm_label": "user.go",
-      "source_file": "apps/api/internal/domain/user/user.go",
-      "source_location": "L1"
-    },
-    {
-      "id": "apps_api_internal_domain_user_user_calculatedistancemeters",
-      "label": "CalculateDistanceMeters()",
-      "_origin": "ast",
-      "community": 86,
-      "community_name": "Service",
-      "file_type": "code",
-      "norm_label": "calculatedistancemeters()",
-      "source_file": "apps/api/internal/domain/user/user.go",
-      "source_location": "L429"
-    },
-    {
-      "id": "apps_api_internal_domain_user_user_defaultpermissionsforrole",
-      "label": "DefaultPermissionsForRole()",
-      "_origin": "ast",
-      "community": 86,
-      "community_name": "Service",
-      "file_type": "code",
-      "norm_label": "defaultpermissionsforrole()",
-      "source_file": "apps/api/internal/domain/user/user.go",
-      "source_location": "L149"
-    },
-    {
-      "id": "apps_api_internal_domain_user_user_go_user_publicprofile",
-      "label": "PublicProfile",
-      "_origin": "ast",
-      "community": 86,
-      "community_name": "Service",
-      "file_type": "code",
-      "norm_label": "publicprofile",
-      "source_file": "apps/api/internal/domain/user/user.go",
-      "source_location": "L219"
-    },
-    {
-      "id": "apps_api_internal_domain_user_user_go_user_user",
-      "label": "User",
-      "_origin": "ast",
-      "community": 86,
-      "community_name": "Service",
-      "file_type": "code",
-      "norm_label": "user",
-      "source_file": "apps/api/internal/domain/user/user.go",
-      "source_location": "L118"
-    },
-    {
-      "id": "apps_api_internal_domain_user_user_isplatformrole",
-      "label": "IsPlatformRole()",
-      "_origin": "ast",
-      "community": 86,
-      "community_name": "Service",
-      "file_type": "code",
-      "norm_label": "isplatformrole()",
-      "source_file": "apps/api/internal/domain/user/user.go",
-      "source_location": "L31"
-    },
-    {
-      "id": "apps_api_internal_domain_user_user_test_testcalculatedistancemeters",
-      "label": "TestCalculateDistanceMeters()",
-      "_origin": "ast",
-      "community": 86,
-      "community_name": "Service",
-      "file_type": "code",
-      "norm_label": "testcalculatedistancemeters()",
-      "source_file": "apps/api/internal/domain/user/user_test.go",
-      "source_location": "L11"
+      "norm_label": "newscope()",
+      "source_file": "apps/api/internal/infrastructure/mongodb/scope.go",
+      "source_location": "L29"
     },
     {
       "id": "handlers_roomhandler_setstaffservice",
       "label": ".SetStaffService()",
       "_origin": "ast",
       "community": 86,
-      "community_name": "Service",
+      "community_name": "NewScope",
       "file_type": "code",
       "norm_label": ".setstaffservice()",
       "source_file": "apps/api/internal/interfaces/http/handlers/room.go",
       "source_location": "L35"
     },
     {
-      "id": "handlers_updatestaffrequest",
-      "label": "UpdateStaffRequest",
+      "id": "menu_category",
+      "label": "Category",
       "_origin": "ast",
       "community": 86,
-      "community_name": "Service",
+      "community_name": "NewScope",
       "file_type": "code",
-      "norm_label": "updatestaffrequest",
-      "source_file": "apps/api/internal/interfaces/http/handlers/staff.go",
-      "source_location": "L96"
+      "norm_label": "category",
+      "source_file": "apps/api/internal/domain/menu/menu.go",
+      "source_location": "L24"
+    },
+    {
+      "id": "menu_category_validate",
+      "label": ".Validate()",
+      "_origin": "ast",
+      "community": 86,
+      "community_name": "NewScope",
+      "file_type": "code",
+      "norm_label": ".validate()",
+      "source_file": "apps/api/internal/domain/menu/menu.go",
+      "source_location": "L87"
+    },
+    {
+      "id": "menu_menuitem",
+      "label": "MenuItem",
+      "_origin": "ast",
+      "community": 86,
+      "community_name": "NewScope",
+      "file_type": "code",
+      "norm_label": "menuitem",
+      "source_file": "apps/api/internal/domain/menu/menu.go",
+      "source_location": "L60"
+    },
+    {
+      "id": "menu_menuitem_validate",
+      "label": ".Validate()",
+      "_origin": "ast",
+      "community": 86,
+      "community_name": "NewScope",
+      "file_type": "code",
+      "norm_label": ".validate()",
+      "source_file": "apps/api/internal/domain/menu/menu.go",
+      "source_location": "L98"
+    },
+    {
+      "id": "menu_publiccategorysection",
+      "label": "PublicCategorySection",
+      "_origin": "ast",
+      "community": 86,
+      "community_name": "NewScope",
+      "file_type": "code",
+      "norm_label": "publiccategorysection",
+      "source_file": "apps/api/internal/application/menu/service.go",
+      "source_location": "L374"
+    },
+    {
+      "id": "menu_publicmenuresponse",
+      "label": "PublicMenuResponse",
+      "_origin": "ast",
+      "community": 86,
+      "community_name": "NewScope",
+      "file_type": "code",
+      "norm_label": "publicmenuresponse",
+      "source_file": "apps/api/internal/application/menu/service.go",
+      "source_location": "L369"
+    },
+    {
+      "id": "menu_service",
+      "label": "Service",
+      "_origin": "ast",
+      "community": 86,
+      "community_name": "NewScope",
+      "file_type": "code",
+      "norm_label": "service",
+      "source_file": "apps/api/internal/application/menu/service.go",
+      "source_location": "L18"
+    },
+    {
+      "id": "menu_service_bulkcreateitems",
+      "label": ".BulkCreateItems()",
+      "_origin": "ast",
+      "community": 86,
+      "community_name": "NewScope",
+      "file_type": "code",
+      "norm_label": ".bulkcreateitems()",
+      "source_file": "apps/api/internal/application/menu/service.go",
+      "source_location": "L296"
+    },
+    {
+      "id": "menu_service_bulkdeleteitems",
+      "label": ".BulkDeleteItems()",
+      "_origin": "ast",
+      "community": 86,
+      "community_name": "NewScope",
+      "file_type": "code",
+      "norm_label": ".bulkdeleteitems()",
+      "source_file": "apps/api/internal/application/menu/service.go",
+      "source_location": "L356"
+    },
+    {
+      "id": "menu_service_bulkupdateitems",
+      "label": ".BulkUpdateItems()",
+      "_origin": "ast",
+      "community": 86,
+      "community_name": "NewScope",
+      "file_type": "code",
+      "norm_label": ".bulkupdateitems()",
+      "source_file": "apps/api/internal/application/menu/service.go",
+      "source_location": "L344"
+    },
+    {
+      "id": "menu_service_createcategory",
+      "label": ".CreateCategory()",
+      "_origin": "ast",
+      "community": 86,
+      "community_name": "NewScope",
+      "file_type": "code",
+      "norm_label": ".createcategory()",
+      "source_file": "apps/api/internal/application/menu/service.go",
+      "source_location": "L49"
+    },
+    {
+      "id": "menu_service_createitem",
+      "label": ".CreateItem()",
+      "_origin": "ast",
+      "community": 86,
+      "community_name": "NewScope",
+      "file_type": "code",
+      "norm_label": ".createitem()",
+      "source_file": "apps/api/internal/application/menu/service.go",
+      "source_location": "L191"
+    },
+    {
+      "id": "menu_service_deletecategory",
+      "label": ".DeleteCategory()",
+      "_origin": "ast",
+      "community": 86,
+      "community_name": "NewScope",
+      "file_type": "code",
+      "norm_label": ".deletecategory()",
+      "source_file": "apps/api/internal/application/menu/service.go",
+      "source_location": "L120"
+    },
+    {
+      "id": "menu_service_deleteitem",
+      "label": ".DeleteItem()",
+      "_origin": "ast",
+      "community": 86,
+      "community_name": "NewScope",
+      "file_type": "code",
+      "norm_label": ".deleteitem()",
+      "source_file": "apps/api/internal/application/menu/service.go",
+      "source_location": "L283"
+    },
+    {
+      "id": "menu_service_findorcreatecategorybyname",
+      "label": ".FindOrCreateCategoryByName()",
+      "_origin": "ast",
+      "community": 86,
+      "community_name": "NewScope",
+      "file_type": "code",
+      "norm_label": ".findorcreatecategorybyname()",
+      "source_file": "apps/api/internal/application/menu/service.go",
+      "source_location": "L87"
+    },
+    {
+      "id": "menu_service_getpublicmenubyslug",
+      "label": ".GetPublicMenuBySlug()",
+      "_origin": "ast",
+      "community": 86,
+      "community_name": "NewScope",
+      "file_type": "code",
+      "norm_label": ".getpublicmenubyslug()",
+      "source_file": "apps/api/internal/application/menu/service.go",
+      "source_location": "L379"
+    },
+    {
+      "id": "menu_service_listcategories",
+      "label": ".ListCategories()",
+      "_origin": "ast",
+      "community": 86,
+      "community_name": "NewScope",
+      "file_type": "code",
+      "norm_label": ".listcategories()",
+      "source_file": "apps/api/internal/application/menu/service.go",
+      "source_location": "L28"
+    },
+    {
+      "id": "menu_service_listitems",
+      "label": ".ListItems()",
+      "_origin": "ast",
+      "community": 86,
+      "community_name": "NewScope",
+      "file_type": "code",
+      "norm_label": ".listitems()",
+      "source_file": "apps/api/internal/application/menu/service.go",
+      "source_location": "L148"
+    },
+    {
+      "id": "menu_service_toggleavailability",
+      "label": ".ToggleAvailability()",
+      "_origin": "ast",
+      "community": 86,
+      "community_name": "NewScope",
+      "file_type": "code",
+      "norm_label": ".toggleavailability()",
+      "source_file": "apps/api/internal/application/menu/service.go",
+      "source_location": "L263"
+    },
+    {
+      "id": "menu_service_updatecategory",
+      "label": ".UpdateCategory()",
+      "_origin": "ast",
+      "community": 86,
+      "community_name": "NewScope",
+      "file_type": "code",
+      "norm_label": ".updatecategory()",
+      "source_file": "apps/api/internal/application/menu/service.go",
+      "source_location": "L64"
+    },
+    {
+      "id": "menu_service_updateitem",
+      "label": ".UpdateItem()",
+      "_origin": "ast",
+      "community": 86,
+      "community_name": "NewScope",
+      "file_type": "code",
+      "norm_label": ".updateitem()",
+      "source_file": "apps/api/internal/application/menu/service.go",
+      "source_location": "L220"
     },
     {
       "id": "staff_attendancefilter",
       "label": "AttendanceFilter",
       "_origin": "ast",
       "community": 86,
-      "community_name": "Service",
+      "community_name": "NewScope",
       "file_type": "code",
       "norm_label": "attendancefilter",
       "source_file": "apps/api/internal/application/staff/service.go",
@@ -30093,29 +30236,18 @@
       "label": "AttendanceSummary",
       "_origin": "ast",
       "community": 86,
-      "community_name": "Service",
+      "community_name": "NewScope",
       "file_type": "code",
       "norm_label": "attendancesummary",
       "source_file": "apps/api/internal/application/staff/service.go",
       "source_location": "L580"
     },
     {
-      "id": "staff_invitestaffinput",
-      "label": "InviteStaffInput",
-      "_origin": "ast",
-      "community": 86,
-      "community_name": "Service",
-      "file_type": "code",
-      "norm_label": "invitestaffinput",
-      "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L74"
-    },
-    {
       "id": "staff_manualattendanceinput",
       "label": "ManualAttendanceInput",
       "_origin": "ast",
       "community": 86,
-      "community_name": "Service",
+      "community_name": "NewScope",
       "file_type": "code",
       "norm_label": "manualattendanceinput",
       "source_file": "apps/api/internal/application/staff/service.go",
@@ -30126,7 +30258,7 @@
       "label": "NotificationEmitter",
       "_origin": "ast",
       "community": 86,
-      "community_name": "Service",
+      "community_name": "NewScope",
       "file_type": "code",
       "norm_label": "notificationemitter",
       "source_file": "apps/api/internal/application/staff/service.go",
@@ -30137,7 +30269,7 @@
       "label": "Service",
       "_origin": "ast",
       "community": 86,
-      "community_name": "Service",
+      "community_name": "NewScope",
       "file_type": "code",
       "norm_label": "service",
       "source_file": "apps/api/internal/application/staff/service.go",
@@ -30148,7 +30280,7 @@
       "label": ".ApplyLeave()",
       "_origin": "ast",
       "community": 86,
-      "community_name": "Service",
+      "community_name": "NewScope",
       "file_type": "code",
       "norm_label": ".applyleave()",
       "source_file": "apps/api/internal/application/staff/service.go",
@@ -30159,7 +30291,7 @@
       "label": ".ApproveLeave()",
       "_origin": "ast",
       "community": 86,
-      "community_name": "Service",
+      "community_name": "NewScope",
       "file_type": "code",
       "norm_label": ".approveleave()",
       "source_file": "apps/api/internal/application/staff/service.go",
@@ -30170,7 +30302,7 @@
       "label": ".ClockIn()",
       "_origin": "ast",
       "community": 86,
-      "community_name": "Service",
+      "community_name": "NewScope",
       "file_type": "code",
       "norm_label": ".clockin()",
       "source_file": "apps/api/internal/application/staff/service.go",
@@ -30181,18 +30313,29 @@
       "label": ".ClockOut()",
       "_origin": "ast",
       "community": 86,
-      "community_name": "Service",
+      "community_name": "NewScope",
       "file_type": "code",
       "norm_label": ".clockout()",
       "source_file": "apps/api/internal/application/staff/service.go",
       "source_location": "L689"
     },
     {
+      "id": "staff_service_createholiday",
+      "label": ".CreateHoliday()",
+      "_origin": "ast",
+      "community": 86,
+      "community_name": "NewScope",
+      "file_type": "code",
+      "norm_label": ".createholiday()",
+      "source_file": "apps/api/internal/application/staff/service.go",
+      "source_location": "L1678"
+    },
+    {
       "id": "staff_service_createshift",
       "label": ".CreateShift()",
       "_origin": "ast",
       "community": 86,
-      "community_name": "Service",
+      "community_name": "NewScope",
       "file_type": "code",
       "norm_label": ".createshift()",
       "source_file": "apps/api/internal/application/staff/service.go",
@@ -30203,7 +30346,7 @@
       "label": ".DeleteStaff()",
       "_origin": "ast",
       "community": 86,
-      "community_name": "Service",
+      "community_name": "NewScope",
       "file_type": "code",
       "norm_label": ".deletestaff()",
       "source_file": "apps/api/internal/application/staff/service.go",
@@ -30214,7 +30357,7 @@
       "label": ".GeneratePayslipHTML()",
       "_origin": "ast",
       "community": 86,
-      "community_name": "Service",
+      "community_name": "NewScope",
       "file_type": "code",
       "norm_label": ".generatepaysliphtml()",
       "source_file": "apps/api/internal/application/staff/service.go",
@@ -30225,7 +30368,7 @@
       "label": ".GetAttendanceHistory()",
       "_origin": "ast",
       "community": 86,
-      "community_name": "Service",
+      "community_name": "NewScope",
       "file_type": "code",
       "norm_label": ".getattendancehistory()",
       "source_file": "apps/api/internal/application/staff/service.go",
@@ -30236,7 +30379,7 @@
       "label": ".GetAttendanceHistoryWithFilter()",
       "_origin": "ast",
       "community": 86,
-      "community_name": "Service",
+      "community_name": "NewScope",
       "file_type": "code",
       "norm_label": ".getattendancehistorywithfilter()",
       "source_file": "apps/api/internal/application/staff/service.go",
@@ -30247,7 +30390,7 @@
       "label": ".GetAttendanceSummary()",
       "_origin": "ast",
       "community": 86,
-      "community_name": "Service",
+      "community_name": "NewScope",
       "file_type": "code",
       "norm_label": ".getattendancesummary()",
       "source_file": "apps/api/internal/application/staff/service.go",
@@ -30258,7 +30401,7 @@
       "label": ".GetGeofence()",
       "_origin": "ast",
       "community": 86,
-      "community_name": "Service",
+      "community_name": "NewScope",
       "file_type": "code",
       "norm_label": ".getgeofence()",
       "source_file": "apps/api/internal/application/staff/service.go",
@@ -30269,7 +30412,7 @@
       "label": ".GetLeaveBalances()",
       "_origin": "ast",
       "community": 86,
-      "community_name": "Service",
+      "community_name": "NewScope",
       "file_type": "code",
       "norm_label": ".getleavebalances()",
       "source_file": "apps/api/internal/application/staff/service.go",
@@ -30280,7 +30423,7 @@
       "label": ".GetPayslip()",
       "_origin": "ast",
       "community": 86,
-      "community_name": "Service",
+      "community_name": "NewScope",
       "file_type": "code",
       "norm_label": ".getpayslip()",
       "source_file": "apps/api/internal/application/staff/service.go",
@@ -30291,7 +30434,7 @@
       "label": ".GetTodayAttendance()",
       "_origin": "ast",
       "community": 86,
-      "community_name": "Service",
+      "community_name": "NewScope",
       "file_type": "code",
       "norm_label": ".gettodayattendance()",
       "source_file": "apps/api/internal/application/staff/service.go",
@@ -30302,29 +30445,29 @@
       "label": ".initLeaveBalance()",
       "_origin": "ast",
       "community": 86,
-      "community_name": "Service",
+      "community_name": "NewScope",
       "file_type": "code",
       "norm_label": ".initleavebalance()",
       "source_file": "apps/api/internal/application/staff/service.go",
       "source_location": "L1081"
     },
     {
-      "id": "staff_service_invitestaff",
-      "label": ".InviteStaff()",
+      "id": "staff_service_listholidays",
+      "label": ".ListHolidays()",
       "_origin": "ast",
       "community": 86,
-      "community_name": "Service",
+      "community_name": "NewScope",
       "file_type": "code",
-      "norm_label": ".invitestaff()",
+      "norm_label": ".listholidays()",
       "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L137"
+      "source_location": "L1638"
     },
     {
       "id": "staff_service_listleaves",
       "label": ".ListLeaves()",
       "_origin": "ast",
       "community": 86,
-      "community_name": "Service",
+      "community_name": "NewScope",
       "file_type": "code",
       "norm_label": ".listleaves()",
       "source_file": "apps/api/internal/application/staff/service.go",
@@ -30335,7 +30478,7 @@
       "label": ".ListPayslips()",
       "_origin": "ast",
       "community": 86,
-      "community_name": "Service",
+      "community_name": "NewScope",
       "file_type": "code",
       "norm_label": ".listpayslips()",
       "source_file": "apps/api/internal/application/staff/service.go",
@@ -30346,7 +30489,7 @@
       "label": ".ListShifts()",
       "_origin": "ast",
       "community": 86,
-      "community_name": "Service",
+      "community_name": "NewScope",
       "file_type": "code",
       "norm_label": ".listshifts()",
       "source_file": "apps/api/internal/application/staff/service.go",
@@ -30357,7 +30500,7 @@
       "label": ".ListStaff()",
       "_origin": "ast",
       "community": 86,
-      "community_name": "Service",
+      "community_name": "NewScope",
       "file_type": "code",
       "norm_label": ".liststaff()",
       "source_file": "apps/api/internal/application/staff/service.go",
@@ -30368,7 +30511,7 @@
       "label": ".MarkManualAttendance()",
       "_origin": "ast",
       "community": 86,
-      "community_name": "Service",
+      "community_name": "NewScope",
       "file_type": "code",
       "norm_label": ".markmanualattendance()",
       "source_file": "apps/api/internal/application/staff/service.go",
@@ -30379,7 +30522,7 @@
       "label": ".RejectLeave()",
       "_origin": "ast",
       "community": 86,
-      "community_name": "Service",
+      "community_name": "NewScope",
       "file_type": "code",
       "norm_label": ".rejectleave()",
       "source_file": "apps/api/internal/application/staff/service.go",
@@ -30390,7 +30533,7 @@
       "label": ".RunPayroll()",
       "_origin": "ast",
       "community": 86,
-      "community_name": "Service",
+      "community_name": "NewScope",
       "file_type": "code",
       "norm_label": ".runpayroll()",
       "source_file": "apps/api/internal/application/staff/service.go",
@@ -30401,7 +30544,7 @@
       "label": ".SetNotificationService()",
       "_origin": "ast",
       "community": 86,
-      "community_name": "Service",
+      "community_name": "NewScope",
       "file_type": "code",
       "norm_label": ".setnotificationservice()",
       "source_file": "apps/api/internal/application/staff/service.go",
@@ -30412,62 +30555,29 @@
       "label": ".ToggleBreak()",
       "_origin": "ast",
       "community": 86,
-      "community_name": "Service",
+      "community_name": "NewScope",
       "file_type": "code",
       "norm_label": ".togglebreak()",
       "source_file": "apps/api/internal/application/staff/service.go",
       "source_location": "L755"
     },
     {
-      "id": "staff_service_updateemployeeprofile",
-      "label": ".UpdateEmployeeProfile()",
-      "_origin": "ast",
-      "community": 86,
-      "community_name": "Service",
-      "file_type": "code",
-      "norm_label": ".updateemployeeprofile()",
-      "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L326"
-    },
-    {
       "id": "staff_service_updategeofence",
       "label": ".UpdateGeofence()",
       "_origin": "ast",
       "community": 86,
-      "community_name": "Service",
+      "community_name": "NewScope",
       "file_type": "code",
       "norm_label": ".updategeofence()",
       "source_file": "apps/api/internal/application/staff/service.go",
       "source_location": "L431"
     },
     {
-      "id": "staff_service_updatestaff",
-      "label": ".UpdateStaff()",
-      "_origin": "ast",
-      "community": 86,
-      "community_name": "Service",
-      "file_type": "code",
-      "norm_label": ".updatestaff()",
-      "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L294"
-    },
-    {
-      "id": "staff_updateemployeeprofileinput",
-      "label": "UpdateEmployeeProfileInput",
-      "_origin": "ast",
-      "community": 86,
-      "community_name": "Service",
-      "file_type": "code",
-      "norm_label": "updateemployeeprofileinput",
-      "source_file": "apps/api/internal/application/staff/service.go",
-      "source_location": "L85"
-    },
-    {
       "id": "user_attendancerecord",
       "label": "AttendanceRecord",
       "_origin": "ast",
       "community": 86,
-      "community_name": "Service",
+      "community_name": "NewScope",
       "file_type": "code",
       "norm_label": "attendancerecord",
       "source_file": "apps/api/internal/domain/user/user.go",
@@ -30478,73 +30588,40 @@
       "label": "AttendanceStatus",
       "_origin": "ast",
       "community": 86,
-      "community_name": "Service",
+      "community_name": "NewScope",
       "file_type": "code",
       "norm_label": "attendancestatus",
       "source_file": "apps/api/internal/domain/user/user.go",
       "source_location": "L264"
     },
     {
-      "id": "user_auth",
-      "label": "Auth",
-      "_origin": "ast",
-      "community": 86,
-      "community_name": "Service",
-      "file_type": "code",
-      "norm_label": "auth",
-      "source_file": "apps/api/internal/domain/user/user.go",
-      "source_location": "L73"
-    },
-    {
-      "id": "user_bankdetails",
-      "label": "BankDetails",
-      "_origin": "ast",
-      "community": 86,
-      "community_name": "Service",
-      "file_type": "code",
-      "norm_label": "bankdetails",
-      "source_file": "apps/api/internal/domain/user/user.go",
-      "source_location": "L104"
-    },
-    {
-      "id": "user_breaklog",
-      "label": "BreakLog",
-      "_origin": "ast",
-      "community": 86,
-      "community_name": "Service",
-      "file_type": "code",
-      "norm_label": "breaklog",
-      "source_file": "apps/api/internal/domain/user/user.go",
-      "source_location": "L276"
-    },
-    {
-      "id": "user_emergencycontact",
-      "label": "EmergencyContact",
-      "_origin": "ast",
-      "community": 86,
-      "community_name": "Service",
-      "file_type": "code",
-      "norm_label": "emergencycontact",
-      "source_file": "apps/api/internal/domain/user/user.go",
-      "source_location": "L111"
-    },
-    {
       "id": "user_geofenceconfig",
       "label": "GeofenceConfig",
       "_origin": "ast",
       "community": 86,
-      "community_name": "Service",
+      "community_name": "NewScope",
       "file_type": "code",
       "norm_label": "geofenceconfig",
       "source_file": "apps/api/internal/domain/user/user.go",
       "source_location": "L312"
     },
     {
+      "id": "user_holiday",
+      "label": "Holiday",
+      "_origin": "ast",
+      "community": 86,
+      "community_name": "NewScope",
+      "file_type": "code",
+      "norm_label": "holiday",
+      "source_file": "apps/api/internal/domain/user/user.go",
+      "source_location": "L417"
+    },
+    {
       "id": "user_leavebalance",
       "label": "LeaveBalance",
       "_origin": "ast",
       "community": 86,
-      "community_name": "Service",
+      "community_name": "NewScope",
       "file_type": "code",
       "norm_label": "leavebalance",
       "source_file": "apps/api/internal/domain/user/user.go",
@@ -30555,7 +30632,7 @@
       "label": "LeaveRequest",
       "_origin": "ast",
       "community": 86,
-      "community_name": "Service",
+      "community_name": "NewScope",
       "file_type": "code",
       "norm_label": "leaverequest",
       "source_file": "apps/api/internal/domain/user/user.go",
@@ -30566,121 +30643,22 @@
       "label": "LeaveStatus",
       "_origin": "ast",
       "community": 86,
-      "community_name": "Service",
+      "community_name": "NewScope",
       "file_type": "code",
       "norm_label": "leavestatus",
       "source_file": "apps/api/internal/domain/user/user.go",
       "source_location": "L347"
     },
     {
-      "id": "user_notificationprefs",
-      "label": "NotificationPrefs",
-      "_origin": "ast",
-      "community": 86,
-      "community_name": "Service",
-      "file_type": "code",
-      "norm_label": "notificationprefs",
-      "source_file": "apps/api/internal/domain/user/user.go",
-      "source_location": "L84"
-    },
-    {
-      "id": "user_payrollrecord",
-      "label": "PayrollRecord",
-      "_origin": "ast",
-      "community": 86,
-      "community_name": "Service",
-      "file_type": "code",
-      "norm_label": "payrollrecord",
-      "source_file": "apps/api/internal/domain/user/user.go",
-      "source_location": "L390"
-    },
-    {
-      "id": "user_permissions",
-      "label": "Permissions",
-      "_origin": "ast",
-      "community": 86,
-      "community_name": "Service",
-      "file_type": "code",
-      "norm_label": "permissions",
-      "source_file": "apps/api/internal/domain/user/user.go",
-      "source_location": "L50"
-    },
-    {
-      "id": "user_refreshtoken",
-      "label": "RefreshToken",
-      "_origin": "ast",
-      "community": 86,
-      "community_name": "Service",
-      "file_type": "code",
-      "norm_label": "refreshtoken",
-      "source_file": "apps/api/internal/domain/user/user.go",
-      "source_location": "L64"
-    },
-    {
-      "id": "user_role",
-      "label": "Role",
-      "_origin": "ast",
-      "community": 86,
-      "community_name": "Service",
-      "file_type": "code",
-      "norm_label": "role",
-      "source_file": "apps/api/internal/domain/user/user.go",
-      "source_location": "L11"
-    },
-    {
-      "id": "user_salarystructure",
-      "label": "SalaryStructure",
-      "_origin": "ast",
-      "community": 86,
-      "community_name": "Service",
-      "file_type": "code",
-      "norm_label": "salarystructure",
-      "source_file": "apps/api/internal/domain/user/user.go",
-      "source_location": "L97"
-    },
-    {
       "id": "user_shift",
       "label": "Shift",
       "_origin": "ast",
       "community": 86,
-      "community_name": "Service",
+      "community_name": "NewScope",
       "file_type": "code",
       "norm_label": "shift",
       "source_file": "apps/api/internal/domain/user/user.go",
       "source_location": "L323"
-    },
-    {
-      "id": "user_status",
-      "label": "Status",
-      "_origin": "ast",
-      "community": 86,
-      "community_name": "Service",
-      "file_type": "code",
-      "norm_label": "status",
-      "source_file": "apps/api/internal/domain/user/user.go",
-      "source_location": "L41"
-    },
-    {
-      "id": "user_user_islocked",
-      "label": ".IsLocked()",
-      "_origin": "ast",
-      "community": 86,
-      "community_name": "Service",
-      "file_type": "code",
-      "norm_label": ".islocked()",
-      "source_file": "apps/api/internal/domain/user/user.go",
-      "source_location": "L211"
-    },
-    {
-      "id": "user_user_topublic",
-      "label": ".ToPublic()",
-      "_origin": "ast",
-      "community": 86,
-      "community_name": "Service",
-      "file_type": "code",
-      "norm_label": ".topublic()",
-      "source_file": "apps/api/internal/domain/user/user.go",
-      "source_location": "L240"
     },
     {
       "id": "apps_api_cmd_server_main",
@@ -30714,6 +30692,17 @@
       "norm_label": "analytics.go",
       "source_file": "apps/api/internal/interfaces/http/handlers/analytics.go",
       "source_location": "L1"
+    },
+    {
+      "id": "apps_api_internal_interfaces_http_handlers_analytics_newanalyticshandler",
+      "label": "NewAnalyticsHandler()",
+      "_origin": "ast",
+      "community": 87,
+      "community_name": "server/main.go",
+      "file_type": "code",
+      "norm_label": "newanalyticshandler()",
+      "source_file": "apps/api/internal/interfaces/http/handlers/analytics.go",
+      "source_location": "L19"
     },
     {
       "id": "apps_api_internal_interfaces_http_handlers_auth",
@@ -30944,6 +30933,17 @@
       "file_type": "code",
       "norm_label": "otp_test.go",
       "source_file": "apps/api/pkg/otp/otp_test.go",
+      "source_location": "L1"
+    },
+    {
+      "id": "apps_api_pkg_token_token_test",
+      "label": "token_test.go",
+      "_origin": "ast",
+      "community": 87,
+      "community_name": "server/main.go",
+      "file_type": "code",
+      "norm_label": "token_test.go",
+      "source_file": "apps/api/pkg/token/token_test.go",
       "source_location": "L1"
     },
     {
@@ -32024,14 +32024,14 @@
       "type": "external"
     },
     {
-      "id": "go_pkg_github_com_dineflow_api_internal_domain_ai",
-      "label": "go_pkg_github_com_dineflow_api_internal_domain_ai",
+      "id": "go_pkg_go_uber_org_zap_zapcore",
+      "label": "go_pkg_go_uber_org_zap_zapcore",
       "_origin": "semantic",
       "community": 134,
       "community_name": "ai/service.go",
       "external": true,
       "file_type": "concept",
-      "norm_label": "go_pkg_github_com_dineflow_api_internal_domain_ai",
+      "norm_label": "go_pkg_go_uber_org_zap_zapcore",
       "source_file": "",
       "type": "external"
     },
@@ -32048,14 +32048,38 @@
       "type": "external"
     },
     {
-      "id": "go_pkg_net_http_httptest",
-      "label": "go_pkg_net_http_httptest",
+      "id": "go_pkg_os",
+      "label": "go_pkg_os",
       "_origin": "semantic",
       "community": 134,
       "community_name": "ai/service.go",
       "external": true,
       "file_type": "concept",
-      "norm_label": "go_pkg_net_http_httptest",
+      "norm_label": "go_pkg_os",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "go_pkg_sync",
+      "label": "go_pkg_sync",
+      "_origin": "semantic",
+      "community": 134,
+      "community_name": "ai/service.go",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "go_pkg_sync",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "go_pkg_github_com_dineflow_api_internal_application_whatsapp",
+      "label": "go_pkg_github_com_dineflow_api_internal_application_whatsapp",
+      "_origin": "semantic",
+      "community": 14,
+      "community_name": "testing.T",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "go_pkg_github_com_dineflow_api_internal_application_whatsapp",
       "source_file": "",
       "type": "external"
     },
@@ -32080,6 +32104,18 @@
       "external": true,
       "file_type": "concept",
       "norm_label": "go_pkg_github_com_dineflow_api_internal_interfaces_http_routes",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "go_pkg_github_com_dineflow_api_internal_messaging",
+      "label": "go_pkg_github_com_dineflow_api_internal_messaging",
+      "_origin": "semantic",
+      "community": 14,
+      "community_name": "testing.T",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "go_pkg_github_com_dineflow_api_internal_messaging",
       "source_file": "",
       "type": "external"
     },
@@ -32112,7 +32148,7 @@
       "label": "go_pkg_github_com_golang_jwt_jwt_v5",
       "_origin": "semantic",
       "community": 141,
-      "community_name": "token.go",
+      "community_name": "security-audit/main.go",
       "external": true,
       "file_type": "concept",
       "norm_label": "go_pkg_github_com_golang_jwt_jwt_v5",
@@ -32124,10 +32160,22 @@
       "label": "go_pkg_github_com_google_uuid",
       "_origin": "semantic",
       "community": 141,
-      "community_name": "token.go",
+      "community_name": "security-audit/main.go",
       "external": true,
       "file_type": "concept",
       "norm_label": "go_pkg_github_com_google_uuid",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "go_pkg_net_http_httptest",
+      "label": "go_pkg_net_http_httptest",
+      "_origin": "semantic",
+      "community": 141,
+      "community_name": "security-audit/main.go",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "go_pkg_net_http_httptest",
       "source_file": "",
       "type": "external"
     },
@@ -32180,18 +32228,6 @@
       "type": "external"
     },
     {
-      "id": "go_pkg_go_uber_org_zap_zapcore",
-      "label": "go_pkg_go_uber_org_zap_zapcore",
-      "_origin": "semantic",
-      "community": 26,
-      "community_name": "main",
-      "external": true,
-      "file_type": "concept",
-      "norm_label": "go_pkg_go_uber_org_zap_zapcore",
-      "source_file": "",
-      "type": "external"
-    },
-    {
       "id": "go_pkg_crypto_sha256",
       "label": "go_pkg_crypto_sha256",
       "_origin": "semantic",
@@ -32236,18 +32272,6 @@
       "external": true,
       "file_type": "concept",
       "norm_label": "go_pkg_path_filepath",
-      "source_file": "",
-      "type": "external"
-    },
-    {
-      "id": "go_pkg_github_com_dineflow_api_internal_application_ai",
-      "label": "go_pkg_github_com_dineflow_api_internal_application_ai",
-      "_origin": "semantic",
-      "community": 3,
-      "community_name": "handlers/menu.go",
-      "external": true,
-      "file_type": "concept",
-      "norm_label": "go_pkg_github_com_dineflow_api_internal_application_ai",
       "source_file": "",
       "type": "external"
     },
@@ -32648,18 +32672,6 @@
       "type": "external"
     },
     {
-      "id": "go_pkg_net_url",
-      "label": "go_pkg_net_url",
-      "_origin": "semantic",
-      "community": 5,
-      "community_name": "go_pkg_time",
-      "external": true,
-      "file_type": "concept",
-      "norm_label": "go_pkg_net_url",
-      "source_file": "",
-      "type": "external"
-    },
-    {
       "id": "go_pkg_regexp",
       "label": "go_pkg_regexp",
       "_origin": "semantic",
@@ -32720,42 +32732,6 @@
       "type": "external"
     },
     {
-      "id": "go_pkg_github_com_dineflow_api_internal_application_whatsapp",
-      "label": "go_pkg_github_com_dineflow_api_internal_application_whatsapp",
-      "_origin": "semantic",
-      "community": 52,
-      "community_name": "workforce_test.go",
-      "external": true,
-      "file_type": "concept",
-      "norm_label": "go_pkg_github_com_dineflow_api_internal_application_whatsapp",
-      "source_file": "",
-      "type": "external"
-    },
-    {
-      "id": "go_pkg_github_com_dineflow_api_internal_messaging",
-      "label": "go_pkg_github_com_dineflow_api_internal_messaging",
-      "_origin": "semantic",
-      "community": 52,
-      "community_name": "workforce_test.go",
-      "external": true,
-      "file_type": "concept",
-      "norm_label": "go_pkg_github_com_dineflow_api_internal_messaging",
-      "source_file": "",
-      "type": "external"
-    },
-    {
-      "id": "go_pkg_sync",
-      "label": "go_pkg_sync",
-      "_origin": "semantic",
-      "community": 52,
-      "community_name": "workforce_test.go",
-      "external": true,
-      "file_type": "concept",
-      "norm_label": "go_pkg_sync",
-      "source_file": "",
-      "type": "external"
-    },
-    {
       "id": "ref_next_navigation",
       "label": "ref_next_navigation",
       "_origin": "semantic",
@@ -32804,14 +32780,14 @@
       "type": "external"
     },
     {
-      "id": "go_pkg_github_com_dineflow_api_internal_application_notification",
-      "label": "go_pkg_github_com_dineflow_api_internal_application_notification",
+      "id": "go_pkg_github_com_dineflow_api_internal_application_ai",
+      "label": "go_pkg_github_com_dineflow_api_internal_application_ai",
       "_origin": "semantic",
-      "community": 81,
-      "community_name": "handlers/room.go",
+      "community": 87,
+      "community_name": "server/main.go",
       "external": true,
       "file_type": "concept",
-      "norm_label": "go_pkg_github_com_dineflow_api_internal_application_notification",
+      "norm_label": "go_pkg_github_com_dineflow_api_internal_application_ai",
       "source_file": "",
       "type": "external"
     },
@@ -32836,6 +32812,18 @@
       "external": true,
       "file_type": "concept",
       "norm_label": "go_pkg_github_com_dineflow_api_internal_application_auth",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "go_pkg_github_com_dineflow_api_internal_application_notification",
+      "label": "go_pkg_github_com_dineflow_api_internal_application_notification",
+      "_origin": "semantic",
+      "community": 87,
+      "community_name": "server/main.go",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "go_pkg_github_com_dineflow_api_internal_application_notification",
       "source_file": "",
       "type": "external"
     },
@@ -32908,6 +32896,18 @@
       "external": true,
       "file_type": "concept",
       "norm_label": "go_pkg_github_com_dineflow_api_internal_application_table",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "go_pkg_github_com_dineflow_api_internal_domain_ai",
+      "label": "go_pkg_github_com_dineflow_api_internal_domain_ai",
+      "_origin": "semantic",
+      "community": 87,
+      "community_name": "server/main.go",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "go_pkg_github_com_dineflow_api_internal_domain_ai",
       "source_file": "",
       "type": "external"
     },
@@ -33068,14 +33068,14 @@
       "type": "external"
     },
     {
-      "id": "go_pkg_os",
-      "label": "go_pkg_os",
+      "id": "go_pkg_net_url",
+      "label": "go_pkg_net_url",
       "_origin": "semantic",
       "community": 87,
       "community_name": "server/main.go",
       "external": true,
       "file_type": "concept",
-      "norm_label": "go_pkg_os",
+      "norm_label": "go_pkg_net_url",
       "source_file": "",
       "type": "external"
     },
@@ -33126,7 +33126,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L157",
+      "source_location": "L154",
       "weight": 1.0
     },
     {
@@ -33138,7 +33138,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L158",
+      "source_location": "L155",
       "weight": 1.0
     },
     {
@@ -33150,7 +33150,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L175",
+      "source_location": "L172",
       "weight": 1.0
     },
     {
@@ -33162,7 +33162,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L59",
+      "source_location": "L56",
       "weight": 1.0
     },
     {
@@ -33174,7 +33174,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L60",
+      "source_location": "L57",
       "weight": 1.0
     },
     {
@@ -33186,7 +33186,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L81",
+      "source_location": "L78",
       "weight": 1.0
     },
     {
@@ -33198,7 +33198,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L125",
+      "source_location": "L122",
       "weight": 1.0
     },
     {
@@ -33210,7 +33210,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L126",
+      "source_location": "L123",
       "weight": 1.0
     },
     {
@@ -33222,7 +33222,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L141",
+      "source_location": "L138",
       "weight": 1.0
     },
     {
@@ -33234,7 +33234,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L190",
+      "source_location": "L187",
       "weight": 1.0
     },
     {
@@ -33246,7 +33246,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L191",
+      "source_location": "L188",
       "weight": 1.0
     },
     {
@@ -33258,7 +33258,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L204",
+      "source_location": "L201",
       "weight": 1.0
     },
     {
@@ -33270,7 +33270,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L110",
+      "source_location": "L107",
       "weight": 1.0
     },
     {
@@ -33282,7 +33282,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L97",
+      "source_location": "L94",
       "weight": 1.0
     },
     {
@@ -33294,31 +33294,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L98",
-      "weight": 1.0
-    },
-    {
-      "source": "ai_service_scanmenuwithvision",
-      "target": "ai_service_ismockmode",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L229",
-      "weight": 1.0
-    },
-    {
-      "source": "ai_service_scanmenuwithvision",
-      "target": "apps_api_internal_application_ai_service_mockscanneddishes",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L230",
+      "source_location": "L95",
       "weight": 1.0
     },
     {
@@ -34878,7 +34854,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/app/api/menu/scan/route.ts",
-      "source_location": "L111",
+      "source_location": "L112",
       "weight": 1.0
     },
     {
@@ -34890,7 +34866,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/app/api/menu/scan/route.ts",
-      "source_location": "L152",
+      "source_location": "L153",
       "weight": 1.0
     },
     {
@@ -34902,7 +34878,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/app/api/menu/scan/route.ts",
-      "source_location": "L160",
+      "source_location": "L161",
       "weight": 1.0
     },
     {
@@ -34914,7 +34890,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/app/api/menu/scan/route.ts",
-      "source_location": "L173",
+      "source_location": "L174",
       "weight": 1.0
     },
     {
@@ -37614,7 +37590,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/components/menu/camera-menu-scanner-modal.tsx",
-      "source_location": "L241",
+      "source_location": "L243",
       "weight": 1.0
     },
     {
@@ -37626,7 +37602,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/components/menu/camera-menu-scanner-modal.tsx",
-      "source_location": "L300",
+      "source_location": "L303",
       "weight": 1.0
     },
     {
@@ -37722,7 +37698,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/components/menu/menu-upload-modal.tsx",
-      "source_location": "L205",
+      "source_location": "L207",
       "weight": 1.0
     },
     {
@@ -37734,7 +37710,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/components/menu/menu-upload-modal.tsx",
-      "source_location": "L268",
+      "source_location": "L271",
       "weight": 1.0
     },
     {
@@ -41118,7 +41094,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/interfaces/http/handlers/menu.go",
-      "source_location": "L540",
+      "source_location": "L541",
       "weight": 1.0
     },
     {
@@ -41130,7 +41106,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/api/internal/interfaces/http/handlers/menu.go",
-      "source_location": "L551",
+      "source_location": "L552",
       "weight": 1.0
     },
     {
@@ -85972,7 +85948,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L388",
+      "source_location": "L392",
       "weight": 1.0
     },
     {
@@ -85984,7 +85960,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L156",
+      "source_location": "L153",
       "weight": 1.0
     },
     {
@@ -85996,7 +85972,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L156",
+      "source_location": "L153",
       "weight": 1.0
     },
     {
@@ -86008,7 +85984,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L58",
+      "source_location": "L55",
       "weight": 1.0
     },
     {
@@ -86020,7 +85996,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L58",
+      "source_location": "L55",
       "weight": 1.0
     },
     {
@@ -86032,7 +86008,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L124",
+      "source_location": "L121",
       "weight": 1.0
     },
     {
@@ -86044,7 +86020,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L124",
+      "source_location": "L121",
       "weight": 1.0
     },
     {
@@ -86056,7 +86032,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L189",
+      "source_location": "L186",
       "weight": 1.0
     },
     {
@@ -86068,7 +86044,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L189",
+      "source_location": "L186",
       "weight": 1.0
     },
     {
@@ -86080,7 +86056,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L96",
+      "source_location": "L93",
       "weight": 1.0
     },
     {
@@ -86092,7 +86068,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L96",
+      "source_location": "L93",
       "weight": 1.0
     },
     {
@@ -86104,7 +86080,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L228",
+      "source_location": "L225",
       "weight": 1.0
     },
     {
@@ -86380,7 +86356,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L526",
+      "source_location": "L530",
       "weight": 1.0
     },
     {
@@ -86392,7 +86368,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L457",
+      "source_location": "L461",
       "weight": 1.0
     },
     {
@@ -86404,7 +86380,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L466",
+      "source_location": "L470",
       "weight": 1.0
     },
     {
@@ -89320,7 +89296,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/api/internal/interfaces/http/handlers/menu.go",
-      "source_location": "L537",
+      "source_location": "L538",
       "weight": 1.0
     },
     {
@@ -97468,7 +97444,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L156",
+      "source_location": "L153",
       "weight": 1.0
     },
     {
@@ -97480,7 +97456,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L58",
+      "source_location": "L55",
       "weight": 1.0
     },
     {
@@ -97492,7 +97468,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L124",
+      "source_location": "L121",
       "weight": 1.0
     },
     {
@@ -97504,7 +97480,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L189",
+      "source_location": "L186",
       "weight": 1.0
     },
     {
@@ -97516,7 +97492,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L96",
+      "source_location": "L93",
       "weight": 1.0
     },
     {
@@ -97528,7 +97504,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L228",
+      "source_location": "L225",
       "weight": 1.0
     },
     {
@@ -97624,7 +97600,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L526",
+      "source_location": "L530",
       "weight": 1.0
     },
     {
@@ -97636,7 +97612,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L476",
+      "source_location": "L480",
       "weight": 1.0
     },
     {
@@ -97648,7 +97624,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L457",
+      "source_location": "L461",
       "weight": 1.0
     },
     {
@@ -97660,7 +97636,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L556",
+      "source_location": "L560",
       "weight": 1.0
     },
     {
@@ -97672,7 +97648,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L352",
+      "source_location": "L356",
       "weight": 1.0
     },
     {
@@ -97684,7 +97660,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L466",
+      "source_location": "L470",
       "weight": 1.0
     },
     {
@@ -102084,7 +102060,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L218",
+      "source_location": "L215",
       "weight": 1.0
     },
     {
@@ -102106,7 +102082,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L352",
+      "source_location": "L356",
       "weight": 1.0
     },
     {
@@ -102117,7 +102093,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L364",
+      "source_location": "L368",
       "weight": 1.0
     },
     {
@@ -102128,7 +102104,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L373",
+      "source_location": "L377",
       "weight": 1.0
     },
     {
@@ -102150,7 +102126,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L457",
+      "source_location": "L461",
       "weight": 1.0
     },
     {
@@ -102161,7 +102137,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L466",
+      "source_location": "L470",
       "weight": 1.0
     },
     {
@@ -102172,7 +102148,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L476",
+      "source_location": "L480",
       "weight": 1.0
     },
     {
@@ -102183,7 +102159,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L526",
+      "source_location": "L530",
       "weight": 1.0
     },
     {
@@ -102194,7 +102170,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L556",
+      "source_location": "L560",
       "weight": 1.0
     },
     {
@@ -107914,7 +107890,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/web/app/api/menu/scan/route.ts",
-      "source_location": "L123",
+      "source_location": "L124",
       "weight": 1.0
     },
     {
@@ -107925,7 +107901,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/web/app/api/menu/scan/route.ts",
-      "source_location": "L16",
+      "source_location": "L17",
       "weight": 1.0
     },
     {
@@ -107936,7 +107912,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/web/app/api/menu/scan/route.ts",
-      "source_location": "L46",
+      "source_location": "L47",
       "weight": 1.0
     },
     {
@@ -107947,7 +107923,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/web/app/api/menu/scan/route.ts",
-      "source_location": "L56",
+      "source_location": "L57",
       "weight": 1.0
     },
     {
@@ -120023,7 +119999,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L124",
+      "source_location": "L121",
       "weight": 1.0
     },
     {
@@ -120034,7 +120010,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L156",
+      "source_location": "L153",
       "weight": 1.0
     },
     {
@@ -120045,7 +120021,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L189",
+      "source_location": "L186",
       "weight": 1.0
     },
     {
@@ -120056,7 +120032,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L228",
+      "source_location": "L225",
       "weight": 1.0
     },
     {
@@ -120067,7 +120043,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L388",
+      "source_location": "L392",
       "weight": 1.0
     },
     {
@@ -120078,7 +120054,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L54",
+      "source_location": "L51",
       "weight": 1.0
     },
     {
@@ -120089,7 +120065,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L58",
+      "source_location": "L55",
       "weight": 1.0
     },
     {
@@ -120100,7 +120076,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/application/ai/service.go",
-      "source_location": "L96",
+      "source_location": "L93",
       "weight": 1.0
     },
     {
@@ -121541,7 +121517,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/api/internal/interfaces/http/handlers/menu.go",
-      "source_location": "L537",
+      "source_location": "L538",
       "weight": 1.0
     },
     {
@@ -127114,5 +127090,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "895cc641f7580bcd72070147e45b5c7798eeb4da"
+  "built_at_commit": "2c0518b18deb8fd11e31acd950ac87fa9d3de4be"
 }

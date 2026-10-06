@@ -195,12 +195,14 @@ export function MenuUploadModal({
     setCurrentStepIndex(2); // Connecting to Gemini Vision AI
     try {
       let rawDishes: any[] = [];
+      const clientApiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 
       // 1. Try Go backend API endpoint (/api/v1/menu/scan) via apiClient
       try {
         const apiRes = await apiClient.post("/menu/scan", {
           imageBase64: base64Data,
           existingItems,
+          geminiKey: clientApiKey,
         });
         const fromApi = parseItemsFromResponse(apiRes.data);
         if (fromApi.length > 0) {
@@ -220,6 +222,7 @@ export function MenuUploadModal({
             body: JSON.stringify({
               imageBase64: base64Data,
               existingItems,
+              geminiKey: clientApiKey,
             }),
           });
 

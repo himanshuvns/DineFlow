@@ -9,6 +9,16 @@ if [ ! -f .env ]; then
   ./deploy/gen-secrets.sh
 fi
 
+# Sync GEMINI_API_KEY into .env if passed in environment
+if [ -n "${GEMINI_API_KEY:-}" ]; then
+  if grep -q "^GEMINI_API_KEY=" .env 2>/dev/null; then
+    sed -i "s|^GEMINI_API_KEY=.*|GEMINI_API_KEY=${GEMINI_API_KEY}|" .env
+  else
+    echo "GEMINI_API_KEY=${GEMINI_API_KEY}" >> .env
+  fi
+  echo "✔ Synced GEMINI_API_KEY into .env"
+fi
+
 # Read configured ports safely
 BE_PORT=$(grep -E '^BACKEND_PORT=' .env 2>/dev/null | tr -cd '0-9' || true)
 FE_PORT=$(grep -E '^FRONTEND_PORT=' .env 2>/dev/null | tr -cd '0-9' || true)

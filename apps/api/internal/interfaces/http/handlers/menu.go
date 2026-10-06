@@ -532,6 +532,7 @@ func (h *MenuHandler) BulkDeleteItems(c *gin.Context) {
 type ScanMenuRequest struct {
 	ImageBase64 string `json:"imageBase64"`
 	RawText     string `json:"rawText"`
+	GeminiKey   string `json:"geminiKey,omitempty"`
 }
 
 func (h *MenuHandler) ScanMenu(c *gin.Context) {
@@ -542,7 +543,7 @@ func (h *MenuHandler) ScanMenu(c *gin.Context) {
 	}
 
 	if h.aiService != nil && req.ImageBase64 != "" {
-		dishes, err := h.aiService.ScanMenuWithVision(c.Request.Context(), req.ImageBase64)
+		dishes, err := h.aiService.ScanMenuWithVision(c.Request.Context(), req.ImageBase64, req.GeminiKey)
 		if err != nil {
 			response.BadRequest(c, "AI_SCAN_FAILED", err.Error())
 			return

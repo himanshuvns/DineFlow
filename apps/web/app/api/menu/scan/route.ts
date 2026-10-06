@@ -10,6 +10,7 @@ interface ScanMenuRequestBody {
   imagesBase64?: string[];
   rawText?: string;
   existingItems?: MenuItem[];
+  geminiKey?: string;
 }
 
 // Ordered fallback chain — starts with fastest active models, then larger reasoning models
@@ -22,7 +23,7 @@ const GEMINI_MODELS = [
 ];
 
 const MENU_PROMPT = `You are an expert restaurant menu digitizer.
-Analyze this menu image and extract EVERY single food/drink item across ALL columns and sections.
+Analyze this menu document (PDF or image) and extract EVERY single food/drink item across ALL columns, sections, and pages.
 Return ONLY a valid JSON array — no markdown fences, no extra text:
 [
   {
@@ -125,7 +126,7 @@ export async function POST(req: NextRequest) {
     const body = (await req.json()) as ScanMenuRequestBody;
     const { imageBase64, imagesBase64, rawText, existingItems = [] } = body;
 
-    const geminiKey = process.env.GEMINI_API_KEY;
+    const geminiKey = (body.geminiKey || process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY || "").trim();
     console.log("[scan] key present:", !!geminiKey, "len:", geminiKey?.length ?? 0);
 
     const imagesToProcess: string[] = [];
