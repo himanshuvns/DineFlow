@@ -81,6 +81,8 @@ type Settings struct {
 	PreparationTimeMinutes int            `bson:"preparationTimeMinutes" json:"preparationTimeMinutes"`
 	OrderingPageTheme      string         `bson:"orderingPageTheme" json:"orderingPageTheme"`
 	ItemUnavailableMode    string         `bson:"itemUnavailableMode" json:"itemUnavailableMode"` // "gray_out" | "hide"
+	GooglePlaceReviewURL   string         `bson:"googlePlaceReviewURL,omitempty" json:"googlePlaceReviewURL,omitempty"`
+	GooglePlaceID          string         `bson:"googlePlaceId,omitempty" json:"googlePlaceId,omitempty"`
 }
 
 // Features holds the feature flags determined by the subscription plan.

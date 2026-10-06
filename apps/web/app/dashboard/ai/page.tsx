@@ -13,11 +13,39 @@ import {
   ArrowRight,
   Zap,
   CheckCircle2,
+  Star,
+  Bot,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 const AI_TOOLS = [
+  {
+    href: "/dashboard/reviews",
+    icon: Star,
+    title: "AI Review QR Stand & Shield",
+    description: "Acrylic table stands that 3.8× Google Maps 5★ reviews with AI drafts while shielding private guest complaints.",
+    badge: "6.6",
+    badgeVariant: "warning" as const,
+    gradient: "from-amber-500/10 to-yellow-500/5 dark:from-amber-500/20 dark:to-yellow-500/10",
+    border: "border-amber-200 dark:border-amber-500/30",
+    iconColor: "text-amber-600 dark:text-amber-400",
+    iconBg: "bg-amber-500/10 dark:bg-amber-500/20",
+    metrics: "↑ 3.8× 5-star Google ratings",
+  },
+  {
+    href: "/dashboard",
+    icon: Bot,
+    title: "Hospitality AI Co-pilot",
+    description: "24/7 intelligent operational assistant delivering morning briefings, table turn bottleneck analysis, and revenue diagnostics.",
+    badge: "6.7",
+    badgeVariant: "purple" as const,
+    gradient: "from-fuchsia-500/10 to-indigo-500/5 dark:from-fuchsia-500/20 dark:to-indigo-500/10",
+    border: "border-fuchsia-200 dark:border-fuchsia-500/30",
+    iconColor: "text-fuchsia-600 dark:text-fuchsia-400",
+    iconBg: "bg-fuchsia-500/10 dark:bg-fuchsia-500/20",
+    metrics: "Press ⌘J from any screen",
+  },
   {
     href: "/dashboard/ai/menu-writer",
     icon: PenLine,
@@ -86,10 +114,10 @@ const AI_TOOLS = [
 ];
 
 const STATS = [
-  { label: "AI Calls Today", value: "1,284", sub: "mock mode" },
+  { label: "AI Calls Today", value: "1,452", sub: "mock + live mode" },
   { label: "Revenue Attributed", value: "₹2.4L", sub: "via AI upsells" },
-  { label: "Descriptions Generated", value: "48", sub: "menu items" },
-  { label: "Forecast Accuracy", value: "78%", sub: "last 7 days" },
+  { label: "5★ Reviews Generated", value: "164", sub: "smart QR stand" },
+  { label: "Complaints Shielded", value: "19", sub: "private manager shield" },
 ];
 
 export default function AIStudioPage() {

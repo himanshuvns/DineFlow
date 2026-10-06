@@ -34,6 +34,7 @@ func Setup(
 	notifHandler *handlers.NotificationHandler,
 	searchHandler *handlers.SearchHandler,
 	platformHandler *handlers.PlatformHandler,
+	reviewHandler *handlers.ReviewHandler,
 ) {
 	// Auth middleware (used on protected routes, checks token signature and real-time Redis revocation)
 	authMiddleware := middleware.Auth(tokenMaker, redisClient)
@@ -77,6 +78,14 @@ func Setup(
 			publicGroup.POST("/workforce/check-in", waHandler.PublicWorkforceCheckIn)
 			publicGroup.GET("/workforce/lookup-staff", waHandler.LookupStaff)
 			publicGroup.GET("/orders/by-phone", waHandler.GetActiveOrderByPhone)
+		}
+
+		// ── Public Google Maps Review Smart QR Stand Endpoints ───────────
+		reviewPublic := v1.Group("/reviews", publicRateLimit)
+		{
+			reviewPublic.GET("/public/:slug", reviewHandler.GetPublicMeta)
+			reviewPublic.POST("/generate", reviewHandler.GenerateReviewSuggestions)
+			reviewPublic.POST("/feedback", reviewHandler.SubmitFeedback)
 		}
 
 		// ── Public WhatsApp Webhook (Meta Cloud API & OpenWA Gateway) ─────
@@ -375,6 +384,16 @@ func Setup(
 				aiGroup.GET("/forecast", middleware.OwnerOrManager(), aiHandler.GetDemandForecast)
 				aiGroup.GET("/pricing-alerts", middleware.OwnerOrManager(), aiHandler.GetPricingAlerts)
 				aiGroup.POST("/chatbot", aiHandler.ChatbotReply)
+				aiGroup.GET("/copilot/brief", aiHandler.GetCopilotBrief)
+				aiGroup.POST("/copilot/query", aiHandler.QueryCopilot)
+			}
+
+			// ── Smart QR Stand Feedback & Review Stats ───────────────────────
+			reviewProtected := protected.Group("/reviews")
+			{
+				reviewProtected.GET("/stats", reviewHandler.GetStats)
+				reviewProtected.GET("/feedback", reviewHandler.ListFeedback)
+				reviewProtected.PATCH("/feedback/:id/status", reviewHandler.UpdateFeedbackStatus)
 			}
 
 			// ── Notifications ──────────────────────────────────────────────

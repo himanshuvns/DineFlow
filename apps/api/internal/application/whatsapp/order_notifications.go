@@ -242,3 +242,25 @@ func (s *Service) NotifyStaffTaskAssigned(ctx context.Context, tenantID bson.Obj
 	_, _ = s.LogMessage(ctx, tenantID, phone, staffName, domainwa.TemplateRoomService, body, roomLoc, domainwa.StatusDelivered, extID)
 }
 
+// NotifyAdminNegativeFeedback alerts admins/managers when a guest submits 1-3 star feedback via Smart QR Review Stand.
+func (s *Service) NotifyAdminNegativeFeedback(ctx context.Context, tenantID bson.ObjectID, rating int, issues []string, comment, guestPhone, restName string) {
+	if len(s.adminNumbers) == 0 {
+		return
+	}
+	issueStr := "None specified"
+	if len(issues) > 0 {
+		issueStr = strings.Join(issues, ", ")
+	}
+	alertText := fmt.Sprintf("🚨 *Private Guest Feedback Shield Alert* (⭐ %d/5)\n\n"+
+		"Restaurant: *%s*\n"+
+		"Guest Phone: %s\n"+
+		"Reported Issues: %s\n"+
+		"Comments: \"%s\"\n\n"+
+		"⚡ *Action Required:* This complaint was shielded from Google Maps. Please reach out to recover the customer!",
+		rating, restName, guestPhone, issueStr, comment)
+
+	for _, adminPhone := range s.adminNumbers {
+		_, _ = s.dispatchMetaMessage(ctx, tenantID, adminPhone, alertText)
+	}
+}
+

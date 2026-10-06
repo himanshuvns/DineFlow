@@ -14,6 +14,7 @@ import { X, UtensilsCrossed, Sparkles, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { HospitalityLoader } from "@/components/ui/hospitality-loader";
+import { CopilotDrawer } from "@/components/ai/copilot-drawer";
 
 function MobileNavSubItems({
   items,
@@ -142,6 +143,17 @@ export default function DashboardLayout({
 
     setIsAuthorized(true);
   }, [pathname, router, isAuthenticated, accessToken, user, tenant?.type]);
+
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "j") {
+        e.preventDefault();
+        useUIStore.getState().toggleCopilot();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const categoryConfig = getCategoryConfig(tenant?.type);
   const navSections = React.useMemo(() => getNavSections(tenant?.type), [tenant?.type]);
@@ -338,6 +350,9 @@ export default function DashboardLayout({
           {children}
         </main>
       </div>
+
+      {/* Global Hospitality AI Co-pilot Widget */}
+      <CopilotDrawer />
     </div>
   );
 }

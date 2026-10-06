@@ -11,6 +11,9 @@ interface UIState {
   activeModal: string | null;
   openModal: (modalId: string) => void;
   closeModal: () => void;
+  copilotOpen: boolean;
+  setCopilotOpen: (open: boolean) => void;
+  toggleCopilot: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -24,4 +27,7 @@ export const useUIStore = create<UIState>((set) => ({
   activeModal: null,
   openModal: (modalId) => set({ activeModal: modalId }),
   closeModal: () => set({ activeModal: null }),
+  copilotOpen: false,
+  setCopilotOpen: (open) => set({ copilotOpen: open }),
+  toggleCopilot: () => set((state) => ({ copilotOpen: !state.copilotOpen })),
 }));

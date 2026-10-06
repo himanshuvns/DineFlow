@@ -149,6 +149,14 @@ func (c *Client) EnsureIndexes(ctx context.Context) error {
 			{Keys: bson.D{{Key: "tenantId", Value: 1}, {Key: "createdAt", Value: -1}}, Options: options.Index().SetName("idx_inv_tenant_date")},
 			{Keys: bson.D{{Key: "status", Value: 1}}, Options: options.Index().SetName("idx_inv_status")},
 		},
+		"reviews_feedback": {
+			{Keys: bson.D{{Key: "tenantId", Value: 1}, {Key: "createdAt", Value: -1}}, Options: options.Index().SetName("idx_review_tenant_created")},
+			{Keys: bson.D{{Key: "tenantId", Value: 1}, {Key: "status", Value: 1}}, Options: options.Index().SetName("idx_review_tenant_status")},
+			{Keys: bson.D{{Key: "tenantId", Value: 1}, {Key: "rating", Value: 1}}, Options: options.Index().SetName("idx_review_tenant_rating")},
+		},
+		"reviews_stats": {
+			{Keys: bson.D{{Key: "tenantId", Value: 1}}, Options: options.Index().SetUnique(true).SetName("idx_review_stats_tenant")},
+		},
 	}
 
 	for collName, models := range indexDefs {

@@ -25,6 +25,7 @@ import {
   CalendarCheck,
   DollarSign,
   Award,
+  Star,
 } from "lucide-react";
 import { useUIStore } from "@/lib/stores/ui-store";
 import { useAuthStore } from "@/lib/stores/auth-store";
@@ -90,6 +91,7 @@ export function getNavSections(category?: string | null): NavSection[] {
           : []),
         { href: "/dashboard/history", label: config.historyTitle, icon: History, badge: "Log" },
         { href: "/dashboard/whatsapp", label: "WhatsApp Connect", icon: MessageSquareShare, badge: "AI" },
+        { href: "/dashboard/reviews", label: "Reviews & QR Stand", icon: Star, badge: "AI" },
         { href: "/dashboard/video", label: "Video Studio", icon: Video, badge: "Remotion" },
       ],
     },

@@ -675,4 +675,21 @@ func (s *Service) EmitStaffRoomOrderPlaced(ctx context.Context, tenantID bson.Ob
 	return err
 }
 
+// NotifyNegativeFeedbackReceived records an alert in the dashboard notification tray when a 1-3 star review is shielded.
+func (s *Service) NotifyNegativeFeedbackReceived(ctx context.Context, tenantID bson.ObjectID, rating int, comment, phone string) {
+	_, _ = s.CreateNotification(ctx, CreateNotificationInput{
+		TenantID:  tenantID,
+		Category:  domainnotification.CategorySystem,
+		Title:     fmt.Sprintf("Shielded Guest Feedback (%d★)", rating),
+		Message:   fmt.Sprintf("Customer (%s) left private feedback: \"%s\"", phone, comment),
+		Priority:  domainnotification.PriorityHigh,
+		ActionURL: "/dashboard/reviews",
+		Metadata: map[string]interface{}{
+			"rating":  rating,
+			"comment": comment,
+			"phone":   phone,
+		},
+	})
+}
+
 

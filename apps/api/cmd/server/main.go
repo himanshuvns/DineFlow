@@ -17,6 +17,7 @@ import (
 	notifapp "github.com/dineflow/api/internal/application/notification"
 	orderapp "github.com/dineflow/api/internal/application/order"
 	platformapp "github.com/dineflow/api/internal/application/platform"
+	reviewapp "github.com/dineflow/api/internal/application/review"
 	roomapp "github.com/dineflow/api/internal/application/room"
 	searchapp "github.com/dineflow/api/internal/application/search"
 	staffapp "github.com/dineflow/api/internal/application/staff"
@@ -193,6 +194,10 @@ func main() {
 	notifHandler := handlers.NewNotificationHandler(notifService, hub)
 	searchHandler := handlers.NewSearchHandler(searchService)
 	platformHandler := handlers.NewPlatformHandler(platformService)
+	reviewService := reviewapp.NewService(mongoDB, aiService)
+	reviewService.SetWhatsAppService(waService)
+	reviewService.SetNotificationService(notifService)
+	reviewHandler := handlers.NewReviewHandler(reviewService)
 
 	// ── WhatsApp Gateway Provider (OpenWA / Meta Cloud API / Mock) ───────────
 	var waProvider messaging.WhatsAppProvider
@@ -270,6 +275,7 @@ func main() {
 		notifHandler,
 		searchHandler,
 		platformHandler,
+		reviewHandler,
 	)
 
 	// ── HTTP Server ───────────────────────────────────────────────────────────

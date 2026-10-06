@@ -151,3 +151,57 @@ func (h *AIHandler) GetPricingAlerts(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, res)
 }
+
+// GetCopilotBrief godoc
+// GET /api/v1/ai/copilot/brief
+func (h *AIHandler) GetCopilotBrief(c *gin.Context) {
+	tenantID := middleware.GetTenantID(c)
+	if tenantID == "" {
+		response.Unauthorized(c, "tenant context missing")
+		return
+	}
+	tOID, err := bson.ObjectIDFromHex(tenantID)
+	if err != nil {
+		response.BadRequest(c, "INVALID_TENANT_ID", "invalid tenant ID")
+		return
+	}
+
+	brief, err := h.aiService.GetCopilotBrief(c.Request.Context(), tOID)
+	if err != nil {
+		response.InternalError(c)
+		return
+	}
+	response.OK(c, brief)
+}
+
+// QueryCopilot godoc
+// POST /api/v1/ai/copilot/query
+func (h *AIHandler) QueryCopilot(c *gin.Context) {
+	tenantID := middleware.GetTenantID(c)
+	if tenantID == "" {
+		response.Unauthorized(c, "tenant context missing")
+		return
+	}
+	tOID, err := bson.ObjectIDFromHex(tenantID)
+	if err != nil {
+		response.BadRequest(c, "INVALID_TENANT_ID", "invalid tenant ID")
+		return
+	}
+
+	var req domainai.CopilotQueryRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "INVALID_PAYLOAD", err.Error())
+		return
+	}
+	if req.Query == "" {
+		response.BadRequest(c, "MISSING_FIELD", "query is required")
+		return
+	}
+
+	res, err := h.aiService.QueryCopilot(c.Request.Context(), tOID, req)
+	if err != nil {
+		response.InternalError(c)
+		return
+	}
+	response.OK(c, res)
+}

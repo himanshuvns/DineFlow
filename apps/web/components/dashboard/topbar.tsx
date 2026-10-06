@@ -28,6 +28,7 @@ const ROUTE_TITLES: Record<string, string> = {
   "/dashboard/tables": "Tables & QR Codes",
   "/dashboard/rooms": "Rooms & Suites (PMS)",
   "/dashboard/whatsapp": "WhatsApp Connect",
+  "/dashboard/reviews": "Google Reviews & QR Stand",
   "/dashboard/staff": "Staff & Permissions",
   "/dashboard/analytics": "Analytics & Sales",
   "/dashboard/ai": "AI Studio",
@@ -164,6 +165,16 @@ export function TopBar() {
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping shrink-0" />
           KDS Connected
         </div>
+
+        {/* AI Co-pilot Header Trigger */}
+        <button
+          onClick={() => useUIStore.getState().toggleCopilot()}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-violet-500/10 hover:bg-violet-500/20 text-violet-700 dark:text-violet-300 border border-violet-500/25 transition-all text-xs font-bold cursor-pointer"
+          title="Hospitality AI Co-pilot (⌘J)"
+        >
+          <Sparkles className="h-3.5 w-3.5 text-violet-500" />
+          <span className="hidden lg:inline">AI Co-pilot</span>
+        </button>
 
         {/* Theme Toggle */}
         <ThemeToggle />
