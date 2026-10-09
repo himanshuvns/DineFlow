@@ -125,25 +125,37 @@ function ReviewContent() {
     }
   };
 
-  // Toggle Vibe Chips
+  // Toggle Vibe Chips (Reactively updates suggestions matching ONLY active filters)
   const toggleVibe = (vibe: string) => {
-    setSelectedVibes((prev) =>
-      prev.includes(vibe) ? prev.filter((v) => v !== vibe) : [...prev, vibe]
-    );
+    const updated = selectedVibes.includes(vibe)
+      ? selectedVibes.filter((v) => v !== vibe)
+      : [...selectedVibes, vibe];
+    setSelectedVibes(updated);
+
+    // Immediately re-synthesize options strictly matching updated filter selection
+    const generated = generateAIReviewOptions(restaurantName, updated);
+    setAiOptions(generated);
+    setReviewText(generated[0]?.text || "");
+    setSelectedAiIndex(0);
   };
 
-  // AI Review Generator
+  // AI Review Generator (Calls Gemini API for fresh, deep variations)
   const handleGenerateAI = async () => {
     setIsGeneratingAi(true);
     try {
       const base = getBaseURL();
+      // Clean emojis from tags before sending
+      const cleanTags = selectedVibes
+        .map((v) => v.replace(/[^\w\s]/g, "").trim())
+        .filter(Boolean);
+
       const res = await fetch(`${base}/reviews/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           rating: selectedRating,
           restaurantName,
-          tags: selectedVibes,
+          tags: cleanTags.length > 0 ? cleanTags : ["Delicious Food", "Great Ambience"],
           language: "en",
         }),
       });
@@ -162,18 +174,20 @@ function ReviewContent() {
           setReviewText(mapped[0]?.text || "");
           setSelectedAiIndex(0);
           setIsGeneratingAi(false);
-          addToast("success", "Reviews Generated", "Authentic review styles crafted by AI.");
+          addToast("success", "Fresh Reviews Generated", "AI crafted new personalized review styles.");
           return;
         }
       }
-    } catch {}
+    } catch (err) {
+      console.warn("API review generation fallback:", err);
+    }
 
     const generated = generateAIReviewOptions(restaurantName, selectedVibes);
     setAiOptions(generated);
     setReviewText(generated[0]?.text || "");
     setSelectedAiIndex(0);
     setIsGeneratingAi(false);
-    addToast("success", "Reviews Generated", "3 authentic review styles crafted by AI.");
+    addToast("success", "Reviews Updated", "Generated styles tailored to your selected filters.");
   };
 
   // Select AI Option card
@@ -433,7 +447,7 @@ function ReviewContent() {
                   <span className="text-[11px] text-slate-400">Tap to edit</span>
                 </div>
 
-                <div className="grid grid-cols-1 gap-2.5">
+                <div className={`grid grid-cols-1 gap-2.5 transition-opacity duration-200 ${isGeneratingAi ? "opacity-50 pointer-events-none" : "opacity-100"}`}>
                   {aiOptions.map((opt, idx) => {
                     const isSelected = selectedAiIndex === idx;
                     return (
