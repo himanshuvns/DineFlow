@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getBaseURL } from "@/lib/api";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { tenantSlug, rating, categories, comment, guestName, guestPhone, guestEmail, tableOrRoom } = body;
+    const { tenantSlug, rating } = body;
 
     if (!rating) {
       return NextResponse.json(
@@ -12,17 +13,28 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const feedbackRecord = {
+    // Forward to Go backend API
+    const base = getBaseURL();
+    try {
+      const upstreamRes = await fetch(`${base}/reviews/feedback`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (upstreamRes.ok) {
+        const upstreamData = await upstreamRes.json();
+        return NextResponse.json(upstreamData, { status: upstreamRes.status });
+      }
+    } catch (err) {
+      console.warn("Could not proxy feedback to Go API:", err);
+    }
+
+    const fallbackRecord = {
       id: `fb-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       tenantSlug: tenantSlug || "the-grand-bistro",
       rating: Number(rating),
-      categories: Array.isArray(categories) ? categories : [],
-      comment: String(comment || "").trim(),
-      guestName: guestName ? String(guestName).trim() : undefined,
-      guestPhone: guestPhone ? String(guestPhone).trim() : undefined,
-      guestEmail: guestEmail ? String(guestEmail).trim() : undefined,
-      tableOrRoom: tableOrRoom ? String(tableOrRoom).trim() : undefined,
-      status: "new",
+      status: Number(rating) >= 4 ? "positive" : "new",
       createdAt: new Date().toISOString(),
     };
 
@@ -30,7 +42,7 @@ export async function POST(req: NextRequest) {
       {
         success: true,
         message: "Feedback submitted directly to restaurant management.",
-        data: feedbackRecord,
+        data: fallbackRecord,
       },
       { status: 201 }
     );

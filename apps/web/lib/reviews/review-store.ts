@@ -51,64 +51,7 @@ export const SHIELD_CATEGORIES = [
   "Cleanliness / Ambience",
 ];
 
-const INITIAL_FEEDBACKS: ReviewFeedback[] = [
-  {
-    id: "fb-101",
-    tenantSlug: "the-grand-bistro",
-    rating: 2,
-    categories: ["Long Wait Time", "Food Quality"],
-    comment:
-      "Truffle Risotto took 45 minutes to arrive and was lukewarm by the time it reached Table 7. Manager was polite but kitchen seemed completely overwhelmed.",
-    guestName: "Arjun Verma",
-    guestPhone: "+91 98765 43210",
-    guestEmail: "arjun.v@example.com",
-    tableOrRoom: "Table T-07",
-    status: "new",
-    createdAt: new Date(Date.now() - 1000 * 60 * 42).toISOString(), // 42 mins ago
-  },
-  {
-    id: "fb-102",
-    tenantSlug: "the-grand-bistro",
-    rating: 3,
-    categories: ["Staff Behavior"],
-    comment:
-      "Waiter forgot our extra sauce and water refills twice during Sunday peak rush. Main pizza was great however.",
-    guestName: "Priya Nair",
-    guestPhone: "+91 98220 11984",
-    guestEmail: "priya.nair@example.com",
-    tableOrRoom: "Table T-12",
-    status: "new",
-    createdAt: new Date(Date.now() - 1000 * 60 * 180).toISOString(), // 3 hours ago
-  },
-  {
-    id: "fb-103",
-    tenantSlug: "the-grand-bistro",
-    rating: 1,
-    categories: ["Billing Issue", "Order Error"],
-    comment:
-      "Double billed for the Mocktail combo. Resolved by front desk but took 15 mins to reverse on card machine.",
-    guestName: "Rohan Mehta",
-    guestPhone: "+91 91234 56789",
-    tableOrRoom: "Room 304",
-    status: "resolved",
-    resolutionNotes: "Apologized via WhatsApp and credited ₹350 voucher for next visit.",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
-  },
-  {
-    id: "fb-104",
-    tenantSlug: "the-grand-bistro",
-    rating: 2,
-    categories: ["Food Quality"],
-    comment:
-      "Soup had too much black pepper; kids could not enjoy it. Garlic bread was wonderful though.",
-    guestName: "Sneha Patel",
-    guestPhone: "+91 97112 33445",
-    tableOrRoom: "Table T-03",
-    status: "resolved",
-    resolutionNotes: "Chef revised soup seasoning notes. Guest thanked us on WhatsApp.",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(), // 2 days ago
-  },
-];
+const INITIAL_FEEDBACKS: ReviewFeedback[] = [];
 
 interface ReviewStoreState {
   configs: Record<string, ReviewConfig>;
@@ -141,9 +84,9 @@ export const useReviewStore = create<ReviewStoreState>()(
           standSubtitle: "Takes 15 seconds • AI Review Assistant ✨",
           standTheme: "dark",
           standSize: "a5",
-          totalScans: 418,
-          fiveStarCount: 164,
-          shieldedCount: 19,
+          totalScans: 0,
+          fiveStarCount: 0,
+          shieldedCount: 0,
         };
 
         set((state) => ({

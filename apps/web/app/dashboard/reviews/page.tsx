@@ -5,6 +5,7 @@ import {
   Star,
   QrCode,
   ShieldCheck,
+  ShieldAlert,
   TrendingUp,
   Printer,
   ExternalLink,
@@ -13,6 +14,10 @@ import {
   Sparkles,
   Maximize2,
   Copy,
+  RefreshCw,
+  ThumbsUp,
+  Clock,
+  User,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,7 +35,39 @@ import {
 import { QRCodeImage } from "@/components/ui/qr-code-image";
 import { useToast } from "@/components/ui/toast";
 import { useAuthStore } from "@/lib/stores/auth-store";
-import { useReviewStore, ReviewFeedback, ReviewConfig } from "@/lib/reviews/review-store";
+import { useReviewStore, ReviewConfig } from "@/lib/reviews/review-store";
+import { apiClient } from "@/lib/api";
+
+interface LiveReviewItem {
+  id: string;
+  tenantId?: string;
+  tenantSlug?: string;
+  rating: number;
+  issueCategories?: string[];
+  vibeTags?: string[];
+  comment: string;
+  guestName?: string;
+  guestPhone?: string;
+  guestEmail?: string;
+  tableOrRoom?: string;
+  status: "new" | "in_review" | "resolved" | "positive";
+  resolutionNotes?: string;
+  createdAt: string;
+}
+
+interface LiveReviewStats {
+  totalScans: number;
+  positiveGenerated: number;
+  negativeShielded: number;
+  averageSentiment: number;
+  totalReviews: number;
+  fiveStarCount: number;
+  fourStarCount: number;
+  threeStarCount: number;
+  twoStarCount: number;
+  oneStarCount: number;
+  conversionRate: number;
+}
 
 export default function ReviewsManagementPage() {
   const { addToast } = useToast();
@@ -38,14 +75,26 @@ export default function ReviewsManagementPage() {
   const tenantSlug = tenant?.slug || "the-grand-bistro";
   const restaurantName = tenant?.name || "The Grand Bistro";
 
-  const {
-    getConfig,
-    updateConfig,
-    feedbacks,
-    updateFeedbackStatus,
-  } = useReviewStore();
-
+  const { getConfig, updateConfig } = useReviewStore();
   const config = getConfig(tenantSlug);
+
+  // Dynamic Live State
+  const [stats, setStats] = React.useState<LiveReviewStats>({
+    totalScans: 0,
+    positiveGenerated: 0,
+    negativeShielded: 0,
+    averageSentiment: 5.0,
+    totalReviews: 0,
+    fiveStarCount: 0,
+    fourStarCount: 0,
+    threeStarCount: 0,
+    twoStarCount: 0,
+    oneStarCount: 0,
+    conversionRate: 0,
+  });
+  const [reviewsList, setReviewsList] = React.useState<LiveReviewItem[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
 
   // Studio customization state
   const [placeIdInput, setPlaceIdInput] = React.useState(config.googlePlaceId || "");
@@ -55,8 +104,8 @@ export default function ReviewsManagementPage() {
   const [standSize, setStandSize] = React.useState<ReviewConfig["standSize"]>(config.standSize || "a5");
 
   // Feedback Table filter
-  const [feedbackTab, setFeedbackTab] = React.useState<"all" | "new" | "resolved">("all");
-  const [selectedComplaint, setSelectedComplaint] = React.useState<ReviewFeedback | null>(null);
+  const [feedbackTab, setFeedbackTab] = React.useState<"all" | "shielded" | "positive" | "resolved">("all");
+  const [selectedReview, setSelectedReview] = React.useState<LiveReviewItem | null>(null);
   const [resolutionNotesInput, setResolutionNotesInput] = React.useState("");
 
   // Stand Preview Fullscreen Modal
@@ -69,6 +118,56 @@ export default function ReviewsManagementPage() {
       setPublicReviewUrl(`${window.location.origin}/m/${tenantSlug}/review`);
     }
   }, [tenantSlug]);
+
+  // Fetch live telemetry from Go API
+  const fetchTelemetry = React.useCallback(async (showFeedback = false) => {
+    try {
+      setIsRefreshing(true);
+
+      // 1. Fetch live dynamic stats
+      try {
+        const statsRes = await apiClient.get("/reviews/stats");
+        if (statsRes.data?.data) {
+          setStats(statsRes.data.data);
+        } else if (statsRes.data) {
+          setStats(statsRes.data);
+        }
+      } catch (err) {
+        console.warn("Could not fetch /reviews/stats:", err);
+      }
+
+      // 2. Fetch live reviews & feedback list
+      try {
+        const listRes = await apiClient.get("/reviews/feedback", {
+          params: { limit: 100 },
+        });
+        const items = listRes.data?.data || listRes.data?.items || listRes.data;
+        if (Array.isArray(items)) {
+          setReviewsList(items);
+        }
+      } catch (err) {
+        console.warn("Could not fetch /reviews/feedback:", err);
+      }
+
+      if (showFeedback) {
+        addToast("success", "Telemetry Synced", "Live scan and review metrics updated.");
+      }
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  }, [addToast]);
+
+  // Initial fetch and 15s auto-polling
+  React.useEffect(() => {
+    fetchTelemetry(false);
+
+    const interval = setInterval(() => {
+      fetchTelemetry(false);
+    }, 15000);
+
+    return () => clearInterval(interval);
+  }, [fetchTelemetry]);
 
   // Save Settings
   const handleSaveSettings = () => {
@@ -102,15 +201,23 @@ export default function ReviewsManagementPage() {
     }
   };
 
-  // Filter complaints
-  const tenantComplaints = feedbacks.filter((f) => f.tenantSlug === tenantSlug || !f.tenantSlug);
-  const filteredComplaints = tenantComplaints.filter((item) => {
-    if (feedbackTab === "new") return item.status === "new" || item.status === "in_review";
-    if (feedbackTab === "resolved") return item.status === "resolved";
+  // Filter reviews
+  const filteredReviews = reviewsList.filter((item) => {
+    if (feedbackTab === "shielded") {
+      return item.rating <= 3 && item.status !== "resolved";
+    }
+    if (feedbackTab === "positive") {
+      return item.rating >= 4 || item.status === "positive";
+    }
+    if (feedbackTab === "resolved") {
+      return item.status === "resolved";
+    }
     return true;
   });
 
-  const newComplaintsCount = tenantComplaints.filter((f) => f.status === "new").length;
+  const shieldedCount = reviewsList.filter((f) => f.rating <= 3 && f.status !== "resolved").length;
+  const positiveCount = reviewsList.filter((f) => f.rating >= 4 || f.status === "positive").length;
+  const resolvedCount = reviewsList.filter((f) => f.status === "resolved").length;
 
   return (
     <div className="space-y-8 w-full max-w-7xl mx-auto">
@@ -161,11 +268,20 @@ export default function ReviewsManagementPage() {
             Reviews & Smart QR Stand
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-2xl">
-            Amplify 5-star Google Maps reviews via AI-assisted guest suggestions while filtering 1–3 star dissatisfaction into your private manager shield.
+            Live telemetry synced with your reception and table stands. Amplify 5-star Google reviews while catching 1–3 star complaints before they go public.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fetchTelemetry(true)}
+            isLoading={isRefreshing}
+            leftIcon={<RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />}
+          >
+            Refresh
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -185,7 +301,7 @@ export default function ReviewsManagementPage() {
         </div>
       </div>
 
-      {/* KPI Metrics */}
+      {/* Dynamic KPI Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card variant="glass" className="p-5">
           <div className="flex items-center justify-between">
@@ -195,11 +311,11 @@ export default function ReviewsManagementPage() {
             </span>
           </div>
           <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">
-            {config.totalScans}
+            {stats.totalScans}
           </p>
           <div className="flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold mt-1">
             <TrendingUp className="h-3.5 w-3.5" />
-            <span>+24% vs last week</span>
+            <span>Live telemetry recorded</span>
           </div>
         </Card>
 
@@ -211,10 +327,10 @@ export default function ReviewsManagementPage() {
             </span>
           </div>
           <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">
-            {config.fiveStarCount}
+            {stats.positiveGenerated}
           </p>
           <div className="flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-            <span>89.2% Google conversion rate</span>
+            <span>{stats.conversionRate > 0 ? `${stats.conversionRate}%` : "0%"} Google conversion rate</span>
           </div>
         </Card>
 
@@ -226,7 +342,7 @@ export default function ReviewsManagementPage() {
             </span>
           </div>
           <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">
-            {config.shieldedCount}
+            {stats.negativeShielded}
           </p>
           <div className="flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold mt-1">
             <span>100% intercepted from Google Maps</span>
@@ -241,10 +357,10 @@ export default function ReviewsManagementPage() {
             </span>
           </div>
           <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">
-            4.88 <span className="text-base text-amber-500">★</span>
+            {(stats.averageSentiment || 5.0).toFixed(1)} <span className="text-base text-amber-500">★</span>
           </p>
           <div className="flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-            <span>Based on 320 customer interactions</span>
+            <span>Based on {stats.totalReviews} guest review{stats.totalReviews === 1 ? "" : "s"}</span>
           </div>
         </Card>
       </div>
@@ -312,7 +428,7 @@ export default function ReviewsManagementPage() {
                   <select
                     value={standTheme}
                     onChange={(e) => setStandTheme(e.target.value as ReviewConfig["standTheme"])}
-                    className="w-full text-xs p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800"
+                    className="w-full text-xs p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"
                   >
                     <option value="dark">Onyx Glass (High Contrast)</option>
                     <option value="emerald">Emerald Prestige</option>
@@ -328,7 +444,7 @@ export default function ReviewsManagementPage() {
                   <select
                     value={standSize}
                     onChange={(e) => setStandSize(e.target.value as ReviewConfig["standSize"])}
-                    className="w-full text-xs p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800"
+                    className="w-full text-xs p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"
                   >
                     <option value="a5">A5 Table Stand (148 × 210 mm)</option>
                     <option value="a6">A6 Compact (105 × 148 mm)</option>
@@ -468,27 +584,27 @@ export default function ReviewsManagementPage() {
         </div>
       </div>
 
-      {/* Private Complaints Shield Section */}
+      {/* Dynamic Feedback & Complaints Shield Section */}
       <div className="space-y-4 pt-4 border-t border-slate-200/80 dark:border-slate-800">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                Private Feedback & Complaint Shield
+                Live Guest Reviews & Complaint Shield
               </h2>
-              {newComplaintsCount > 0 && (
+              {shieldedCount > 0 && (
                 <Badge variant="danger" size="sm">
-                  {newComplaintsCount} New
+                  {shieldedCount} New Complaint{shieldedCount === 1 ? "" : "s"}
                 </Badge>
               )}
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Low-score feedback (1–3 stars) submitted by guests before reaching Google Maps.
+              Real-time feed of guest ratings. Low scores (1–3★) are shielded privately, while 5★ reviews are guided to Google Maps.
             </p>
           </div>
 
           {/* Filter Tabs */}
-          <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
+          <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800 text-xs flex-wrap">
             <button
               onClick={() => setFeedbackTab("all")}
               className={`px-3 py-1 rounded-lg font-medium transition-all cursor-pointer ${
@@ -497,17 +613,27 @@ export default function ReviewsManagementPage() {
                   : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
-              All ({tenantComplaints.length})
+              All ({reviewsList.length})
             </button>
             <button
-              onClick={() => setFeedbackTab("new")}
+              onClick={() => setFeedbackTab("shielded")}
               className={`px-3 py-1 rounded-lg font-medium transition-all cursor-pointer ${
-                feedbackTab === "new"
+                feedbackTab === "shielded"
                   ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs font-semibold"
                   : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
-              New & In-Review ({newComplaintsCount})
+              Shielded Complaints ({shieldedCount})
+            </button>
+            <button
+              onClick={() => setFeedbackTab("positive")}
+              className={`px-3 py-1 rounded-lg font-medium transition-all cursor-pointer ${
+                feedbackTab === "positive"
+                  ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs font-semibold"
+                  : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+              Google 5★ Conversions ({positiveCount})
             </button>
             <button
               onClick={() => setFeedbackTab("resolved")}
@@ -517,12 +643,12 @@ export default function ReviewsManagementPage() {
                   : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
-              Resolved ({tenantComplaints.length - newComplaintsCount})
+              Resolved ({resolvedCount})
             </button>
           </div>
         </div>
 
-        {/* Complaints Table */}
+        {/* Reviews & Complaints Table */}
         <Card variant="glass">
           <Table>
             <TableHeader>
@@ -530,28 +656,57 @@ export default function ReviewsManagementPage() {
                 <TableHead>Time & Table</TableHead>
                 <TableHead>Guest</TableHead>
                 <TableHead>Rating</TableHead>
-                <TableHead>Flagged Issues</TableHead>
-                <TableHead className="w-1/3">Guest Feedback</TableHead>
+                <TableHead>Tags / Issues</TableHead>
+                <TableHead className="w-1/3">Guest Review</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredComplaints.length === 0 ? (
+              {isLoading ? (
                 <TableRow>
                   <TableCell colSpan={7} className="h-32 text-center text-slate-400">
-                    <ShieldCheck className="h-8 w-8 text-emerald-500 mx-auto mb-2 opacity-60" />
-                    No private complaints found in this view.
+                    <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2 text-emerald-500" />
+                    Loading live review records...
+                  </TableCell>
+                </TableRow>
+              ) : filteredReviews.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="h-36 text-center text-slate-400 p-6">
+                    <div className="max-w-md mx-auto space-y-2">
+                      <ShieldCheck className="h-9 w-9 text-emerald-500 mx-auto opacity-70" />
+                      <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm">
+                        No reviews found in this view
+                      </p>
+                      <p className="text-xs text-slate-400">
+                        {reviewsList.length === 0
+                          ? "Place your acrylic stand on dining tables or reception. Scans and reviews will appear here live in real-time."
+                          : "No records match the current filter selection."}
+                      </p>
+                      {reviewsList.length === 0 && (
+                        <div className="pt-2">
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => window.open(publicReviewUrl, "_blank")}
+                            leftIcon={<ExternalLink className="h-3.5 w-3.5" />}
+                          >
+                            Test Guest Review Link
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredComplaints.map((item) => (
+                filteredReviews.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell className="whitespace-nowrap">
                       <div className="font-semibold text-slate-900 dark:text-white text-xs">
                         {item.tableOrRoom || "Dining Area"}
                       </div>
-                      <div className="text-[11px] text-slate-400">
+                      <div className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
+                        <Clock className="h-3 w-3" />
                         {new Date(item.createdAt).toLocaleTimeString([], {
                           hour: "2-digit",
                           minute: "2-digit",
@@ -560,29 +715,46 @@ export default function ReviewsManagementPage() {
                     </TableCell>
 
                     <TableCell className="whitespace-nowrap">
-                      <div className="font-medium text-xs">{item.guestName || "Anonymous"}</div>
-                      <div className="text-[11px] text-slate-400">{item.guestPhone || "No phone"}</div>
-                    </TableCell>
-
-                    <TableCell>
-                      <div className="inline-flex items-center gap-1 font-bold text-amber-500 text-xs">
-                        {item.rating} <Star className="h-3.5 w-3.5 fill-amber-500" />
+                      <div className="font-medium text-xs flex items-center gap-1">
+                        <User className="h-3 w-3 text-slate-400" />
+                        {item.guestName || "Anonymous Diner"}
+                      </div>
+                      <div className="text-[11px] text-slate-400">
+                        {item.guestPhone || item.guestEmail || "No contact info"}
                       </div>
                     </TableCell>
 
                     <TableCell>
-                      <div className="flex flex-wrap gap-1 max-w-[180px]">
-                        {item.categories.map((c) => (
-                          <Badge key={c} variant="warning" size="sm">
-                            {c}
-                          </Badge>
-                        ))}
+                      <div className={`inline-flex items-center gap-1 font-bold text-xs ${
+                        item.rating >= 4 ? "text-emerald-500" : "text-amber-500"
+                      }`}>
+                        {item.rating} <Star className={`h-3.5 w-3.5 ${item.rating >= 4 ? "fill-emerald-500" : "fill-amber-500"}`} />
+                      </div>
+                    </TableCell>
+
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1 max-w-[200px]">
+                        {item.rating >= 4 && item.vibeTags && item.vibeTags.length > 0
+                          ? item.vibeTags.map((v) => (
+                              <Badge key={v} variant="success" size="sm">
+                                {v}
+                              </Badge>
+                            ))
+                          : item.issueCategories && item.issueCategories.length > 0
+                          ? item.issueCategories.map((c) => (
+                              <Badge key={c} variant="warning" size="sm">
+                                {c}
+                              </Badge>
+                            ))
+                          : (
+                            <span className="text-[11px] text-slate-400">General</span>
+                          )}
                       </div>
                     </TableCell>
 
                     <TableCell>
                       <p className="text-xs text-slate-700 dark:text-slate-300 line-clamp-2 leading-relaxed">
-                        {item.comment}
+                        {item.comment || "No written remarks."}
                       </p>
                       {item.resolutionNotes && (
                         <div className="mt-1 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
@@ -593,10 +765,20 @@ export default function ReviewsManagementPage() {
 
                     <TableCell>
                       <Badge
-                        variant={item.status === "resolved" ? "success" : "danger"}
+                        variant={
+                          item.status === "positive" || item.rating >= 4
+                            ? "glow"
+                            : item.status === "resolved"
+                            ? "success"
+                            : "danger"
+                        }
                         size="sm"
                       >
-                        {item.status === "resolved" ? "Resolved" : "New"}
+                        {item.status === "positive" || item.rating >= 4
+                          ? "Google 5★"
+                          : item.status === "resolved"
+                          ? "Resolved"
+                          : "New"}
                       </Badge>
                     </TableCell>
 
@@ -622,7 +804,7 @@ export default function ReviewsManagementPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => {
-                            setSelectedComplaint(item);
+                            setSelectedReview(item);
                             setResolutionNotesInput(item.resolutionNotes || "");
                           }}
                         >
@@ -638,77 +820,104 @@ export default function ReviewsManagementPage() {
         </Card>
       </div>
 
-      {/* Complaint Resolution Detail Modal */}
-      {selectedComplaint && (
+      {/* Complaint / Review Resolution Detail Modal */}
+      {selectedReview && (
         <Modal
-          isOpen={Boolean(selectedComplaint)}
-          onClose={() => setSelectedComplaint(null)}
-          title={`Complaint Details — ${selectedComplaint.tableOrRoom || "Guest Feedback"}`}
+          isOpen={Boolean(selectedReview)}
+          onClose={() => setSelectedReview(null)}
+          title={`Review Details — ${selectedReview.tableOrRoom || "Dining Area"}`}
           size="md"
         >
           <div className="space-y-4 text-xs sm:text-sm">
             <div className="p-3.5 rounded-xl bg-slate-100 dark:bg-slate-900 space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-slate-900 dark:text-white">
-                  Rating: {selectedComplaint.rating} ★
+                <span className="font-semibold text-slate-900 dark:text-white flex items-center gap-1">
+                  Rating: {selectedReview.rating} <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
                 </span>
                 <Badge
-                  variant={selectedComplaint.status === "resolved" ? "success" : "danger"}
+                  variant={
+                    selectedReview.status === "positive" || selectedReview.rating >= 4
+                      ? "glow"
+                      : selectedReview.status === "resolved"
+                      ? "success"
+                      : "danger"
+                  }
                 >
-                  {selectedComplaint.status === "resolved" ? "Resolved" : "New"}
+                  {selectedReview.status === "positive" || selectedReview.rating >= 4
+                    ? "Google 5★ Conversion"
+                    : selectedReview.status === "resolved"
+                    ? "Resolved"
+                    : "Shielded Complaint"}
                 </Badge>
               </div>
-              <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed mt-2">
-                &ldquo;{selectedComplaint.comment}&rdquo;
+              <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed mt-2 whitespace-pre-wrap">
+                &ldquo;{selectedReview.comment}&rdquo;
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div>
                 <span className="text-slate-400">Guest Name:</span>
-                <p className="font-semibold">{selectedComplaint.guestName || "Anonymous"}</p>
+                <p className="font-semibold">{selectedReview.guestName || "Anonymous Diner"}</p>
               </div>
               <div>
-                <span className="text-slate-400">Phone Number:</span>
-                <p className="font-semibold">{selectedComplaint.guestPhone || "Not provided"}</p>
+                <span className="text-slate-400">Phone / Email:</span>
+                <p className="font-semibold">{selectedReview.guestPhone || selectedReview.guestEmail || "Not provided"}</p>
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-900 dark:text-white">
-                Manager Resolution Notes:
-              </label>
-              <textarea
-                value={resolutionNotesInput}
-                onChange={(e) => setResolutionNotesInput(e.target.value)}
-                placeholder="Log manager actions taken (e.g. called guest, sent dessert voucher, briefed head chef)..."
-                rows={3}
-                className="w-full text-xs p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800"
-              />
-            </div>
+            {selectedReview.rating <= 3 && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-900 dark:text-white">
+                  Manager Resolution Notes:
+                </label>
+                <textarea
+                  value={resolutionNotesInput}
+                  onChange={(e) => setResolutionNotesInput(e.target.value)}
+                  placeholder="Log actions taken (e.g. called guest, issued voucher, briefed head chef)..."
+                  rows={3}
+                  className="w-full text-xs p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"
+                />
+              </div>
+            )}
 
             <div className="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-800">
-              <Button
-                variant={selectedComplaint.status === "resolved" ? "outline" : "primary"}
-                size="sm"
-                onClick={() => {
-                  const newStatus = selectedComplaint.status === "resolved" ? "new" : "resolved";
-                  updateFeedbackStatus(selectedComplaint.id, newStatus, resolutionNotesInput);
-                  setSelectedComplaint(null);
-                  addToast(
-                    "success",
-                    newStatus === "resolved" ? "Marked as Resolved" : "Reopened Complaint",
-                    "Status updated in manager dashboard."
-                  );
-                }}
-              >
-                {selectedComplaint.status === "resolved" ? "Reopen Complaint" : "✓ Mark as Resolved"}
-              </Button>
+              {selectedReview.rating <= 3 ? (
+                <Button
+                  variant={selectedReview.status === "resolved" ? "outline" : "primary"}
+                  size="sm"
+                  onClick={async () => {
+                    const newStatus = selectedReview.status === "resolved" ? "new" : "resolved";
+                    try {
+                      await apiClient.patch(`/reviews/feedback/${selectedReview.id}/status`, {
+                        status: newStatus,
+                        notes: resolutionNotesInput,
+                      });
+                      addToast(
+                        "success",
+                        newStatus === "resolved" ? "Marked as Resolved" : "Reopened Complaint",
+                        "Status updated in database."
+                      );
+                      setSelectedReview(null);
+                      fetchTelemetry(false);
+                    } catch (err) {
+                      addToast("error", "Update Failed", "Could not update status.");
+                    }
+                  }}
+                >
+                  {selectedReview.status === "resolved" ? "Reopen Complaint" : "✓ Mark as Resolved"}
+                </Button>
+              ) : (
+                <div className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                  <ThumbsUp className="h-3.5 w-3.5" />
+                  Positive 5★ Review guided to Google Maps
+                </div>
+              )}
 
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={() => setSelectedComplaint(null)}
+                onClick={() => setSelectedReview(null)}
               >
                 Close
               </Button>

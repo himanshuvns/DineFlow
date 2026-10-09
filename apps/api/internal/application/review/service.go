@@ -199,11 +199,21 @@ Return ONLY valid JSON without markdown code fences.`,
 	}, nil
 }
 
-// SubmitPrivateFeedback records 1-3 star feedback internally and dispatches immediate WhatsApp notification to managers.
+// SubmitPrivateFeedback records 1-5 star feedback internally and dispatches immediate WhatsApp notification to managers for complaints.
 func (s *Service) SubmitPrivateFeedback(ctx context.Context, feedback *domainreview.PrivateFeedback) error {
 	feedback.ID = bson.NewObjectID()
 	feedback.CreatedAt = time.Now().UTC()
-	feedback.Status = "new"
+	feedback.UpdatedAt = feedback.CreatedAt
+
+	if feedback.Rating >= 4 {
+		if feedback.Status == "" {
+			feedback.Status = "positive"
+		}
+	} else {
+		if feedback.Status == "" {
+			feedback.Status = "new"
+		}
+	}
 
 	if s.db != nil {
 		coll := s.db.Collection("reviews_feedback")
@@ -211,58 +221,84 @@ func (s *Service) SubmitPrivateFeedback(ctx context.Context, feedback *domainrev
 			return err
 		}
 
-		// Track negative feedback shielded
+		// Track metrics in reviews_stats
 		statsColl := s.db.Collection("reviews_stats")
-		_, _ = statsColl.UpdateOne(ctx,
-			bson.M{"tenantId": feedback.TenantID},
-			bson.M{"$inc": bson.M{"negativeShielded": 1}},
-			options.UpdateOne().SetUpsert(true),
-		)
-	}
-
-	// Lookup restaurant name for notification
-	restaurantName := "Your Restaurant"
-	if s.db != nil {
-		var t domaintenant.Tenant
-		if err := s.db.Collection("tenants").FindOne(ctx, bson.M{"_id": feedback.TenantID}).Decode(&t); err == nil {
-			restaurantName = t.Name
+		if feedback.Rating >= 4 {
+			_, _ = statsColl.UpdateOne(ctx,
+				bson.M{"tenantId": feedback.TenantID},
+				bson.M{
+					"$inc":         bson.M{"positiveGenerated": 1},
+					"$setOnInsert": bson.M{"totalScans": 1, "negativeShielded": 0, "createdAt": time.Now().UTC()},
+					"$set":         bson.M{"updatedAt": time.Now().UTC()},
+				},
+				options.UpdateOne().SetUpsert(true),
+			)
+		} else {
+			_, _ = statsColl.UpdateOne(ctx,
+				bson.M{"tenantId": feedback.TenantID},
+				bson.M{
+					"$inc":         bson.M{"negativeShielded": 1},
+					"$setOnInsert": bson.M{"totalScans": 1, "positiveGenerated": 0, "createdAt": time.Now().UTC()},
+					"$set":         bson.M{"updatedAt": time.Now().UTC()},
+				},
+				options.UpdateOne().SetUpsert(true),
+			)
 		}
 	}
 
-	// Alert manager via WhatsApp
-	if s.waService != nil {
-		s.waService.NotifyAdminNegativeFeedback(
-			ctx,
-			feedback.TenantID,
-			feedback.Rating,
-			feedback.IssueCategories,
-			feedback.Comment,
-			feedback.GuestPhone,
-			restaurantName,
-		)
-	}
+	// Only alert manager for negative / shielded complaints (1-3 stars)
+	if feedback.Rating <= 3 {
+		// Lookup restaurant name for notification
+		restaurantName := "Your Restaurant"
+		if s.db != nil {
+			var t domaintenant.Tenant
+			if err := s.db.Collection("tenants").FindOne(ctx, bson.M{"_id": feedback.TenantID}).Decode(&t); err == nil {
+				restaurantName = t.Name
+			}
+		}
 
-	// Alert manager via In-App Notification Hub
-	if s.notifService != nil {
-		s.notifService.NotifyNegativeFeedbackReceived(
-			ctx,
-			feedback.TenantID,
-			feedback.Rating,
-			feedback.Comment,
-			feedback.GuestPhone,
-		)
+		// Alert manager via WhatsApp
+		if s.waService != nil {
+			s.waService.NotifyAdminNegativeFeedback(
+				ctx,
+				feedback.TenantID,
+				feedback.Rating,
+				feedback.IssueCategories,
+				feedback.Comment,
+				feedback.GuestPhone,
+				restaurantName,
+			)
+		}
+
+		// Alert manager via In-App Notification Hub
+		if s.notifService != nil {
+			s.notifService.NotifyNegativeFeedbackReceived(
+				ctx,
+				feedback.TenantID,
+				feedback.Rating,
+				feedback.Comment,
+				feedback.GuestPhone,
+			)
+		}
 	}
 
 	return nil
 }
 
-// GetReviewStats computes scans, shielded complaints, positive drafts, and conversion rate.
+// GetReviewStats computes scans, shielded complaints, positive drafts, and conversion rate dynamically.
 func (s *Service) GetReviewStats(ctx context.Context, tenantID bson.ObjectID) (*domainreview.ReviewStats, error) {
 	if s.db == nil {
 		return &domainreview.ReviewStats{
 			TotalScans:        142,
 			PositiveGenerated: 118,
 			NegativeShielded:  8,
+			AverageSentiment:  4.8,
+			TotalReviews:      126,
+			FiveStarCount:     102,
+			FourStarCount:     16,
+			ThreeStarCount:    4,
+			TwoStarCount:      3,
+			OneStarCount:      1,
 			ConversionRate:    83.1,
 		}, nil
 	}
@@ -276,15 +312,70 @@ func (s *Service) GetReviewStats(ctx context.Context, tenantID bson.ObjectID) (*
 
 	_ = statsColl.FindOne(ctx, bson.M{"tenantId": tenantID}).Decode(&doc)
 
-	// Cross-verify shielded count from reviews_feedback collection
+	// Fetch all feedback documents for this tenant to compute live dynamic aggregates
 	feedbackColl := s.db.Collection("reviews_feedback")
-	feedbackCount, err := feedbackColl.CountDocuments(ctx, bson.M{"tenantId": tenantID})
-	if err == nil && feedbackCount > doc.NegativeShielded {
-		doc.NegativeShielded = feedbackCount
+	cursor, err := feedbackColl.Find(ctx, bson.M{"tenantId": tenantID})
+	var reviews []domainreview.PrivateFeedback
+	if err == nil {
+		_ = cursor.All(ctx, &reviews)
 	}
 
-	if doc.TotalScans < (doc.PositiveGenerated + doc.NegativeShielded) {
-		doc.TotalScans = doc.PositiveGenerated + doc.NegativeShielded
+	var (
+		totalReviews   int64
+		sumRatings     int64
+		fiveStarCount  int64
+		fourStarCount  int64
+		threeStarCount int64
+		twoStarCount   int64
+		oneStarCount   int64
+		positiveCount  int64
+		negativeCount  int64
+	)
+
+	for _, r := range reviews {
+		totalReviews++
+		sumRatings += int64(r.Rating)
+		switch r.Rating {
+		case 5:
+			fiveStarCount++
+			positiveCount++
+		case 4:
+			fourStarCount++
+			positiveCount++
+		case 3:
+			threeStarCount++
+			negativeCount++
+		case 2:
+			twoStarCount++
+			negativeCount++
+		case 1:
+			oneStarCount++
+			negativeCount++
+		default:
+			if r.Rating >= 4 {
+				positiveCount++
+			} else if r.Rating > 0 {
+				negativeCount++
+			}
+		}
+	}
+
+	// Sync counts with stats document
+	if positiveCount > doc.PositiveGenerated {
+		doc.PositiveGenerated = positiveCount
+	}
+	if negativeCount > doc.NegativeShielded {
+		doc.NegativeShielded = negativeCount
+	}
+
+	totalInteractions := doc.PositiveGenerated + doc.NegativeShielded
+	if doc.TotalScans < totalInteractions {
+		doc.TotalScans = totalInteractions
+	}
+
+	var averageSentiment float64 = 5.0
+	if totalReviews > 0 {
+		averageSentiment = math.Round((float64(sumRatings)/float64(totalReviews))*10) / 10
 	}
 
 	var conversionRate float64
@@ -296,8 +387,52 @@ func (s *Service) GetReviewStats(ctx context.Context, tenantID bson.ObjectID) (*
 		TotalScans:        doc.TotalScans,
 		PositiveGenerated: doc.PositiveGenerated,
 		NegativeShielded:  doc.NegativeShielded,
+		AverageSentiment:  averageSentiment,
+		TotalReviews:      totalReviews,
+		FiveStarCount:     fiveStarCount,
+		FourStarCount:     fourStarCount,
+		ThreeStarCount:    threeStarCount,
+		TwoStarCount:      twoStarCount,
+		OneStarCount:      oneStarCount,
 		ConversionRate:    conversionRate,
 	}, nil
+}
+
+// RecordScan increments the total QR scan counter for a restaurant by slug.
+func (s *Service) RecordScan(ctx context.Context, slug string) (int64, error) {
+	if s.db == nil {
+		return 1, nil
+	}
+
+	var t domaintenant.Tenant
+	err := s.db.Collection("tenants").FindOne(ctx, bson.M{
+		"slug":      slug,
+		"deletedAt": bson.M{"$exists": false},
+	}).Decode(&t)
+	if err != nil {
+		return 0, errors.New("restaurant not found")
+	}
+
+	statsColl := s.db.Collection("reviews_stats")
+	res := statsColl.FindOneAndUpdate(
+		ctx,
+		bson.M{"tenantId": t.ID},
+		bson.M{
+			"$inc":         bson.M{"totalScans": 1},
+			"$setOnInsert": bson.M{"positiveGenerated": 0, "negativeShielded": 0, "createdAt": time.Now().UTC()},
+			"$set":         bson.M{"updatedAt": time.Now().UTC()},
+		},
+		options.FindOneAndUpdate().SetUpsert(true).SetReturnDocument(options.After),
+	)
+
+	var updated struct {
+		TotalScans int64 `bson:"totalScans"`
+	}
+	if err := res.Decode(&updated); err == nil {
+		return updated.TotalScans, nil
+	}
+
+	return 1, nil
 }
 
 // ListPrivateFeedback returns tenant-isolated feedback logs.
@@ -311,7 +446,13 @@ func (s *Service) ListPrivateFeedback(ctx context.Context, tenantID bson.ObjectI
 
 	filter := bson.M{}
 	if status != "" {
-		filter["status"] = status
+		if status == "negative" {
+			filter["rating"] = bson.M{"$lte": 3}
+		} else if status == "positive" {
+			filter["rating"] = bson.M{"$gte": 4}
+		} else {
+			filter["status"] = status
+		}
 	}
 
 	total, err := scope.Count(ctx, filter)
@@ -342,14 +483,18 @@ func (s *Service) ListPrivateFeedback(ctx context.Context, tenantID bson.ObjectI
 }
 
 // UpdateFeedbackStatus updates the resolution status of private feedback.
-func (s *Service) UpdateFeedbackStatus(ctx context.Context, tenantID, feedbackID bson.ObjectID, status string) error {
+func (s *Service) UpdateFeedbackStatus(ctx context.Context, tenantID, feedbackID bson.ObjectID, status, notes string) error {
 	if s.db == nil {
 		return nil
 	}
 
 	coll := s.db.Collection("reviews_feedback")
 	filter := bson.M{"_id": feedbackID, "tenantId": tenantID}
-	update := bson.M{"$set": bson.M{"status": status, "updatedAt": time.Now().UTC()}}
+	updateSet := bson.M{"status": status, "updatedAt": time.Now().UTC()}
+	if notes != "" {
+		updateSet["resolutionNotes"] = notes
+	}
+	update := bson.M{"$set": updateSet}
 
 	_, err := coll.UpdateOne(ctx, filter, update)
 	return err

@@ -25,6 +25,7 @@ import {
   generateAIReviewOptions,
 } from "@/lib/reviews/review-store";
 import { useTenantDataStore } from "@/lib/stores/tenant-data-store";
+import { getBaseURL } from "@/lib/api";
 
 function ReviewContent() {
   const params = useParams();
@@ -46,17 +47,38 @@ function ReviewContent() {
   const { getConfig, addFeedback, recordScan, recordFiveStar } = useReviewStore();
 
   const config = getConfig(tenantSlug);
-  const restaurantName =
+  const fallbackRestaurantName =
     storeTenantName ||
     tenantSlug
       .split("-")
       .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
       .join(" ");
 
-  // Track QR scan on first render
+  const [dynamicRestaurantName, setDynamicRestaurantName] = React.useState<string>(fallbackRestaurantName);
+  const [dynamicGoogleUrl, setDynamicGoogleUrl] = React.useState<string>(config.googleReviewUrl || "");
+
+  // Track QR scan on first render via public backend API and local store
   React.useEffect(() => {
     recordScan(tenantSlug);
+
+    const fetchPublicMeta = async () => {
+      try {
+        const base = getBaseURL();
+        const res = await fetch(`${base}/reviews/public/${tenantSlug}`);
+        if (res.ok) {
+          const json = await res.json();
+          const meta = json.data || json;
+          if (meta.restaurantName) setDynamicRestaurantName(meta.restaurantName);
+          if (meta.googlePlaceReviewURL) setDynamicGoogleUrl(meta.googlePlaceReviewURL);
+        }
+      } catch (err) {
+        console.warn("Could not load public review meta:", err);
+      }
+    };
+    fetchPublicMeta();
   }, [tenantSlug, recordScan]);
+
+  const restaurantName = dynamicRestaurantName || fallbackRestaurantName;
 
   // Rating State
   const [selectedRating, setSelectedRating] = React.useState<number>(5);
@@ -113,7 +135,39 @@ function ReviewContent() {
   // AI Review Generator
   const handleGenerateAI = async () => {
     setIsGeneratingAi(true);
-    await new Promise((resolve) => setTimeout(resolve, 650));
+    try {
+      const base = getBaseURL();
+      const res = await fetch(`${base}/reviews/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          rating: selectedRating,
+          restaurantName,
+          tags: selectedVibes,
+          language: "en",
+        }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        const suggestions = json.data?.suggestions || json.suggestions;
+        if (Array.isArray(suggestions) && suggestions.length > 0) {
+          const badges = ["Foodie Favorite", "Punchy & Direct", "Warm & Heartfelt"];
+          const tones = ["Sensory & Passionate", "Crisp & High Impact", "Memorable Experience"];
+          const mapped = suggestions.slice(0, 3).map((text: string, i: number) => ({
+            badge: badges[i] || "AI Draft",
+            tone: tones[i] || "Authentic",
+            text,
+          }));
+          setAiOptions(mapped);
+          setReviewText(mapped[0]?.text || "");
+          setSelectedAiIndex(0);
+          setIsGeneratingAi(false);
+          addToast("success", "Reviews Generated", "Authentic review styles crafted by AI.");
+          return;
+        }
+      }
+    } catch {}
+
     const generated = generateAIReviewOptions(restaurantName, selectedVibes);
     setAiOptions(generated);
     setReviewText(generated[0]?.text || "");
@@ -139,6 +193,26 @@ function ReviewContent() {
       setHasCopied(true);
       recordFiveStar(tenantSlug);
 
+      // Post 4-5 star review to backend API dynamically so owner/manager sees it live
+      try {
+        const base = getBaseURL();
+        await fetch(`${base}/reviews/feedback`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            tenantSlug,
+            rating: selectedRating,
+            vibeTags: selectedVibes,
+            comment: reviewText,
+            guestName: guestParam || undefined,
+            tableOrRoom: locationContext || undefined,
+            status: "positive",
+          }),
+        });
+      } catch (err) {
+        console.warn("Could not post positive review to backend:", err);
+      }
+
       // Trigger Confetti Celebration
       confetti({
         particleCount: 85,
@@ -151,11 +225,12 @@ function ReviewContent() {
 
       // Open Google Review Link in new tab
       setTimeout(() => {
-        const url = config.googleReviewUrl || `https://search.google.com/local/writereview?placeid=${config.googlePlaceId}`;
+        const url = dynamicGoogleUrl || config.googleReviewUrl || `https://search.google.com/local/writereview?placeid=${config.googlePlaceId}`;
         window.open(url, "_blank", "noopener,noreferrer");
       }, 700);
     } catch {
-      window.open(config.googleReviewUrl, "_blank", "noopener,noreferrer");
+      const url = dynamicGoogleUrl || config.googleReviewUrl;
+      window.open(url, "_blank", "noopener,noreferrer");
     }
   };
 
@@ -176,22 +251,24 @@ function ReviewContent() {
 
     setIsSubmittingShield(true);
     try {
-      // 1. Send via API route
-      await fetch("/api/v1/reviews/feedback", {
+      // 1. Send via Go REST API backend
+      const base = getBaseURL();
+      await fetch(`${base}/reviews/feedback`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           tenantSlug,
           rating: selectedRating,
-          categories: selectedIssues,
+          issueCategories: selectedIssues,
           comment: complaintText,
-          guestName,
-          guestPhone,
+          guestName: guestName || undefined,
+          guestPhone: guestPhone || undefined,
           tableOrRoom: locationContext || undefined,
+          status: "new",
         }),
       });
 
-      // 2. Also record in local store for instantaneous manager dashboard visibility
+      // 2. Also record in local store for instantaneous fallback visibility
       addFeedback({
         tenantSlug,
         rating: selectedRating,

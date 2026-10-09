@@ -67,8 +67,13 @@ func (h *ReviewHandler) SubmitFeedback(c *gin.Context) {
 		TenantSlug      string   `json:"tenantSlug"`
 		Rating          int      `json:"rating" binding:"required"`
 		IssueCategories []string `json:"issueCategories"`
+		VibeTags        []string `json:"vibeTags"`
 		Comment         string   `json:"comment"`
+		GuestName       string   `json:"guestName"`
 		GuestPhone      string   `json:"guestPhone"`
+		GuestEmail      string   `json:"guestEmail"`
+		TableOrRoom     string   `json:"tableOrRoom"`
+		Status          string   `json:"status"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -103,10 +108,16 @@ func (h *ReviewHandler) SubmitFeedback(c *gin.Context) {
 
 	fb := &domainreview.PrivateFeedback{
 		TenantID:        tenantOID,
+		TenantSlug:      input.TenantSlug,
 		Rating:          input.Rating,
 		IssueCategories: input.IssueCategories,
+		VibeTags:        input.VibeTags,
 		Comment:         input.Comment,
+		GuestName:       input.GuestName,
 		GuestPhone:      input.GuestPhone,
+		GuestEmail:      input.GuestEmail,
+		TableOrRoom:     input.TableOrRoom,
+		Status:          input.Status,
 	}
 
 	if err := h.reviewService.SubmitPrivateFeedback(c.Request.Context(), fb); err != nil {
@@ -117,6 +128,27 @@ func (h *ReviewHandler) SubmitFeedback(c *gin.Context) {
 	response.Created(c, gin.H{
 		"message": "Feedback submitted successfully",
 		"id":      fb.ID.Hex(),
+	})
+}
+
+// RecordScan godoc
+// POST /api/v1/reviews/public/:slug/scan
+func (h *ReviewHandler) RecordScan(c *gin.Context) {
+	slug := c.Param("slug")
+	if slug == "" {
+		response.BadRequest(c, "MISSING_SLUG", "restaurant slug is required")
+		return
+	}
+
+	scans, err := h.reviewService.RecordScan(c.Request.Context(), slug)
+	if err != nil {
+		response.NotFound(c, "Restaurant")
+		return
+	}
+
+	response.OK(c, gin.H{
+		"slug":       slug,
+		"totalScans": scans,
 	})
 }
 
@@ -206,13 +238,14 @@ func (h *ReviewHandler) UpdateFeedbackStatus(c *gin.Context) {
 
 	var body struct {
 		Status string `json:"status" binding:"required"`
+		Notes  string `json:"notes"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		response.BadRequest(c, "INVALID_PAYLOAD", err.Error())
 		return
 	}
 
-	if err := h.reviewService.UpdateFeedbackStatus(c.Request.Context(), tOID, fbOID, body.Status); err != nil {
+	if err := h.reviewService.UpdateFeedbackStatus(c.Request.Context(), tOID, fbOID, body.Status, body.Notes); err != nil {
 		response.InternalError(c)
 		return
 	}

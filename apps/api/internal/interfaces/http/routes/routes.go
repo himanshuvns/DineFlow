@@ -84,6 +84,7 @@ func Setup(
 		reviewPublic := v1.Group("/reviews", publicRateLimit)
 		{
 			reviewPublic.GET("/public/:slug", reviewHandler.GetPublicMeta)
+			reviewPublic.POST("/public/:slug/scan", reviewHandler.RecordScan)
 			reviewPublic.POST("/generate", reviewHandler.GenerateReviewSuggestions)
 			reviewPublic.POST("/feedback", reviewHandler.SubmitFeedback)
 		}
