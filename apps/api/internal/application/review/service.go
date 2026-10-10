@@ -186,13 +186,14 @@ Language: %s
 Variation Seed: %d
 
 CRITICAL RULES:
-1. FOCUS STRICTLY on the customer's selected highlights (%s).
-2. DO NOT mention or praise unselected aspects (e.g. if the customer only highlighted food and ambience, DO NOT praise speed of service, staff friendliness, hygiene, drinks, or prices).
-3. AVOID CLICHES: Never start with "Absolute hidden gem", "Hands down", "Blown away", or "Run don't walk". Sound like an actual customer who ate there today.
-4. Each option must have a distinct realistic diner personality:
-   - Option 1 (Punchy & Direct): 1-2 crisp, high-impact sentences focusing directly on the selected highlights.
-   - Option 2 (Detailed Experience): 2-3 natural sentences highlighting the specific sensory flavors or setting selected.
-   - Option 3 (Warm Recommendation): 2-3 genuine sentences recommending the spot to other diners based purely on what they loved.
+1. FULL COVERAGE OF ALL HIGHLIGHTS: You MUST incorporate and praise ALL of the customer's selected highlights (%s). If the customer selected multiple highlights (e.g., food, drinks, ambience, staff, service, hygiene, value), weave EVERY SINGLE ONE of those highlights into the review. Do NOT leave out any of them.
+2. NO UNSELECTED TOPICS: DO NOT mention any aspects that were NOT selected in the highlights.
+3. SCALED LENGTH: When multiple highlights (3 or more) are selected, write a thorough, detailed 3-5 sentence review so every single selected aspect receives authentic praise.
+4. AVOID CLICHES: Never start with "Absolute hidden gem", "Hands down", "Blown away", or "Run don't walk". Sound like an actual customer who ate there today.
+5. Provide 3 distinct styles:
+   - Option 1 (Full Dining Journey): Weaves all selected highlights into a seamless, passionate dining narrative.
+   - Option 2 (Detailed Breakdown): Walks through each selected highlight (food/drinks, atmosphere/cozy vibe, service/staff, cleanliness/value) with thoughtful, specific praise.
+   - Option 3 (Warm Recommendation): Emphasizes how rare it is to find a place that excels across every single selected aspect, recommending it enthusiastically.
 
 Return a valid JSON object with key "suggestions" containing an array of exactly 3 review strings.
 Return ONLY valid JSON without markdown code fences.`,
@@ -548,7 +549,7 @@ func mockReviewSuggestions(req domainreview.GenerateReviewRequest) []string {
 		if strings.Contains(lower, "food") || strings.Contains(lower, "taste") || strings.Contains(lower, "delicious") {
 			hasFood = true
 		}
-		if strings.Contains(lower, "ambience") || strings.Contains(lower, "atmosphere") || strings.Contains(lower, "vibe") {
+		if strings.Contains(lower, "ambience") || strings.Contains(lower, "atmosphere") {
 			hasAmbience = true
 		}
 		if strings.Contains(lower, "service") || strings.Contains(lower, "fast") || strings.Contains(lower, "quick") {
@@ -566,121 +567,184 @@ func mockReviewSuggestions(req domainreview.GenerateReviewRequest) []string {
 		if strings.Contains(lower, "hygiene") || strings.Contains(lower, "clean") || strings.Contains(lower, "spotless") {
 			hasHygiene = true
 		}
-		if strings.Contains(lower, "cozy") || strings.Contains(lower, "comfort") {
+		if strings.Contains(lower, "cozy") || strings.Contains(lower, "comfort") || strings.Contains(lower, "vibe") {
 			hasCozy = true
 		}
 	}
 
 	// Default fallback if no specific tags matched
-	if !hasFood && !hasAmbience && !hasService && !hasStaff && !hasValue && !hasDrinks && !hasHygiene && !hasCozy {
-		hasFood = true
-		hasAmbience = true
+	hasAny := hasFood || hasAmbience || hasService || hasStaff || hasValue || hasDrinks || hasHygiene || hasCozy
+	if !hasAny {
+		return []string{
+			fmt.Sprintf("Had an outstanding dining experience at %s! Everything exceeded expectations. Definitely coming back soon with family and friends!", name),
+			fmt.Sprintf("10/10 dining at %s! Great quality, attentive care, and welcoming energy throughout. Highly recommended!", name),
+			fmt.Sprintf("From the moment we walked into %s, the experience was memorable. A true gem that nails consistency and quality!", name),
+		}
 	}
 
 	if strings.ToLower(req.Language) == "hi" {
-		if hasFood && hasAmbience {
-			return []string{
-				fmt.Sprintf("%s का खाना और माहौल दोनों लाजवाब हैं! बहुत ही शानदार अनुभव रहा।", name),
-				fmt.Sprintf("यहाँ का खाना बहुत ही स्वादिष्ट है और इंटीरियर व डेकोरेशन बहुत खूबसूरत है। 5 स्टार!"),
-				fmt.Sprintf("अगर आप बेहतरीन स्वाद और अच्छे माहौल की तलाश में हैं, तो %s एकदम सही जगह है।", name),
-			}
-		}
+		var hiParts []string
 		if hasFood {
-			return []string{
-				fmt.Sprintf("%s का खाना बहुत ही स्वादिष्ट और ताज़ा था! हर निवाले में बेहतरीन स्वाद था।", name),
-				fmt.Sprintf("यहाँ के व्यंजनों का स्वाद बहुत ही लाजवाब है। 10/10 रेटिंग!"),
-				fmt.Sprintf("शानदार खाना और उम्दा क्वालिटी। %s फिर ज़रूर आएँगे!", name),
-			}
+			hiParts = append(hiParts, "खाना बेहद स्वादिष्ट और ताज़ा था")
 		}
+		if hasDrinks {
+			hiParts = append(hiParts, "ड्रिंक्स भी लाजवाब थीं")
+		}
+		if hasAmbience || hasCozy {
+			hiParts = append(hiParts, "यहाँ का माहौल और इंटीरियर बहुत ही खूबसूरत और सुकून देने वाला है")
+		}
+		if hasService {
+			hiParts = append(hiParts, "सर्विस बहुत ही तेज़ थी")
+		}
+		if hasStaff {
+			hiParts = append(hiParts, "स्टाफ का व्यवहार बहुत ही विनम्र और मददगार था")
+		}
+		if hasHygiene {
+			hiParts = append(hiParts, "सफाई और हाइजीन का पूरा ध्यान रखा गया है")
+		}
+		if hasValue {
+			hiParts = append(hiParts, "पैसे की पूरी कद्र है")
+		}
+		summary := strings.Join(hiParts, ", ")
 		return []string{
-			fmt.Sprintf("%s में बहुत बढ़िया अनुभव रहा। 5 स्टार सर्विस और बेहतरीन अनुभव!", name),
-			fmt.Sprintf("यहाँ आकर बहुत अच्छा लगा। बहुत ही सुकून देने वाली जगह।"),
-			fmt.Sprintf("सभी को %s आने की सलाह दूँगा। बहुत ही अच्छा अनुभव रहा!", name),
+			fmt.Sprintf("%s में बहुत ही शानदार अनुभव रहा! %s। 5 स्टार रेटिंग!", name, summary),
+			fmt.Sprintf("%s का अनुभव लाजवाब रहा। %s। हम यहाँ फिर ज़रूर आएँगे!", name, summary),
+			fmt.Sprintf("अगर आप बेहतरीन जगह ढूँढ रहे हैं तो %s एकदम सही है। %s। सभी को यहाँ आने की सलाह दूँगा!", name, summary),
 		}
 	}
 
-	// Dynamic synthesis strictly based on active categories
-	var opt1, opt2, opt3 string
+	// --- Option 1: Complete Experience (Foodie & Passionate) ---
+	var s1Sentences []string
 
-	// Option 1: Punchy & Direct
-	switch {
-	case hasFood && hasAmbience:
-		opt1 = fmt.Sprintf("Great experience at %s! The food was packed with incredible flavor and the ambience made for a wonderful dining experience.", name)
-	case hasFood && hasService:
-		opt1 = fmt.Sprintf("Delicious food and super fast turnaround at %s! Our dishes arrived hot, fresh, and full of flavor.", name)
-	case hasFood && hasStaff:
-		opt1 = fmt.Sprintf("Top-notch food and remarkably warm hospitality at %s. You can tell the team genuinely cares about their diners.", name)
-	case hasFood:
+	if hasFood && hasDrinks {
 		if dishStr != "" {
-			opt1 = fmt.Sprintf("Outstanding meal at %s! The %s was prepared to absolute perfection with wonderful authentic flavors.", name, dishStr)
+			s1Sentences = append(s1Sentences, fmt.Sprintf("The food was prepared to absolute perfection—especially the %s—and the signature drinks were creative and refreshing.", dishStr))
 		} else {
-			opt1 = fmt.Sprintf("Outstanding meal at %s! The food was fresh, vibrant, and bursting with rich authentic flavors.", name)
+			s1Sentences = append(s1Sentences, "The food was prepared to absolute perfection with incredible flavors, and the signature drinks were creative and refreshing.")
 		}
-	case hasAmbience && hasStaff:
-		opt1 = fmt.Sprintf("Wonderful atmosphere and genuine, welcoming hospitality at %s. Made our evening truly memorable!", name)
-	case hasAmbience:
-		opt1 = fmt.Sprintf("The ambience at %s is exceptional! Beautiful lighting, great mood, and an effortlessly stylish setting.", name)
-	case hasService && hasStaff:
-		opt1 = fmt.Sprintf("Incredible service at %s! Staff was polite and attentive, and our orders arrived without any waiting.", name)
-	case hasService:
-		opt1 = fmt.Sprintf("Remarkably prompt and efficient service at %s. Fast turnaround without compromising on quality!", name)
-	case hasStaff:
-		opt1 = fmt.Sprintf("The staff at %s was so courteous and attentive throughout our visit. Truly heartwarming hospitality!", name)
-	case hasDrinks:
-		opt1 = fmt.Sprintf("Fantastic beverages at %s! The signature drinks were refreshing, creative, and expertly crafted.", name)
-	case hasHygiene:
-		opt1 = fmt.Sprintf("Impressed by how clean and spotless %s is. Impeccable hygiene standards and a very tidy dining area.", name)
-	case hasValue:
-		opt1 = fmt.Sprintf("Generous portion sizes and great value for money at %s. You definitely get top quality for what you pay!", name)
-	default:
-		opt1 = fmt.Sprintf("Had a wonderful 5-star experience at %s! Definitely coming back soon.", name)
+	} else if hasFood {
+		if dishStr != "" {
+			s1Sentences = append(s1Sentences, fmt.Sprintf("The food was prepared to absolute perfection, especially the %s which was bursting with authentic flavors.", dishStr))
+		} else {
+			s1Sentences = append(s1Sentences, "The food was prepared to absolute perfection, with rich, authentic flavors in every single dish.")
+		}
+	} else if hasDrinks {
+		s1Sentences = append(s1Sentences, "The signature drinks were expertly crafted, refreshing, and full of flavor.")
 	}
 
-	// Option 2: Detailed Experience
-	switch {
-	case hasFood && hasAmbience:
-		opt2 = "Every single dish was cooked to perfection and plated beautifully. Combined with the cozy lighting and relaxed music, it was easily one of the best dinners we have had."
-	case hasFood && hasHygiene:
-		opt2 = "You can immediately tell how fresh the ingredients are, and the open dining room is pristine and spotless. A fantastic culinary experience."
-	case hasFood && hasDrinks:
-		opt2 = "The food was rich and full of flavor, and their drinks paired perfectly with the meal. Clearly a kitchen that takes craft seriously."
-	case hasFood:
-		opt2 = "The depth of flavor in every course was phenomenal. Seasoned to perfection and served piping hot. 10/10 for food quality and taste."
-	case hasAmbience && hasCozy:
-		opt2 = "Such a cozy, charming setting with great attention to interior decor. It provides the ideal backdrop for a relaxed and unhurried meal."
-	case hasAmbience:
-		opt2 = "The aesthetic decor and ambient music create such an inviting dining atmosphere. A really chic and comfortable place to spend an evening."
-	case hasStaff && hasService:
-		opt2 = "From the greeting at the door to the swift delivery of our orders, the team handled everything with utmost professionalism and care."
-	case hasStaff:
-		opt2 = "Staff members were polite, knowledgeable about the menu, and always ready to help with a smile. First-class customer service."
-	case hasValue:
-		opt2 = "High quality ingredients combined with very reasonable pricing. Portion sizes are hearty and well worth every penny."
-	case hasHygiene:
-		opt2 = "The tables, cutlery, and entire venue are maintained to high cleanliness standards. Felt comfortable and well looked after."
-	default:
-		opt2 = "Everything during our visit exceeded expectations. High quality standards and a very pleasant experience overall."
+	if hasAmbience && hasCozy {
+		s1Sentences = append(s1Sentences, "The ambience is gorgeous with warm, cozy lighting that creates an intimate, relaxing vibe.")
+	} else if hasAmbience {
+		s1Sentences = append(s1Sentences, "The aesthetic decor and ambient music create a wonderfully stylish dining atmosphere.")
+	} else if hasCozy {
+		s1Sentences = append(s1Sentences, "The seating is wonderfully comfortable and the cozy vibe makes you want to linger.")
 	}
 
-	// Option 3: Warm Recommendation
-	switch {
-	case hasFood && hasAmbience:
-		opt3 = fmt.Sprintf("If you appreciate exceptional food in a gorgeous, relaxing atmosphere, %s is an absolute must-visit. Highly recommended!", name)
-	case hasFood && hasStaff:
-		opt3 = fmt.Sprintf("Delicious food coupled with staff that treats you like family. Will definitely be recommending %s to friends and colleagues!", name)
-	case hasFood && hasValue:
-		opt3 = fmt.Sprintf("Top-tier flavors without breaking the bank. %s is our new favorite spot for great food and great value!", name)
-	case hasFood:
-		opt3 = fmt.Sprintf("A true delight for anyone who loves great food. We will definitely be returning to %s to try more of the menu!", name)
-	case hasAmbience:
-		opt3 = fmt.Sprintf("Can't recommend %s enough for anyone wanting a lovely setting for dates or gatherings. The vibe is simply unmatched!", name)
-	case hasStaff:
-		opt3 = fmt.Sprintf("A big shoutout to the wonderful team at %s for making us feel so valued. Exceptional hospitality all around!", name)
-	case hasService:
-		opt3 = fmt.Sprintf("Rare to find a place that respects your time with such fast and organized service. Keep up the fantastic work, %s!", name)
-	default:
-		opt3 = fmt.Sprintf("5 stars all the way for %s! Looking forward to our next visit.", name)
+	if hasService && hasStaff {
+		s1Sentences = append(s1Sentences, "Service was remarkably fast and efficient, and the staff treated us with genuine warmth and attentiveness.")
+	} else if hasService {
+		s1Sentences = append(s1Sentences, "Service was remarkably fast and efficient without feeling rushed.")
+	} else if hasStaff {
+		s1Sentences = append(s1Sentences, "The team greeted us with genuine smiles and provided thoughtful, attentive hospitality.")
 	}
+
+	if hasHygiene && hasValue {
+		s1Sentences = append(s1Sentences, "On top of that, the entire venue was spotlessly clean, and the generous portions offer fantastic value for money.")
+	} else if hasHygiene {
+		s1Sentences = append(s1Sentences, "We were especially impressed by the spotless hygiene and how clean and tidy everything was kept.")
+	} else if hasValue {
+		s1Sentences = append(s1Sentences, "The generous portion sizes and reasonable pricing offer fantastic value for money.")
+	}
+
+	opt1 := fmt.Sprintf("Outstanding visit to %s! %s Highly recommended to anyone looking for a top-tier dining experience!", name, strings.Join(s1Sentences, " "))
+
+	// --- Option 2: Detailed Breakdown (Crisp & High Impact) ---
+	var s2Points []string
+	if hasFood {
+		if dishStr != "" {
+			s2Points = append(s2Points, fmt.Sprintf("The %s and every course we tried was packed with flavor and cooked with evident culinary skill.", dishStr))
+		} else {
+			s2Points = append(s2Points, "Every course was packed with flavor and cooked with evident culinary skill.")
+		}
+	}
+	if hasDrinks {
+		s2Points = append(s2Points, "Their craft beverages are top-notch and pair wonderfully with the meal.")
+	}
+	if hasAmbience || hasCozy {
+		s2Points = append(s2Points, "The atmosphere is stylish, beautifully lit, and exceptionally inviting.")
+	}
+	if hasService {
+		s2Points = append(s2Points, "Turnaround from kitchen to table was impressively quick.")
+	}
+	if hasStaff {
+		s2Points = append(s2Points, "The staff was courteous, polite, and on top of every detail.")
+	}
+	if hasHygiene {
+		s2Points = append(s2Points, "Strict hygiene standards are obvious—the space is immaculate from corner to corner.")
+	}
+	if hasValue {
+		s2Points = append(s2Points, "Portions are generous and pricing is very fair for the quality.")
+	}
+
+	opt2 := fmt.Sprintf("10/10 across the board at %s! %s Easily one of the best dining decisions we've made recently.", name, strings.Join(s2Points, " "))
+
+	// --- Option 3: Warm Recommendation (Memorable & Heartfelt) ---
+	var activeHighlights []string
+	if hasFood {
+		activeHighlights = append(activeHighlights, "mouthwatering food")
+	}
+	if hasDrinks {
+		activeHighlights = append(activeHighlights, "crafted drinks")
+	}
+	if hasAmbience || hasCozy {
+		activeHighlights = append(activeHighlights, "captivating atmosphere")
+	}
+	if hasStaff {
+		activeHighlights = append(activeHighlights, "heartfelt hospitality")
+	}
+	if hasService {
+		activeHighlights = append(activeHighlights, "swift service")
+	}
+	if hasHygiene {
+		activeHighlights = append(activeHighlights, "spotless hygiene")
+	}
+	if hasValue {
+		activeHighlights = append(activeHighlights, "unbeatable value")
+	}
+
+	var highlightPhrase string
+	if len(activeHighlights) > 1 {
+		highlightPhrase = strings.Join(activeHighlights[:len(activeHighlights)-1], ", ") + " and " + activeHighlights[len(activeHighlights)-1]
+	} else if len(activeHighlights) == 1 {
+		highlightPhrase = activeHighlights[0]
+	} else {
+		highlightPhrase = "great dining"
+	}
+
+	var s3Sentences []string
+	s3Sentences = append(s3Sentences, fmt.Sprintf("It is rare to find a place like %s that checks every single box, delivering %s.", name, highlightPhrase))
+
+	if hasFood && (hasAmbience || hasCozy) {
+		s3Sentences = append(s3Sentences, "The combination of exceptional culinary flavors and an unhurried, comfortable setting made our gathering truly special.")
+	} else if hasFood {
+		s3Sentences = append(s3Sentences, "The depth of flavor in every dish left a lasting impression on our entire table.")
+	} else if hasAmbience || hasCozy {
+		s3Sentences = append(s3Sentences, "The relaxed, inviting setting provides the ideal backdrop for a memorable evening.")
+	}
+
+	if hasStaff && hasService {
+		s3Sentences = append(s3Sentences, "The team's dedication to fast service and gracious care made us feel genuinely valued.")
+	} else if hasStaff {
+		s3Sentences = append(s3Sentences, "A big shoutout to the staff for making us feel so welcomed and looked after.")
+	} else if hasService {
+		s3Sentences = append(s3Sentences, "Service was prompt and flawless from the moment we sat down.")
+	}
+
+	if hasHygiene || hasValue {
+		s3Sentences = append(s3Sentences, "You can dine with complete confidence knowing the place is pristine and the pricing is completely fair.")
+	}
+
+	opt3 := fmt.Sprintf("%s We will definitely be regular diners here and can't recommend it enough!", strings.Join(s3Sentences, " "))
 
 	return []string{opt1, opt2, opt3}
 }

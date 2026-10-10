@@ -192,7 +192,7 @@ export function generateAIReviewOptions(restaurantName: string, vibes: string[])
   const cleanVibes = vibes.map((v) => v.replace(/[^\w\s]/g, "").trim()).filter(Boolean);
 
   const hasFood = cleanVibes.some((v) => /food|delicious|taste|flavor/i.test(v));
-  const hasAmbience = cleanVibes.some((v) => /ambience|atmosphere|vibe/i.test(v));
+  const hasAmbience = cleanVibes.some((v) => /ambience|atmosphere/i.test(v));
   const hasService = cleanVibes.some((v) => /service|fast|quick/i.test(v));
   const hasStaff = cleanVibes.some((v) => /staff|friendly|hospitality/i.test(v));
   const hasValue = cleanVibes.some((v) => /value|price|money/i.test(v));
@@ -200,81 +200,128 @@ export function generateAIReviewOptions(restaurantName: string, vibes: string[])
   const hasHygiene = cleanVibes.some((v) => /hygiene|clean|spotless/i.test(v));
   const hasCozy = cleanVibes.some((v) => /cozy|comfort/i.test(v));
 
-  // Option 1: Direct highlight focus
-  let opt1 = "";
-  if (hasFood && hasAmbience) {
-    opt1 = `Great experience at ${name}! The food was packed with incredible flavor and the ambience made for a wonderful dining experience.`;
-  } else if (hasFood && hasService) {
-    opt1 = `Delicious food and super fast turnaround at ${name}! Our dishes arrived hot, fresh, and full of flavor.`;
-  } else if (hasFood && hasStaff) {
-    opt1 = `Top-notch food and remarkably warm hospitality at ${name}. You can tell the team genuinely cares about their diners.`;
+  // Clean fallback when no tags are selected
+  if (cleanVibes.length === 0) {
+    return [
+      {
+        badge: "Foodie Favorite",
+        tone: "Sensory & Passionate",
+        text: `Had an outstanding dining experience at ${name}! Everything exceeded expectations. Definitely coming back soon with family and friends!`,
+      },
+      {
+        badge: "Punchy & Direct",
+        tone: "Crisp & High Impact",
+        text: `10/10 dining at ${name}! Great quality, attentive care, and welcoming energy throughout. Highly recommended!`,
+      },
+      {
+        badge: "Warm & Heartfelt",
+        tone: "Memorable Experience",
+        text: `From the moment we walked into ${name}, the experience was memorable. A true gem that nails consistency and quality!`,
+      },
+    ];
+  }
+
+  // --- Option 1: Complete Experience (Foodie & Passionate) ---
+  const s1Sentences: string[] = [];
+
+  if (hasFood && hasDrinks) {
+    s1Sentences.push(`The food was prepared to absolute perfection with incredible flavors, and the signature drinks were creative and refreshing.`);
   } else if (hasFood) {
-    opt1 = `Outstanding meal at ${name}! The food was fresh, vibrant, and bursting with rich authentic flavors.`;
-  } else if (hasAmbience && hasStaff) {
-    opt1 = `Wonderful atmosphere and genuine, welcoming hospitality at ${name}. Made our evening truly memorable!`;
-  } else if (hasAmbience) {
-    opt1 = `The ambience at ${name} is exceptional! Beautiful lighting, great mood, and an effortlessly stylish setting.`;
-  } else if (hasService && hasStaff) {
-    opt1 = `Incredible service at ${name}! Staff was polite and attentive, and our orders arrived without any waiting.`;
-  } else if (hasService) {
-    opt1 = `Remarkably prompt and efficient service at ${name}. Fast turnaround without compromising on quality!`;
-  } else if (hasStaff) {
-    opt1 = `The staff at ${name} was so courteous and attentive throughout our visit. Truly heartwarming hospitality!`;
+    s1Sentences.push(`The food was prepared to absolute perfection, with rich, authentic flavors in every single dish.`);
   } else if (hasDrinks) {
-    opt1 = `Fantastic beverages at ${name}! The signature drinks were refreshing, creative, and expertly crafted.`;
-  } else if (hasHygiene) {
-    opt1 = `Impressed by how clean and spotless ${name} is. Impeccable hygiene standards and a very tidy dining area.`;
-  } else if (hasValue) {
-    opt1 = `Generous portion sizes and great value for money at ${name}. You definitely get top quality for what you pay!`;
-  } else {
-    opt1 = `Had a wonderful 5-star experience at ${name}! Definitely coming back soon.`;
+    s1Sentences.push(`The signature drinks were expertly crafted, refreshing, and full of flavor.`);
   }
 
-  // Option 2: Detailed Experience
-  let opt2 = "";
-  if (hasFood && hasAmbience) {
-    opt2 = `Every single dish was cooked to perfection and plated beautifully. Combined with the cozy lighting and relaxed music, it was easily one of the best dinners we have had.`;
-  } else if (hasFood && hasHygiene) {
-    opt2 = `You can immediately tell how fresh the ingredients are, and the open dining room is pristine and spotless. A fantastic culinary experience from start to finish.`;
-  } else if (hasFood && hasDrinks) {
-    opt2 = `The food was rich and full of flavor, and their drinks paired perfectly with the meal. Clearly a kitchen that takes its craft seriously.`;
-  } else if (hasFood) {
-    opt2 = `The depth of flavor in every course was phenomenal. Seasoned to perfection and served piping hot. 10/10 for food quality and taste.`;
-  } else if (hasAmbience && hasCozy) {
-    opt2 = `Such a cozy, charming setting with great attention to interior decor. It provides the ideal backdrop for a relaxed and unhurried meal.`;
+  if (hasAmbience && hasCozy) {
+    s1Sentences.push(`The ambience is gorgeous with warm, cozy lighting that creates an intimate, relaxing vibe.`);
   } else if (hasAmbience) {
-    opt2 = `The aesthetic decor and ambient music create such an inviting dining atmosphere. A really chic and comfortable place to spend an evening.`;
-  } else if (hasStaff && hasService) {
-    opt2 = `From the greeting at the door to the swift delivery of our orders, the team handled everything with utmost professionalism and care.`;
-  } else if (hasStaff) {
-    opt2 = `Staff members were polite, knowledgeable about the menu, and always ready to help with a smile. First-class customer service.`;
-  } else if (hasValue) {
-    opt2 = `High quality ingredients combined with very reasonable pricing. Portion sizes are hearty and well worth every penny.`;
-  } else if (hasHygiene) {
-    opt2 = `The tables, cutlery, and entire venue are maintained to high cleanliness standards. Felt comfortable and well looked after.`;
-  } else {
-    opt2 = `Everything during our visit exceeded expectations. High quality standards and a very pleasant experience overall.`;
+    s1Sentences.push(`The aesthetic decor and ambient music create a wonderfully stylish dining atmosphere.`);
+  } else if (hasCozy) {
+    s1Sentences.push(`The seating is wonderfully comfortable and the cozy vibe makes you want to linger.`);
   }
 
-  // Option 3: Warm Recommendation
-  let opt3 = "";
-  if (hasFood && hasAmbience) {
-    opt3 = `If you appreciate exceptional food in a gorgeous, relaxing atmosphere, ${name} is an absolute must-visit. Highly recommended!`;
-  } else if (hasFood && hasStaff) {
-    opt3 = `Delicious food coupled with staff that treats you like family. Will definitely be recommending ${name} to friends and colleagues!`;
-  } else if (hasFood && hasValue) {
-    opt3 = `Top-tier flavors without breaking the bank. ${name} is our new favorite spot for great food and great value!`;
-  } else if (hasFood) {
-    opt3 = `A true delight for anyone who loves great food. We will definitely be returning to ${name} to try more of the menu!`;
-  } else if (hasAmbience) {
-    opt3 = `Can't recommend ${name} enough for anyone wanting a lovely setting for dates or gatherings. The vibe is simply unmatched!`;
-  } else if (hasStaff) {
-    opt3 = `A big shoutout to the wonderful team at ${name} for making us feel so valued. Exceptional hospitality all around!`;
+  if (hasService && hasStaff) {
+    s1Sentences.push(`Service was remarkably fast and efficient, and the staff treated us with genuine warmth and attentiveness.`);
   } else if (hasService) {
-    opt3 = `Rare to find a place that respects your time with such fast and organized service. Keep up the fantastic work, ${name}!`;
-  } else {
-    opt3 = `5 stars all the way for ${name}! Looking forward to our next visit.`;
+    s1Sentences.push(`Service was remarkably fast and efficient without feeling rushed.`);
+  } else if (hasStaff) {
+    s1Sentences.push(`The team greeted us with genuine smiles and provided thoughtful, attentive hospitality.`);
   }
+
+  if (hasHygiene && hasValue) {
+    s1Sentences.push(`On top of that, the entire venue was spotlessly clean, and the generous portions offer fantastic value for money.`);
+  } else if (hasHygiene) {
+    s1Sentences.push(`We were especially impressed by the spotless hygiene and how clean and tidy everything was kept.`);
+  } else if (hasValue) {
+    s1Sentences.push(`The generous portion sizes and reasonable pricing offer fantastic value for money.`);
+  }
+
+  const opt1 = `Outstanding visit to ${name}! ${s1Sentences.join(" ")} Highly recommended to anyone looking for a top-tier dining experience!`;
+
+  // --- Option 2: Detailed Breakdown (Crisp & High Impact) ---
+  const s2Points: string[] = [];
+  if (hasFood) {
+    s2Points.push(`Every course was packed with flavor and cooked with evident culinary skill.`);
+  }
+  if (hasDrinks) {
+    s2Points.push(`Their craft beverages are top-notch and pair wonderfully with the meal.`);
+  }
+  if (hasAmbience || hasCozy) {
+    s2Points.push(`The atmosphere is stylish, beautifully lit, and exceptionally inviting.`);
+  }
+  if (hasService) {
+    s2Points.push(`Turnaround from kitchen to table was impressively quick.`);
+  }
+  if (hasStaff) {
+    s2Points.push(`The staff was courteous, polite, and on top of every detail.`);
+  }
+  if (hasHygiene) {
+    s2Points.push(`Strict hygiene standards are obvious—the space is immaculate from corner to corner.`);
+  }
+  if (hasValue) {
+    s2Points.push(`Portions are generous and pricing is very fair for the quality.`);
+  }
+
+  const opt2 = `10/10 across the board at ${name}! ${s2Points.join(" ")} Easily one of the best dining decisions we've made recently.`;
+
+  // --- Option 3: Warm Recommendation (Memorable & Heartfelt) ---
+  const s3Sentences: string[] = [];
+  const activeHighlights: string[] = [];
+  if (hasFood) activeHighlights.push("mouthwatering food");
+  if (hasDrinks) activeHighlights.push("crafted drinks");
+  if (hasAmbience || hasCozy) activeHighlights.push("captivating atmosphere");
+  if (hasStaff) activeHighlights.push("heartfelt hospitality");
+  if (hasService) activeHighlights.push("swift service");
+  if (hasHygiene) activeHighlights.push("spotless hygiene");
+  if (hasValue) activeHighlights.push("unbeatable value");
+
+  const highlightPhrase = activeHighlights.length > 1
+    ? `${activeHighlights.slice(0, -1).join(", ")} and ${activeHighlights[activeHighlights.length - 1]}`
+    : activeHighlights[0] || "great dining";
+
+  s3Sentences.push(`It is rare to find a place like ${name} that checks every single box, delivering ${highlightPhrase}.`);
+
+  if (hasFood && (hasAmbience || hasCozy)) {
+    s3Sentences.push(`The combination of exceptional culinary flavors and an unhurried, comfortable setting made our gathering truly special.`);
+  } else if (hasFood) {
+    s3Sentences.push(`The depth of flavor in every dish left a lasting impression on our entire table.`);
+  } else if (hasAmbience || hasCozy) {
+    s3Sentences.push(`The relaxed, inviting setting provides the ideal backdrop for a memorable evening.`);
+  }
+
+  if (hasStaff && hasService) {
+    s3Sentences.push(`The team's dedication to fast service and gracious care made us feel genuinely valued.`);
+  } else if (hasStaff) {
+    s3Sentences.push(`A big shoutout to the staff for making us feel so welcomed and looked after.`);
+  } else if (hasService) {
+    s3Sentences.push(`Service was prompt and flawless from the moment we sat down.`);
+  }
+
+  if (hasHygiene || hasValue) {
+    s3Sentences.push(`You can dine with complete confidence knowing the place is pristine and the pricing is completely fair.`);
+  }
+
+  const opt3 = `${s3Sentences.join(" ")} We will definitely be regular diners here and can't recommend it enough!`;
 
   return [
     {
