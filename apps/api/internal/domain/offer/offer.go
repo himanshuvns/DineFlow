@@ -17,10 +17,13 @@ const (
 type TargetAudience string
 
 const (
-	AudienceBilledToday TargetAudience = "billed_today"
-	AudienceServedToday TargetAudience = "served_today"
-	AudiencePastWeek    TargetAudience = "past_week"
-	AudienceAllGuests   TargetAudience = "all_guests"
+	AudienceBilledToday  TargetAudience = "billed_today"
+	AudienceActiveTables TargetAudience = "active_tables"
+	AudienceServedToday  TargetAudience = "served_today"
+	AudiencePastWeek     TargetAudience = "past_week"
+	AudiencePast7Days    TargetAudience = "past_7_days"
+	AudienceAllGuests    TargetAudience = "all_guests"
+	AudienceAllDiners    TargetAudience = "all_diners"
 )
 
 // OfferStats tracks real-time engagement and conversion metrics.

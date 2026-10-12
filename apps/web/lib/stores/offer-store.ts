@@ -28,78 +28,12 @@ export interface OfferCampaign {
   createdAt: string;
 }
 
-const INITIAL_CAMPAIGNS: OfferCampaign[] = [
-  {
-    id: "cmp-101",
-    tenantSlug: "the-grand-bistro",
-    title: "🍕 Craving Round Two? 20% OFF Post-Meal Re-Order!",
-    description: "Enjoy 20% off drinks, artisanal pizzas, or handcrafted desserts right now. Hot & fresh to your table or doorstep!",
-    discountType: "percent",
-    discountValue: 20,
-    promoCode: "REORDER20",
-    expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 4).toISOString(), // 4 hours from now
-    targetAudience: "billed_today",
-    channels: ["whatsapp", "web_push", "in_menu"],
-    deepLinkDestination: "table_menu",
-    status: "active",
-    sentCount: 412,
-    clickCount: 158,
-    convertedCount: 54,
-    recoveredRevenue: 38200,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-  },
-  {
-    id: "cmp-102",
-    tenantSlug: "the-grand-bistro",
-    title: "🍟 Complimentary Chef's Truffle Fries on Next Round!",
-    description: "Add a touch of indulgence to your table! Order any 2 drinks and receive our signature Truffle Parmesan Fries on the house.",
-    discountType: "free_item",
-    discountValue: 0,
-    freeItemName: "Truffle Parmesan Fries",
-    promoCode: "CHEFDELIGHT",
-    expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 6).toISOString(),
-    targetAudience: "active_tables",
-    channels: ["in_menu", "web_push"],
-    deepLinkDestination: "table_menu",
-    status: "active",
-    sentCount: 186,
-    clickCount: 82,
-    convertedCount: 39,
-    recoveredRevenue: 31450,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
-  },
-  {
-    id: "cmp-103",
-    tenantSlug: "the-grand-bistro",
-    title: "✨ Weekend Dining Perks: Flat ₹150 OFF!",
-    description: "Thank you for dining with us! Come back this evening or order takeaway to enjoy flat ₹150 off your bill above ₹600.",
-    discountType: "fixed",
-    discountValue: 150,
-    promoCode: "WEEKEND150",
-    expiresAt: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(),
-    targetAudience: "past_7_days",
-    channels: ["whatsapp", "web_push"],
-    deepLinkDestination: "online_delivery",
-    status: "completed",
-    sentCount: 822,
-    clickCount: 254,
-    convertedCount: 125,
-    recoveredRevenue: 79000,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
-  },
-];
-
 interface OfferStoreState {
   campaigns: OfferCampaign[];
+  setCampaigns: (campaigns: OfferCampaign[]) => void;
   getActiveOffers: (tenantSlug: string) => OfferCampaign[];
   getAllCampaigns: (tenantSlug: string) => OfferCampaign[];
-  createCampaign: (
-    campaign: Omit<
-      OfferCampaign,
-      "id" | "createdAt" | "sentCount" | "clickCount" | "convertedCount" | "recoveredRevenue" | "status"
-    >
-  ) => OfferCampaign;
-  broadcastAgain: (campaignId: string) => void;
+  addCampaign: (campaign: OfferCampaign) => void;
   deleteCampaign: (campaignId: string) => void;
   recordClick: (campaignId: string) => void;
   recordConversion: (campaignId: string, orderTotal: number) => void;
@@ -108,7 +42,10 @@ interface OfferStoreState {
 export const useOfferStore = create<OfferStoreState>()(
   persist(
     (set, get) => ({
-      campaigns: INITIAL_CAMPAIGNS,
+      // Zero mock data - 100% dynamic DB backed
+      campaigns: [],
+
+      setCampaigns: (campaigns) => set({ campaigns }),
 
       getActiveOffers: (tenantSlug: string) => {
         const cleanSlug = tenantSlug || "the-grand-bistro";
@@ -125,47 +62,9 @@ export const useOfferStore = create<OfferStoreState>()(
         return get().campaigns.filter((c) => c.tenantSlug === cleanSlug || !c.tenantSlug);
       },
 
-      createCampaign: (data) => {
-        // Calculate simulated target counts based on audience selection
-        const simulatedCounts: Record<TargetAudience, number> = {
-          billed_today: 48,
-          active_tables: 16,
-          past_7_days: 340,
-          all_diners: 520,
-        };
-
-        const newCampaign: OfferCampaign = {
-          ...data,
-          id: `cmp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-          status: "active",
-          sentCount: simulatedCounts[data.targetAudience] || 45,
-          clickCount: 0,
-          convertedCount: 0,
-          recoveredRevenue: 0,
-          createdAt: new Date().toISOString(),
-        };
-
+      addCampaign: (campaign) => {
         set((state) => ({
-          campaigns: [newCampaign, ...state.campaigns],
-        }));
-
-        return newCampaign;
-      },
-
-      broadcastAgain: (campaignId: string) => {
-        set((state) => ({
-          campaigns: state.campaigns.map((c) => {
-            if (c.id === campaignId) {
-              const moreSent = Math.floor(Math.random() * 30) + 20;
-              return {
-                ...c,
-                status: "active",
-                sentCount: c.sentCount + moreSent,
-                expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 4).toISOString(),
-              };
-            }
-            return c;
-          }),
+          campaigns: [campaign, ...state.campaigns.filter((c) => c.id !== campaign.id)],
         }));
       },
 

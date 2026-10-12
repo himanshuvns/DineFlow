@@ -23,6 +23,7 @@ import {
   ExternalLink,
   ShieldCheck,
   Zap,
+  RefreshCw,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,7 @@ import {
 } from "@/components/ui/table";
 import { useToast } from "@/components/ui/toast";
 import { useAuthStore } from "@/lib/stores/auth-store";
+import { apiClient } from "@/lib/api";
 import {
   useOfferStore,
   OfferCampaign,
@@ -54,14 +56,11 @@ export default function OffersStudioPage() {
   const tenantSlug = tenant?.slug || "the-grand-bistro";
   const restaurantName = tenant?.name || "The Grand Bistro";
 
-  const {
-    getAllCampaigns,
-    createCampaign,
-    broadcastAgain,
-    deleteCampaign,
-  } = useOfferStore();
-
-  const campaigns = getAllCampaigns(tenantSlug);
+  // Dynamic state loaded straight from Go backend / MongoDB
+  const [campaigns, setCampaigns] = React.useState<OfferCampaign[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
+  const [isBroadcasting, setIsBroadcasting] = React.useState(false);
 
   // Composer Form State
   const [title, setTitle] = React.useState("🍕 Craving Round Two? 20% OFF Post-Meal Re-Order!");
@@ -80,13 +79,73 @@ export default function OffersStudioPage() {
   // Simulator Preview Tab
   const [simulatorTab, setSimulatorTab] = React.useState<"lockscreen" | "whatsapp" | "inmenu">("lockscreen");
 
-  // Telemetry Aggregations
+  // Fetch live campaigns from Go REST API
+  const fetchCampaigns = React.useCallback(async (showToast = false) => {
+    try {
+      setIsRefreshing(true);
+      const res = await apiClient.get("/offers");
+      const list = res.data?.data || res.data || [];
+
+      if (Array.isArray(list)) {
+        const mapped: OfferCampaign[] = list.map((o: any) => ({
+          id: o.id || o._id,
+          tenantSlug: tenantSlug,
+          title: o.title || "Special Table Offer",
+          description: o.message || o.description || "",
+          discountType:
+            o.discountType === "percentage"
+              ? "percent"
+              : o.discountType === "fixed_amount"
+              ? "fixed"
+              : o.discountType || "percent",
+          discountValue: Number(o.discountValue) || 0,
+          freeItemName: o.freeItemName,
+          promoCode: (o.promoCode || "").toUpperCase(),
+          expiresAt: o.expiresAt || new Date(Date.now() + 1000 * 60 * 60 * 6).toISOString(),
+          targetAudience: o.targetAudience || "billed_today",
+          channels: o.channels || ["web_push", "whatsapp", "in_menu"],
+          deepLinkDestination: "table_menu",
+          status: o.isActive !== false ? "active" : "completed",
+          sentCount: o.stats?.sentCount || 0,
+          clickCount: o.stats?.clickedCount || 0,
+          convertedCount: o.stats?.ordersCount || 0,
+          recoveredRevenue: o.stats?.revenueGenerated || 0,
+          createdAt: o.createdAt || new Date().toISOString(),
+        }));
+
+        setCampaigns(mapped);
+        useOfferStore.getState().setCampaigns(mapped);
+
+        if (showToast) {
+          addToast("success", "Telemetry Synced", `Loaded ${mapped.length} live campaigns from server.`);
+        }
+      }
+    } catch (err: any) {
+      console.warn("Could not fetch /offers:", err);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  }, [tenantSlug, addToast]);
+
+  // Initial load and 15-second polling interval
+  React.useEffect(() => {
+    fetchCampaigns(false);
+
+    const interval = setInterval(() => {
+      fetchCampaigns(false);
+    }, 15000);
+
+    return () => clearInterval(interval);
+  }, [fetchCampaigns]);
+
+  // Dynamic Telemetry Aggregations - 100% computed from real DB records
   const totalCampaigns = campaigns.length;
-  const totalDinersReached = campaigns.reduce((acc, c) => acc + c.sentCount, 0);
-  const totalClicks = campaigns.reduce((acc, c) => acc + c.clickCount, 0);
-  const totalConversions = campaigns.reduce((acc, c) => acc + c.convertedCount, 0);
-  const totalRecoveredRevenue = campaigns.reduce((acc, c) => acc + c.recoveredRevenue, 0);
-  const averageCTR = totalDinersReached > 0 ? ((totalClicks / totalDinersReached) * 100).toFixed(1) : "34.8";
+  const totalDinersReached = campaigns.reduce((acc, c) => acc + (c.sentCount || 0), 0);
+  const totalClicks = campaigns.reduce((acc, c) => acc + (c.clickCount || 0), 0);
+  const totalConversions = campaigns.reduce((acc, c) => acc + (c.convertedCount || 0), 0);
+  const totalRecoveredRevenue = campaigns.reduce((acc, c) => acc + (c.recoveredRevenue || 0), 0);
+  const averageCTR = totalDinersReached > 0 ? ((totalClicks / totalDinersReached) * 100).toFixed(1) : "0.0";
 
   // Channel toggle helper
   const toggleChannel = (ch: OfferChannel) => {
@@ -108,33 +167,83 @@ export default function OffersStudioPage() {
     addToast("success", "AI Copy Generated ✨", "Mouthwatering ad copy & promo code crafted.");
   };
 
-  // Submit Broadcast
-  const handleLaunchBroadcast = (e: React.FormEvent) => {
+  // Submit Broadcast - Live API dispatch
+  const handleLaunchBroadcast = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !promoCode.trim()) {
       addToast("error", "Missing Information", "Title and promo code are required.");
       return;
     }
 
-    createCampaign({
-      tenantSlug,
-      title: title.trim(),
-      description: description.trim(),
-      discountType,
-      discountValue: Number(discountValue) || 0,
-      freeItemName: discountType === "free_item" ? freeItemName : undefined,
-      promoCode: promoCode.trim().toUpperCase(),
-      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 4).toISOString(),
-      targetAudience,
-      channels,
-      deepLinkDestination,
-    });
+    try {
+      setIsBroadcasting(true);
 
-    addToast(
-      "success",
-      "Campaign Broadcasted! 🚀",
-      `Dispatched across ${channels.join(", ")} to ${targetAudience.replace("_", " ")}.`
-    );
+      const backendDiscountType =
+        discountType === "percent"
+          ? "percentage"
+          : discountType === "fixed"
+          ? "fixed_amount"
+          : "free_item";
+
+      const deepLink =
+        deepLinkDestination === "table_menu"
+          ? `https://dine.rovixatech.com/m/${tenantSlug}?promo=${promoCode.trim().toUpperCase()}`
+          : `https://dine.rovixatech.com/m/${tenantSlug}?promo=${promoCode.trim().toUpperCase()}`;
+
+      // 1. Create offer in Go backend MongoDB
+      const createRes = await apiClient.post("/offers", {
+        title: title.trim(),
+        message: description.trim(),
+        promoCode: promoCode.trim().toUpperCase(),
+        discountType: backendDiscountType,
+        discountValue: Number(discountValue) || 0,
+        targetAudience,
+        channels,
+        deepLinkUrl: deepLink,
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 6).toISOString(),
+      });
+
+      const createdOffer = createRes.data?.data || createRes.data;
+      const offerId = createdOffer?.id || createdOffer?._id;
+
+      if (!offerId) {
+        throw new Error("Failed to create offer campaign");
+      }
+
+      // 2. Trigger multi-channel broadcast (WhatsApp, Web Push, SSE)
+      const broadcastRes = await apiClient.post(`/offers/${offerId}/broadcast`);
+      const bData = broadcastRes.data?.data || broadcastRes.data;
+
+      addToast(
+        "success",
+        "Campaign Broadcast Dispatched! 🚀",
+        `Sent to ${bData?.audienceCount || 0} diners across WhatsApp & Web Push.`
+      );
+
+      // 3. Immediately refresh table from live database
+      await fetchCampaigns(false);
+    } catch (err: any) {
+      console.error("Broadcast failed:", err);
+      addToast("error", "Broadcast Failed", err.response?.data?.error || err.message || "Could not broadcast offer.");
+    } finally {
+      setIsBroadcasting(false);
+    }
+  };
+
+  // Re-send broadcast for an existing campaign
+  const handleBroadcastAgain = async (campaignId: string, code: string) => {
+    try {
+      const res = await apiClient.post(`/offers/${campaignId}/broadcast`);
+      const bData = res.data?.data || res.data;
+      addToast(
+        "success",
+        "Campaign Re-Dispatched 🚀",
+        `Fresh notifications sent to ${bData?.audienceCount || 0} diners for ${code}.`
+      );
+      await fetchCampaigns(false);
+    } catch (err: any) {
+      addToast("error", "Re-broadcast Failed", err.response?.data?.error || err.message);
+    }
   };
 
   const discountBadgeText =
@@ -163,6 +272,16 @@ export default function OffersStudioPage() {
 
         <div className="flex items-center gap-2">
           <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => fetchCampaigns(true)}
+            isLoading={isRefreshing}
+            leftIcon={<RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />}
+          >
+            Sync Telemetry
+          </Button>
+
+          <Button
             variant="glow"
             size="sm"
             onClick={() => {
@@ -176,7 +295,7 @@ export default function OffersStudioPage() {
         </div>
       </div>
 
-      {/* KPI Telemetry Cards */}
+      {/* KPI Telemetry Cards - 100% Real-Time DB Derived */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <Card variant="glass" className="p-4 sm:p-5">
           <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Total Campaigns</span>
@@ -184,7 +303,7 @@ export default function OffersStudioPage() {
             {totalCampaigns}
           </p>
           <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1 mt-1">
-            <CheckCircle2 className="h-3 w-3" /> Live & Historical
+            <CheckCircle2 className="h-3 w-3" /> Live Database Records
           </span>
         </Card>
 
@@ -204,7 +323,7 @@ export default function OffersStudioPage() {
             {averageCTR}%
           </p>
           <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1 mt-1">
-            <TrendingUp className="h-3 w-3" /> +14.2% vs industry avg
+            <TrendingUp className="h-3 w-3" /> {totalClicks} total clicks
           </span>
         </Card>
 
@@ -214,7 +333,7 @@ export default function OffersStudioPage() {
             {totalConversions}
           </p>
           <span className="text-[11px] text-slate-500 mt-1 block">
-            Tables & Online delivery
+            Attributed table orders
           </span>
         </Card>
 
@@ -416,6 +535,7 @@ export default function OffersStudioPage() {
                   variant="glow"
                   size="md"
                   className="w-full mt-4 font-bold"
+                  isLoading={isBroadcasting}
                   leftIcon={<Send className="h-4 w-4" />}
                 >
                   🚀 Broadcast Offer Now
@@ -498,37 +618,38 @@ export default function OffersStudioPage() {
               {simulatorTab === "lockscreen" && (
                 <div className="my-auto space-y-4 pt-4">
                   <div className="text-center space-y-1">
-                    <span className="text-4xl font-extralight tracking-tight">09:41</span>
+                    <Clock className="h-8 w-8 text-slate-400/80 mx-auto" />
+                    <h3 className="text-3xl font-light tracking-tight">09:41</h3>
                     <p className="text-[10px] text-slate-400">Wednesday, October 14</p>
                   </div>
 
-                  {/* Lock Screen Notification Banner */}
-                  <div className="rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 p-3.5 shadow-xl space-y-2 animate-in fade-in-50 slide-in-from-top-2">
+                  {/* Lockscreen Notification Banner */}
+                  <div className="rounded-2xl bg-white/10 dark:bg-slate-800/80 backdrop-blur-md p-3 border border-white/15 space-y-2 shadow-lg animate-in fade-in duration-300">
                     <div className="flex items-center justify-between text-[10px] text-slate-300">
-                      <div className="flex items-center gap-1.5">
-                        <div className="h-4 w-4 rounded-md bg-emerald-500 flex items-center justify-center text-white text-[9px] font-black">
+                      <div className="flex items-center gap-1.5 font-bold">
+                        <span className="h-4 w-4 rounded-md bg-emerald-500 text-white flex items-center justify-center text-[9px]">
                           D
-                        </div>
-                        <span className="font-bold text-white">{restaurantName}</span>
+                        </span>
+                        {restaurantName}
                       </div>
                       <span className="text-[9px] text-slate-400">now</span>
                     </div>
 
-                    <div className="space-y-0.5">
-                      <p className="text-xs font-bold text-white line-clamp-1">
+                    <div>
+                      <h4 className="text-xs font-bold text-white line-clamp-1">
                         {title}
-                      </p>
-                      <p className="text-[10px] text-slate-300 line-clamp-2 leading-relaxed">
+                      </h4>
+                      <p className="text-[10px] text-slate-300 line-clamp-2 leading-relaxed mt-0.5">
                         {description}
                       </p>
                     </div>
 
-                    <div className="pt-2 border-t border-white/10 flex items-center justify-between">
-                      <Badge variant="glow" size="sm" className="font-mono text-[9px]">
+                    <div className="flex items-center justify-between pt-1 border-t border-white/10">
+                      <span className="font-mono text-[9px] text-emerald-400 font-bold bg-emerald-500/20 px-1.5 py-0.5 rounded-sm">
                         {promoCode} ({discountBadgeText})
-                      </Badge>
-                      <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1">
-                        Order Now <ArrowRight className="h-3 w-3" />
+                      </span>
+                      <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-0.5">
+                        Order Now <ArrowRight className="h-2.5 w-2.5" />
                       </span>
                     </div>
                   </div>
@@ -537,43 +658,39 @@ export default function OffersStudioPage() {
 
               {/* SIMULATOR TAB 2: WHATSAPP BUBBLE */}
               {simulatorTab === "whatsapp" && (
-                <div className="my-auto space-y-3 pt-4">
-                  {/* WhatsApp Header Mock */}
-                  <div className="p-2.5 rounded-xl bg-emerald-900/40 border border-emerald-500/30 flex items-center gap-2">
-                    <div className="h-7 w-7 rounded-full bg-emerald-500 flex items-center justify-center font-black text-white text-xs">
-                      {restaurantName.charAt(0)}
+                <div className="my-auto space-y-3 pt-6 animate-in fade-in duration-300">
+                  {/* WhatsApp Top Bar */}
+                  <div className="flex items-center gap-2 p-2 rounded-xl bg-[#128C7E]/20 border border-[#128C7E]/30">
+                    <div className="h-6 w-6 rounded-full bg-[#25D366] text-white flex items-center justify-center text-[10px] font-bold">
+                      W
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold text-white truncate flex items-center gap-1">
+                    <div>
+                      <p className="text-[10px] font-bold text-white flex items-center gap-1">
                         {restaurantName}
-                        <ShieldCheck className="h-3 w-3 text-emerald-400 shrink-0" />
+                        <ShieldCheck className="h-2.5 w-2.5 text-[#25D366]" />
                       </p>
-                      <p className="text-[9px] text-emerald-300">Official Business Account</p>
+                      <p className="text-[8px] text-emerald-300 font-medium">Official Business Account</p>
                     </div>
                   </div>
 
-                  {/* Chat Message Bubble */}
-                  <div className="p-3.5 rounded-2xl bg-[#1f2c34] border border-[#2a3942] text-slate-200 text-xs space-y-2 shadow-lg">
-                    <p className="font-bold text-white text-xs">
-                      🎁 Exclusive Diner Offer from {restaurantName}
+                  {/* Message Bubble */}
+                  <div className="rounded-2xl rounded-tl-xs bg-[#075E54]/90 p-3 text-white border border-[#128C7E]/40 space-y-2 shadow-lg">
+                    <p className="text-[10px] leading-relaxed">
+                      🎁 <strong className="text-amber-300">{title}</strong>
                     </p>
-                    <p className="text-[11px] leading-relaxed text-slate-300">
+                    <p className="text-[10px] text-slate-100 leading-relaxed">
                       {description}
                     </p>
-                    <div className="p-2 rounded-lg bg-black/30 border border-white/5 space-y-0.5 font-mono text-[10px]">
-                      <p className="text-emerald-400 font-bold">🎟️ Coupon: {promoCode}</p>
-                      <p className="text-slate-400">Discount: {discountBadgeText}</p>
+                    <div className="p-2 rounded-lg bg-black/30 border border-white/10 space-y-1">
+                      <p className="text-[9px] text-emerald-300 font-mono font-bold">
+                        🎟️ Promo Code: <strong>{promoCode}</strong>
+                      </p>
+                      <p className="text-[8px] text-slate-300">
+                        🔗 https://dine.rovixatech.com/m/{tenantSlug}?promo={promoCode}
+                      </p>
                     </div>
-                    <div className="pt-2 border-t border-white/10">
-                      <button
-                        type="button"
-                        className="w-full py-1.5 rounded-lg bg-emerald-600 text-white font-bold text-xs flex items-center justify-center gap-1 shadow-xs"
-                      >
-                        🍽️ Order Now with Offer
-                      </button>
-                    </div>
-                    <div className="text-right text-[8px] text-slate-500">
-                      09:41 AM • Read
+                    <div className="flex justify-end">
+                      <span className="text-[8px] text-slate-300">09:41 AM · Read ✓✓</span>
                     </div>
                   </div>
                 </div>
@@ -581,22 +698,23 @@ export default function OffersStudioPage() {
 
               {/* SIMULATOR TAB 3: IN-MENU TOAST */}
               {simulatorTab === "inmenu" && (
-                <div className="my-auto space-y-3 pt-4">
-                  <div className="p-2 rounded-xl bg-slate-800/60 border border-white/10 text-center">
-                    <span className="text-[10px] text-slate-400">Diner browsing /m/{tenantSlug}/t-04</span>
+                <div className="my-auto space-y-3 pt-6 animate-in fade-in duration-300">
+                  <div className="text-center p-3 rounded-xl bg-white/5 border border-white/10">
+                    <p className="text-[10px] text-slate-400">Viewing Table Menu</p>
+                    <p className="text-xs font-bold text-white mt-0.5">Table T-04 · Dine-In</p>
                   </div>
 
-                  {/* Floating In-Menu Toast Banner */}
-                  <div className="p-3.5 rounded-2xl bg-slate-900 border border-emerald-500/40 text-white shadow-2xl space-y-2.5">
+                  {/* In-Menu Popover Banner */}
+                  <div className="rounded-2xl border border-emerald-500/40 bg-slate-900/95 p-3 text-white shadow-xl space-y-2">
                     <div className="flex items-center gap-2">
-                      <div className="h-6 w-6 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
-                        <Bell className="h-3.5 w-3.5 animate-bounce" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <Badge variant="success" size="sm" className="font-mono text-[9px]">
+                      <span className="h-6 w-6 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                        <Bell className="h-3 w-3" />
+                      </span>
+                      <div>
+                        <Badge variant="success" size="sm" className="text-[9px] font-mono font-black">
                           {discountBadgeText}
                         </Badge>
-                        <h4 className="text-[11px] font-bold text-white truncate mt-0.5">
+                        <h4 className="text-[11px] font-bold line-clamp-1 mt-0.5">
                           {title}
                         </h4>
                       </div>
@@ -620,14 +738,14 @@ export default function OffersStudioPage() {
         </div>
       </div>
 
-      {/* Campaign History & Re-Send Table */}
+      {/* Campaign History & Re-Send Table - 100% Real Database Backed */}
       <Card variant="glass">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-base font-bold">Broadcast Campaign History</CardTitle>
               <CardDescription className="text-xs">
-                Performance tracking, click-through rates, and 1-click re-broadcasting for completed offers.
+                Performance tracking, click-through rates, and 1-click re-broadcasting for saved promotional campaigns.
               </CardDescription>
             </div>
           </div>
@@ -650,93 +768,97 @@ export default function OffersStudioPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {campaigns.map((c) => {
-                  const ctr = c.sentCount > 0 ? ((c.clickCount / c.sentCount) * 100).toFixed(1) : "0.0";
-                  return (
-                    <TableRow key={c.id}>
-                      <TableCell className="max-w-[220px]">
-                        <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                          {c.title}
-                        </p>
-                        <p className="text-[10px] text-slate-500 truncate mt-0.5">
-                          {c.description}
-                        </p>
-                      </TableCell>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center py-8 text-xs text-slate-500">
+                      Loading campaigns from database...
+                    </TableCell>
+                  </TableRow>
+                ) : campaigns.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center py-12 text-slate-500">
+                      <Tag className="h-8 w-8 text-slate-400 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                        No promotional campaigns launched yet
+                      </p>
+                      <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                        Compose your first promotional offer above to re-engage seated diners and drive instant repeat orders!
+                      </p>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  campaigns.map((c) => {
+                    const ctr = c.sentCount > 0 ? ((c.clickCount / c.sentCount) * 100).toFixed(1) : "0.0";
+                    return (
+                      <TableRow key={c.id}>
+                        <TableCell className="max-w-[220px]">
+                          <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                            {c.title}
+                          </p>
+                          <p className="text-[10px] text-slate-500 truncate mt-0.5">
+                            {c.description}
+                          </p>
+                        </TableCell>
 
-                      <TableCell className="text-xs">
-                        <Badge variant="outline" size="sm" className="capitalize text-[10px]">
-                          {c.targetAudience.replace("_", " ")}
-                        </Badge>
-                      </TableCell>
+                        <TableCell className="text-xs">
+                          <Badge variant="outline" size="sm" className="capitalize text-[10px]">
+                            {c.targetAudience.replace("_", " ")}
+                          </Badge>
+                        </TableCell>
 
-                      <TableCell className="text-xs">
-                        <div className="flex items-center gap-1">
-                          {c.channels.map((ch) => (
-                            <span
-                              key={ch}
-                              className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 font-mono"
+                        <TableCell className="text-xs">
+                          <div className="flex items-center gap-1">
+                            {c.channels.map((ch) => (
+                              <span
+                                key={ch}
+                                className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 font-mono"
+                              >
+                                {ch === "whatsapp" ? "WA" : ch === "web_push" ? "Push" : "Menu"}
+                              </span>
+                            ))}
+                          </div>
+                        </TableCell>
+
+                        <TableCell className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                          {c.promoCode}
+                        </TableCell>
+
+                        <TableCell className="text-xs font-mono">
+                          {c.sentCount.toLocaleString()}
+                        </TableCell>
+
+                        <TableCell className="text-xs">
+                          <span className="font-mono font-semibold">{c.clickCount}</span>
+                          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 ml-1">
+                            ({ctr}%)
+                          </span>
+                        </TableCell>
+
+                        <TableCell className="text-xs font-mono font-semibold">
+                          {c.convertedCount}
+                        </TableCell>
+
+                        <TableCell className="text-xs font-mono font-bold text-slate-900 dark:text-white">
+                          {formatCurrency(c.recoveredRevenue, "INR")}
+                        </TableCell>
+
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              className="h-7 text-[11px]"
+                              onClick={() => handleBroadcastAgain(c.id, c.promoCode)}
+                              leftIcon={<RotateCcw className="h-3 w-3" />}
                             >
-                              {ch === "whatsapp" ? "WA" : ch === "web_push" ? "Push" : "Menu"}
-                            </span>
-                          ))}
-                        </div>
-                      </TableCell>
-
-                      <TableCell className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                        {c.promoCode}
-                      </TableCell>
-
-                      <TableCell className="text-xs font-mono">
-                        {c.sentCount.toLocaleString()}
-                      </TableCell>
-
-                      <TableCell className="text-xs">
-                        <span className="font-mono font-semibold">{c.clickCount}</span>
-                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 ml-1">
-                          ({ctr}%)
-                        </span>
-                      </TableCell>
-
-                      <TableCell className="text-xs font-mono font-semibold">
-                        {c.convertedCount}
-                      </TableCell>
-
-                      <TableCell className="text-xs font-mono font-bold text-slate-900 dark:text-white">
-                        {formatCurrency(c.recoveredRevenue, "INR")}
-                      </TableCell>
-
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            className="h-7 text-[11px]"
-                            onClick={() => {
-                              broadcastAgain(c.id);
-                              addToast(
-                                "success",
-                                "Campaign Re-Dispatched",
-                                `Fresh notifications queued for ${c.promoCode}.`
-                              );
-                            }}
-                            leftIcon={<RotateCcw className="h-3 w-3" />}
-                          >
-                            Broadcast Again
-                          </Button>
-
-                          <button
-                            type="button"
-                            onClick={() => deleteCampaign(c.id)}
-                            className="p-1 rounded-md text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
-                            title="Delete Campaign"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+                              Broadcast Again
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
               </TableBody>
             </Table>
           </div>

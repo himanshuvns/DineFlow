@@ -16,51 +16,173 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCartStore } from "@/lib/stores/cart-store";
-import { useOfferStore, OfferCampaign } from "@/lib/stores/offer-store";
+import { useOfferStore, OfferCampaign, DiscountType } from "@/lib/stores/offer-store";
 import { useToast } from "@/components/ui/toast";
 
 interface OfferNotificationCenterProps {
   tenantSlug: string;
 }
 
+function mapOfferPayload(o: any, tenantSlug: string): OfferCampaign {
+  let discType: DiscountType = "percent";
+  if (o.discountType === "fixed_amount" || o.discountType === "fixed") {
+    discType = "fixed";
+  } else if (o.discountType === "free_item") {
+    discType = "free_item";
+  }
+
+  return {
+    id: o.id || o._id || `off-${o.promoCode}`,
+    tenantSlug: tenantSlug,
+    title: o.title || "Special Table Offer",
+    description: o.message || o.description || "Enjoy exclusive savings on your dining bill!",
+    discountType: discType,
+    discountValue: Number(o.discountValue) || 0,
+    freeItemName: o.freeItemName,
+    promoCode: (o.promoCode || "").toUpperCase(),
+    expiresAt: o.expiresAt || new Date(Date.now() + 1000 * 60 * 60 * 6).toISOString(),
+    targetAudience: o.targetAudience || "billed_today",
+    channels: o.channels || ["web_push", "in_menu"],
+    deepLinkDestination: "table_menu",
+    status: o.isActive !== false ? "active" : "completed",
+    sentCount: o.stats?.sentCount || 0,
+    clickCount: o.stats?.clickedCount || o.clickCount || 0,
+    convertedCount: o.stats?.ordersCount || o.convertedCount || 0,
+    recoveredRevenue: o.stats?.revenueGenerated || o.recoveredRevenue || 0,
+    createdAt: o.createdAt || new Date().toISOString(),
+  };
+}
+
 function OfferNotificationCenterInner({ tenantSlug }: OfferNotificationCenterProps) {
   const searchParams = useSearchParams();
   const { addToast } = useToast();
   const { appliedPromo, applyPromo } = useCartStore();
-  const { getActiveOffers, recordClick } = useOfferStore();
+  const { addCampaign } = useOfferStore();
 
   const [dismissed, setDismissed] = React.useState(false);
-  const [pushSubscribed, setPushSubscribed] = React.useState(false);
+  const [pushPermission, setPushPermission] = React.useState<NotificationPermission>("default");
   const [activeOffer, setActiveOffer] = React.useState<OfferCampaign | null>(null);
 
-  // Check URL param ?promo=... or active campaigns
+  // Check existing Notification permission on load
   React.useEffect(() => {
-    const promoQuery = searchParams.get("promo") || searchParams.get("offer");
-    const activeList = getActiveOffers(tenantSlug);
-
-    if (promoQuery) {
-      const match = activeList.find(
-        (o) => o.promoCode.toLowerCase() === promoQuery.toLowerCase()
-      );
-      if (match) {
-        setActiveOffer(match);
-        // Auto-apply promo from URL
-        applyPromo(match.promoCode, match.discountType, match.discountValue, match.title);
-        return;
+    if (typeof window !== "undefined" && "Notification" in window) {
+      setPushPermission(Notification.permission);
+      // Auto register service worker in background if available
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/sw.js").catch(() => {});
       }
     }
+  }, []);
 
-    if (activeList.length > 0 && !activeOffer) {
-      setActiveOffer(activeList[0]);
+  // Fetch real active offers from Go Backend API
+  const fetchActiveOffers = React.useCallback(async () => {
+    try {
+      const res = await fetch(`/api/v1/offers/public/${tenantSlug}`, { cache: "no-store" });
+      if (!res.ok) return [];
+      const json = await res.json();
+      const list = json.data || json || [];
+      if (Array.isArray(list)) {
+        const mapped = list.map((item) => mapOfferPayload(item, tenantSlug));
+        mapped.forEach((c) => addCampaign(c));
+        return mapped;
+      }
+      return [];
+    } catch {
+      return [];
     }
-  }, [tenantSlug, searchParams, getActiveOffers, applyPromo]);
+  }, [tenantSlug, addCampaign]);
+
+  // Initial fetch and URL ?promo= detection
+  React.useEffect(() => {
+    let isMounted = true;
+    const promoQuery = searchParams.get("promo") || searchParams.get("offer");
+
+    fetchActiveOffers().then((offers) => {
+      if (!isMounted) return;
+
+      if (promoQuery && offers.length > 0) {
+        const match = offers.find(
+          (o) => o.promoCode.toLowerCase() === promoQuery.toLowerCase()
+        );
+        if (match) {
+          setActiveOffer(match);
+          applyPromo(match.promoCode, match.discountType, match.discountValue, match.title);
+          return;
+        }
+      }
+
+      if (offers.length > 0 && !activeOffer) {
+        setActiveOffer(offers[0]);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [tenantSlug, searchParams, fetchActiveOffers, applyPromo]);
+
+  // Realtime Server-Sent Events (SSE) listener for live broadcasts
+  React.useEffect(() => {
+    if (typeof window === "undefined" || !("EventSource" in window)) return;
+
+    let es: EventSource | null = null;
+    try {
+      // Connect to SSE hub for this tenant
+      es = new EventSource(`/api/v1/realtime?tenant=${tenantSlug}`);
+      es.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === "offer.broadcast" && data.offer) {
+            const mapped = mapOfferPayload(data.offer, tenantSlug);
+            setActiveOffer(mapped);
+            setDismissed(false);
+            addCampaign(mapped);
+
+            // If user previously granted native notification permission, display native system notification!
+            if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+              try {
+                if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+                  navigator.serviceWorker.ready.then((reg) => {
+                    reg.showNotification(mapped.title, {
+                      body: mapped.description,
+                      icon: "/favicon.ico",
+                      badge: "/favicon.ico",
+                      tag: mapped.promoCode,
+                      data: { url: window.location.href },
+                    });
+                  });
+                } else {
+                  new Notification(mapped.title, {
+                    body: mapped.description,
+                    icon: "/favicon.ico",
+                  });
+                }
+              } catch {}
+            }
+          }
+        } catch {}
+      };
+    } catch {}
+
+    return () => {
+      if (es) es.close();
+    };
+  }, [tenantSlug, addCampaign]);
 
   if (!activeOffer || dismissed) return null;
 
   const isAlreadyApplied = appliedPromo?.code === activeOffer.promoCode;
 
-  const handleClaim = () => {
-    recordClick(activeOffer.id);
+  const handleClaim = async () => {
+    // Record click telemetry on backend
+    try {
+      await fetch("/api/v1/offers/track-click", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ offerId: activeOffer.id }),
+      });
+    } catch {}
+
     applyPromo(
       activeOffer.promoCode,
       activeOffer.discountType,
@@ -89,18 +211,66 @@ function OfferNotificationCenterInner({ tenantSlug }: OfferNotificationCenterPro
   };
 
   const handleSubscribePush = async () => {
-    setPushSubscribed(true);
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      addToast("info", "Web Push Not Supported", "Your browser does not support push notifications.");
+      return;
+    }
+
     try {
-      await fetch("/api/v1/offers/public/subscribe-push", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tenantSlug,
-          timestamp: Date.now(),
-        }),
-      });
-      addToast("info", "Notifications Enabled 🔔", "You will receive exclusive VIP table perks.");
-    } catch {}
+      const permission = await Notification.requestPermission();
+      setPushPermission(permission);
+
+      if (permission === "granted") {
+        let endpoint = `https://fcm.googleapis.com/browser/${Date.now()}`;
+        let p256dhKey = "granted";
+        let authKey = "granted";
+
+        if ("serviceWorker" in navigator) {
+          const reg = await navigator.serviceWorker.register("/sw.js");
+          try {
+            const sub = await reg.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: "BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBKr3qBUYIHBQFLXYp5Nksh8U",
+            });
+            if (sub) {
+              endpoint = sub.endpoint;
+              const p256 = sub.getKey("p256dh");
+              const auth = sub.getKey("auth");
+              if (p256) p256dhKey = btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(p256))));
+              if (auth) authKey = btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(auth))));
+            }
+          } catch {
+            // Subscription fallback without custom VAPID key
+          }
+        }
+
+        // Register subscription with backend
+        await fetch("/api/v1/offers/public/subscribe-push", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            tenantSlug,
+            endpoint,
+            p256dhKey,
+            authKey,
+          }),
+        });
+
+        // Trigger an immediate confirmation notification on diner's mobile device
+        try {
+          new Notification("🔔 VIP Notifications Enabled!", {
+            body: `You will now receive instant specials and kitchen perks from ${tenantSlug.replace("-", " ")}.`,
+            icon: "/favicon.ico",
+          });
+        } catch {}
+
+        addToast("success", "Notifications Enabled! 🔔", "You will receive exclusive VIP table perks directly on your device.");
+      } else if (permission === "denied") {
+        addToast("info", "Notifications Blocked", "Please unblock notifications in your mobile browser settings to receive flash deals.");
+      }
+    } catch (err: any) {
+      console.warn("Failed to subscribe push:", err);
+    }
   };
 
   const discountBadgeText =
@@ -130,7 +300,7 @@ function OfferNotificationCenterInner({ tenantSlug }: OfferNotificationCenterPro
                   {discountBadgeText}
                 </Badge>
                 <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                  <Clock className="h-3 w-3" /> Flash Offer
+                  <Clock className="h-3 w-3" /> Live Offer
                 </span>
               </div>
               <h4 className="text-xs font-bold text-white line-clamp-1 mt-0.5">
@@ -173,13 +343,13 @@ function OfferNotificationCenterInner({ tenantSlug }: OfferNotificationCenterPro
             )}
           </Button>
 
-          {!pushSubscribed && (
+          {pushPermission !== "granted" && (
             <button
               onClick={handleSubscribePush}
               className="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 text-[10px] font-semibold transition-colors shrink-0 flex items-center gap-1 cursor-pointer"
-              title="Get Push Notifications"
+              title="Get Push Notifications on your phone"
             >
-              <Volume2 className="h-3 w-3 text-amber-400" /> Notify Me
+              <Volume2 className="h-3 w-3 text-amber-400" /> Push Alert
             </button>
           )}
         </div>

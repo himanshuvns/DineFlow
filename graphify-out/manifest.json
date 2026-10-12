@@ -2514,9 +2514,9 @@
     "semantic_hash": ""
   },
   "apps/api/internal/application/offer/service.go": {
-    "mtime": 1791799674.1102455,
-    "seen": 1791800445.570178,
-    "ast_hash": "55af2b17834ffec52e92bfde6416f449",
+    "mtime": 1791802746.170547,
+    "seen": 1791803079.001358,
+    "ast_hash": "0ba10ca202a3154e65cae6427f32eae0",
     "semantic_hash": ""
   },
   "apps/api/internal/application/offer/service_test.go": {
@@ -2526,9 +2526,9 @@
     "semantic_hash": ""
   },
   "apps/api/internal/domain/offer/offer.go": {
-    "mtime": 1791799634.6668544,
-    "seen": 1791800445.570196,
-    "ast_hash": "acca2ba1491295422d1cafd7f873fbf0",
+    "mtime": 1791802704.26236,
+    "seen": 1791803079.001376,
+    "ast_hash": "5819bb3d61ab9e6d270427bba97e24c2",
     "semantic_hash": ""
   },
   "apps/api/internal/interfaces/http/handlers/offer.go": {
@@ -2562,21 +2562,39 @@
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/offers/page.tsx": {
-    "mtime": 1791800193.4149487,
-    "seen": 1791800445.570271,
-    "ast_hash": "67e668eb32e53eb73327b84801969ad6",
+    "mtime": 1791802967.7002988,
+    "seen": 1791803079.001444,
+    "ast_hash": "c71e050a7e6173b0b511b9bdafa388d2",
     "semantic_hash": ""
   },
   "apps/web/components/customer/offer-notification-center.tsx": {
-    "mtime": 1791800011.0781884,
-    "seen": 1791800445.5703099,
-    "ast_hash": "a6f2844564423343899e557274fb3ed3",
+    "mtime": 1791802874.3132796,
+    "seen": 1791803079.001478,
+    "ast_hash": "19f823a1b5e7d91af9fe50dc1b07ba68",
     "semantic_hash": ""
   },
   "apps/web/lib/stores/offer-store.ts": {
-    "mtime": 1791799993.8079486,
-    "seen": 1791800445.570358,
-    "ast_hash": "aea78c52b8bae8c402f45c00a073efe6",
+    "mtime": 1791802814.3725858,
+    "seen": 1791803079.0015209,
+    "ast_hash": "1ac3ec718bebb35e274bf2dd5880e681",
+    "semantic_hash": ""
+  },
+  "apps/web/app/api/v1/offers/track-click/route.ts": {
+    "mtime": 1791802988.4086132,
+    "seen": 1791803079.0014331,
+    "ast_hash": "ef2c3ed281d4962b7f9b2c131d418b39",
+    "semantic_hash": ""
+  },
+  "apps/web/app/api/v1/offers/track-order/route.ts": {
+    "mtime": 1791802996.4453387,
+    "seen": 1791803079.001434,
+    "ast_hash": "ee8b2d80996d8670bab6a92fa1575b8f",
+    "semantic_hash": ""
+  },
+  "apps/web/public/sw.js": {
+    "mtime": 1791802771.538361,
+    "seen": 1791803079.001528,
+    "ast_hash": "3a4d009328bf7ecdd4234fd8380bac41",
     "semantic_hash": ""
   }
 }

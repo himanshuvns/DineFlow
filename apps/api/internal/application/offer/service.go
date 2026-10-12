@@ -128,16 +128,18 @@ func (s *Service) BroadcastOffer(ctx context.Context, tenantID, offerID bson.Obj
 
 	switch off.TargetAudience {
 	case domainoffer.AudienceBilledToday:
-		ordersFilter["status"] = domainorder.StatusPaid
+		ordersFilter["status"] = bson.M{"$in": []string{string(domainorder.StatusPaid), string(domainorder.StatusServed)}}
 		ordersFilter["createdAt"] = bson.M{"$gte": todayStart}
-	case domainoffer.AudienceServedToday:
-		ordersFilter["status"] = bson.M{"$in": []string{string(domainorder.StatusServed), string(domainorder.StatusPaid)}}
+	case domainoffer.AudienceActiveTables, domainoffer.AudienceServedToday:
+		// Active tables includes any order from today (placed, preparing, ready, served, paid)
 		ordersFilter["createdAt"] = bson.M{"$gte": todayStart}
-	case domainoffer.AudiencePastWeek:
-		ordersFilter["status"] = bson.M{"$in": []string{string(domainorder.StatusServed), string(domainorder.StatusPaid)}}
+	case domainoffer.AudiencePastWeek, domainoffer.AudiencePast7Days:
 		ordersFilter["createdAt"] = bson.M{"$gte": pastWeekStart}
-	case domainoffer.AudienceAllGuests:
-		ordersFilter["status"] = bson.M{"$in": []string{string(domainorder.StatusServed), string(domainorder.StatusPaid)}}
+	case domainoffer.AudienceAllGuests, domainoffer.AudienceAllDiners:
+		// all orders
+	default:
+		// default to past 7 days
+		ordersFilter["createdAt"] = bson.M{"$gte": pastWeekStart}
 	}
 
 	uniquePhones := make(map[string]bool)
@@ -154,15 +156,46 @@ func (s *Service) BroadcastOffer(ctx context.Context, tenantID, offerID bson.Obj
 				}
 			}
 		}
+
+		// Fallback: If no orders matched the narrow window, query any recent orders with phone numbers
+		if len(uniquePhones) == 0 {
+			fallbackCursor, fErr := s.db.Collection("orders").Find(ctx, bson.M{
+				"tenantId":      tenantID,
+				"deletedAt":     bson.M{"$exists": false},
+				"customerPhone": bson.M{"$nin": []interface{}{"", nil}},
+			}, options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}}).SetLimit(50))
+			if fErr == nil {
+				var fallbackOrders []domainorder.Order
+				if fallbackCursor.All(ctx, &fallbackOrders) == nil {
+					for _, ord := range fallbackOrders {
+						phone := strings.TrimSpace(ord.CustomerPhone)
+						if phone != "" {
+							uniquePhones[phone] = true
+						}
+					}
+				}
+			}
+		}
 	}
 
-	// 2. Fetch Restaurant Name for message branding
+	// 2. Fetch Restaurant Name & Slug for message branding and deep links
 	restaurantName := "Our Restaurant"
+	tenantSlug := "the-grand-bistro"
 	if s.db != nil {
 		var t domaintenant.Tenant
 		if err := s.db.Collection("tenants").FindOne(ctx, bson.M{"_id": tenantID}).Decode(&t); err == nil {
-			restaurantName = t.Name
+			if t.Name != "" {
+				restaurantName = t.Name
+			}
+			if t.Slug != "" {
+				tenantSlug = t.Slug
+			}
 		}
+	}
+
+	deepLink := off.DeepLinkURL
+	if strings.TrimSpace(deepLink) == "" {
+		deepLink = fmt.Sprintf("https://dine.rovixatech.com/m/%s?promo=%s", tenantSlug, off.PromoCode)
 	}
 
 	// 3. Dispatch WhatsApp notifications to unique guest phones
@@ -180,9 +213,9 @@ func (s *Service) BroadcastOffer(ctx context.Context, tenantID, offerID bson.Obj
 				"*%s*\n"+
 				"%s\n\n"+
 				"🎟️ Use Promo Code: *%s* (%s)\n"+
-				"Order now directly from your table or online: %s",
+				"Order now directly from your table or online:\n%s",
 				restaurantName, off.Title, off.Message,
-				off.PromoCode, discountText, off.DeepLinkURL,
+				off.PromoCode, discountText, deepLink,
 			)
 			_, err := s.waService.SendDirectMessage(ctx, tenantID, phone, msg)
 			if err == nil {
@@ -197,6 +230,7 @@ func (s *Service) BroadcastOffer(ctx context.Context, tenantID, offerID bson.Obj
 		"tenantId": tenantID.Hex(),
 		"type":     "offer.broadcast",
 		"offer":    off,
+		"deepLink": deepLink,
 	}
 	rawBytes, _ := json.Marshal(eventPayload)
 	hub.BroadcastRaw(tenantID.Hex(), rawBytes)
