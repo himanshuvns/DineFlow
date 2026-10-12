@@ -23,6 +23,39 @@ interface OfferNotificationCenterProps {
   tenantSlug: string;
 }
 
+function playNotificationChime() {
+  try {
+    const AudioContextClass =
+      window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const ctx = new AudioContextClass();
+    const now = ctx.currentTime;
+    const osc1 = ctx.createOscillator();
+    const osc2 = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc1.type = "sine";
+    osc1.frequency.setValueAtTime(587.33, now); // D5
+    osc1.frequency.exponentialRampToValueAtTime(880, now + 0.15); // A5
+
+    osc2.type = "triangle";
+    osc2.frequency.setValueAtTime(880, now);
+    osc2.frequency.exponentialRampToValueAtTime(1174.66, now + 0.2); // D6
+
+    gain.gain.setValueAtTime(0.25, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+
+    osc1.connect(gain);
+    osc2.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc1.start(now);
+    osc2.start(now);
+    osc1.stop(now + 0.45);
+    osc2.stop(now + 0.45);
+  } catch {}
+}
+
 function mapOfferPayload(o: any, tenantSlug: string): OfferCampaign {
   let discType: DiscountType = "percent";
   if (o.discountType === "fixed_amount" || o.discountType === "fixed") {
@@ -62,12 +95,12 @@ function OfferNotificationCenterInner({ tenantSlug }: OfferNotificationCenterPro
   const [dismissed, setDismissed] = React.useState(false);
   const [pushPermission, setPushPermission] = React.useState<NotificationPermission>("default");
   const [activeOffer, setActiveOffer] = React.useState<OfferCampaign | null>(null);
+  const activeOfferIdRef = React.useRef<string | null>(null);
 
   // Check existing Notification permission on load
   React.useEffect(() => {
     if (typeof window !== "undefined" && "Notification" in window) {
       setPushPermission(Notification.permission);
-      // Auto register service worker in background if available
       if ("serviceWorker" in navigator) {
         navigator.serviceWorker.register("/sw.js").catch(() => {});
       }
@@ -106,39 +139,84 @@ function OfferNotificationCenterInner({ tenantSlug }: OfferNotificationCenterPro
         );
         if (match) {
           setActiveOffer(match);
+          activeOfferIdRef.current = match.id;
           applyPromo(match.promoCode, match.discountType, match.discountValue, match.title);
+          playNotificationChime();
           return;
         }
       }
 
       if (offers.length > 0 && !activeOffer) {
         setActiveOffer(offers[0]);
+        activeOfferIdRef.current = offers[0].id;
       }
     });
 
     return () => {
       isMounted = false;
     };
-  }, [tenantSlug, searchParams, fetchActiveOffers, applyPromo]);
+  }, [tenantSlug, searchParams, fetchActiveOffers, applyPromo, activeOffer]);
 
-  // Realtime Server-Sent Events (SSE) listener for live broadcasts
+  // 5-second polling fallback so newly broadcasted offers pop down instantly on mobile without reloading
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      fetchActiveOffers().then((offers) => {
+        if (offers.length > 0) {
+          const newest = offers[0];
+          if (!activeOfferIdRef.current || activeOfferIdRef.current !== newest.id) {
+            setActiveOffer(newest);
+            activeOfferIdRef.current = newest.id;
+            setDismissed(false);
+            playNotificationChime();
+
+            // Trigger native OS notification if permission granted
+            if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+              try {
+                if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+                  navigator.serviceWorker.ready.then((reg) => {
+                    reg.showNotification(newest.title, {
+                      body: newest.description,
+                      icon: "/favicon.ico",
+                      badge: "/favicon.ico",
+                      tag: newest.promoCode,
+                      vibrate: [200, 100, 200],
+                      data: { url: window.location.href },
+                    } as any);
+                  });
+                } else {
+                  new Notification(newest.title, {
+                    body: newest.description,
+                    icon: "/favicon.ico",
+                  });
+                }
+              } catch {}
+            }
+          }
+        }
+      });
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [fetchActiveOffers]);
+
+  // Realtime Server-Sent Events (SSE) listener
   React.useEffect(() => {
     if (typeof window === "undefined" || !("EventSource" in window)) return;
 
     let es: EventSource | null = null;
     try {
-      // Connect to SSE hub for this tenant
-      es = new EventSource(`/api/v1/realtime?tenant=${tenantSlug}`);
+      es = new EventSource(`/api/v1/offers/public/stream/${tenantSlug}`);
       es.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
           if (data.type === "offer.broadcast" && data.offer) {
             const mapped = mapOfferPayload(data.offer, tenantSlug);
             setActiveOffer(mapped);
+            activeOfferIdRef.current = mapped.id;
             setDismissed(false);
             addCampaign(mapped);
+            playNotificationChime();
 
-            // If user previously granted native notification permission, display native system notification!
             if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
               try {
                 if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
@@ -149,7 +227,7 @@ function OfferNotificationCenterInner({ tenantSlug }: OfferNotificationCenterPro
                       badge: "/favicon.ico",
                       tag: mapped.promoCode,
                       data: { url: window.location.href },
-                    });
+                    } as any);
                   });
                 } else {
                   new Notification(mapped.title, {
@@ -174,7 +252,6 @@ function OfferNotificationCenterInner({ tenantSlug }: OfferNotificationCenterPro
   const isAlreadyApplied = appliedPromo?.code === activeOffer.promoCode;
 
   const handleClaim = async () => {
-    // Record click telemetry on backend
     try {
       await fetch("/api/v1/offers/track-click", {
         method: "POST",
@@ -194,7 +271,7 @@ function OfferNotificationCenterInner({ tenantSlug }: OfferNotificationCenterPro
       confetti({
         particleCount: 65,
         spread: 60,
-        origin: { y: 0.8 },
+        origin: { y: 0.2 },
         colors: ["#10b981", "#f59e0b", "#6366f1"],
       });
     } catch {}
@@ -239,12 +316,9 @@ function OfferNotificationCenterInner({ tenantSlug }: OfferNotificationCenterPro
               if (p256) p256dhKey = btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(p256))));
               if (auth) authKey = btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(auth))));
             }
-          } catch {
-            // Subscription fallback without custom VAPID key
-          }
+          } catch {}
         }
 
-        // Register subscription with backend
         await fetch("/api/v1/offers/public/subscribe-push", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -256,7 +330,6 @@ function OfferNotificationCenterInner({ tenantSlug }: OfferNotificationCenterPro
           }),
         });
 
-        // Trigger an immediate confirmation notification on diner's mobile device
         try {
           new Notification("🔔 VIP Notifications Enabled!", {
             body: `You will now receive instant specials and kitchen perks from ${tenantSlug.replace("-", " ")}.`,
@@ -281,29 +354,30 @@ function OfferNotificationCenterInner({ tenantSlug }: OfferNotificationCenterPro
       : `FREE PERK`;
 
   return (
-    <div className="fixed bottom-20 sm:bottom-6 right-3 sm:right-6 z-40 max-w-sm w-[calc(100%-1.5rem)] animate-in fade-in-50 slide-in-from-bottom-4 duration-300 pointer-events-auto">
-      <div className="rounded-2xl border border-emerald-500/30 bg-slate-900/95 dark:bg-[#070d18]/95 backdrop-blur-md text-white p-4 shadow-2xl shadow-emerald-500/10 space-y-3">
+    // Fixed at TOP OF SCREEN with drop-down animation so it's 100% visible on all mobile phones
+    <div className="fixed top-3 xs:top-4 inset-x-3 sm:inset-x-auto sm:right-6 sm:max-w-md z-50 pointer-events-auto animate-in slide-in-from-top-4 duration-500">
+      <div className="rounded-2xl border border-emerald-500/50 bg-slate-900/98 dark:bg-[#070d18]/98 backdrop-blur-xl text-white p-3.5 sm:p-4 shadow-2xl shadow-emerald-500/20 space-y-2.5 ring-1 ring-white/10">
         {/* Top Header */}
         <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5 min-w-0">
             <span className="relative flex h-8 w-8 rounded-xl bg-emerald-500/20 text-emerald-400 items-center justify-center shrink-0">
-              <Bell className="h-4 w-4 animate-bounce" />
+              <Bell className="h-4 w-4 animate-bounce text-emerald-400" />
               <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
               </span>
             </span>
 
-            <div>
-              <div className="flex items-center gap-1.5">
-                <Badge variant="success" size="sm" className="font-mono text-[10px] font-black">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <Badge variant="success" size="sm" className="font-mono text-[10px] font-black bg-emerald-500 text-slate-950 px-1.5 py-0.5">
                   {discountBadgeText}
                 </Badge>
-                <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                  <Clock className="h-3 w-3" /> Live Offer
+                <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
+                  <Sparkles className="h-3 w-3" /> Flash Deal Now
                 </span>
               </div>
-              <h4 className="text-xs font-bold text-white line-clamp-1 mt-0.5">
+              <h4 className="text-xs sm:text-sm font-extrabold text-white truncate mt-0.5">
                 {activeOffer.title}
               </h4>
             </div>
@@ -311,7 +385,7 @@ function OfferNotificationCenterInner({ tenantSlug }: OfferNotificationCenterPro
 
           <button
             onClick={() => setDismissed(true)}
-            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer shrink-0"
             title="Dismiss Offer"
           >
             <X className="h-4 w-4" />
@@ -319,26 +393,26 @@ function OfferNotificationCenterInner({ tenantSlug }: OfferNotificationCenterPro
         </div>
 
         {/* Offer Body */}
-        <p className="text-[11px] text-slate-300 leading-relaxed line-clamp-2">
+        <p className="text-[11px] sm:text-xs text-slate-200 leading-relaxed line-clamp-2">
           {activeOffer.description}
         </p>
 
-        {/* CTA Bar */}
-        <div className="flex items-center gap-2 pt-1 border-t border-white/10">
+        {/* Action Button Bar */}
+        <div className="flex items-center gap-2 pt-2 border-t border-white/10">
           <Button
             size="sm"
             variant={isAlreadyApplied ? "secondary" : "glow"}
-            className="flex-1 text-xs font-bold h-9"
+            className="flex-1 text-xs font-bold h-8 sm:h-9"
             onClick={handleClaim}
             disabled={isAlreadyApplied}
           >
             {isAlreadyApplied ? (
               <span className="flex items-center gap-1 text-emerald-400">
-                <CheckCircle2 className="h-3.5 w-3.5" /> Promo Applied
+                <CheckCircle2 className="h-3.5 w-3.5" /> Coupon {activeOffer.promoCode} Applied
               </span>
             ) : (
               <span className="flex items-center gap-1">
-                <Tag className="h-3.5 w-3.5" /> Claim ({activeOffer.promoCode})
+                <Tag className="h-3.5 w-3.5" /> Claim {discountBadgeText} ({activeOffer.promoCode})
               </span>
             )}
           </Button>
@@ -346,7 +420,7 @@ function OfferNotificationCenterInner({ tenantSlug }: OfferNotificationCenterPro
           {pushPermission !== "granted" && (
             <button
               onClick={handleSubscribePush}
-              className="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 text-[10px] font-semibold transition-colors shrink-0 flex items-center gap-1 cursor-pointer"
+              className="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 text-[10px] font-semibold transition-colors shrink-0 flex items-center gap-1 cursor-pointer h-8 sm:h-9"
               title="Get Push Notifications on your phone"
             >
               <Volume2 className="h-3 w-3 text-amber-400" /> Push Alert

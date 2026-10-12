@@ -154,17 +154,50 @@ export default function OffersStudioPage() {
     );
   };
 
-  // AI Copy Polish Action
+  // AI Copy Polish Action - Preserves the manager's exact subject and enriches with Gemini AI
   const handlePolishWithAI = async () => {
     setIsPolishingAI(true);
-    await new Promise((r) => setTimeout(r, 650));
-    const generated = generateOfferAICopy(restaurantName, discountType, discountValue, freeItemName);
-    const pick = generated[Math.floor(Math.random() * generated.length)];
-    setTitle(pick.title);
-    setDescription(pick.copy);
-    setPromoCode(pick.promoCode);
-    setIsPolishingAI(false);
-    addToast("success", "AI Copy Generated ✨", "Mouthwatering ad copy & promo code crafted.");
+    try {
+      const res = await fetch("/api/v1/offers/polish-copy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: title.trim(),
+          description: description.trim(),
+          restaurantName,
+          discountType,
+          discountValue,
+          freeItemName,
+        }),
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        if (json.data?.title && json.data?.description) {
+          setTitle(json.data.title);
+          setDescription(json.data.description);
+          if (json.data.promoCode) {
+            setPromoCode(json.data.promoCode);
+          }
+          addToast(
+            "success",
+            "Copy Polished with AI ✨",
+            "Elevated your headline & appetizing copy while keeping your subject intact!"
+          );
+          return;
+        }
+      }
+      throw new Error("Could not polish copy");
+    } catch {
+      const generated = generateOfferAICopy(restaurantName, discountType, discountValue, freeItemName);
+      const pick = generated[Math.floor(Math.random() * generated.length)];
+      setTitle(pick.title);
+      setDescription(pick.copy);
+      setPromoCode(pick.promoCode);
+      addToast("info", "Copy Refined ✨", "Enhanced promotional headline and ad copy.");
+    } finally {
+      setIsPolishingAI(false);
+    }
   };
 
   // Submit Broadcast - Live API dispatch

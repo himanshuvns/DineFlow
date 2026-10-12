@@ -1,10 +1,14 @@
 package handlers
 
 import (
+	"fmt"
+	"io"
+	"net/http"
 	"time"
 
 	appoffer "github.com/dineflow/api/internal/application/offer"
 	domainoffer "github.com/dineflow/api/internal/domain/offer"
+	"github.com/dineflow/api/internal/infrastructure/realtime"
 	"github.com/dineflow/api/internal/interfaces/http/middleware"
 	"github.com/dineflow/api/pkg/response"
 	"github.com/gin-gonic/gin"
@@ -202,4 +206,47 @@ func (h *OfferHandler) TrackClick(c *gin.Context) {
 
 	_ = h.offerService.TrackOfferClick(c.Request.Context(), oOID)
 	response.OK(c, gin.H{"tracked": true})
+}
+
+// StreamActiveOffers godoc
+// GET /api/v1/offers/public/stream/:slug
+func (h *OfferHandler) StreamActiveOffers(c *gin.Context) {
+	slug := c.Param("slug")
+	tID, err := h.offerService.GetTenantIDBySlug(c.Request.Context(), slug)
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+
+	c.Header("Content-Type", "text/event-stream")
+	c.Header("Cache-Control", "no-cache")
+	c.Header("Connection", "keep-alive")
+	c.Header("Transfer-Encoding", "chunked")
+
+	messageChan := make(chan []byte, 10)
+	hub := realtime.GetHub()
+	hub.Register(tID.Hex(), messageChan)
+	defer hub.Unregister(tID.Hex(), messageChan)
+
+	c.SSEvent("connected", fmt.Sprintf(`{"status":"connected","slug":"%s"}`, slug))
+	c.Writer.Flush()
+
+	notify := c.Request.Context().Done()
+	c.Stream(func(w io.Writer) bool {
+		select {
+		case <-notify:
+			return false
+		case msg, ok := <-messageChan:
+			if !ok {
+				return false
+			}
+			c.SSEvent("message", string(msg))
+			c.Writer.Flush()
+			return true
+		case <-time.After(15 * time.Second):
+			c.SSEvent("ping", fmt.Sprintf(`{"time":%d}`, time.Now().Unix()))
+			c.Writer.Flush()
+			return true
+		}
+	})
 }

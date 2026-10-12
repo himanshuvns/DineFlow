@@ -94,6 +94,7 @@ func Setup(
 		offerPublic := v1.Group("/offers/public", publicRateLimit)
 		{
 			offerPublic.GET("/:slug", offerHandler.GetActiveOffers)
+			offerPublic.GET("/stream/:slug", offerHandler.StreamActiveOffers)
 			offerPublic.POST("/subscribe-push", offerHandler.SubscribePush)
 			offerPublic.POST("/track-click", offerHandler.TrackClick)
 		}

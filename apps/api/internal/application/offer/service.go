@@ -383,3 +383,20 @@ func (s *Service) TrackOfferConversion(ctx context.Context, tenantID bson.Object
 	)
 	return err
 }
+
+// GetTenantIDBySlug finds the tenant ObjectID by public slug.
+func (s *Service) GetTenantIDBySlug(ctx context.Context, slug string) (bson.ObjectID, error) {
+	if s.db == nil {
+		return bson.NilObjectID, errors.New("db not initialized")
+	}
+	var t domaintenant.Tenant
+	err := s.db.Collection("tenants").FindOne(ctx, bson.M{
+		"slug":      slug,
+		"deletedAt": bson.M{"$exists": false},
+	}).Decode(&t)
+	if err != nil {
+		return bson.NilObjectID, err
+	}
+	return t.ID, nil
+}
+
