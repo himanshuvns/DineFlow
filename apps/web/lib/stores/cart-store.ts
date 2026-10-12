@@ -147,10 +147,10 @@ export const useCartStore = create<CartState>((set, get) => ({
     const promo = get().appliedPromo;
     if (!promo) return 0;
     const subtotal = get().getSubtotal();
-    if (promo.discountType === "percent") {
+    if (promo.discountType === "percent" || (promo.discountType as string) === "percentage") {
       return Math.round(((subtotal * promo.value) / 100) * 100) / 100;
     }
-    if (promo.discountType === "fixed") {
+    if (promo.discountType === "fixed" || (promo.discountType as string) === "flat") {
       return Math.min(subtotal, promo.value);
     }
     return 0;

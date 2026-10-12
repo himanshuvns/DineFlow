@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
       : "http://localhost:8080/api/v1");
 
   try {
-    const res = await fetch(
+    let res = await fetch(
       `${apiBase}/public/tables/${encodeURIComponent(resolvedSlug)}/${encodeURIComponent(table)}`,
       {
         cache: "no-store",
@@ -37,15 +37,27 @@ export async function GET(req: NextRequest) {
           Accept: "application/json",
         },
       }
-    );
+    ).catch(() => null);
 
-    const data = await res.json().catch(() => null);
+    if (!res || !res.ok) {
+      res = await fetch(
+        `https://dine.rovixatech.com/api/v1/public/tables/${encodeURIComponent(resolvedSlug)}/${encodeURIComponent(table)}`,
+        {
+          cache: "no-store",
+          headers: {
+            Accept: "application/json",
+          },
+        }
+      ).catch(() => null);
+    }
 
-    if (!res.ok) {
+    const data = res ? await res.json().catch(() => null) : null;
+
+    if (!res || !res.ok) {
       return NextResponse.json(
         data || { success: false, error: "Failed to fetch table details" },
         {
-          status: res.status,
+          status: res?.status || 502,
           headers: {
             "Cache-Control": "no-store, max-age=0, must-revalidate",
           },

@@ -8,11 +8,17 @@ export async function GET(
   try {
     const { tenantSlug } = await context.params;
     const base = getBaseURL();
-    const res = await fetch(`${base}/offers/public/${tenantSlug}`, {
+    let res = await fetch(`${base}/offers/public/${tenantSlug}`, {
       cache: "no-store",
-    });
+    }).catch(() => null);
 
-    if (res.ok) {
+    if (!res || !res.ok) {
+      res = await fetch(`https://dine.rovixatech.com/api/v1/offers/public/${tenantSlug}`, {
+        cache: "no-store",
+      }).catch(() => null);
+    }
+
+    if (res && res.ok) {
       const data = await res.json();
       return NextResponse.json(data);
     }

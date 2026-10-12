@@ -16,6 +16,11 @@ import {
   X,
   Lock,
   Users,
+  UtensilsCrossed,
+  Tag,
+  Receipt,
+  Star,
+  ChefHat,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,6 +33,10 @@ import {
 } from "@/components/customer/dish-customizer-sheet";
 import { CustomerCartDrawer } from "@/components/customer/customer-cart-drawer";
 import { OfferNotificationCenter } from "@/components/customer/offer-notification-center";
+import { CustomerOffersHub } from "@/components/customer/customer-offers-hub";
+import { CustomerServiceHub } from "@/components/customer/customer-service-hub";
+import { CustomerOrdersHub } from "@/components/customer/customer-orders-hub";
+import { CustomerReviewHub } from "@/components/customer/customer-review-hub";
 import { useCartStore } from "@/lib/stores/cart-store";
 import { useTenantDataStore } from "@/lib/stores/tenant-data-store";
 import { isCategoryMatch } from "@/lib/utils/category-utils";
@@ -77,6 +86,36 @@ export default function CustomerMenuPage() {
     status?: string;
   } | null>(null);
 
+  type AppTab = "menu" | "offers" | "orders" | "service" | "reviews";
+  const [activeTab, setActiveTab] = React.useState<AppTab>("menu");
+  const [activeOffersCount, setActiveOffersCount] = React.useState<number>(0);
+  const { getItemCount } = useCartStore();
+  const cartItemCount = getItemCount();
+
+  React.useEffect(() => {
+    if (!tenantSlug) return;
+    const fetchOffersCount = async () => {
+      try {
+        const res = await fetch(`/api/v1/offers/public/${encodeURIComponent(tenantSlug)}?_t=${Date.now()}`);
+        if (res.ok) {
+          const json = await res.json();
+          const list = Array.isArray(json.data) ? json.data : Array.isArray(json) ? json : [];
+          setActiveOffersCount(list.length);
+        }
+      } catch {}
+    };
+    fetchOffersCount();
+
+    let bc: BroadcastChannel | null = null;
+    try {
+      bc = new BroadcastChannel("dineflow_menu_sync");
+      bc.onmessage = () => fetchOffersCount();
+    } catch {}
+    return () => {
+      bc?.close();
+    };
+  }, [tenantSlug]);
+
   const fetchPublicMenu = React.useCallback(async (rawSlug: string) => {
     if (!rawSlug) return;
     const slug =
@@ -121,11 +160,18 @@ export default function CustomerMenuPage() {
             ? "https://dine.rovixatech.com/api/v1"
             : "http://localhost:8080/api/v1");
 
-        const directRes = await fetch(`${apiBase}/public/m/${encodeURIComponent(slug)}?_t=${Date.now()}`, {
+        let directRes = await fetch(`${apiBase}/public/m/${encodeURIComponent(slug)}?_t=${Date.now()}`, {
           cache: "no-store",
-        });
-        if (directRes.ok) {
-          json = await directRes.json();
+        }).catch(() => null);
+
+        if (!directRes || !directRes.ok) {
+          directRes = await fetch(`https://dine.rovixatech.com/api/v1/public/m/${encodeURIComponent(slug)}?_t=${Date.now()}`, {
+            cache: "no-store",
+          }).catch(() => null);
+        }
+
+        if (directRes && directRes.ok) {
+          json = await directRes.json().catch(() => null);
         }
       }
 
@@ -296,12 +342,20 @@ export default function CustomerMenuPage() {
               ? "https://dine.rovixatech.com/api/v1"
               : "http://localhost:8080/api/v1");
 
-          const directRes = await fetch(
+          let directRes = await fetch(
             `${apiBase}/public/tables/${encodeURIComponent(slug)}/${encodeURIComponent(rawTableId)}?_t=${Date.now()}`,
             { cache: "no-store" }
-          );
-          if (directRes.ok) {
-            json = await directRes.json();
+          ).catch(() => null);
+
+          if (!directRes || !directRes.ok) {
+            directRes = await fetch(
+              `https://dine.rovixatech.com/api/v1/public/tables/${encodeURIComponent(slug)}/${encodeURIComponent(rawTableId)}?_t=${Date.now()}`,
+              { cache: "no-store" }
+            ).catch(() => null);
+          }
+
+          if (directRes && directRes.ok) {
+            json = await directRes.json().catch(() => null);
           }
         }
 
@@ -557,8 +611,53 @@ export default function CustomerMenuPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-28 font-sans transition-colors duration-200">
-      {/* Top Navigation & Hero Banner */}
-      <div className="relative">
+      {/* Mobile Restaurant App Top Header Bar */}
+      <header className="sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-4 py-2.5 transition-colors">
+        <div className="max-w-xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="h-9 w-9 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-black text-sm flex items-center justify-center shadow-md shadow-emerald-500/20 shrink-0">
+              {restaurantDisplayName.charAt(0)}
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-sm font-bold text-slate-900 dark:text-white truncate leading-tight">
+                {restaurantDisplayName}
+              </h1>
+              <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+                <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="font-semibold text-emerald-600 dark:text-emerald-400">{tableName}</span>
+                <span>•</span>
+                <span>{isTableReserved ? "Reserved" : "Live Kitchen Active"}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={handleCallWaiter}
+              className="h-8 px-2.5 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-bold text-xs flex items-center gap-1 transition-colors cursor-pointer"
+              title="Alert Steward"
+            >
+              <BellRing className="h-3.5 w-3.5" />
+              <span className="hidden xs:inline">Waiter</span>
+            </button>
+            <button
+              onClick={handleOpenWhatsApp}
+              className="h-8 w-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-emerald-600 flex items-center justify-center transition-colors cursor-pointer"
+              title="WhatsApp Concierge"
+            >
+              <MessageCircle className="h-4 w-4" />
+            </button>
+            <ThemeToggle className="h-8 w-8 rounded-full bg-slate-100 dark:bg-slate-800" />
+          </div>
+        </div>
+      </header>
+
+      {/* Tab 1: Menu (Catalog & Food Ordering) */}
+      {activeTab === "menu" && (
+        <>
+          {/* Hero Banner */}
+          <div className="relative">
         <div className="h-44 sm:h-56 w-full relative overflow-hidden bg-slate-200 dark:bg-slate-900">
           <img
             src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1600&q=80"
@@ -921,6 +1020,52 @@ export default function CustomerMenuPage() {
           ))
         )}
       </div>
+        </>
+      )}
+
+      {/* Tab 2: Offers & Coupons Hub */}
+      {activeTab === "offers" && (
+        <CustomerOffersHub
+          tenantSlug={tenantSlug}
+          restaurantName={restaurantDisplayName}
+          onOpenMenu={() => setActiveTab("menu")}
+        />
+      )}
+
+      {/* Tab 3: Table Orders & Live Kitchen Tracker */}
+      {activeTab === "orders" && (
+        <CustomerOrdersHub
+          tenantSlug={tenantSlug}
+          tableId={tableId}
+          tableName={tableName}
+          onOpenMenu={() => setActiveTab("menu")}
+          onOpenCheckout={() => {}}
+        />
+      )}
+
+      {/* Tab 4: Table Service & Assistance */}
+      {activeTab === "service" && (
+        <CustomerServiceHub
+          tableName={tableName}
+          restaurantName={restaurantDisplayName}
+          onCallWaiter={handleCallWaiter}
+          onOpenWhatsApp={handleOpenWhatsApp}
+        />
+      )}
+
+      {/* Tab 5: Google Reviews & Feedback */}
+      {activeTab === "reviews" && (
+        <React.Suspense
+          fallback={
+            <div className="p-12 text-center text-xs text-slate-400">
+              <div className="h-6 w-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+              Loading reviews...
+            </div>
+          }
+        >
+          <CustomerReviewHub embedded={true} />
+        </React.Suspense>
+      )}
 
       {/* Dish Customizer Sheet Modal */}
       <DishCustomizerSheet
@@ -931,7 +1076,7 @@ export default function CustomerMenuPage() {
 
       {/* Sticky Table Reserved Floating Banner */}
       {isTableReserved && (
-        <div className="fixed bottom-4 inset-x-0 z-40 px-3 xs:px-4 max-w-lg mx-auto pb-safe">
+        <div className="fixed bottom-[68px] sm:bottom-[72px] inset-x-0 z-30 px-3 xs:px-4 max-w-lg mx-auto">
           <div className="w-full h-14 bg-amber-600/95 dark:bg-amber-900/95 backdrop-blur text-white font-bold px-4 rounded-2xl shadow-xl border border-amber-400/40 flex items-center justify-between">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="h-8 w-8 rounded-xl bg-amber-700/60 dark:bg-amber-800/60 flex items-center justify-center shrink-0">
@@ -966,7 +1111,98 @@ export default function CustomerMenuPage() {
         tableSlug={tableId}
         tableName={tableName}
         isTableReserved={isTableReserved}
+        cartBarBottomClass="bottom-[68px] sm:bottom-[72px]"
       />
+
+      {/* Mobile App Bottom Navigation Bar */}
+      <nav className="fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800 pb-safe shadow-2xl">
+        <div className="max-w-xl mx-auto flex items-center justify-around h-16 px-1">
+          {/* Tab 1: Menu */}
+          <button
+            onClick={() => setActiveTab("menu")}
+            className={`flex flex-col items-center justify-center flex-1 h-full py-1 transition-colors cursor-pointer ${
+              activeTab === "menu"
+                ? "text-emerald-600 dark:text-emerald-400 font-extrabold"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 font-medium"
+            }`}
+          >
+            <div className={`p-1 rounded-xl transition-all ${activeTab === "menu" ? "bg-emerald-500/15" : ""}`}>
+              <UtensilsCrossed className="h-5 w-5" />
+            </div>
+            <span className="text-[10px] tracking-tight mt-0.5">Menu</span>
+          </button>
+
+          {/* Tab 2: Offers */}
+          <button
+            onClick={() => setActiveTab("offers")}
+            className={`flex flex-col items-center justify-center flex-1 h-full py-1 relative transition-colors cursor-pointer ${
+              activeTab === "offers"
+                ? "text-emerald-600 dark:text-emerald-400 font-extrabold"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 font-medium"
+            }`}
+          >
+            <div className={`p-1 rounded-xl transition-all relative ${activeTab === "offers" ? "bg-emerald-500/15" : ""}`}>
+              <Tag className="h-5 w-5" />
+              {activeOffersCount > 0 && (
+                <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-rose-500 text-white font-mono font-black text-[9px] flex items-center justify-center animate-pulse">
+                  {activeOffersCount}
+                </span>
+              )}
+            </div>
+            <span className="text-[10px] tracking-tight mt-0.5">Offers</span>
+          </button>
+
+          {/* Tab 3: Orders */}
+          <button
+            onClick={() => setActiveTab("orders")}
+            className={`flex flex-col items-center justify-center flex-1 h-full py-1 relative transition-colors cursor-pointer ${
+              activeTab === "orders"
+                ? "text-emerald-600 dark:text-emerald-400 font-extrabold"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 font-medium"
+            }`}
+          >
+            <div className={`p-1 rounded-xl transition-all relative ${activeTab === "orders" ? "bg-emerald-500/15" : ""}`}>
+              <Clock className="h-5 w-5" />
+              {cartItemCount > 0 && (
+                <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-emerald-500 text-slate-950 font-mono font-black text-[9px] flex items-center justify-center">
+                  {cartItemCount}
+                </span>
+              )}
+            </div>
+            <span className="text-[10px] tracking-tight mt-0.5">Orders</span>
+          </button>
+
+          {/* Tab 4: Service */}
+          <button
+            onClick={() => setActiveTab("service")}
+            className={`flex flex-col items-center justify-center flex-1 h-full py-1 transition-colors cursor-pointer ${
+              activeTab === "service"
+                ? "text-emerald-600 dark:text-emerald-400 font-extrabold"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 font-medium"
+            }`}
+          >
+            <div className={`p-1 rounded-xl transition-all ${activeTab === "service" ? "bg-emerald-500/15" : ""}`}>
+              <BellRing className="h-5 w-5" />
+            </div>
+            <span className="text-[10px] tracking-tight mt-0.5">Service</span>
+          </button>
+
+          {/* Tab 5: Reviews */}
+          <button
+            onClick={() => setActiveTab("reviews")}
+            className={`flex flex-col items-center justify-center flex-1 h-full py-1 transition-colors cursor-pointer ${
+              activeTab === "reviews"
+                ? "text-emerald-600 dark:text-emerald-400 font-extrabold"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 font-medium"
+            }`}
+          >
+            <div className={`p-1 rounded-xl transition-all ${activeTab === "reviews" ? "bg-emerald-500/15" : ""}`}>
+              <Star className="h-5 w-5" />
+            </div>
+            <span className="text-[10px] tracking-tight mt-0.5">Reviews</span>
+          </button>
+        </div>
+      </nav>
     </div>
   );
 }

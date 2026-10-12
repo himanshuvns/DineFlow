@@ -486,9 +486,9 @@
     "semantic_hash": ""
   },
   "apps/web/app/api/menu/public/route.ts": {
-    "mtime": 1791108279.2981982,
-    "seen": 1791108568.022989,
-    "ast_hash": "4c2f30ba038765c911a9ed4420142683",
+    "mtime": 1791836550.5619295,
+    "seen": 1791837092.985791,
+    "ast_hash": "9b61e8de22efac2ed5a2799e38e40104",
     "semantic_hash": ""
   },
   "apps/web/app/api/menu/scan/route.ts": {
@@ -642,9 +642,9 @@
     "semantic_hash": ""
   },
   "apps/web/app/m/[tenantSlug]/[tableId]/page.tsx": {
-    "mtime": 1791800105.0540447,
-    "seen": 1791800445.570281,
-    "ast_hash": "1ad44ed3cc537f371758e08afa4e8bd9",
+    "mtime": 1791836579.5086224,
+    "seen": 1791837092.985824,
+    "ast_hash": "624afb2fcf55e447759b5741780858ec",
     "semantic_hash": ""
   },
   "apps/web/app/m/[tenantSlug]/order/[orderId]/page.tsx": {
@@ -738,9 +738,9 @@
     "semantic_hash": "67c3fc8071c36a6e51aa3b23ce0dac7b"
   },
   "apps/web/components/customer/customer-cart-drawer.tsx": {
-    "mtime": 1791800067.688234,
-    "seen": 1791800445.570306,
-    "ast_hash": "c4ecced6ddde856ad7110643340db52e",
+    "mtime": 1791836797.9894385,
+    "seen": 1791837092.985848,
+    "ast_hash": "01f4f992a539d4d14f641dea6380fdd5",
     "semantic_hash": ""
   },
   "apps/web/components/customer/customer-extend-stay-modal.tsx": {
@@ -984,9 +984,9 @@
     "semantic_hash": ""
   },
   "apps/web/lib/stores/cart-store.ts": {
-    "mtime": 1791799975.1976514,
-    "seen": 1791800445.570357,
-    "ast_hash": "e03f836e07286a1275910dfe89aa2132",
+    "mtime": 1791836809.1326132,
+    "seen": 1791837092.9859,
+    "ast_hash": "cb2d73f40242ce9271029596f457ec05",
     "semantic_hash": ""
   },
   "apps/web/lib/stores/notification-store.ts": {
@@ -1962,9 +1962,9 @@
     "semantic_hash": ""
   },
   "apps/web/app/api/menu/table/route.ts": {
-    "mtime": 1791108271.3885462,
-    "seen": 1791108568.02299,
-    "ast_hash": "b2ebfa0178a851d6e83230748303e152",
+    "mtime": 1791836561.3603742,
+    "seen": 1791837092.985793,
+    "ast_hash": "d06c62622463e7ddc5b69f83f5ffa174",
     "semantic_hash": ""
   },
   "deploy/deploy.sh": {
@@ -2496,9 +2496,9 @@
     "semantic_hash": ""
   },
   "apps/web/app/m/[tenantSlug]/review/page.tsx": {
-    "mtime": 1791579148.3880847,
-    "seen": 1791579194.6633449,
-    "ast_hash": "6c8c4b844df4f72292d7b1782347aaf0",
+    "mtime": 1791836324.2551157,
+    "seen": 1791836394.167497,
+    "ast_hash": "c87a95564c800c56c2bc3fc089905239",
     "semantic_hash": ""
   },
   "apps/web/components/ai/copilot-drawer.tsx": {
@@ -2544,9 +2544,9 @@
     "semantic_hash": ""
   },
   "apps/web/app/api/v1/offers/public/[tenantSlug]/route.ts": {
-    "mtime": 1791800336.7760744,
-    "seen": 1791800445.570258,
-    "ast_hash": "7ffe6d6af17e6f5efc192f2331640336",
+    "mtime": 1791836550.6193774,
+    "seen": 1791837092.9858,
+    "ast_hash": "df398be910e2977d480849dd1681bb4e",
     "semantic_hash": ""
   },
   "apps/web/app/api/v1/offers/public/subscribe-push/route.ts": {
@@ -2598,9 +2598,9 @@
     "semantic_hash": ""
   },
   "apps/web/app/api/v1/offers/polish-copy/route.ts": {
-    "mtime": 1791832058.709174,
-    "seen": 1791832368.464261,
-    "ast_hash": "8e52003800b95f8f2b1669e18b6777e8",
+    "mtime": 1791832410.1164672,
+    "seen": 1791832484.0994549,
+    "ast_hash": "75c99cd0973dbc475e69e9ca35cec72a",
     "semantic_hash": ""
   },
   "apps/web/app/api/v1/offers/public/stream/[tenantSlug]/route.ts": {
@@ -2613,6 +2613,30 @@
     "mtime": 1791832039.4467669,
     "seen": 1791832368.464287,
     "ast_hash": "144e56e82d17cdbb4b34a36c48585564",
+    "semantic_hash": ""
+  },
+  "apps/web/components/customer/customer-offers-hub.tsx": {
+    "mtime": 1791836797.8533819,
+    "seen": 1791837092.9858508,
+    "ast_hash": "93713ae8bce00c1d014faf9900b32335",
+    "semantic_hash": ""
+  },
+  "apps/web/components/customer/customer-orders-hub.tsx": {
+    "mtime": 1791835399.2565107,
+    "seen": 1791836394.167526,
+    "ast_hash": "a0d217d8e7a32f0376f38fe3d73a8081",
+    "semantic_hash": ""
+  },
+  "apps/web/components/customer/customer-review-hub.tsx": {
+    "mtime": 1791836317.638809,
+    "seen": 1791836394.167527,
+    "ast_hash": "bdc2e02ff60d58dd6efaf7037132bb71",
+    "semantic_hash": ""
+  },
+  "apps/web/components/customer/customer-service-hub.tsx": {
+    "mtime": 1791835375.7471626,
+    "seen": 1791836394.167527,
+    "ast_hash": "7628f04a81c280525c29a53b2301c221",
     "semantic_hash": ""
   }
 }

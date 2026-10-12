@@ -28,20 +28,29 @@ export async function GET(req: NextRequest) {
       : "http://localhost:8080/api/v1");
 
   try {
-    const res = await fetch(`${apiBase}/public/m/${encodeURIComponent(resolvedSlug)}`, {
+    let res = await fetch(`${apiBase}/public/m/${encodeURIComponent(resolvedSlug)}`, {
       cache: "no-store",
       headers: {
         Accept: "application/json",
       },
-    });
+    }).catch(() => null);
 
-    const data = await res.json().catch(() => null);
+    if (!res || !res.ok) {
+      res = await fetch(`https://dine.rovixatech.com/api/v1/public/m/${encodeURIComponent(resolvedSlug)}`, {
+        cache: "no-store",
+        headers: {
+          Accept: "application/json",
+        },
+      }).catch(() => null);
+    }
 
-    if (!res.ok) {
+    const data = res ? await res.json().catch(() => null) : null;
+
+    if (!res || !res.ok) {
       return NextResponse.json(
         data || { success: false, error: "Failed to fetch menu from backend" },
         {
-          status: res.status,
+          status: res?.status || 502,
           headers: {
             "Cache-Control": "no-store, max-age=0, must-revalidate",
           },
