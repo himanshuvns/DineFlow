@@ -27,6 +27,7 @@ import {
   CustomizerDish,
 } from "@/components/customer/dish-customizer-sheet";
 import { CustomerCartDrawer } from "@/components/customer/customer-cart-drawer";
+import { OfferNotificationCenter } from "@/components/customer/offer-notification-center";
 import { useCartStore } from "@/lib/stores/cart-store";
 import { useTenantDataStore } from "@/lib/stores/tenant-data-store";
 import { isCategoryMatch } from "@/lib/utils/category-utils";
@@ -955,6 +956,9 @@ export default function CustomerMenuPage() {
           </div>
         </div>
       )}
+
+      {/* Promotional Re-engagement Offer Center */}
+      <OfferNotificationCenter tenantSlug={tenantSlug} />
 
       {/* Customer Sticky Cart / Checkout Drawer */}
       <CustomerCartDrawer

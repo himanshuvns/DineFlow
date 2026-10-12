@@ -385,6 +385,11 @@ func (s *Service) SendFeedbackRequest(ctx context.Context, tenantID bson.ObjectI
 	return s.LogMessage(ctx, tenantID, recipientPhone, customerName, domainwa.TemplateFeedbackRequest, body, "Dine-in", domainwa.StatusDelivered, extID)
 }
 
+// SendDirectMessage sends a formatted promotional or direct WhatsApp message to a recipient phone number.
+func (s *Service) SendDirectMessage(ctx context.Context, tenantID bson.ObjectID, recipientPhone, messageText string) (string, error) {
+	return s.dispatchMetaMessage(ctx, tenantID, recipientPhone, messageText)
+}
+
 func (s *Service) ListLogs(ctx context.Context, tenantID bson.ObjectID) ([]domainwa.MessageLog, error) {
 	coll := s.db.Collection("whatsapp_logs")
 	scope := mongoinfra.NewScope(coll, tenantID)

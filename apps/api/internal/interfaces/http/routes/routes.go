@@ -35,6 +35,7 @@ func Setup(
 	searchHandler *handlers.SearchHandler,
 	platformHandler *handlers.PlatformHandler,
 	reviewHandler *handlers.ReviewHandler,
+	offerHandler *handlers.OfferHandler,
 ) {
 	// Auth middleware (used on protected routes, checks token signature and real-time Redis revocation)
 	authMiddleware := middleware.Auth(tokenMaker, redisClient)
@@ -87,6 +88,14 @@ func Setup(
 			reviewPublic.POST("/public/:slug/scan", reviewHandler.RecordScan)
 			reviewPublic.POST("/generate", reviewHandler.GenerateReviewSuggestions)
 			reviewPublic.POST("/feedback", reviewHandler.SubmitFeedback)
+		}
+
+		// ── Public Promotional Offers & Web Push ─────────────────────────
+		offerPublic := v1.Group("/offers/public", publicRateLimit)
+		{
+			offerPublic.GET("/:slug", offerHandler.GetActiveOffers)
+			offerPublic.POST("/subscribe-push", offerHandler.SubscribePush)
+			offerPublic.POST("/track-click", offerHandler.TrackClick)
 		}
 
 		// ── Public WhatsApp Webhook (Meta Cloud API & OpenWA Gateway) ─────
@@ -395,6 +404,14 @@ func Setup(
 				reviewProtected.GET("/stats", reviewHandler.GetStats)
 				reviewProtected.GET("/feedback", reviewHandler.ListFeedback)
 				reviewProtected.PATCH("/feedback/:id/status", reviewHandler.UpdateFeedbackStatus)
+			}
+
+			// ── Post-Dining Table Re-Engagement & Promotional Offers ─────────
+			offerGroup := protected.Group("/offers")
+			{
+				offerGroup.POST("", offerHandler.CreateOffer)
+				offerGroup.GET("", offerHandler.ListOffers)
+				offerGroup.POST("/:id/broadcast", offerHandler.BroadcastOffer)
 			}
 
 			// ── Notifications ──────────────────────────────────────────────

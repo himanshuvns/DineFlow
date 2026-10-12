@@ -29,6 +29,7 @@ const ROUTE_TITLES: Record<string, string> = {
   "/dashboard/rooms": "Rooms & Suites (PMS)",
   "/dashboard/whatsapp": "WhatsApp Connect",
   "/dashboard/reviews": "Google Reviews & QR Stand",
+  "/dashboard/offers": "Offers & Promotional Broadcasts",
   "/dashboard/staff": "Staff & Permissions",
   "/dashboard/analytics": "Analytics & Sales",
   "/dashboard/ai": "AI Studio",

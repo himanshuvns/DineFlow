@@ -17,6 +17,13 @@ export interface CartItem {
   totalPrice: number;
 }
 
+export interface AppliedPromo {
+  code: string;
+  discountType: "percent" | "fixed" | "free_item";
+  value: number;
+  description?: string;
+}
+
 interface CartState {
   items: CartItem[];
   tenantSlug: string;
@@ -24,13 +31,17 @@ interface CartState {
   customerName: string;
   customerPhone: string;
   specialInstructions: string;
+  appliedPromo: AppliedPromo | null;
   setContext: (tenantSlug: string, tableSlug: string) => void;
   setCustomerInfo: (name: string, phone: string, instructions?: string) => void;
   addItem: (item: Omit<CartItem, "cartItemId" | "totalPrice">) => void;
   removeItem: (cartItemId: string) => void;
   updateQuantity: (cartItemId: string, quantity: number) => void;
   clearCart: () => void;
+  applyPromo: (code: string, discountType: "percent" | "fixed" | "free_item", value: number, description?: string) => void;
+  removePromo: () => void;
   getSubtotal: () => number;
+  getDiscountAmount: () => number;
   getTax: () => number;
   getTotal: () => number;
   getItemCount: () => number;
@@ -43,6 +54,7 @@ export const useCartStore = create<CartState>((set, get) => ({
   customerName: "",
   customerPhone: "",
   specialInstructions: "",
+  appliedPromo: null,
 
   setContext: (tenantSlug, tableSlug) => set({ tenantSlug, tableSlug }),
 
@@ -113,18 +125,45 @@ export const useCartStore = create<CartState>((set, get) => ({
       };
     }),
 
-  clearCart: () => set({ items: [] }),
+  clearCart: () => set({ items: [], appliedPromo: null }),
+
+  applyPromo: (code, discountType, value, description) =>
+    set({
+      appliedPromo: {
+        code: code.trim().toUpperCase(),
+        discountType,
+        value,
+        description,
+      },
+    }),
+
+  removePromo: () => set({ appliedPromo: null }),
 
   getSubtotal: () => {
     return get().items.reduce((sum, item) => sum + item.totalPrice, 0);
   },
 
+  getDiscountAmount: () => {
+    const promo = get().appliedPromo;
+    if (!promo) return 0;
+    const subtotal = get().getSubtotal();
+    if (promo.discountType === "percent") {
+      return Math.round(((subtotal * promo.value) / 100) * 100) / 100;
+    }
+    if (promo.discountType === "fixed") {
+      return Math.min(subtotal, promo.value);
+    }
+    return 0;
+  },
+
   getTax: () => {
-    return Math.round(get().getSubtotal() * 0.05 * 100) / 100; // 5% standard GST
+    const discountedSubtotal = Math.max(0, get().getSubtotal() - get().getDiscountAmount());
+    return Math.round(discountedSubtotal * 0.05 * 100) / 100; // 5% standard GST
   },
 
   getTotal: () => {
-    return get().getSubtotal() + get().getTax();
+    const discountedSubtotal = Math.max(0, get().getSubtotal() - get().getDiscountAmount());
+    return Math.round((discountedSubtotal + get().getTax()) * 100) / 100;
   },
 
   getItemCount: () => {

@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useToast } from "@/components/ui/toast";
 import { formatCurrency } from "@/lib/utils";
+import { OfferNotificationCenter } from "@/components/customer/offer-notification-center";
 
 type OrderStatus = "pending" | "preparing" | "ready" | "served" | "paid" | "cancelled";
 
@@ -569,6 +570,9 @@ export default function OrderTrackingPage() {
             <span>Order More Drinks or Food</span>
           </Button>
         </div>
+
+        {/* Promotional Re-engagement Offer Center */}
+        <OfferNotificationCenter tenantSlug={tenantSlug} />
       </main>
     </div>
   );

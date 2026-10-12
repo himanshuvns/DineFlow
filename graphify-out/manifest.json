@@ -6,9 +6,9 @@
     "semantic_hash": "5ccefffaba9f66f7bf35021aab9e4822"
   },
   "apps/api/cmd/server/main.go": {
-    "mtime": 1791314848.418432,
-    "seen": 1791315556.580297,
-    "ast_hash": "94633ea51b3ace229d0f98204a6ec027",
+    "mtime": 1791799873.4951513,
+    "seen": 1791800445.570169,
+    "ast_hash": "da42a003a6203efaffdedce2577e73d9",
     "semantic_hash": ""
   },
   "apps/api/cmd/server/seed.go": {
@@ -90,9 +90,9 @@
     "semantic_hash": ""
   },
   "apps/api/internal/application/whatsapp/service.go": {
-    "mtime": 1791222310.7422228,
-    "seen": 1791222784.808372,
-    "ast_hash": "892607a5aab6db4db29b7b58e6a2cb36",
+    "mtime": 1791799649.141322,
+    "seen": 1791800445.5701911,
+    "ast_hash": "0b4cd58912816ac8c1a5dbd47b714e2e",
     "semantic_hash": ""
   },
   "apps/api/internal/domain/ai/ai.go": {
@@ -204,9 +204,9 @@
     "semantic_hash": "e836c53d873e4d98557794f5866a070f"
   },
   "apps/api/internal/infrastructure/mongodb/client.go": {
-    "mtime": 1791314750.6428537,
-    "seen": 1791315556.5803351,
-    "ast_hash": "d00a4ea6690b0652809a9778a33db809",
+    "mtime": 1791799892.6261265,
+    "seen": 1791800445.5702121,
+    "ast_hash": "65c51abe0ef7b097bdb9b6ae097f2546",
     "semantic_hash": ""
   },
   "apps/api/internal/infrastructure/mongodb/scope.go": {
@@ -348,9 +348,9 @@
     "semantic_hash": ""
   },
   "apps/api/internal/interfaces/http/routes/routes.go": {
-    "mtime": 1791526547.8696628,
-    "seen": 1791526873.248571,
-    "ast_hash": "06e497aa936d332f1df505d62e608fa1",
+    "mtime": 1791799797.4886713,
+    "seen": 1791800445.5702322,
+    "ast_hash": "624e2f171ba3dca71f20b89340452e5b",
     "semantic_hash": ""
   },
   "apps/api/package.json": {
@@ -642,15 +642,15 @@
     "semantic_hash": ""
   },
   "apps/web/app/m/[tenantSlug]/[tableId]/page.tsx": {
-    "mtime": 1791108252.632056,
-    "seen": 1791108568.023013,
-    "ast_hash": "e99a9c9c93ea0d21105e7475a0e94c33",
+    "mtime": 1791800105.0540447,
+    "seen": 1791800445.570281,
+    "ast_hash": "1ad44ed3cc537f371758e08afa4e8bd9",
     "semantic_hash": ""
   },
   "apps/web/app/m/[tenantSlug]/order/[orderId]/page.tsx": {
-    "mtime": 1790069638.213103,
-    "seen": 1790069809.2773938,
-    "ast_hash": "1f851f077f902b80c5b1c01d37d302cc",
+    "mtime": 1791800132.4298038,
+    "seen": 1791800445.570282,
+    "ast_hash": "e5956d241c490b458baad1865122e4d9",
     "semantic_hash": ""
   },
   "apps/web/app/m/[tenantSlug]/room/[roomNumber]/page.tsx": {
@@ -738,9 +738,9 @@
     "semantic_hash": "67c3fc8071c36a6e51aa3b23ce0dac7b"
   },
   "apps/web/components/customer/customer-cart-drawer.tsx": {
-    "mtime": 1791108193.58068,
-    "seen": 1791108568.023036,
-    "ast_hash": "60fbbb18b9bb393c564e7bdfcb433f73",
+    "mtime": 1791800067.688234,
+    "seen": 1791800445.570306,
+    "ast_hash": "c4ecced6ddde856ad7110643340db52e",
     "semantic_hash": ""
   },
   "apps/web/components/customer/customer-extend-stay-modal.tsx": {
@@ -768,15 +768,15 @@
     "semantic_hash": "1949d2c976b3ee6fd48edf96b9482e63"
   },
   "apps/web/components/dashboard/sidebar.tsx": {
-    "mtime": 1791315359.6205592,
-    "seen": 1791315556.580427,
-    "ast_hash": "e2b09fa067a44337dbc81e4aaea0fcda",
+    "mtime": 1791800229.588719,
+    "seen": 1791800445.570312,
+    "ast_hash": "0273acd3626a2db8e579ce8ed18eca3c",
     "semantic_hash": ""
   },
   "apps/web/components/dashboard/topbar.tsx": {
-    "mtime": 1791315338.9729095,
-    "seen": 1791315556.5804281,
-    "ast_hash": "2a64fadc39e957c869fab8ebc5d8d8d8",
+    "mtime": 1791800309.432661,
+    "seen": 1791800445.570313,
+    "ast_hash": "79f33476dc233dd73c6fdb2b63bc64e1",
     "semantic_hash": ""
   },
   "apps/web/components/menu/camera-menu-scanner-modal.tsx": {
@@ -984,10 +984,10 @@
     "semantic_hash": ""
   },
   "apps/web/lib/stores/cart-store.ts": {
-    "mtime": 1789160920.6839783,
-    "seen": 1789625093.7010329,
-    "ast_hash": "627170a05a654262ecfc3707fd7c5610",
-    "semantic_hash": "627170a05a654262ecfc3707fd7c5610"
+    "mtime": 1791799975.1976514,
+    "seen": 1791800445.570357,
+    "ast_hash": "e03f836e07286a1275910dfe89aa2132",
+    "semantic_hash": ""
   },
   "apps/web/lib/stores/notification-store.ts": {
     "mtime": 1789965163.1410532,
@@ -1806,9 +1806,9 @@
     "semantic_hash": ""
   },
   "apps/web/lib/rbac/roles.ts": {
-    "mtime": 1791315382.8835957,
-    "seen": 1791315556.58047,
-    "ast_hash": "c11244f5105bf167016dcd1ea7393a12",
+    "mtime": 1791800298.4449618,
+    "seen": 1791800445.5703528,
+    "ast_hash": "11ce68f523a39e8cee25bbe55bb037ed",
     "semantic_hash": ""
   },
   "apps/web/lib/stores/platform-store.ts": {
@@ -2190,9 +2190,9 @@
     "semantic_hash": ""
   },
   "apps/api/internal/interfaces/http/routes/routes_test.go": {
-    "mtime": 1791314922.2713256,
-    "seen": 1791315556.5803552,
-    "ast_hash": "c719d7e4b61860ec4f09208911bd7b8d",
+    "mtime": 1791799934.954477,
+    "seen": 1791800445.5702322,
+    "ast_hash": "f9e40abf2b4e86e6b9c0fd8e62109be0",
     "semantic_hash": ""
   },
   "ui-audit/report.json": {
@@ -2511,6 +2511,72 @@
     "mtime": 1791580822.208469,
     "seen": 1791580900.860188,
     "ast_hash": "a07f5df04991ad1ac9d4375ea546a4d6",
+    "semantic_hash": ""
+  },
+  "apps/api/internal/application/offer/service.go": {
+    "mtime": 1791799674.1102455,
+    "seen": 1791800445.570178,
+    "ast_hash": "55af2b17834ffec52e92bfde6416f449",
+    "semantic_hash": ""
+  },
+  "apps/api/internal/application/offer/service_test.go": {
+    "mtime": 1791799684.4763038,
+    "seen": 1791800445.570179,
+    "ast_hash": "19489d771515a42814e50250a094911b",
+    "semantic_hash": ""
+  },
+  "apps/api/internal/domain/offer/offer.go": {
+    "mtime": 1791799634.6668544,
+    "seen": 1791800445.570196,
+    "ast_hash": "acca2ba1491295422d1cafd7f873fbf0",
+    "semantic_hash": ""
+  },
+  "apps/api/internal/interfaces/http/handlers/offer.go": {
+    "mtime": 1791799702.122189,
+    "seen": 1791800445.570221,
+    "ast_hash": "1eb6d63d7243562c9e4876018fec5397",
+    "semantic_hash": ""
+  },
+  "apps/web/app/api/v1/offers/[id]/broadcast/route.ts": {
+    "mtime": 1791800330.5236144,
+    "seen": 1791800445.570258,
+    "ast_hash": "8f9bc74677247ffb4c8ded380cfb3e4d",
+    "semantic_hash": ""
+  },
+  "apps/web/app/api/v1/offers/public/[tenantSlug]/route.ts": {
+    "mtime": 1791800336.7760744,
+    "seen": 1791800445.570258,
+    "ast_hash": "7ffe6d6af17e6f5efc192f2331640336",
+    "semantic_hash": ""
+  },
+  "apps/web/app/api/v1/offers/public/subscribe-push/route.ts": {
+    "mtime": 1791800343.1404824,
+    "seen": 1791800445.5702589,
+    "ast_hash": "8df3617bbfda504c5279fa88d2cc2a13",
+    "semantic_hash": ""
+  },
+  "apps/web/app/api/v1/offers/route.ts": {
+    "mtime": 1791800323.5727277,
+    "seen": 1791800445.57026,
+    "ast_hash": "a20c3161c0bebe4d5c0929da2a0425c2",
+    "semantic_hash": ""
+  },
+  "apps/web/app/dashboard/offers/page.tsx": {
+    "mtime": 1791800193.4149487,
+    "seen": 1791800445.570271,
+    "ast_hash": "67e668eb32e53eb73327b84801969ad6",
+    "semantic_hash": ""
+  },
+  "apps/web/components/customer/offer-notification-center.tsx": {
+    "mtime": 1791800011.0781884,
+    "seen": 1791800445.5703099,
+    "ast_hash": "a6f2844564423343899e557274fb3ed3",
+    "semantic_hash": ""
+  },
+  "apps/web/lib/stores/offer-store.ts": {
+    "mtime": 1791799993.8079486,
+    "seen": 1791800445.570358,
+    "ast_hash": "aea78c52b8bae8c402f45c00a073efe6",
     "semantic_hash": ""
   }
 }

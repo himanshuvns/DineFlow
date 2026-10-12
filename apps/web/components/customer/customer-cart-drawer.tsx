@@ -16,6 +16,7 @@ import {
   MessageSquare,
   MessageCircle,
   Lock,
+  Tag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -61,7 +62,12 @@ export function CustomerCartDrawer({
     customerPhone,
     specialInstructions,
     setCustomerInfo,
+    appliedPromo,
+    removePromo,
+    getDiscountAmount,
   } = useCartStore();
+
+  const discountAmount = getDiscountAmount();
 
   const [isOpen, setIsOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -148,6 +154,8 @@ export function CustomerCartDrawer({
           : "Guest"),
       customerPhone: validatedPhone,
       specialInstructions: notesInput.trim(),
+      promoCode: appliedPromo?.code || undefined,
+      discountAmount: discountAmount || 0,
       items: items.map((i) => ({
         menuItemId: i.menuItemId,
         name: i.name,
@@ -505,6 +513,25 @@ export function CustomerCartDrawer({
                   <span>Subtotal</span>
                   <span className="font-mono">{formatCurrency(subtotal, "INR")}</span>
                 </div>
+
+                {appliedPromo && discountAmount > 0 && (
+                  <div className="flex justify-between text-xs text-emerald-600 dark:text-emerald-400 font-semibold items-center">
+                    <span className="flex items-center gap-1.5">
+                      <Tag className="h-3.5 w-3.5" />
+                      <span>Promo ({appliedPromo.code})</span>
+                      <button
+                        type="button"
+                        onClick={removePromo}
+                        className="text-slate-400 hover:text-rose-500 text-[10px] ml-1 cursor-pointer"
+                        title="Remove Promo"
+                      >
+                        (remove)
+                      </button>
+                    </span>
+                    <span className="font-mono">-{formatCurrency(discountAmount, "INR")}</span>
+                  </div>
+                )}
+
                 <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400">
                   <span>Taxes & GST (5%)</span>
                   <span className="font-mono">{formatCurrency(tax, "INR")}</span>
