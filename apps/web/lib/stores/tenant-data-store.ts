@@ -1376,6 +1376,7 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
   addOrder: async (orderData) => {
     const state = get();
     let orderId = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
+    let backendOrderCreated = false;
 
     try {
       const res = await apiClient.post("/public/orders", {
@@ -1399,6 +1400,7 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
       });
       if (res.data?.data?.orderNumber || res.data?.data?.id) {
         orderId = res.data.data.orderNumber || res.data.data.id;
+        backendOrderCreated = true;
       }
     } catch (e) {
       console.warn("Backend manual order creation failed:", e);
@@ -1476,16 +1478,19 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
 
     persistTenantState(state.tenantId, { orders: updatedOrders, tables: updatedTables });
 
-    // Ensure notification center is updated in real-time
-    const isRoom = orderData.destination === "room_service" || (orderData.table || "").toLowerCase().includes("suite") || (orderData.table || "").toLowerCase().includes("room");
-    apiClient.post("/notifications", {
-      category: isRoom ? "room_service" : "orders",
-      title: isRoom ? `Room Service Order — #${orderId}` : `New Order Received — #${orderId}`,
-      message: `${orderData.table || "Dine-in"} • ${(orderData.items || []).length} item(s) • ₹${orderData.total || 0}`,
-      priority: "high",
-      actionUrl: isRoom ? "/dashboard/rooms" : "/dashboard/orders",
-      metadata: { orderId, table: orderData.table, total: orderData.total },
-    }).catch(() => {});
+    // Fallback notification if backend /public/orders did not already emit one
+    if (!backendOrderCreated) {
+      const isRoom = orderData.destination === "room_service" || (orderData.table || "").toLowerCase().includes("suite") || (orderData.table || "").toLowerCase().includes("room");
+      const cleanId = String(orderId || "").replace(/^#+/, "").trim();
+      apiClient.post("/notifications", {
+        category: isRoom ? "room_service" : "orders",
+        title: isRoom ? `Room Service Order — #${cleanId}` : `New Order Received — #${cleanId}`,
+        message: `${orderData.table || "Dine-in"} • ${(orderData.items || []).length} item(s) • ₹${orderData.total || 0}`,
+        priority: "high",
+        actionUrl: isRoom ? "/dashboard/rooms" : "/dashboard/orders",
+        metadata: { orderId: cleanId, table: orderData.table, total: orderData.total },
+      }).catch(() => {});
+    }
 
     set({ orders: updatedOrders, tables: updatedTables });
     return newOrder;
@@ -1493,8 +1498,10 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
 
   updateOrderStatus: async (id, status, note, billingMethod) => {
     const state = get();
+    let backendUpdated = false;
     try {
       await apiClient.patch(`/orders/${encodeURIComponent(id)}/status`, { status, note, billingMethod });
+      backendUpdated = true;
     } catch (e) {
       console.warn("Backend order status update failed:", e);
     }
@@ -1530,8 +1537,8 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
       }
     }
 
-    // Emit notification on status transitions (delivered, paid, cancelled)
-    if (status === "served" || status === "cancelled" || status === "paid") {
+    // Fallback notification emission only if backend PATCH did not already emit one
+    if (!backendUpdated && (status === "served" || status === "cancelled" || status === "paid")) {
       const order = state.orders.find((o) => o.id === id);
       const isRoom = order?.destination === "room_service" || (order?.table || "").toLowerCase().includes("suite");
       const cleanId = String(id || "").replace(/^#+/, "").trim();
@@ -1544,13 +1551,18 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
         cancelled: `Order Cancelled — #${cleanId}`,
         paid: `Payment Received — #${cleanId}`,
       };
+      const messageMap: Record<string, string> = {
+        served: `${cleanTable} order has been served and delivered to the customer.`,
+        cancelled: `${cleanTable} • Order #${cleanId} has been cancelled.`,
+        paid: `${cleanTable} • ₹${Math.round(order?.total || 0)} payment received${billingMethod ? ` (Settled via ${billingMethod})` : ` for Order #${cleanId}`}.`,
+      };
       apiClient.post("/notifications", {
         category: status === "paid" ? "payments" : (isRoom ? "room_service" : "orders"),
         title: titleMap[status] || `Order ${status} — #${cleanId}`,
-        message: `${cleanTable} order marked as ${status}.${billingMethod ? ` Settled via ${billingMethod}.` : ""}`,
+        message: messageMap[status] || `${cleanTable} order marked as ${status}.`,
         priority: status === "cancelled" ? "high" : "medium",
         actionUrl: isRoom ? "/dashboard/rooms" : "/dashboard/orders",
-        metadata: { orderId: cleanId, status, billingMethod },
+        metadata: { orderId: cleanId, status, billingMethod, table: cleanTable },
       }).catch(() => {});
     }
 

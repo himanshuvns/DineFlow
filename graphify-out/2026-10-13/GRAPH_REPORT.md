@@ -1,49 +1,49 @@
 # Graph Report - DineFlow  (2026-10-13)
 
 ## Corpus Check
-- 384 files · ~736,840 words
+- 384 files · ~737,694 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 12 file(s) not represented in the graph (top: (none) 6, .example 2, .toml 1)
 
 ## Summary
-- 3101 nodes · 8710 edges · 164 communities (122 shown, 42 thin omitted)
+- 3102 nodes · 8723 edges · 163 communities (126 shown, 37 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 57 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `0023d28e`
+- Built from commit: `ec704e3e`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
 - github.com/gin-gonic/gin.Context
-- user.go
-- ai/service.go
-- Service
+- Order
+- handlers/menu.go
+- NewScope
 - staff-storage.ts
 - go_pkg_time
-- button.tsx
-- Service
+- toast.tsx
+- whatsapp/whatsapp.go
 - Service
 - 3. Comprehensive Issue Register & Auto-Fix Log
 - Service
 - webhook/route.ts
 - config.go
-- api.ts
+- [roomId]/page.tsx
 - testing.T
 - staff/page.tsx
 - NotFound
-- time.Time
+- Service
 - OpenWAProvider
 - DineFlow — UI/UX Guidelines
 - BadRequest
-- Order
-- [roomId]/page.tsx
+- Subscription
+- Service
 - DineFlow Multi-Agent System Architecture
 - web/package.json
 - Scope
 - main
-- notification-store.ts
+- notifications/page.tsx
 - platform-store.ts
 - dependencies
 - compilerOptions
@@ -55,11 +55,11 @@
 - package.json
 - OK
 - DineFlow — Development Plan
-- getBaseURL
+- api.ts
 - devDependencies
 - scripts
 - menu-nlp-engine.ts
-- offer-notification-center.tsx
+- offers/page.tsx
 - DineFlow — System Architecture
 - Setup
 - DineFlow — API Strategy
@@ -68,7 +68,7 @@
 - Service
 - 2. Exhaustive Browser QA Checklist
 - tenant/tenant.go
-- otp.go
+- redisKey
 - postcss.config.mjs
 - github.com/dineflow/api
 - printer.go
@@ -102,7 +102,7 @@
 - Ponytail Technical Debt Analysis
 - Ponytail Configuration & Status
 - web/README.md
-- go.mongodb.org/mongo-driver/v2/bson.ObjectID
+- time.Time
 - server/main.go
 - DineFlow Frontend Specialist Agent (`dineflow-frontend`)
 - Graphify Knowledge Graph Query
@@ -121,29 +121,29 @@
 - TubesCursor
 - SubscriptionHandler
 - Service
-- tenant-data-store.ts
-- search.go
+- menu/page.tsx
+- search/service.go
 - DineFlow Critical User Journeys (CUJs)
 - DineFlow Engineering Principles & Shared Rules
-- MSG91Provider
+- framer-motion
 - 1. Hospitality Operational Domains
 - remotion.config.ts
-- github.com/gin-gonic/gin.HandlerFunc
+- Hub
 - getWhatsAppLogs
 - extend-stay/route.ts
 - 3. Non-Functional Requirements
 - 1. Core Performance Vectors
 - AnalyticsHandler
-- Service
+- context.Context
 - Backend Invariants & Development Rules
 - deploy.sh
 - gen-secrets.sh
-- storage/storage.go
+- handlers/whatsapp.go
 - check-in/page.tsx
 - AuthHandler
-- NewFirebaseTestProvider
+- NewService
 - spotlight-cursor.tsx
-- context.Context
+- go.mongodb.org/mongo-driver/v2/bson.ObjectID
 - Maker
 - react
 - design-system.ts
@@ -155,18 +155,17 @@
 - DineFlow DevOps & Infrastructure Agent (`dineflow-devops`)
 - DineFlow Security Reviewer Agent (`dineflow-security-reviewer`)
 - landing-workflow.tsx
-- [orderId]/route.ts
+- ref_next_server
 - landing-customer-journey.tsx
-- review/service_test.go
+- ui/pricing.tsx
 - peeking-chef.tsx
 - Phase 2 — Restaurant MVP
-- Phase 1 — Foundation & Infrastructure
-- orders/route.ts
-- table/route.ts
-- Notification
-- middleware.ts
-- public/route.ts
-- next.config.ts
+- .SendInvoiceViaWhatsApp
+- .ProcessChatbotMessage
+- ai/service.go
+- .LogMessage
+- .dispatchMetaMessage
+- review/review.go
 
 ## God Nodes (most connected - your core abstractions)
 1. `OK()` - 174 edges
@@ -189,49 +188,49 @@
   apps/api/cmd/server/main.go → apps/api/internal/interfaces/http/handlers/health.go
 - `TestIndianPhoneValidation()` --calls--> `ValidateAndNormalizeIndianPhone()`  [INFERRED]
   apps/api/internal/domain/room/room_test.go → apps/api/internal/domain/room/room.go
-- `RequireRole()` --calls--> `GetRole()`  [INFERRED]
-  apps/api/internal/interfaces/http/middleware/rbac.go → apps/api/internal/interfaces/http/middleware/auth.go
+- `TestDefaultPermissionsForRole()` --calls--> `DefaultPermissionsForRole()`  [INFERRED]
+  apps/api/internal/domain/user/user_test.go → apps/api/internal/domain/user/user.go
 
 ## Import Cycles
 - None detected.
 
-## Communities (164 total, 42 thin omitted)
+## Communities (163 total, 37 thin omitted)
 
 ### Community 0 - "github.com/gin-gonic/gin.Context"
 Cohesion: 0.09
 Nodes (15): AIHandler, PlatformHandler, PlanLimitMiddleware(), Conflict(), FeatureNotAvailable(), InternalError(), NoContent(), OKWithMeta() (+7 more)
 
-### Community 1 - "user.go"
-Cohesion: 0.19
-Nodes (16): cleanPhoneNumber(), PublicProfile, User, IsPlatformRole(), UpdateStaffRequest, InviteStaffInput, UpdateEmployeeProfileInput, Auth (+8 more)
+### Community 1 - "Order"
+Cohesion: 0.12
+Nodes (11): Service, Order, UpdateOrderStatusRequest, DestinationType, OrderItem, OrderItemModifier, OrderSource, OrderStatus (+3 more)
 
-### Community 2 - "ai/service.go"
-Cohesion: 0.09
-Nodes (24): geminiRequest, geminiResponse, ScannedDish, TestCopilotBrief_MockMode(), TestCopilotQuery_Classification(), getDefaultGeminiKey(), mockScannedDishes(), NewService() (+16 more)
+### Community 2 - "handlers/menu.go"
+Cohesion: 0.17
+Nodes (13): NewMenuHandler(), go_pkg_github_com_dineflow_api_internal_application_menu, BulkCreateItemsRequest, BulkDeleteItemsRequest, BulkUpdateItemsRequest, CreateCategoryRequest, ScanMenuRequest, ToggleStockRequest (+5 more)
 
-### Community 3 - "Service"
-Cohesion: 0.16
-Nodes (9): NewService(), NewTableHandler(), BulkCreateRoomsRequest, CreateTableRequest, UpdateTableStatusRequest, LocationType, Service, Table (+1 more)
+### Community 3 - "NewScope"
+Cohesion: 0.11
+Nodes (11): NewService(), NewScope(), buildMenuItemFromUpsertRequest(), NewTableHandler(), Category, MenuItem, PublicCategorySection, PublicMenuResponse (+3 more)
 
 ### Community 4 - "staff-storage.ts"
 Cohesion: 0.15
 Nodes (20): dynamic, GET(), POST(), AttendanceRecord, enrollStaff(), findStaffByPhone(), findStaffByPhoneAsync(), generateCheckInSignedUrl() (+12 more)
 
 ### Community 5 - "go_pkg_time"
-Cohesion: 0.11
-Nodes (35): SendOTPRequest, go_pkg_bytes, go_pkg_context, go_pkg_encoding_csv, go_pkg_encoding_json, go_pkg_errors, go_pkg_fmt, go_pkg_github_com_dineflow_api_internal_domain_menu (+27 more)
+Cohesion: 0.10
+Nodes (41): SendOTPRequest, go_pkg_bytes, go_pkg_context, go_pkg_crypto_rand, go_pkg_encoding_csv, go_pkg_encoding_json, go_pkg_errors, go_pkg_fmt (+33 more)
 
-### Community 6 - "button.tsx"
-Cohesion: 0.05
-Nodes (53): MenuItem, RoomInfo, RoomServiceMenuPage(), SuiteTab, CustomerMenuPage(), matchesTable(), CustomerCartDrawer(), CustomerCartDrawerProps (+45 more)
+### Community 6 - "toast.tsx"
+Cohesion: 0.06
+Nodes (53): OrderStatus, OrderTrackingPage(), TrackingOrder, TrackingOrderItem, TrackingTab, MenuItem, RoomInfo, RoomServiceMenuPage() (+45 more)
 
-### Community 7 - "Service"
-Cohesion: 0.04
-Nodes (58): Service, TestPhoneNumberNormalization(), BuildFeedbackRequestMessage(), BuildKitchenReadyMessage(), BuildOrderConfirmationMessage(), CalculateGST(), GetStandardTemplates(), InterpolateTemplate() (+50 more)
+### Community 7 - "whatsapp/whatsapp.go"
+Cohesion: 0.12
+Nodes (26): Campaign, CampaignStats, CampaignStatus, CampaignType, ChatbotSession, ChatbotState, InteractiveButton, InteractiveRow (+18 more)
 
 ### Community 8 - "Service"
-Cohesion: 0.08
-Nodes (20): ValidateAndNormalizeIndianPhone(), NewRoomHandler(), CreateTaskRequest, UpdateRoomStatusRequest, UpdateTaskRequest, CheckInInput, ExtensionStatus, Guest (+12 more)
+Cohesion: 0.07
+Nodes (19): ValidateAndNormalizeIndianPhone(), NewRoomHandler(), CreateTaskRequest, UpdateRoomStatusRequest, UpdateTaskRequest, ExtensionStatus, Guest, GuestStatus (+11 more)
 
 ### Community 9 - "3. Comprehensive Issue Register & Auto-Fix Log"
 Cohesion: 0.11
@@ -249,25 +248,25 @@ Nodes (5): dynamic, GET(), getGoBackendBase(), POST(), revalidate
 Cohesion: 0.16
 Nodes (18): getEnv(), getEnvInt(), Load(), requireEnv(), AIConfig, AppConfig, Config, EmailConfig (+10 more)
 
-### Community 13 - "api.ts"
-Cohesion: 0.06
-Nodes (41): ForgotPasswordContent(), Step, LoginPage(), RegisterPage(), ResetPasswordContent(), WhatsAppPage(), BUSINESS_CATEGORIES, BusinessCategory (+33 more)
+### Community 13 - "[roomId]/page.tsx"
+Cohesion: 0.07
+Nodes (42): ForgotPasswordContent(), Step, LoginPage(), RegisterPage(), ResetPasswordContent(), DEFAULT_FALLBACK_ROOMS, getStayMetrics(), HousekeepingTask (+34 more)
 
 ### Community 14 - "testing.T"
 Cohesion: 0.05
-Nodes (59): NewService(), TestBroadcastOffer_Mock(), TestCreateOffer(), TestTrackOfferClick_NoPanic(), TestTrackOfferConversion_NoPanic(), TestSearchScenarios(), NewService(), TestSearchAll_EmptyQuery() (+51 more)
+Nodes (65): NewService(), TestGenerateReviewSuggestions_AllEightHighlights(), TestGenerateReviewSuggestions_MockFallback(), TestGetReviewStats_Calculation(), TestSearchScenarios(), NewService(), TestSearchAll_EmptyQuery(), TestSearchAll_ShortQuery() (+57 more)
 
 ### Community 15 - "staff/page.tsx"
-Cohesion: 0.08
-Nodes (24): CATEGORIES, CATEGORY_META, PRIORITIES, PRIORITY_BADGE, AttendanceRecord, BankDetails, calculateDistanceM(), EmergencyContact (+16 more)
+Cohesion: 0.10
+Nodes (20): AttendanceRecord, BankDetails, calculateDistanceM(), EmergencyContact, GeofenceConfig, Holiday, LeaveBalance, LeaveRequest (+12 more)
 
 ### Community 16 - "NotFound"
 Cohesion: 0.14
 Nodes (3): AuthHandler, ReviewHandler, NotFound()
 
-### Community 17 - "time.Time"
-Cohesion: 0.07
-Nodes (26): CalculateHealthScore(), time.Time, AnnouncementInfo, AuditActor, AuditLogRecord, BusinessType, ClientStatus, DashboardMetrics (+18 more)
+### Community 17 - "Service"
+Cohesion: 0.08
+Nodes (23): CalculateHealthScore(), AnnouncementInfo, AuditActor, AuditLogRecord, BusinessType, ClientStatus, DashboardMetrics, FeatureFlagDefinition (+15 more)
 
 ### Community 18 - "OpenWAProvider"
 Cohesion: 0.08
@@ -281,13 +280,13 @@ Nodes (44): 10. Responsive Breakpoints, 11. Iconography, 12. Empty States, 13. T
 Cohesion: 0.08
 Nodes (12): MenuHandler, NotificationHandler, RoomHandler, StaffHandler, GetRole(), GetTenantID(), GetUserID(), ByTenant() (+4 more)
 
-### Community 21 - "Order"
-Cohesion: 0.05
-Nodes (36): NewService(), NewService(), Order, FormatPlanName(), GetLimits(), Hub, NewNotificationHandler(), NewOrderHandler() (+28 more)
+### Community 21 - "Subscription"
+Cohesion: 0.13
+Nodes (17): NewService(), FormatPlanName(), GetLimits(), NewSubscriptionHandler(), go_pkg_github_com_dineflow_api_internal_application_subscription, go_pkg_github_com_dineflow_api_internal_domain_subscription, AdminOverrideRequest, CheckoutRequest (+9 more)
 
-### Community 22 - "[roomId]/page.tsx"
-Cohesion: 0.14
-Nodes (21): GuestDiningHistoryPage(), getStayMetrics(), RoomsDirectoryPage(), DEFAULT_FALLBACK_ROOMS, getStayMetrics(), HousekeepingTask, RoomDetail, RoomDetailPage() (+13 more)
+### Community 22 - "Service"
+Cohesion: 0.12
+Nodes (5): Service, SessionManager, WhatsAppProvider, NotificationEmitter, WhatsAppConfig
 
 ### Community 23 - "DineFlow Multi-Agent System Architecture"
 Cohesion: 0.15
@@ -295,23 +294,23 @@ Nodes (12): 1. The Eight Primary Operational Roles, 2. Preserved Domain Speciali
 
 ### Community 24 - "web/package.json"
 Cohesion: 0.08
-Nodes (26): Player, Label, labelVariants, typescript, name, packageManager, private, version (+18 more)
+Nodes (24): Player, typescript, name, packageManager, private, version, axios, clsx (+16 more)
 
 ### Community 25 - "Scope"
 Cohesion: 0.21
 Nodes (8): ensureUpdatedAt(), go.mongodb.org/mongo-driver/v2/bson.M, go.mongodb.org/mongo-driver/v2/mongo.Cursor, go.mongodb.org/mongo-driver/v2/mongo.DeleteResult, go.mongodb.org/mongo-driver/v2/mongo.InsertManyResult, go.mongodb.org/mongo-driver/v2/mongo.InsertOneResult, go.mongodb.org/mongo-driver/v2/mongo.UpdateResult, Scope
 
 ### Community 26 - "main"
-Cohesion: 0.07
-Nodes (38): main(), testCORSOriginDefense(), testMetaWebhookHMACSignature(), testNoSQLInjectionInBody(), testNoSQLInjectionInQueryParams(), testRequestIDTracing(), testSecurityHeaders(), main() (+30 more)
+Cohesion: 0.06
+Nodes (49): main(), testCORSOriginDefense(), testMetaWebhookHMACSignature(), testNoSQLInjectionInBody(), testNoSQLInjectionInQueryParams(), testRequestIDTracing(), testSecurityHeaders(), main() (+41 more)
 
-### Community 27 - "notification-store.ts"
-Cohesion: 0.16
-Nodes (17): NotificationsPage(), timeAgo(), CATEGORIES, CATEGORY_META, NotifCard(), NotificationCenter(), sanitizeNotification(), timeAgo() (+9 more)
+### Community 27 - "notifications/page.tsx"
+Cohesion: 0.14
+Nodes (21): CATEGORIES, CATEGORY_META, NotificationsPage(), PRIORITIES, PRIORITY_BADGE, timeAgo(), CATEGORIES, CATEGORY_META (+13 more)
 
 ### Community 28 - "platform-store.ts"
-Cohesion: 0.10
-Nodes (20): AuditLogEntry, BusinessType, ClientStatus, DashboardMetrics, FeatureFlagDefinition, INITIAL_AUDIT_LOGS, INITIAL_CLIENTS, INITIAL_FEATURE_FLAGS (+12 more)
+Cohesion: 0.09
+Nodes (21): AuditLogEntry, BusinessType, ClientStatus, DashboardMetrics, FeatureFlagDefinition, INITIAL_AUDIT_LOGS, INITIAL_CLIENTS, INITIAL_FEATURE_FLAGS (+13 more)
 
 ### Community 29 - "dependencies"
 Cohesion: 0.09
@@ -322,8 +321,8 @@ Cohesion: 0.11
 Nodes (18): compilerOptions, allowJs, esModuleInterop, incremental, isolatedModules, jsx, lib, module (+10 more)
 
 ### Community 31 - "app/layout.tsx"
-Cohesion: 0.13
-Nodes (13): apps_web_app_globals, metadata, plusJakarta, spaceGrotesk, viewport, ResolvedTheme, Theme, ThemeContext (+5 more)
+Cohesion: 0.10
+Nodes (16): apps_web_app_globals, metadata, plusJakarta, spaceGrotesk, viewport, ResolvedTheme, Theme, ThemeContext (+8 more)
 
 ### Community 32 - "tasks"
 Cohesion: 0.11
@@ -338,8 +337,8 @@ Cohesion: 0.12
 Nodes (16): aliases, components, hooks, lib, ui, utils, rsc, $schema (+8 more)
 
 ### Community 35 - "cn"
-Cohesion: 0.08
-Nodes (75): MOCK_DESCRIPTIONS, SAMPLE_ITEMS, TONES, AI_TOOLS, STATS, ALERT_CONFIG, ALERTS, PricingAlertsPage() (+67 more)
+Cohesion: 0.07
+Nodes (56): AnalyticsPage(), DatePreset, DiningRecord, GuestDiningHistoryPage(), HotelGuestRecord, LiveReviewItem, LiveReviewStats, getStayMetrics() (+48 more)
 
 ### Community 36 - "package.json"
 Cohesion: 0.08
@@ -350,12 +349,12 @@ Cohesion: 0.11
 Nodes (3): TenantHandler, WhatsAppHandler, OK()
 
 ### Community 38 - "DineFlow — Development Plan"
-Cohesion: 0.15
-Nodes (13): Definition of Done, DineFlow — Development Plan, E2E Tests (Playwright), How to Read This Plan, Integration Tests, Performance Tests (k6), Phase 0 — Planning & Architecture, Phase 3 — Hotel Module (+5 more)
+Cohesion: 0.10
+Nodes (21): 1.1 — Monorepo Setup, 1.2 — Backend Foundation (Go), 1.3 — Authentication Service, 1.4 — Multi-Tenancy Middleware, 1.5 — Frontend Foundation (Next.js), 1.6 — File Storage, 1.7 — Email Service, Definition of Done (+13 more)
 
-### Community 39 - "getBaseURL"
-Cohesion: 0.13
-Nodes (12): dynamic, POST(), GET(), POST(), GET(), GET(), POST(), POST() (+4 more)
+### Community 39 - "api.ts"
+Cohesion: 0.14
+Nodes (13): POST(), GET(), POST(), GET(), GET(), POST(), POST(), POST() (+5 more)
 
 ### Community 40 - "devDependencies"
 Cohesion: 0.20
@@ -366,12 +365,12 @@ Cohesion: 0.22
 Nodes (8): name, private, scripts, build, dev, lint, test, version
 
 ### Community 42 - "menu-nlp-engine.ts"
-Cohesion: 0.11
-Nodes (29): callGeminiVision(), GEMINI_MODELS, getDefaultGeminiKey(), maxDuration, POST(), RawMenuItem, ScanMenuRequestBody, CameraMenuScannerModalProps (+21 more)
+Cohesion: 0.14
+Nodes (22): callGeminiVision(), GEMINI_MODELS, getDefaultGeminiKey(), maxDuration, POST(), RawMenuItem, ScanMenuRequestBody, INDIAN_CATEGORIES (+14 more)
 
-### Community 43 - "offer-notification-center.tsx"
-Cohesion: 0.17
-Nodes (14): OffersStudioPage(), mapOfferPayload(), OfferNotificationCenterInner(), OfferNotificationCenterProps, playNotificationChime(), DiscountType, generateOfferAICopy(), OfferCampaign (+6 more)
+### Community 43 - "offers/page.tsx"
+Cohesion: 0.23
+Nodes (13): OffersStudioPage(), mapOfferPayload(), OfferNotificationCenterInner(), OfferNotificationCenterProps, playNotificationChime(), DiscountType, generateOfferAICopy(), OfferCampaign (+5 more)
 
 ### Community 44 - "DineFlow — System Architecture"
 Cohesion: 0.07
@@ -394,20 +393,20 @@ Cohesion: 0.25
 Nodes (8): scripts, build, dev, lint, start, video:preview, video:render, video:render:qr
 
 ### Community 49 - "Service"
-Cohesion: 0.14
-Nodes (11): NewService(), ValidatePasswordComplexity(), NewAuthHandler(), OTPProvider, NormalizePhone(), AuthResponse, EmailSender, LoginRequest (+3 more)
+Cohesion: 0.16
+Nodes (8): ValidatePasswordComplexity(), NewAuthHandler(), NormalizePhone(), AuthResponse, LoginRequest, Service, VerifyOTPRequest, go.mongodb.org/mongo-driver/v2/mongo.Collection
 
 ### Community 50 - "2. Exhaustive Browser QA Checklist"
 Cohesion: 0.20
 Nodes (9): 1. Targeted Viewports & Breakpoints, 2. Exhaustive Browser QA Checklist, 3. High-Priority User Journeys to Inspect, 4. Execution Guardrails, A. Horizontal Overflow & Layout Integrity, B. Mobile Operational Ergonomics, C. Modal & Drawer Scroll Containment, D. Dual-Theme Contrast & WCAG Compliance (+1 more)
 
 ### Community 51 - "tenant/tenant.go"
-Cohesion: 0.17
-Nodes (22): seedDefaultData(), seedPlatformData(), generateSlug(), FeaturesForPlan(), BusinessType, Tenant, LimitsForPlan(), DefaultPermissionsForRole() (+14 more)
+Cohesion: 0.20
+Nodes (19): seedDefaultData(), seedPlatformData(), generateSlug(), FeaturesForPlan(), BusinessType, Tenant, LimitsForPlan(), RegisterRequest (+11 more)
 
-### Community 52 - "otp.go"
-Cohesion: 0.21
-Nodes (8): GenerateCode(), redis.Client, NewService(), redisKey(), TestGenerateCode(), go_pkg_crypto_rand, go_pkg_math_big, Service
+### Community 52 - "redisKey"
+Cohesion: 0.14
+Nodes (12): Config, redis.Client, NewMSG91Provider(), GenerateCode(), redis.Client, NewService(), redisKey(), TestGenerateCode() (+4 more)
 
 ### Community 55 - "printer.go"
 Cohesion: 0.26
@@ -434,12 +433,12 @@ Cohesion: 0.13
 Nodes (15): Collection: `audit_logs`, Collection: `categories`, Collection: `locations`, Collection: `menu_items`, Collection: `menus`, Collection: `modifier_groups`, Collection: `notifications`, Collection: `orders` (+7 more)
 
 ### Community 61 - "useAuthStore"
-Cohesion: 0.05
-Nodes (64): VerifyContent(), DashboardLayout(), MobileNavSubItemsInner(), DashboardOverviewPage(), TablesManagementPage(), RootLoading(), PlatformLayout(), PricingPage() (+56 more)
+Cohesion: 0.04
+Nodes (77): DashboardLayout(), MobileNavSubItemsInner(), DashboardOverviewPage(), TablesManagementPage(), RootLoading(), PlatformLayout(), ChatMessage, CopilotDrawer() (+69 more)
 
 ### Community 62 - "useToast"
 Cohesion: 0.07
-Nodes (34): DAYS, ForecastPage(), generateForecast(), getIntensityClass(), HOURS, INSIGHTS, getDescription(), MenuWriterPage() (+26 more)
+Nodes (38): VerifyContent(), getDescription(), MenuWriterPage(), PricingAlertsPage(), UpsellPage(), ReviewsManagementPage(), PlatformAnalyticsPage(), PlatformAuditLogsPage() (+30 more)
 
 ### Community 63 - "DineFlow — Feature Roadmap"
 Cohesion: 0.10
@@ -533,13 +532,13 @@ Nodes (3): Available Profiles, Ponytail Configuration & Status, Usage
 Cohesion: 0.50
 Nodes (3): Deploy on Vercel, Getting Started, Learn More
 
-### Community 86 - "go.mongodb.org/mongo-driver/v2/bson.ObjectID"
+### Community 86 - "time.Time"
 Cohesion: 0.06
-Nodes (29): Service, CalculateDistanceMeters(), TestCalculateDistanceMeters(), NewScope(), ParseObjectID(), buildMenuItemFromUpsertRequest(), NewStaffHandler(), go.mongodb.org/mongo-driver/v2/bson.ObjectID (+21 more)
+Nodes (39): cleanPhoneNumber(), CalculateDistanceMeters(), DefaultPermissionsForRole(), PublicProfile, User, IsPlatformRole(), TestCalculateDistanceMeters(), NewStaffHandler() (+31 more)
 
 ### Community 87 - "server/main.go"
 Cohesion: 0.05
-Nodes (54): corsMiddleware(), Health(), SetHealthDeps(), Version(), NewPlatformHandler(), NewSubscriptionHandler(), ByIP(), ByIPAndRoute() (+46 more)
+Nodes (58): corsMiddleware(), Health(), SetHealthDeps(), Version(), NewPlatformHandler(), NewTenantHandler(), ByIP(), ByIPAndRoute() (+50 more)
 
 ### Community 88 - "DineFlow Frontend Specialist Agent (`dineflow-frontend`)"
 Cohesion: 0.18
@@ -549,12 +548,12 @@ Nodes (10): 1. 21st.dev Design System Compliance, 2. Viewport & Breakpoint Testi
 Cohesion: 0.22
 Nodes (7): CategoryShare, HourlyPoint, OverviewMetrics, Service, TopItemMetric, NewService(), NewAnalyticsHandler()
 
-### Community 117 - "tenant-data-store.ts"
-Cohesion: 0.07
-Nodes (43): MenuManagementPage(), INITIAL_KDS_ORDERS, KdsItem, KdsOrder, KDSOrdersPage(), MENU_PRESETS, ReviewsManagementPage(), CustomerReviewHub() (+35 more)
+### Community 117 - "menu/page.tsx"
+Cohesion: 0.08
+Nodes (50): IMAGE_PRESETS, MenuManagementPage(), INITIAL_KDS_ORDERS, KdsItem, KdsOrder, KDSOrdersPage(), MENU_PRESETS, CustomerMenuPage() (+42 more)
 
-### Community 118 - "search.go"
-Cohesion: 0.25
+### Community 118 - "search/service.go"
+Cohesion: 0.29
 Nodes (8): SearchHandler, NewSearchHandler(), go_pkg_github_com_dineflow_api_internal_application_search, SearchFilterOptions, SearchResponse, SearchResultItem, SearchResultsGrouped, Service
 
 ### Community 119 - "DineFlow Critical User Journeys (CUJs)"
@@ -565,17 +564,17 @@ Nodes (10): 12-Step QA Execution Workflow, DineFlow Critical User Journeys (CUJs
 Cohesion: 0.18
 Nodes (10): 1. System Overview & Domain Invariants, 2. Core Execution Rule, 3. Anti-Duplication & Architectural Reuse, 4. Preservation of the Existing System, 5. Real Data vs. Mock Data Policy, 6. Strict Multi-Tenant Data Isolation, 7. Security Invariants, 8. Quality & Engineering Standards (+2 more)
 
-### Community 121 - "MSG91Provider"
-Cohesion: 0.25
-Nodes (6): Config, redis.Client, NewMSG91Provider(), TestMSG91ProviderFallback(), net/http.Client, MSG91Provider
+### Community 121 - "framer-motion"
+Cohesion: 0.12
+Nodes (14): ChefMascot(), ChefMascotProps, FloatingCard(), FloatingCardProps, HeroSection(), HeroSectionProps, SCATTERED_FOODS, ScatteredFood (+6 more)
 
 ### Community 122 - "1. Hospitality Operational Domains"
 Cohesion: 0.22
 Nodes (8): 1. Hospitality Operational Domains, 2. Product Review Standards, A. Restaurant Dine-In & Quick Service (QSR), B. Hotel PMS & In-Room Guest Services, C. Workforce & Operational HRMS, D. Omnichannel Guest Communication, DineFlow Product Reviewer Agent (`dineflow-product-reviewer`), E. Multi-Tenant Platform Administration
 
-### Community 124 - "github.com/gin-gonic/gin.HandlerFunc"
-Cohesion: 0.41
-Nodes (12): ChefOrAbove(), FinanceAdminOrAbove(), OwnerOnly(), OwnerOrManager(), PlatformAdminOrAbove(), RequireAnyRole(), RequirePlatformRole(), RequireRole() (+4 more)
+### Community 124 - "Hub"
+Cohesion: 0.14
+Nodes (11): NewService(), NewService(), Hub, NewNotificationHandler(), NewOrderHandler(), notifServiceIface, Service, WhatsAppOrderNotifier (+3 more)
 
 ### Community 125 - "getWhatsAppLogs"
 Cohesion: 0.32
@@ -593,17 +592,17 @@ Nodes (19): 1. User Personas, 3.1 Performance, 3.2 Scalability, 3.3 Reliability,
 Cohesion: 0.25
 Nodes (7): 1. Core Performance Vectors, 2. Safe Performance Audit Protocol, A. MongoDB Indexing & Query Efficiency, B. Redis Caching & Rate Limiting Strategy, C. Next.js Bundle Size & Rendering Efficiency, D. Server Resource Efficiency (Go Backend), DineFlow Performance Specialist Agent (`dineflow-performance`)
 
-### Community 130 - "Service"
-Cohesion: 0.14
-Nodes (9): cleanReviewTag(), mockReviewSuggestions(), NewReviewHandler(), GenerateReviewRequest, GenerateReviewResponse, PrivateFeedback, PublicRestaurantReviewMeta, ReviewStats (+1 more)
+### Community 130 - "context.Context"
+Cohesion: 0.09
+Nodes (11): Service, Client, New(), NewReviewHandler(), RateLimit(), context.Context, time.Duration, PrivateFeedback (+3 more)
 
 ### Community 131 - "Backend Invariants & Development Rules"
 Cohesion: 0.20
 Nodes (9): 1. Mandatory Server-Side Multi-Tenant Scoping, 2. Standardized API Response & Error Handling, 3. Database Schema Integrity & Indexing, 4. External Webhook & Integration Guidelines, Backend Invariants & Development Rules, Backend Quality & Validation Checklist, DineFlow Backend Specialist Agent (`dineflow-backend`), Directory & Architectural Organization (+1 more)
 
-### Community 134 - "storage/storage.go"
-Cohesion: 0.16
-Nodes (12): StorageService, NewService(), TestStorageValidation(), StorageHandler, NewStorageHandler(), go_pkg_encoding_hex, go_pkg_github_com_dineflow_api_internal_infrastructure_storage, go_pkg_path_filepath (+4 more)
+### Community 134 - "handlers/whatsapp.go"
+Cohesion: 0.12
+Nodes (17): StorageService, NewService(), TestStorageValidation(), StorageHandler, NewStorageHandler(), NewWhatsAppHandler(), verifyMetaSignature(), verifyOpenWASignature() (+9 more)
 
 ### Community 135 - "check-in/page.tsx"
 Cohesion: 0.40
@@ -613,25 +612,25 @@ Nodes (4): calculateDistanceMeters(), CheckInContent(), CheckInResult, TokenInfo
 Cohesion: 0.26
 Nodes (4): clearRefreshTokenCookie(), AuthHandler, setRefreshTokenCookie(), GetTokenID()
 
-### Community 137 - "NewFirebaseTestProvider"
-Cohesion: 0.17
-Nodes (11): Config, redis.Client, NewFirebaseTestProvider(), redis.Client, NewOTPProvider(), ParseTestNumbers(), TestFirebaseTestProvider(), TestNormalizePhone() (+3 more)
+### Community 137 - "NewService"
+Cohesion: 0.18
+Nodes (10): NewService(), Config, redis.Client, NewFirebaseTestProvider(), OTPProvider, redis.Client, NewOTPProvider(), EmailSender (+2 more)
 
 ### Community 138 - "spotlight-cursor.tsx"
 Cohesion: 0.32
 Nodes (5): Component(), ComponentProps, SpotlightConfig, SpotlightCursor, useSpotlightEffect()
 
-### Community 139 - "context.Context"
-Cohesion: 0.08
-Nodes (11): cleanGuestName(), cleanOrderNumber(), cleanTableName(), Service, Client, RateLimit(), context.Context, time.Duration (+3 more)
+### Community 139 - "go.mongodb.org/mongo-driver/v2/bson.ObjectID"
+Cohesion: 0.12
+Nodes (14): cleanGuestName(), cleanOrderNumber(), cleanTableName(), ParseObjectID(), go.mongodb.org/mongo-driver/v2/bson.ObjectID, CreateNotificationRequest, Category, CreateNotificationInput (+6 more)
 
 ### Community 140 - "Maker"
-Cohesion: 0.30
-Nodes (7): Maker, NewMaker(), TestTokenMaker(), go_pkg_github_com_golang_jwt_jwt_v5, jwt.RegisteredClaims, Claims, TokenType
+Cohesion: 0.44
+Nodes (4): Maker, jwt.RegisteredClaims, Claims, TokenType
 
 ### Community 141 - "react"
-Cohesion: 0.03
-Nodes (73): DashboardErrorProps, SettingsPage(), metadata, OrderStatus, OrderTrackingPage(), TrackingOrder, TrackingOrderItem, metadata (+65 more)
+Cohesion: 0.06
+Nodes (70): DAYS, ForecastPage(), generateForecast(), getIntensityClass(), HOURS, INSIGHTS, MOCK_DESCRIPTIONS, SAMPLE_ITEMS (+62 more)
 
 ### Community 143 - "dnd/route.ts"
 Cohesion: 0.38
@@ -661,49 +660,65 @@ Nodes (4): 1. Scope of Infrastructure, 2. MANDATORY PRODUCTION SAFETY GUARDRAILS
 Cohesion: 0.40
 Nodes (4): 1. 10-Point Security Review Matrix, 2. Review Protocol & Severity Ratings, 3. Strict Safety Guardrails, DineFlow Security Reviewer Agent (`dineflow-security-reviewer`)
 
+### Community 151 - "ref_next_server"
+Cohesion: 0.08
+Nodes (11): dynamic, revalidate, dynamic, dynamic, revalidate, dynamic, revalidate, dynamic (+3 more)
+
 ### Community 153 - "landing-customer-journey.tsx"
 Cohesion: 0.18
 Nodes (8): HOTEL_LOADING_MESSAGES, HOTEL_STEPS, JourneyStep, JourneyType, LandingCustomerJourney(), RESTAURANT_LOADING_MESSAGES, RESTAURANT_STEPS, ParallaxFloat()
 
-### Community 154 - "review/service_test.go"
-Cohesion: 0.28
-Nodes (7): NewService(), TestGenerateReviewSuggestions_AllEightHighlights(), TestGenerateReviewSuggestions_MockFallback(), TestGetReviewStats_Calculation(), TestReviewDomainTypes(), go_pkg_github_com_dineflow_api_internal_application_review, go_pkg_github_com_dineflow_api_internal_domain_review
+### Community 154 - "ui/pricing.tsx"
+Cohesion: 0.18
+Nodes (11): CANONICAL_PLANS, LandingPricing(), buttonVariants, Label, labelVariants, Pricing(), PricingPlan, PricingProps (+3 more)
 
 ### Community 156 - "Phase 2 — Restaurant MVP"
 Cohesion: 0.22
 Nodes (9): 2.1 — Onboarding, 2.2 — Menu Management, 2.3 — Table & QR Code Management, 2.4 — Customer Ordering Experience, 2.5 — WebSocket / Real-Time, 2.6 — Order Management (Staff Dashboard), 2.7 — Kitchen Display System, 2.8 — Basic Analytics (+1 more)
 
-### Community 157 - "Phase 1 — Foundation & Infrastructure"
-Cohesion: 0.25
-Nodes (8): 1.1 — Monorepo Setup, 1.2 — Backend Foundation (Go), 1.3 — Authentication Service, 1.4 — Multi-Tenancy Middleware, 1.5 — Frontend Foundation (Next.js), 1.6 — File Storage, 1.7 — Email Service, Phase 1 — Foundation & Infrastructure
+### Community 157 - ".SendInvoiceViaWhatsApp"
+Cohesion: 0.16
+Nodes (10): CalculateGST(), GetStandardTemplates(), InterpolateTemplate(), TestBuildOrderConfirmationMessage(), TestCalculateGST(), TestGetStandardTemplates(), TestInterpolateTemplate(), CustomerInvoice (+2 more)
 
-### Community 160 - "Notification"
-Cohesion: 0.48
-Nodes (5): CreateNotificationRequest, Category, CreateNotificationInput, Notification, Priority
+### Community 158 - ".ProcessChatbotMessage"
+Cohesion: 0.17
+Nodes (7): TestPhoneNumberNormalization(), IsOptOutKeyword(), NormalizePhoneNumber(), ParseRating(), TestIsOptOutKeyword(), TestParseRating(), InboundResult
 
-### Community 165 - "next.config.ts"
-Cohesion: 0.50
-Nodes (3): nextConfig, securityHeaders, next
+### Community 159 - "ai/service.go"
+Cohesion: 0.20
+Nodes (11): geminiRequest, geminiResponse, ScannedDish, TestCopilotBrief_MockMode(), TestCopilotQuery_Classification(), getDefaultGeminiKey(), mockScannedDishes(), NewService() (+3 more)
+
+### Community 160 - ".LogMessage"
+Cohesion: 0.26
+Nodes (7): BuildFeedbackRequestMessage(), BuildKitchenReadyMessage(), BuildOrderConfirmationMessage(), MessageLog, MessageStatus, OrderConfirmationData, TemplateType
+
+### Community 161 - ".dispatchMetaMessage"
+Cohesion: 0.24
+Nodes (3): LeaveType, WorkforceCheckInInput, WorkforceCheckInResult
+
+### Community 162 - "review/review.go"
+Cohesion: 0.47
+Nodes (4): cleanReviewTag(), mockReviewSuggestions(), GenerateReviewRequest, GenerateReviewResponse
 
 ## Knowledge Gaps
-- **889 isolated node(s):** `TestResult`, `github.com/dineflow/api`, `geminiRequest`, `geminiResponse`, `SendOTPRequest` (+884 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 1095 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **42 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **890 isolated node(s):** `TestResult`, `github.com/dineflow/api`, `geminiRequest`, `geminiResponse`, `SendOTPRequest` (+885 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 1096 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **37 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `Service` connect `Service` to `Service`, `go_pkg_time`, `OK`, `testing.T`, `OpenWAProvider`, `BadRequest`, `go.mongodb.org/mongo-driver/v2/bson.ObjectID`, `Service`, `MSG91Provider`, `main`?**
+- **Why does `Service` connect `Service` to `.LogMessage`, `.dispatchMetaMessage`, `context.Context`, `go_pkg_time`, `OK`, `whatsapp/whatsapp.go`, `handlers/whatsapp.go`, `testing.T`, `OpenWAProvider`, `redisKey`, `BadRequest`, `time.Time`, `Service`, `main`, `.SendInvoiceViaWhatsApp`, `.ProcessChatbotMessage`?**
   _High betweenness centrality (0.026) - this node is a cross-community bridge._
-- **Why does `react` connect `react` to `button.tsx`, `check-in/page.tsx`, `spotlight-cursor.tsx`, `api.ts`, `staff/page.tsx`, `[roomId]/page.tsx`, `landing-workflow.tsx`, `web/package.json`, `landing-customer-journey.tsx`, `peeking-chef.tsx`, `notification-store.ts`, `app/layout.tsx`, `cn`, `offer-notification-center.tsx`, `useAuthStore`, `useToast`, `video/page.tsx`, `TubesCursor`, `tenant-data-store.ts`?**
-  _High betweenness centrality (0.019) - this node is a cross-community bridge._
-- **Why does `RoomHandler` connect `BadRequest` to `Service`, `Service`, `context.Context`, `Setup`, `NotFound`, `go.mongodb.org/mongo-driver/v2/bson.ObjectID`, `server/main.go`?**
-  _High betweenness centrality (0.013) - this node is a cross-community bridge._
+- **Why does `react` connect `react` to `toast.tsx`, `check-in/page.tsx`, `spotlight-cursor.tsx`, `[roomId]/page.tsx`, `staff/page.tsx`, `landing-workflow.tsx`, `web/package.json`, `landing-customer-journey.tsx`, `ui/pricing.tsx`, `peeking-chef.tsx`, `notifications/page.tsx`, `app/layout.tsx`, `cn`, `offers/page.tsx`, `useAuthStore`, `useToast`, `video/page.tsx`, `TubesCursor`, `menu/page.tsx`, `framer-motion`?**
+  _High betweenness centrality (0.020) - this node is a cross-community bridge._
+- **Why does `Setup()` connect `Setup` to `github.com/gin-gonic/gin.Context`, `AnalyticsHandler`, `context.Context`, `OK`, `handlers/whatsapp.go`, `AuthHandler`, `Maker`, `testing.T`, `NotFound`, `SubscriptionHandler`, `BadRequest`, `search/service.go`, `server/main.go`, `main`?**
+  _High betweenness centrality (0.012) - this node is a cross-community bridge._
 - **What connects `TestResult`, `github.com/dineflow/api`, `geminiRequest` to the rest of the system?**
-  _889 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _890 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `github.com/gin-gonic/gin.Context` be split into smaller, more focused modules?**
   _Cohesion score 0.09044289044289044 - nodes in this community are weakly interconnected._
-- **Should `ai/service.go` be split into smaller, more focused modules?**
-  _Cohesion score 0.09113300492610837 - nodes in this community are weakly interconnected._
-- **Should `go_pkg_time` be split into smaller, more focused modules?**
-  _Cohesion score 0.11468812877263582 - nodes in this community are weakly interconnected._
+- **Should `Order` be split into smaller, more focused modules?**
+  _Cohesion score 0.1206896551724138 - nodes in this community are weakly interconnected._
+- **Should `NewScope` be split into smaller, more focused modules?**
+  _Cohesion score 0.1064102564102564 - nodes in this community are weakly interconnected._

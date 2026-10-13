@@ -411,21 +411,30 @@ func (s *Service) EmitOrderUpdated(ctx context.Context, tenantID bson.ObjectID, 
 	var title, message string
 	priority := domainnotification.PriorityMedium
 	category := domainnotification.CategoryOrders
+	actionURL := "/dashboard/orders"
+	if ord.Destination == "room_service" {
+		category = domainnotification.CategoryRoomService
+		actionURL = "/dashboard/rooms"
+	}
 	cleanOrdNum := cleanOrderNumber(ord.OrderNumber)
 	cleanTbl := cleanTableName(ord.TableName)
 
 	switch ord.Status {
 	case domainorder.StatusServed:
 		title = fmt.Sprintf("Order Delivered — #%s", cleanOrdNum)
-		message = fmt.Sprintf("%s order has been delivered to the customer.", cleanTbl)
+		message = fmt.Sprintf("%s order has been served and delivered to the customer.", cleanTbl)
 	case domainorder.StatusCancelled:
 		title = fmt.Sprintf("Order Cancelled — #%s", cleanOrdNum)
-		message = fmt.Sprintf("Order #%s has been cancelled.", cleanOrdNum)
+		message = fmt.Sprintf("%s • Order #%s has been cancelled.", cleanTbl, cleanOrdNum)
 		priority = domainnotification.PriorityHigh
 	case domainorder.StatusPaid:
 		category = domainnotification.CategoryPayments
 		title = fmt.Sprintf("Payment Received — #%s", cleanOrdNum)
-		message = fmt.Sprintf("₹%.0f payment recorded for Order #%s.", ord.TotalAmount, cleanOrdNum)
+		if strings.TrimSpace(ord.BillingMethod) != "" {
+			message = fmt.Sprintf("%s • ₹%.0f payment received (Settled via %s).", cleanTbl, ord.TotalAmount, strings.TrimSpace(ord.BillingMethod))
+		} else {
+			message = fmt.Sprintf("%s • ₹%.0f payment received for Order #%s.", cleanTbl, ord.TotalAmount, cleanOrdNum)
+		}
 		priority = domainnotification.PriorityMedium
 	default:
 		return nil // no notification for other status transitions
@@ -437,11 +446,13 @@ func (s *Service) EmitOrderUpdated(ctx context.Context, tenantID bson.ObjectID, 
 		Title:     title,
 		Message:   message,
 		Priority:  priority,
-		ActionURL: "/dashboard/orders",
+		ActionURL: actionURL,
 		Metadata: map[string]interface{}{
-			"orderId":     ord.ID.Hex(),
-			"orderNumber": cleanOrdNum,
-			"status":      string(ord.Status),
+			"orderId":       ord.ID.Hex(),
+			"orderNumber":   cleanOrdNum,
+			"status":        string(ord.Status),
+			"billingMethod": ord.BillingMethod,
+			"table":         cleanTbl,
 		},
 	})
 	return err

@@ -16,6 +16,7 @@ export type NotificationPriority = 'low' | 'medium' | 'high' | 'critical'
 
 export interface Notification {
   id: string
+  mergedIds?: string[]
   tenantId: string
   userId?: string
   category: NotificationCategory
@@ -27,6 +28,93 @@ export interface Notification {
   metadata?: Record<string, unknown>
   createdAt: string
   expiresAt?: string
+}
+
+function combineNotificationMessages(
+  title: string,
+  msgA: string,
+  msgB: string,
+  metaA?: Record<string, unknown>,
+  metaB?: Record<string, unknown>
+): string {
+  const cleanA = (msgA || '').trim()
+  const cleanB = (msgB || '').trim()
+  if (!cleanA) return cleanB
+  if (!cleanB || cleanA.toLowerCase() === cleanB.toLowerCase()) return cleanA
+
+  const both = `${cleanA} | ${cleanB}`
+  const lowerTitle = (title || '').toLowerCase()
+
+  if (lowerTitle.includes('payment received')) {
+    const tableMatch = both.match(/\b((?:Table|Room|Suite)\s+[A-Za-z0-9-]+)\b/i)
+    const table = tableMatch ? tableMatch[1] : String(metaA?.table || metaB?.table || '').trim()
+    const amtMatch = both.match(/(₹[\d,]+(?:\.\d+)?)/)
+    const amount = amtMatch ? amtMatch[1] : ''
+    const settledMatch = both.match(/Settled via\s+([^.|)]+)/i)
+    const settled = settledMatch
+      ? settledMatch[1].trim()
+      : String(metaA?.billingMethod || metaB?.billingMethod || '').trim()
+    const ordMatch = title.match(/(#[A-Za-z0-9-]+)/)
+    const ordRef = ordMatch ? ordMatch[1] : ''
+
+    const parts: string[] = []
+    if (table) parts.push(table)
+    if (amount) {
+      parts.push(`${amount} payment received${ordRef ? ` for Order ${ordRef}` : ''}`)
+    } else {
+      parts.push('Order marked as paid')
+    }
+    if (settled) parts.push(`Settled via ${settled}`)
+    return `${parts.join(' • ')}.`
+  }
+
+  if (lowerTitle.includes('order delivered')) {
+    const tableMatch = both.match(/\b((?:Table|Room|Suite)\s+[A-Za-z0-9-]+)\b/i)
+    const table = tableMatch ? tableMatch[1] : 'Table'
+    return `${table} order has been served and delivered to the customer.`
+  }
+
+  return cleanA.length >= cleanB.length ? cleanA : cleanB
+}
+
+export function mergeDuplicateNotifications(items: Notification[]): Notification[] {
+  const result: Notification[] = []
+  const seenByKey = new Map<string, Notification>()
+
+  for (const item of items) {
+    const normTitle = (item.title || '').replace(/#+/g, '#').trim()
+    const shouldDedupe = normTitle.includes('#') || normTitle.includes('—')
+    const key = `${item.category}|${normTitle.toLowerCase()}`
+
+    if (shouldDedupe && seenByKey.has(key)) {
+      const existing = seenByKey.get(key)!
+      const combinedIds = Array.from(
+        new Set([...(existing.mergedIds || [existing.id]), ...(item.mergedIds || [item.id])])
+      )
+      existing.mergedIds = combinedIds
+      existing.message = combineNotificationMessages(
+        normTitle,
+        existing.message,
+        item.message,
+        existing.metadata,
+        item.metadata
+      )
+      existing.metadata = { ...(item.metadata || {}), ...(existing.metadata || {}) }
+      existing.read = existing.read && item.read
+    } else {
+      const cloned: Notification = {
+        ...item,
+        title: normTitle || item.title,
+        mergedIds: item.mergedIds ? [...item.mergedIds] : [item.id],
+      }
+      result.push(cloned)
+      if (shouldDedupe) {
+        seenByKey.set(key, cloned)
+      }
+    }
+  }
+
+  return result
 }
 
 interface ListNotificationsResponse {
@@ -117,12 +205,15 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       const tenantId = useAuthStore.getState().tenant?.id
       const deletedIds = getDeletedIds(tenantId)
       const filtered = data.data.filter((n) => !deletedIds.has(n.id))
-      const deletedUnreadCount = data.data.filter((n) => deletedIds.has(n.id) && !n.read).length
+      const merged = mergeDuplicateNotifications(filtered)
+      const removedCount = data.data.length - merged.length
+      const removedUnreadCount =
+        data.data.filter((n) => !n.read).length - merged.filter((n) => !n.read).length
 
       set({
-        notifications: filtered,
-        unreadCount: Math.max(0, data.unreadCount - deletedUnreadCount),
-        total: Math.max(0, data.total - (data.data.length - filtered.length)),
+        notifications: merged,
+        unreadCount: Math.max(0, data.unreadCount - removedUnreadCount),
+        total: Math.max(0, data.total - removedCount),
         isLoading: false,
       })
     } catch {
@@ -140,8 +231,10 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   },
 
   markAsRead: async (id: string) => {
+    const target = get().notifications.find((n) => n.id === id)
+    const allIds = target?.mergedIds?.length ? target.mergedIds : [id]
     try {
-      await apiClient.patch(`/notifications/${id}/read`)
+      await Promise.allSettled(allIds.map((itemId) => apiClient.patch(`/notifications/${itemId}/read`)))
       set((state) => ({
         notifications: state.notifications.map((n) =>
           n.id === id ? { ...n, read: true } : n
@@ -168,6 +261,12 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   markMultipleAsRead: async (ids: string[]) => {
     if (!ids.length) return
     const idSet = new Set(ids)
+    const expandedIds = new Set<string>(ids)
+    get().notifications.forEach((n) => {
+      if (idSet.has(n.id) && n.mergedIds) {
+        n.mergedIds.forEach((mId) => expandedIds.add(mId))
+      }
+    })
     set((state) => {
       const newlyReadCount = state.notifications.filter((n) => idSet.has(n.id) && !n.read).length
       return {
@@ -178,7 +277,9 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       }
     })
     try {
-      await Promise.allSettled(ids.map((id) => apiClient.patch(`/notifications/${id}/read`)))
+      await Promise.allSettled(
+        Array.from(expandedIds).map((itemId) => apiClient.patch(`/notifications/${itemId}/read`))
+      )
     } catch {
       // silent
     }
@@ -186,9 +287,16 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
 
   deleteNotifications: async (ids: string[]) => {
     if (!ids.length) return
-    const tenantId = useAuthStore.getState().tenant?.id
-    addDeletedIds(tenantId, ids)
     const idSet = new Set(ids)
+    const expandedIds = new Set<string>(ids)
+    get().notifications.forEach((n) => {
+      if (idSet.has(n.id) && n.mergedIds) {
+        n.mergedIds.forEach((mId) => expandedIds.add(mId))
+      }
+    })
+    const allIdsToDelete = Array.from(expandedIds)
+    const tenantId = useAuthStore.getState().tenant?.id
+    addDeletedIds(tenantId, allIdsToDelete)
 
     set((state) => {
       const deletedUnread = state.notifications.filter((n) => idSet.has(n.id) && !n.read).length
@@ -200,10 +308,10 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     })
 
     try {
-      await apiClient.post('/notifications/delete-batch', { ids })
+      await apiClient.post('/notifications/delete-batch', { ids: allIdsToDelete })
     } catch {
       try {
-        await Promise.allSettled(ids.map((id) => apiClient.delete(`/notifications/${id}`)))
+        await Promise.allSettled(allIdsToDelete.map((itemId) => apiClient.delete(`/notifications/${itemId}`)))
       } catch {
         // silent
       }
@@ -216,7 +324,16 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
 
   clearRead: async () => {
     const tenantId = useAuthStore.getState().tenant?.id
-    const readIds = get().notifications.filter((n) => n.read).map((n) => n.id)
+    const readIds: string[] = []
+    get()
+      .notifications.filter((n) => n.read)
+      .forEach((n) => {
+        if (n.mergedIds?.length) {
+          readIds.push(...n.mergedIds)
+        } else {
+          readIds.push(n.id)
+        }
+      })
     addDeletedIds(tenantId, readIds)
 
     try {
@@ -237,12 +354,17 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     if (deletedIds.has(notif.id)) return
 
     set((state) => {
-      const exists = state.notifications.some((n) => n.id === notif.id)
+      const exists = state.notifications.some(
+        (n) => n.id === notif.id || (n.mergedIds && n.mergedIds.includes(notif.id))
+      )
       if (exists) return state
+      const merged = mergeDuplicateNotifications([notif, ...state.notifications])
+      const wasMergedIntoExisting = merged.length === state.notifications.length
       return {
-        notifications: [notif, ...state.notifications],
-        unreadCount: notif.read ? state.unreadCount : state.unreadCount + 1,
-        total: state.total + 1,
+        notifications: merged,
+        unreadCount:
+          notif.read || wasMergedIntoExisting ? state.unreadCount : state.unreadCount + 1,
+        total: wasMergedIntoExisting ? state.total : state.total + 1,
       }
     })
   },
