@@ -625,7 +625,11 @@ export default function CustomerMenuPage() {
   }).filter((cat) => cat.items.length > 0);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-28 font-sans transition-colors duration-200">
+    <div
+      className={`min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 ${
+        cartItemCount > 0 ? "pb-mobile-cart" : "pb-mobile-nav"
+      } font-sans transition-colors duration-200`}
+    >
       {/* Mobile Restaurant App Top Header Bar */}
       <header className="sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-4 py-2.5 transition-colors">
         <div className="max-w-xl mx-auto flex items-center justify-between">
@@ -1095,8 +1099,8 @@ export default function CustomerMenuPage() {
 
       {/* Sticky Table Reserved Floating Banner */}
       {isTableReserved && (
-        <div className="fixed bottom-[68px] sm:bottom-[72px] inset-x-0 z-30 px-3 xs:px-4 max-w-lg mx-auto">
-          <div className="w-full h-14 bg-amber-600/95 dark:bg-amber-900/95 backdrop-blur text-white font-bold px-4 rounded-2xl shadow-xl border border-amber-400/40 flex items-center justify-between">
+        <div className="fixed bottom-cart-offset inset-x-0 z-40 px-3 xs:px-4 max-w-lg mx-auto pointer-events-none">
+          <div className="w-full h-14 bg-amber-600/95 dark:bg-amber-900/95 backdrop-blur text-white font-bold px-4 rounded-2xl shadow-xl border border-amber-400/40 flex items-center justify-between pointer-events-auto">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="h-8 w-8 rounded-xl bg-amber-700/60 dark:bg-amber-800/60 flex items-center justify-center shrink-0">
                 <Lock className="h-4 w-4 text-amber-200" />
@@ -1130,7 +1134,7 @@ export default function CustomerMenuPage() {
         tableSlug={tableId}
         tableName={tableName}
         isTableReserved={isTableReserved}
-        cartBarBottomClass="bottom-[68px] sm:bottom-[72px]"
+        cartBarBottomClass="bottom-cart-offset"
       />
 
       {/* Mobile App Bottom Navigation Bar */}

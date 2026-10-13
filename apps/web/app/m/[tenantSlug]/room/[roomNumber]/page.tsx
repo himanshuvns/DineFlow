@@ -1655,6 +1655,7 @@ export default function RoomServiceMenuPage() {
         roomNumber={cleanRoomNum}
         destination="room_service"
         guestName={roomInfo?.currentGuestName}
+        cartBarBottomClass="bottom-4 sm:bottom-6 pb-safe"
       />
 
       {/* ── Suite Housekeeping & Amenities Request Sheet ── */}

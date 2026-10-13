@@ -129,7 +129,7 @@ export function CustomerOffersHub({
   };
 
   return (
-    <div className="space-y-4 pb-24 max-w-xl mx-auto px-4 pt-4 animate-in fade-in duration-200">
+    <div className="space-y-4 pb-mobile-nav max-w-xl mx-auto px-4 pt-4 animate-in fade-in duration-200">
       {/* Hero Offers Header Card */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-900 text-white p-5 shadow-xl">
         <div className="absolute top-0 right-0 -mr-6 -mt-6 h-36 w-36 rounded-full bg-white/10 blur-xl pointer-events-none" />

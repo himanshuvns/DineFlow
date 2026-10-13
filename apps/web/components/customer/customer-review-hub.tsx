@@ -302,7 +302,7 @@ export function CustomerReviewHub({ embedded = false }: { embedded?: boolean } =
   };
 
   return (
-    <div className={`${embedded ? "pb-24 max-w-xl mx-auto px-4 pt-4 animate-in fade-in duration-200" : "min-h-screen bg-gradient-to-b from-slate-50 via-slate-100/60 to-white dark:from-[#090D16] dark:via-[#0F172A] dark:to-[#070A12] flex flex-col justify-between p-3 sm:p-5"} text-slate-900 dark:text-slate-100 selection:bg-emerald-500 selection:text-white`}>
+    <div className={`${embedded ? "pb-mobile-nav max-w-xl mx-auto px-4 pt-4 animate-in fade-in duration-200" : "min-h-screen bg-gradient-to-b from-slate-50 via-slate-100/60 to-white dark:from-[#090D16] dark:via-[#0F172A] dark:to-[#070A12] flex flex-col justify-between p-3 sm:p-5"} text-slate-900 dark:text-slate-100 selection:bg-emerald-500 selection:text-white`}>
       {/* Top Navbar */}
       {!embedded && (
         <header className="max-w-xl mx-auto w-full flex items-center justify-between py-2 sm:py-3 px-1">

@@ -1,7 +1,7 @@
 # Graph Report - DineFlow  (2026-10-13)
 
 ## Corpus Check
-- 384 files · ~738,480 words
+- 384 files · ~738,508 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 12 file(s) not represented in the graph (top: (none) 6, .example 2, .toml 1)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `d981df70`
+- Built from commit: `61945c7c`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -693,11 +693,11 @@ Nodes (4): calculateDistanceMeters(), CheckInContent(), CheckInResult, TokenInfo
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `Service` connect `Service` to `github.com/gin-gonic/gin.Context`, `workforce_integration_test.go`, `context.Context`, `whatsapp/service.go`, `OpenWAProvider`, `BadRequest`, `go.mongodb.org/mongo-driver/v2/bson.ObjectID`, `Service`, `main`?**
-  _High betweenness centrality (0.027) - this node is a cross-community bridge._
+  _High betweenness centrality (0.026) - this node is a cross-community bridge._
 - **Why does `react` connect `react` to `utils.ts`, `spotlight-cursor.tsx`, `whatsapp/page.tsx`, `landing-workflow.tsx`, `web/package.json`, `app/pricing/page.tsx`, `peeking-chef.tsx`, `notifications/page.tsx`, `landing-customer-journey.tsx`, `app/layout.tsx`, `check-in/page.tsx`, `cn`, `useAuthStore`, `customer-review-hub.tsx`, `video/page.tsx`, `TubesCursor`, `menu/page.tsx`, `staff/page.tsx`, `useToast`?**
-  _High betweenness centrality (0.018) - this node is a cross-community bridge._
+  _High betweenness centrality (0.020) - this node is a cross-community bridge._
 - **Why does `RoomHandler` connect `BadRequest` to `handlers/room.go`, `Service`, `time.Time`, `context.Context`, `NotFound`, `go.mongodb.org/mongo-driver/v2/bson.ObjectID`, `Setup`?**
-  _High betweenness centrality (0.013) - this node is a cross-community bridge._
+  _High betweenness centrality (0.012) - this node is a cross-community bridge._
 - **What connects `TestResult`, `github.com/dineflow/api`, `geminiRequest` to the rest of the system?**
   _890 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `OK` be split into smaller, more focused modules?**

@@ -39882,7 +39882,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/app/m/[tenantSlug]/[tableId]/page.tsx",
-      "source_location": "L988",
+      "source_location": "L992",
       "weight": 1.0
     },
     {
@@ -138028,5 +138028,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "d981df706a8719e06dd9b2b457371cd667e2f66f"
+  "built_at_commit": "61945c7c94df25df904e2a618207e914e49c4bd6"
 }

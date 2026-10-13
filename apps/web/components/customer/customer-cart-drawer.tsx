@@ -52,7 +52,7 @@ export function CustomerCartDrawer({
   guestName,
   guestPhone,
   isTableReserved = false,
-  cartBarBottomClass = "bottom-[68px] sm:bottom-[72px]",
+  cartBarBottomClass = "bottom-cart-offset",
 }: CustomerCartDrawerProps) {
   const router = useRouter();
   const { addToast } = useToast();
@@ -441,10 +441,10 @@ export function CustomerCartDrawer({
     <>
       {/* Sticky Bottom Bar */}
       {itemCount > 0 && !isOpen && !isTableReserved && (
-        <div className={`fixed ${cartBarBottomClass} inset-x-0 z-30 px-3 xs:px-4 max-w-lg mx-auto`}>
+        <div className={`fixed ${cartBarBottomClass} inset-x-0 z-40 px-3 xs:px-4 max-w-lg mx-auto pointer-events-none`}>
           <button
             onClick={() => setIsOpen(true)}
-            className="w-full h-14 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold px-4 xs:px-5 rounded-2xl shadow-xl shadow-emerald-500/20 flex items-center justify-between transition-transform active:scale-[0.99]"
+            className="w-full h-14 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold px-4 xs:px-5 rounded-2xl shadow-xl shadow-emerald-500/20 flex items-center justify-between transition-transform active:scale-[0.99] pointer-events-auto cursor-pointer"
           >
             <div className="flex items-center gap-2.5 xs:gap-3">
               <div className="h-8 w-8 rounded-xl bg-slate-950/20 flex items-center justify-center font-mono font-extrabold text-sm">

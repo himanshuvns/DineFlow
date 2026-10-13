@@ -106,6 +106,7 @@ export default function OrderTrackingPage() {
   }, [tenantSlug]);
 
   const setContext = useCartStore((s) => s.setContext);
+  const cartItemCount = useCartStore((s) => s.getItemCount());
   React.useEffect(() => {
     if (tenantSlug && resolvedTableSlug) {
       setContext(tenantSlug, resolvedTableSlug);
@@ -331,7 +332,11 @@ export default function OrderTrackingPage() {
   }, [isRoomService, tableName, router, tenantSlug, resolvedTableSlug]);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-28 font-sans transition-colors duration-200">
+    <div
+      className={`min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 ${
+        cartItemCount > 0 ? "pb-mobile-cart" : "pb-mobile-nav"
+      } font-sans transition-colors duration-200`}
+    >
       {/* Header */}
       <header className="border-b border-slate-200 dark:border-slate-800/80 bg-white/80 dark:bg-slate-900/60 backdrop-blur sticky top-0 z-30">
         <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
@@ -714,7 +719,7 @@ export default function OrderTrackingPage() {
         tenantSlug={tenantSlug}
         tableSlug={resolvedTableSlug}
         tableName={tableName}
-        cartBarBottomClass="bottom-[68px] sm:bottom-[72px]"
+        cartBarBottomClass="bottom-cart-offset"
       />
 
       {/* ── Mobile App Bottom Navigation Bar (5 Tabs) ───────────────────── */}

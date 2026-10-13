@@ -258,6 +258,20 @@ input:-webkit-autofill:active {
   bottom: env(safe-area-inset-bottom, 1rem);
 }
 
+/* Floating bottom cart bar offset: sits cleanly 12px above the 64px + safe-area mobile navigation bar */
+.bottom-cart-offset {
+  bottom: calc(4rem + env(safe-area-inset-bottom, 1rem) + 0.75rem);
+}
+
+/* Scroll padding for customer app views */
+.pb-mobile-nav {
+  padding-bottom: calc(5.25rem + env(safe-area-inset-bottom, 1rem));
+}
+
+.pb-mobile-cart {
+  padding-bottom: calc(10.75rem + env(safe-area-inset-bottom, 1rem));
+}
+
 /* Touch optimization & prevent double-tap zoom delays */
 button, 
 a, 

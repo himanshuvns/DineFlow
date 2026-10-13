@@ -88,7 +88,7 @@ export function CustomerOrdersHub({
   };
 
   return (
-    <div className="space-y-4 pb-24 max-w-xl mx-auto px-4 pt-4 animate-in fade-in duration-200">
+    <div className="space-y-4 pb-mobile-nav max-w-xl mx-auto px-4 pt-4 animate-in fade-in duration-200">
       {/* Header */}
       <div className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs">
         <div className="flex items-center justify-between">

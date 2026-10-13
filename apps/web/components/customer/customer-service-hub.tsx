@@ -81,7 +81,7 @@ export function CustomerServiceHub({
   ];
 
   return (
-    <div className="space-y-4 pb-24 max-w-xl mx-auto px-4 pt-4 animate-in fade-in duration-200">
+    <div className="space-y-4 pb-mobile-nav max-w-xl mx-auto px-4 pt-4 animate-in fade-in duration-200">
       {/* Service Header Card */}
       <div className="rounded-3xl bg-gradient-to-br from-slate-900 via-slate-850 to-slate-950 text-white p-5 border border-slate-800 shadow-xl relative overflow-hidden">
         <div className="flex items-start justify-between">
