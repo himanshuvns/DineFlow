@@ -10,7 +10,8 @@
     "lint": "eslint",
     "video:preview": "remotion preview remotion/index.ts",
     "video:render": "remotion render remotion/index.ts DineFlowPromo out/dineflow-promo.mp4",
-    "video:render:qr": "remotion render remotion/index.ts QROrderingDemo out/qr-ordering-demo.mp4"
+    "video:render:qr": "remotion render remotion/index.ts QROrderingDemo out/qr-ordering-demo.mp4",
+    "video:render:tutorial01": "remotion render remotion/index.ts Tutorial01-Registration out/tutorial-01-registration.mp4"
   },
   "dependencies": {
     "@number-flow/react": "^0.6.2",
