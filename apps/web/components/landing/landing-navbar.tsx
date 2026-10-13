@@ -15,7 +15,7 @@ const NAV_LINKS: NavLink[] = [
   { label: "Features", href: "#features" },
   { label: "Solutions", href: "#solutions" },
   { label: "Interactive Demo", href: "#interactive-demo" },
-  { label: "Hotel & Staff", href: "#hospitality-modules" },
+  { label: "Stories", href: "#testimonials" },
   { label: "Pricing", href: "#pricing" },
 ];
 

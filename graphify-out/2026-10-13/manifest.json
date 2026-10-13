@@ -1044,9 +1044,9 @@
     "semantic_hash": ""
   },
   "apps/web/package.json": {
-    "mtime": 1789979729.3584864,
-    "seen": 1789979992.4253492,
-    "ast_hash": "2c05aec8d9039ee0f8fdc781f05f996a",
+    "mtime": 1791889280.5748348,
+    "seen": 1791889505.540514,
+    "ast_hash": "d1d9d69238dd4ae4f2aaf142c6109844",
     "semantic_hash": ""
   },
   "apps/web/postcss.config.mjs": {
@@ -2094,9 +2094,9 @@
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/video/page.tsx": {
-    "mtime": 1790250963.8845234,
-    "seen": 1790251145.8446112,
-    "ast_hash": "623ff808aee981b7ffe58f3445f8f9c8",
+    "mtime": 1791889433.0799189,
+    "seen": 1791889505.540419,
+    "ast_hash": "cc0ab0a6adc22c50ab82549e62a8af16",
     "semantic_hash": ""
   },
   "apps/web/remotion.config.ts": {
@@ -2106,9 +2106,9 @@
     "semantic_hash": ""
   },
   "apps/web/remotion/Root.tsx": {
-    "mtime": 1789979719.915865,
-    "seen": 1789979992.4253519,
-    "ast_hash": "e19c4643a7381bc5619884c3f13e3200",
+    "mtime": 1791889274.7343397,
+    "seen": 1791889505.5405178,
+    "ast_hash": "7545d795d1cb0c0ccfff68160624c9a4",
     "semantic_hash": ""
   },
   "apps/web/remotion/compositions/DineFlowPromo.tsx": {
@@ -2637,6 +2637,60 @@
     "mtime": 1791885752.9232934,
     "seen": 1791885864.254742,
     "ast_hash": "716149176fbb2574a3cc3852bf50687d",
+    "semantic_hash": ""
+  },
+  "apps/web/remotion/components/RecordlyCursor.tsx": {
+    "mtime": 1791888782.1614044,
+    "seen": 1791889505.540519,
+    "ast_hash": "fc18aa2afccb2c5d076886baa03969ab",
+    "semantic_hash": ""
+  },
+  "apps/web/remotion/components/RecordlyFrame.tsx": {
+    "mtime": 1791888801.9901776,
+    "seen": 1791889505.54052,
+    "ast_hash": "95509795a98a9e6a93975bfed19c90a9",
+    "semantic_hash": ""
+  },
+  "apps/web/remotion/compositions/Tutorial01_Registration.tsx": {
+    "mtime": 1791889147.0508425,
+    "seen": 1791889505.540522,
+    "ast_hash": "c027cf3c36c8ea8099a5873c08b87f54",
+    "semantic_hash": ""
+  },
+  "apps/web/public/audio/tutorials/video01/scene1.mp3": {
+    "mtime": 1791888749.1975899,
+    "seen": 1791889505.540607,
+    "ast_hash": "142a3f3144a5947e9a21f81dc3b6761d",
+    "semantic_hash": ""
+  },
+  "apps/web/public/audio/tutorials/video01/scene2.mp3": {
+    "mtime": 1791888750.3265712,
+    "seen": 1791889505.540608,
+    "ast_hash": "3168743b92e391063581ad59decab126",
+    "semantic_hash": ""
+  },
+  "apps/web/public/audio/tutorials/video01/scene3.mp3": {
+    "mtime": 1791888751.4054368,
+    "seen": 1791889505.540608,
+    "ast_hash": "23a0e26a65e5dc8616b0bcf8231cacdb",
+    "semantic_hash": ""
+  },
+  "apps/web/public/audio/tutorials/video01/scene4.mp3": {
+    "mtime": 1791888752.4317474,
+    "seen": 1791889505.5406091,
+    "ast_hash": "8183fa9d23c56df3bb628ca24328c8ae",
+    "semantic_hash": ""
+  },
+  "apps/web/public/audio/tutorials/video01/scene5.mp3": {
+    "mtime": 1791888753.5123546,
+    "seen": 1791889505.5406091,
+    "ast_hash": "7d6d1d7f378a61fce76efe6ecb078cdd",
+    "semantic_hash": ""
+  },
+  "apps/web/public/tutorials/tutorial-01-registration.mp4": {
+    "mtime": 1791889391.3995936,
+    "seen": 1791889505.54061,
+    "ast_hash": "2bf1485a8d27a8874db384d70c140a10",
     "semantic_hash": ""
   }
 }

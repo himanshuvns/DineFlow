@@ -9,6 +9,7 @@ import { LandingHero } from "@/components/landing/landing-hero";
 import { LandingInteractivePreview } from "@/components/landing/landing-interactive-preview";
 import { LandingSolutions } from "@/components/landing/landing-solutions";
 import { LandingCustomerJourney } from "@/components/landing/landing-customer-journey";
+import { LandingTestimonials } from "@/components/landing/landing-testimonials";
 import { LandingPricing } from "@/components/landing/landing-pricing";
 import { LandingFooter } from "@/components/landing/landing-footer";
 import { AetherParticleCanvas } from "@/components/ui/aether-particle-canvas";
@@ -45,7 +46,10 @@ export default function HomePage() {
         {/* 4. The Modern Customer Journey */}
         <LandingCustomerJourney />
 
-        {/* 5. Transparent Pricing */}
+        {/* 5. Real Hospitality Testimonials (Floating Parallax Marquee) */}
+        <LandingTestimonials />
+
+        {/* 6. Transparent Pricing */}
         <LandingPricing />
 
         {/* 6. Pre-Footer Hospitality Conversion Banner */}
