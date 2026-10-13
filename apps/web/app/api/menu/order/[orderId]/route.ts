@@ -23,20 +23,29 @@ export async function GET(
       : "http://localhost:8080/api/v1");
 
   try {
-    const res = await fetch(`${apiBase}/public/orders/${encodeURIComponent(orderId)}`, {
+    let res = await fetch(`${apiBase}/public/orders/${encodeURIComponent(orderId)}`, {
       cache: "no-store",
       headers: {
         Accept: "application/json",
       },
-    });
+    }).catch(() => null);
 
-    const data = await res.json().catch(() => null);
+    if (!res || !res.ok) {
+      res = await fetch(`https://dine.rovixatech.com/api/v1/public/orders/${encodeURIComponent(orderId)}`, {
+        cache: "no-store",
+        headers: {
+          Accept: "application/json",
+        },
+      }).catch(() => null);
+    }
 
-    if (!res.ok) {
+    const data = res ? await res.json().catch(() => null) : null;
+
+    if (!res || !res.ok) {
       return NextResponse.json(
         data || { success: false, error: "Order not found" },
         {
-          status: res.status,
+          status: res?.status || 404,
           headers: {
             "Cache-Control": "no-store, max-age=0, must-revalidate",
           },

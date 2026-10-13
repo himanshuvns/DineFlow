@@ -39761,7 +39761,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/app/m/[tenantSlug]/[tableId]/page.tsx",
-      "source_location": "L302",
+      "source_location": "L309",
       "weight": 1.0
     },
     {
@@ -39773,7 +39773,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/app/m/[tenantSlug]/[tableId]/page.tsx",
-      "source_location": "L484",
+      "source_location": "L499",
       "weight": 1.0
     },
     {
@@ -39821,7 +39821,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/app/m/[tenantSlug]/[tableId]/page.tsx",
-      "source_location": "L958",
+      "source_location": "L973",
       "weight": 1.0
     },
     {
@@ -40301,7 +40301,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/components/customer/customer-cart-drawer.tsx",
-      "source_location": "L140",
+      "source_location": "L151",
       "weight": 1.0
     },
     {
@@ -40313,7 +40313,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/components/customer/customer-cart-drawer.tsx",
-      "source_location": "L209",
+      "source_location": "L220",
       "weight": 1.0
     },
     {
@@ -40337,7 +40337,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/components/customer/customer-cart-drawer.tsx",
-      "source_location": "L600",
+      "source_location": "L611",
       "weight": 1.0
     },
     {
@@ -40433,7 +40433,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/components/customer/customer-offers-hub.tsx",
-      "source_location": "L101",
+      "source_location": "L112",
       "weight": 1.0
     },
     {

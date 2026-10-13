@@ -87,10 +87,21 @@ export default function CustomerMenuPage() {
   } | null>(null);
 
   type AppTab = "menu" | "offers" | "orders" | "service" | "reviews";
-  const [activeTab, setActiveTab] = React.useState<AppTab>("menu");
+  const tabParam = searchParams.get("tab") as AppTab | null;
+  const [activeTab, setActiveTab] = React.useState<AppTab>(
+    tabParam && ["menu", "offers", "orders", "service", "reviews"].includes(tabParam)
+      ? tabParam
+      : "menu"
+  );
   const [activeOffersCount, setActiveOffersCount] = React.useState<number>(0);
   const { getItemCount } = useCartStore();
   const cartItemCount = getItemCount();
+
+  React.useEffect(() => {
+    if (tabParam && ["menu", "offers", "orders", "service", "reviews"].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
 
   React.useEffect(() => {
     if (!tenantSlug) return;
@@ -542,6 +553,10 @@ export default function CustomerMenuPage() {
       ? `Table ${tableId.slice(2)}`
       : tableId.toUpperCase().startsWith("R-")
       ? `Room ${tableId.slice(2)}`
+      : tableId.toLowerCase().startsWith("table-")
+      ? `Table ${tableId.slice(6)}`
+      : tableId.toLowerCase().startsWith("room-")
+      ? `Room ${tableId.slice(5)}`
       : `Table ${tableId}`;
 
   const tableName = tableInfo?.name || fallbackTableName;
@@ -1039,7 +1054,11 @@ export default function CustomerMenuPage() {
           tableId={tableId}
           tableName={tableName}
           onOpenMenu={() => setActiveTab("menu")}
-          onOpenCheckout={() => {}}
+          onOpenCheckout={() => {
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(new CustomEvent("dineflow:open-cart-drawer"));
+            }
+          }}
         />
       )}
 

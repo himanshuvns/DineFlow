@@ -143,6 +143,12 @@ export function CustomerCartDrawer({
     if (guestPhone && !phoneInput) setPhoneInput(guestPhone);
   }, [guestName, guestPhone]);
 
+  React.useEffect(() => {
+    const handleOpenDrawer = () => setIsOpen(true);
+    window.addEventListener("dineflow:open-cart-drawer", handleOpenDrawer);
+    return () => window.removeEventListener("dineflow:open-cart-drawer", handleOpenDrawer);
+  }, []);
+
   const handleApplyOffer = (offer: AvailableOfferItem) => {
     if (offer.minOrderValue && subtotal < offer.minOrderValue) {
       addToast(
@@ -379,7 +385,7 @@ export function CustomerCartDrawer({
       router.push(
         `/m/${tenantSlug}/order/${encodeURIComponent(orderId)}?table=${encodeURIComponent(
           tableName
-        )}`
+        )}&tableSlug=${encodeURIComponent(tableSlug)}`
       );
     } catch (err: any) {
       console.error("[cart-drawer] Order checkout error:", err);

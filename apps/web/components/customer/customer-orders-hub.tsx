@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import {
   ChefHat,
   Clock,
@@ -238,6 +239,16 @@ export function CustomerOrdersHub({
                       {formatCurrency(ord.total, "INR")}
                     </span>
                   </div>
+                </div>
+
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+                  <Link
+                    href={`/m/${tenantSlug}/order/${encodeURIComponent(ord.id || `#${ord.orderNumber}`)}?table=${encodeURIComponent(tableName)}&tableSlug=${encodeURIComponent(tableId)}`}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 transition-colors"
+                  >
+                    <span>Open Live Kitchen Tracker</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
                 </div>
               </div>
             );

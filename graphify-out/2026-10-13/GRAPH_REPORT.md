@@ -1,7 +1,7 @@
 # Graph Report - DineFlow  (2026-10-13)
 
 ## Corpus Check
-- 384 files · ~736,614 words
+- 384 files · ~736,840 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 12 file(s) not represented in the graph (top: (none) 6, .example 2, .toml 1)
 
@@ -698,7 +698,7 @@ _Questions this graph is uniquely positioned to answer:_
 - **Why does `react` connect `react` to `button.tsx`, `check-in/page.tsx`, `spotlight-cursor.tsx`, `api.ts`, `staff/page.tsx`, `[roomId]/page.tsx`, `landing-workflow.tsx`, `web/package.json`, `landing-customer-journey.tsx`, `peeking-chef.tsx`, `notification-store.ts`, `app/layout.tsx`, `cn`, `offer-notification-center.tsx`, `useAuthStore`, `useToast`, `video/page.tsx`, `TubesCursor`, `tenant-data-store.ts`?**
   _High betweenness centrality (0.019) - this node is a cross-community bridge._
 - **Why does `RoomHandler` connect `BadRequest` to `Service`, `Service`, `context.Context`, `Setup`, `NotFound`, `go.mongodb.org/mongo-driver/v2/bson.ObjectID`, `server/main.go`?**
-  _High betweenness centrality (0.014) - this node is a cross-community bridge._
+  _High betweenness centrality (0.013) - this node is a cross-community bridge._
 - **What connects `TestResult`, `github.com/dineflow/api`, `geminiRequest` to the rest of the system?**
   _889 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `github.com/gin-gonic/gin.Context` be split into smaller, more focused modules?**
