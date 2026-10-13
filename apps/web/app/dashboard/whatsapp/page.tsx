@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useSearchParams } from "next/navigation";
 import {
   MessageSquareShare,
   CheckCircle2,
@@ -294,11 +295,32 @@ const INITIAL_CAMPAIGNS: CampaignItem[] = [
   },
 ];
 
-export default function WhatsAppPage() {
+function WhatsAppPageContent() {
   const { addToast } = useToast();
+  const searchParams = useSearchParams();
+  const urlTab = searchParams.get("tab") as "overview" | "gateway" | "chatbot" | "workforce" | "campaigns" | "invoices" | "logs" | null;
 
   // Active Tab: overview | gateway | chatbot | workforce | campaigns | invoices | logs
-  const [activeTab, setActiveTab] = React.useState<"overview" | "gateway" | "chatbot" | "workforce" | "campaigns" | "invoices" | "logs">("overview");
+  const [activeTab, setActiveTab] = React.useState<"overview" | "gateway" | "chatbot" | "workforce" | "campaigns" | "invoices" | "logs">(
+    urlTab && ["overview", "gateway", "chatbot", "workforce", "campaigns", "invoices", "logs"].includes(urlTab)
+      ? urlTab
+      : "overview"
+  );
+
+  React.useEffect(() => {
+    if (urlTab && ["overview", "gateway", "chatbot", "workforce", "campaigns", "invoices", "logs"].includes(urlTab)) {
+      setActiveTab(urlTab);
+    }
+  }, [urlTab]);
+
+  const handleTabChange = (newTab: typeof activeTab) => {
+    setActiveTab(newTab);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", newTab);
+      window.history.replaceState(null, "", url.toString());
+    }
+  };
   const [showMobileStats, setShowMobileStats] = React.useState(false);
 
   // OpenWA Gateway State
@@ -1350,7 +1372,7 @@ export default function WhatsAppPage() {
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as typeof activeTab)}
+              onClick={() => handleTabChange(tab.id as typeof activeTab)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                 isActive
                   ? "bg-white dark:bg-emerald-600 text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-emerald-500"
@@ -3527,5 +3549,13 @@ export default function WhatsAppPage() {
         </form>
       </Modal>
     </div>
+  );
+}
+
+export default function WhatsAppPage() {
+  return (
+    <React.Suspense fallback={<div className="p-8 text-center text-slate-400">Loading WhatsApp suite...</div>}>
+      <WhatsAppPageContent />
+    </React.Suspense>
   );
 }

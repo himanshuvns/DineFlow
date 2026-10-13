@@ -552,9 +552,9 @@
     "semantic_hash": "d29c43e8a5e05a6ca7c60f0a84efd176"
   },
   "apps/web/app/dashboard/layout.tsx": {
-    "mtime": 1791315449.335199,
-    "seen": 1791315556.5803862,
-    "ast_hash": "86179e78f4bfb2141c8a691af30f033c",
+    "mtime": 1791884111.6867669,
+    "seen": 1791884290.5239239,
+    "ast_hash": "393d66579ef405e0a1d911b84b5a50c3",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/loading.tsx": {
@@ -618,9 +618,9 @@
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/whatsapp/page.tsx": {
-    "mtime": 1791191935.6538088,
-    "seen": 1791192280.329133,
-    "ast_hash": "ac40f63c26ef764f4919c91d29ba8782",
+    "mtime": 1791884199.7329566,
+    "seen": 1791884290.523934,
+    "ast_hash": "28f949e359560f23a9282ae069d33be3",
     "semantic_hash": ""
   },
   "apps/web/app/demo/page.tsx": {
@@ -768,9 +768,9 @@
     "semantic_hash": "1949d2c976b3ee6fd48edf96b9482e63"
   },
   "apps/web/components/dashboard/sidebar.tsx": {
-    "mtime": 1791800229.588719,
-    "seen": 1791800445.570312,
-    "ast_hash": "0273acd3626a2db8e579ce8ed18eca3c",
+    "mtime": 1791883895.2293038,
+    "seen": 1791884290.5239732,
+    "ast_hash": "119eef3a0d4cee95944cbcfb120cdc86",
     "semantic_hash": ""
   },
   "apps/web/components/dashboard/topbar.tsx": {
@@ -2490,9 +2490,9 @@
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/reviews/page.tsx": {
-    "mtime": 1791526755.9550996,
-    "seen": 1791526873.248607,
-    "ast_hash": "56cbb08b18a65b4bea752845fbe2c1d2",
+    "mtime": 1791884122.1862276,
+    "seen": 1791884290.52393,
+    "ast_hash": "bb7c952509572629d6a2919f89257857",
     "semantic_hash": ""
   },
   "apps/web/app/m/[tenantSlug]/review/page.tsx": {
@@ -2562,9 +2562,9 @@
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/offers/page.tsx": {
-    "mtime": 1791832079.0510926,
-    "seen": 1791832368.464276,
-    "ast_hash": "dab1abd5cf1b5c07ed9c8d0efb68ac84",
+    "mtime": 1791884130.3103552,
+    "seen": 1791884290.5239282,
+    "ast_hash": "e578d92c6c05c71eb1473cd260757427",
     "semantic_hash": ""
   },
   "apps/web/components/customer/offer-notification-center.tsx": {

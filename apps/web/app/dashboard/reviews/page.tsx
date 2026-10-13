@@ -220,7 +220,7 @@ export default function ReviewsManagementPage() {
   const resolvedCount = reviewsList.filter((f) => f.status === "resolved").length;
 
   return (
-    <div className="space-y-8 w-full max-w-7xl mx-auto">
+    <div className="space-y-6 w-full min-w-0 pb-12 overflow-x-hidden">
       {/* Print CSS Injection */}
       <style
         dangerouslySetInnerHTML={{
