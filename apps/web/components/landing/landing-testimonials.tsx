@@ -184,7 +184,7 @@ export const TESTIMONIALS: TestimonialItem[] = [
     name: "Zoya Merchant",
     role: "Co-Founder & COO",
     restaurant: "Spice Route Bistro Group",
-    city: "Hyderabad & Pune (3 Outlets)",
+    city: "Hyderabad & Pune",
     category: "chain",
     categoryLabel: "Multi-Outlet Bistro Group",
     categoryIcon: Building2,
@@ -306,9 +306,9 @@ export function LandingTestimonials() {
             </div>
             <div className="text-xs">
               <div className="flex items-center gap-1 font-bold text-slate-900 dark:text-white">
-                <div className="flex text-amber-400">
+                <div className="flex items-center gap-0.5 text-amber-400 shrink-0">
                   {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-3 h-3 fill-amber-400" />
+                    <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400 shrink-0" />
                   ))}
                 </div>
                 <span>4.9 / 5</span>
@@ -365,18 +365,18 @@ export function LandingTestimonials() {
               <div
                 key={`${item.id}-${index}`}
                 onClick={() => setActiveModalItem(item)}
-                className={`w-[340px] sm:w-[410px] shrink-0 rounded-2xl p-5 sm:p-6 transition-all duration-300 cursor-pointer flex flex-col justify-between backdrop-blur-md border ${
+                className={`w-[340px] sm:w-[410px] shrink-0 rounded-2xl p-5 sm:p-6 transition-all duration-300 cursor-pointer flex flex-col justify-between backdrop-blur-md border overflow-hidden ${
                   isHighlighted
                     ? "bg-white/90 dark:bg-slate-900/85 border-slate-200/90 dark:border-slate-800 shadow-xl shadow-slate-900/5 dark:shadow-black/30 hover:border-emerald-500/50 hover:shadow-2xl hover:shadow-emerald-500/10 dark:hover:border-emerald-500/50 hover:-translate-y-1.5"
                     : "opacity-45 grayscale bg-white/50 dark:bg-slate-900/40 border-slate-200/50 dark:border-slate-800/50"
                 }`}
               >
-                {/* Card Top: Owner Avatar, Name & Venue */}
+                {/* Card Top: Owner Avatar, Name, Role & 5-Star Rating */}
                 <div>
-                  <div className="flex items-start justify-between gap-3 mb-3.5">
-                    <div className="flex items-center gap-3">
+                  <div className="flex items-start justify-between gap-2.5 mb-2.5">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
                       {/* Photo Avatar with verified pulse ring */}
-                      <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-slate-800 shrink-0 border border-slate-200 dark:border-slate-700/80 shadow-inner">
+                      <div className="relative w-11 h-11 sm:w-12 sm:h-12 rounded-xl overflow-hidden bg-slate-800 shrink-0 border border-slate-200 dark:border-slate-700/80 shadow-inner">
                         {!hasError ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
@@ -397,7 +397,7 @@ export function LandingTestimonials() {
                       </div>
 
                       {/* Name & Title */}
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">
                           <h4 className="font-extrabold text-sm text-slate-900 dark:text-white truncate">
                             {item.name}
@@ -407,20 +407,24 @@ export function LandingTestimonials() {
                         <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                           {item.role}
                         </p>
-                        <div className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5 truncate">
-                          <CategoryIcon className="w-3 h-3 shrink-0" />
-                          <span className="truncate">{item.restaurant}</span>
-                          <span className="text-slate-400 font-normal">• {item.city.split(",")[0]}</span>
-                        </div>
                       </div>
                     </div>
 
-                    {/* Star Rating */}
-                    <div className="flex text-amber-400 shrink-0">
+                    {/* 5-Star Rating Badge — ALWAYS contained, solid, and never breaking */}
+                    <div className="flex items-center gap-0.5 text-amber-400 shrink-0 px-2 py-1 rounded-lg bg-amber-400/10 dark:bg-amber-400/15 border border-amber-400/20 whitespace-nowrap shadow-xs">
                       {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="w-3.5 h-3.5 fill-amber-400" />
+                        <Star key={i} className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-amber-400 text-amber-400 shrink-0" />
                       ))}
                     </div>
+                  </div>
+
+                  {/* Restaurant Venue & City (Dedicated full-width row) */}
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 mb-3 min-w-0">
+                    <CategoryIcon className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate">{item.restaurant}</span>
+                    <span className="text-slate-400 dark:text-slate-500 font-normal shrink-0">
+                      • {item.city}
+                    </span>
                   </div>
 
                   {/* Benefit Pill Badge */}
@@ -505,6 +509,16 @@ export function LandingTestimonials() {
                 <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
                   {activeModalItem.restaurant} • {activeModalItem.city}
                 </p>
+                <div className="flex items-center gap-1 text-amber-400 mt-1.5">
+                  <div className="flex items-center gap-0.5">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />
+                    ))}
+                  </div>
+                  <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 ml-1">
+                    5.0 Verified Dining Partner
+                  </span>
+                </div>
               </div>
             </div>
 
