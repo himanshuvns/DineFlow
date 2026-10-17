@@ -18,6 +18,9 @@ import {
   UtensilsCrossed,
   Tag,
   Star,
+  QrCode,
+  Smartphone,
+  ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +32,7 @@ import { CustomerOffersHub } from "@/components/customer/customer-offers-hub";
 import { CustomerServiceHub } from "@/components/customer/customer-service-hub";
 import { CustomerReviewHub } from "@/components/customer/customer-review-hub";
 import { CustomerCartDrawer } from "@/components/customer/customer-cart-drawer";
+import { CustomerUpiPaymentModal } from "@/components/customer/customer-upi-payment-modal";
 import { useCartStore } from "@/lib/stores/cart-store";
 
 type OrderStatus = "pending" | "preparing" | "ready" | "served" | "paid" | "cancelled";
@@ -84,6 +88,7 @@ export default function OrderTrackingPage() {
   const [selectedTags, setSelectedTags] = React.useState<string[]>(["Delicious Food", "Lightning Fast"]);
   const [activeTab, setActiveTab] = React.useState<TrackingTab>("orders");
   const [activeOffersCount, setActiveOffersCount] = React.useState(0);
+  const [isUpiModalOpen, setIsUpiModalOpen] = React.useState(false);
 
   const tableName = order?.tableName || urlTable || "Table 1";
 
@@ -574,6 +579,56 @@ export default function OrderTrackingPage() {
                 </span>
               </div>
             </div>
+
+            {/* ── 0% Fee UPI Payment Action Card ──────────────────────── */}
+            <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+              {status === "paid" || order?.status === "paid" ? (
+                <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <div>
+                      <span className="font-bold text-emerald-800 dark:text-emerald-300 block">
+                        Bill Settled via 0% Fee UPI
+                      </span>
+                      <span className="text-[11px] text-emerald-600/80 dark:text-emerald-400/80">
+                        Paid directly to restaurant bank account
+                      </span>
+                    </div>
+                  </div>
+                  <Badge variant="outline" className="border-emerald-500/40 text-emerald-700 dark:text-emerald-300 font-mono text-[10px]">
+                    PAID
+                  </Badge>
+                </div>
+              ) : (
+                <div className="p-3.5 rounded-2xl bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-slate-50 dark:from-emerald-950/30 dark:via-teal-950/20 dark:to-slate-900 border border-emerald-500/20 space-y-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-9 w-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold shadow-sm shrink-0">
+                      <QrCode className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                        Instant UPI Payment
+                        <span className="px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold">
+                          0% Fee
+                        </span>
+                      </h4>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                        Pay via Google Pay, PhonePe, Paytm, or CRED
+                      </p>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="button"
+                    onClick={() => setIsUpiModalOpen(true)}
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2.5 rounded-xl shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.98]"
+                  >
+                    <Smartphone className="h-4 w-4" />
+                    <span>Pay ₹{(order?.totalAmount || 0).toFixed(2)} via UPI</span>
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* ── Post-Dining Guest Feedback Card (Phase 5) ──────────────────── */}
@@ -777,6 +832,24 @@ export default function OrderTrackingPage() {
           })}
         </div>
       </nav>
+
+      {/* Customer 0% UPI Payment Modal */}
+      <CustomerUpiPaymentModal
+        isOpen={isUpiModalOpen}
+        onClose={() => setIsUpiModalOpen(false)}
+        orderId={orderId}
+        orderNumber={order?.orderNumber}
+        amount={order?.totalAmount || 0}
+        customerName={order?.customerName}
+        tableName={tableName}
+        onPaymentSuccess={() => {
+          setStatus("paid");
+          if (order) {
+            setOrder({ ...order, status: "paid" });
+          }
+          setIsUpiModalOpen(false);
+        }}
+      />
     </div>
   );
 }

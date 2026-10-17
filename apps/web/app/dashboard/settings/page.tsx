@@ -27,6 +27,12 @@ import {
   Upload,
   Image as ImageIcon,
   Trash2,
+  Smartphone,
+  RefreshCw,
+  Copy,
+  ExternalLink,
+  Wifi,
+  WifiOff,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -35,6 +41,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs } from "@/components/ui/tabs";
 import { Modal } from "@/components/ui/modal";
 import { useAuthStore } from "@/lib/stores/auth-store";
+import { useUpiSettings } from "@/lib/stores/upi-settings-store";
 import { useToast } from "@/components/ui/toast";
 import { useTheme } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
@@ -124,6 +131,52 @@ export default function SettingsPage() {
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = React.useState(false);
   const [targetUpgradePlan, setTargetUpgradePlan] = React.useState<"free" | "starter" | "growth" | "hotel_pro">("hotel_pro");
   const [isUpgrading, setIsUpgrading] = React.useState(false);
+
+  // UPI Gateway & YouPI state
+  const {
+    vpa: storeVpa,
+    merchantName: storeMerchantName,
+    youpiGatewayUrl: storeGatewayUrl,
+    webhookSecret: storeSecret,
+    autoSettleOnWebhook: storeAutoSettle,
+    observerStatus: storeObserverStatus,
+    saveSettings: saveUpiSettings,
+    isSaving: isUpiSaving,
+  } = useUpiSettings();
+
+  const [upiVpa, setUpiVpa] = React.useState(storeVpa);
+  const [upiMerchantName, setUpiMerchantName] = React.useState(storeMerchantName);
+  const [upiGatewayUrl, setUpiGatewayUrl] = React.useState(storeGatewayUrl);
+  const [upiWebhookSecret, setUpiWebhookSecret] = React.useState(storeSecret);
+  const [upiAutoSettle, setUpiAutoSettle] = React.useState(storeAutoSettle);
+
+  React.useEffect(() => {
+    setUpiVpa(storeVpa);
+    setUpiMerchantName(storeMerchantName);
+    setUpiGatewayUrl(storeGatewayUrl);
+    setUpiWebhookSecret(storeSecret);
+    setUpiAutoSettle(storeAutoSettle);
+  }, [storeVpa, storeMerchantName, storeGatewayUrl, storeSecret, storeAutoSettle]);
+
+  const handleSaveUpi = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!upiVpa.includes("@")) {
+      addToast("error", "Invalid UPI VPA", "Please enter a valid VPA containing '@' (e.g. merchant@icici)");
+      return;
+    }
+    const token = useAuthStore.getState().accessToken;
+    await saveUpiSettings(
+      {
+        vpa: upiVpa.trim(),
+        merchantName: upiMerchantName.trim(),
+        youpiGatewayUrl: upiGatewayUrl.trim(),
+        webhookSecret: upiWebhookSecret.trim(),
+        autoSettleOnWebhook: upiAutoSettle,
+      },
+      token || undefined
+    );
+    addToast("success", "UPI Settings Saved", "Zero-fee UPI gateway credentials updated successfully.");
+  };
 
   // Resource usage metrics
   const usage = {
@@ -313,6 +366,7 @@ export default function SettingsPage() {
           <Tabs
             tabs={[
               { id: "general", label: "Brand & Business" },
+              { id: "upi", label: "0% Fee UPI & Gateway" },
               ...(!isManager ? [{ id: "billing", label: "Subscription & Invoices" }] : []),
               { id: "appearance", label: "Appearance & Theme" },
             ]}
@@ -321,6 +375,265 @@ export default function SettingsPage() {
           />
         </div>
       </div>
+
+      {/* ── Tab: 0% Fee UPI & Gateway ──────────────────────────────────────── */}
+      {activeTab === "upi" && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          {/* Header Banner */}
+          <Card variant="glass">
+            <CardHeader>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
+                    <QrCode className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      Zero-Fee UPI Payment Gateway
+                      <Badge variant="outline" className="border-emerald-500/30 text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 text-[10px]">
+                        0% Commission • Powered by YouPI
+                      </Badge>
+                    </CardTitle>
+                    <CardDescription className="text-xs text-slate-500 dark:text-slate-400">
+                      Bypass payment aggregator 2% fees. Direct bank settlement straight into your restaurant current account.
+                    </CardDescription>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                    <Wifi className="h-3.5 w-3.5" />
+                    Observer: {storeObserverStatus === "online" ? "Active" : "Ready"}
+                  </span>
+                </div>
+              </div>
+            </CardHeader>
+          </Card>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left 2 Cols: Form */}
+            <div className="lg:col-span-2 space-y-6">
+              <Card variant="glass">
+                <CardHeader>
+                  <CardTitle className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <Smartphone className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                    Restaurant UPI Account Credentials
+                  </CardTitle>
+                  <CardDescription className="text-xs text-slate-500">
+                    These credentials generate dynamic NPCI UPI intent deep links and customer bill QR codes.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleSaveUpi} className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1.5">
+                          Merchant UPI VPA / ID: <span className="text-rose-500">*</span>
+                        </label>
+                        <Input
+                          value={upiVpa}
+                          onChange={(e) => setUpiVpa(e.target.value)}
+                          placeholder="e.g. restaurant@icici or 9876543210@paytm"
+                          required
+                          className="font-mono text-xs"
+                        />
+                        <span className="text-[10px] text-slate-400 block mt-1">
+                          The official UPI ID linked to your restaurant bank current account.
+                        </span>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1.5">
+                          Merchant Display Name: <span className="text-rose-500">*</span>
+                        </label>
+                        <Input
+                          value={upiMerchantName}
+                          onChange={(e) => setUpiMerchantName(e.target.value)}
+                          placeholder="e.g. The Grand Bistro"
+                          required
+                          className="text-xs"
+                        />
+                        <span className="text-[10px] text-slate-400 block mt-1">
+                          Appears inside customer UPI apps (GPay, PhonePe, Paytm).
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-200/80 dark:border-slate-800 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+                            Automatic Order Settlement
+                          </h4>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                            Auto-mark orders as Paid and release tables immediately when bank SMS/push arrives.
+                          </p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={upiAutoSettle}
+                            onChange={(e) => setUpiAutoSettle(e.target.checked)}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-emerald-600"></div>
+                        </label>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1.5">
+                            YouPI Gateway / Poller URL (Optional):
+                          </label>
+                          <Input
+                            value={upiGatewayUrl}
+                            onChange={(e) => setUpiGatewayUrl(e.target.value)}
+                            placeholder="e.g. https://youpi.rovixatech.com"
+                            className="font-mono text-xs"
+                          />
+                          <span className="text-[10px] text-slate-400 block mt-1">
+                            Self-hosted YouPI-PG gateway server endpoint.
+                          </span>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1.5">
+                            Webhook Signature Secret:
+                          </label>
+                          <Input
+                            type="password"
+                            value={upiWebhookSecret}
+                            onChange={(e) => setUpiWebhookSecret(e.target.value)}
+                            placeholder="e.g. whsec_youpi_secret_key"
+                            className="font-mono text-xs"
+                          />
+                          <span className="text-[10px] text-slate-400 block mt-1">
+                            HMAC-SHA256 signature secret for authenticating webhook pushes.
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 flex justify-end">
+                      <Button
+                        type="submit"
+                        disabled={isUpiSaving}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-2 cursor-pointer shadow-sm"
+                      >
+                        <Save className="h-4 w-4" />
+                        <span>{isUpiSaving ? "Saving..." : "Save UPI Settings"}</span>
+                      </Button>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
+
+              {/* Webhook Endpoint Info Box */}
+              <Card variant="glass">
+                <CardHeader>
+                  <CardTitle className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                    Authoritative Webhook Integration Endpoint
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-xs">
+                  <p className="text-slate-500 dark:text-slate-400 text-[11px]">
+                    Configure this endpoint in your YouPI companion server or Android APK:
+                  </p>
+                  <div className="p-2.5 rounded-xl bg-slate-900 text-emerald-400 font-mono text-xs flex items-center justify-between overflow-x-auto">
+                    <span>https://dine.rovixatech.com/api/v1/payments/youpi/webhook</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (typeof navigator !== "undefined") {
+                          navigator.clipboard.writeText("https://dine.rovixatech.com/api/v1/payments/youpi/webhook");
+                          addToast("info", "Copied", "Webhook URL copied to clipboard.");
+                        }
+                      }}
+                      className="ml-2 p-1 hover:text-white transition-colors cursor-pointer shrink-0"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Right Col: Live Preview & Observer Setup */}
+            <div className="space-y-6">
+              {/* Dynamic QR Live Preview */}
+              <Card variant="glass">
+                <CardHeader>
+                  <CardTitle className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <QrCode className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                    Live Customer QR Preview
+                  </CardTitle>
+                  <CardDescription className="text-xs text-slate-500">
+                    Real-time render of your counter/table payment QR.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex flex-col items-center text-center space-y-3">
+                  <div className="p-3 bg-white rounded-2xl border border-slate-200 shadow-sm">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(
+                        `upi://pay?pa=${encodeURIComponent(upiVpa || "dineflow@icici")}&pn=${encodeURIComponent(
+                          upiMerchantName || "DineFlow"
+                        )}&am=100.00&tr=DEMO_PREVIEW&tn=Table_Order_Test&cu=INR`
+                      )}&margin=4`}
+                      alt="UPI QR Preview"
+                      width={160}
+                      height={160}
+                      className="rounded"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-xs font-bold text-slate-900 dark:text-white block font-mono">
+                      {upiVpa || "dineflow@icici"}
+                    </span>
+                    <span className="text-[11px] text-slate-500 block">
+                      {upiMerchantName || "DineFlow Restaurant"}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* YouPI APK Instructions */}
+              <Card variant="glass">
+                <CardHeader>
+                  <CardTitle className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <Smartphone className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                    YouPI Observer Companion App
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 text-xs">
+                  <p className="text-slate-600 dark:text-slate-400 text-[11px] leading-relaxed">
+                    Install the YouPI Companion APK on the smartphone/counter tablet containing the restaurant bank SIM:
+                  </p>
+                  <ol className="list-decimal pl-4 space-y-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+                    <li>Download & install YouPI Companion APK.</li>
+                    <li>Grant Notification Listener and SMS permissions.</li>
+                    <li>Enter webhook secret and DineFlow endpoint.</li>
+                    <li>Incoming payments auto-verify in real time with 0% fee!</li>
+                  </ol>
+                  <div className="pt-2">
+                    <a
+                      href="https://github.com/gxurav1710/YouPI-PG"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                      <span>View YouPI-PG GitHub Repository</span>
+                    </a>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Tab: Appearance & Theme ────────────────────────────────────────── */}
       {activeTab === "appearance" && (

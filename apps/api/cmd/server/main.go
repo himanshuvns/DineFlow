@@ -17,6 +17,7 @@ import (
 	notifapp "github.com/dineflow/api/internal/application/notification"
 	offerapp "github.com/dineflow/api/internal/application/offer"
 	orderapp "github.com/dineflow/api/internal/application/order"
+	paymentapp "github.com/dineflow/api/internal/application/payment"
 	platformapp "github.com/dineflow/api/internal/application/platform"
 	reviewapp "github.com/dineflow/api/internal/application/review"
 	roomapp "github.com/dineflow/api/internal/application/room"
@@ -202,6 +203,8 @@ func main() {
 	offerService := offerapp.NewService(mongoDB)
 	offerService.SetWhatsAppService(waService)
 	offerHandler := handlers.NewOfferHandler(offerService)
+	paymentService := paymentapp.NewService(mongoDB, hub)
+	paymentHandler := handlers.NewPaymentHandler(paymentService)
 
 	// ── WhatsApp Gateway Provider (OpenWA / Meta Cloud API / Mock) ───────────
 	var waProvider messaging.WhatsAppProvider
@@ -281,6 +284,7 @@ func main() {
 		platformHandler,
 		reviewHandler,
 		offerHandler,
+		paymentHandler,
 	)
 
 	// ── HTTP Server ───────────────────────────────────────────────────────────

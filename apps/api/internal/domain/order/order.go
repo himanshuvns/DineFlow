@@ -108,6 +108,8 @@ type Order struct {
 	PlacedBy            string          `bson:"placedBy,omitempty" json:"placedBy,omitempty"`
 	BookingID           *bson.ObjectID  `bson:"bookingId,omitempty" json:"bookingId,omitempty"`
 	BillingMethod       string          `bson:"billingMethod,omitempty" json:"billingMethod,omitempty"`
+	PaymentUTR          string          `bson:"paymentUtr,omitempty" json:"paymentUtr,omitempty"`
+	SettledAt           *time.Time      `bson:"settledAt,omitempty" json:"settledAt,omitempty"`
 	CreatedAt           time.Time       `bson:"createdAt" json:"createdAt"`
 	UpdatedAt           time.Time       `bson:"updatedAt" json:"updatedAt"`
 }
@@ -124,8 +126,9 @@ func (o *Order) CalculateTotals(taxRatePercent float64) {
 		for _, mod := range item.SelectedModifiers {
 			itemTotal += mod.Price
 		}
-		item.TotalPrice = round(itemTotal * float64(item.Quantity))
-		subtotal += item.TotalPrice
+		itemTotal = round(itemTotal * float64(item.Quantity))
+		item.TotalPrice = itemTotal
+		subtotal += itemTotal
 	}
 
 	o.Subtotal = round(subtotal)
@@ -149,11 +152,11 @@ func (o *Order) CanTransitionTo(next OrderStatus) bool {
 
 	switch o.Status {
 	case StatusPending:
-		return next == StatusPreparing || next == StatusCancelled
+		return next == StatusPreparing || next == StatusCancelled || next == StatusPaid
 	case StatusPreparing:
-		return next == StatusReady || next == StatusCancelled
+		return next == StatusReady || next == StatusCancelled || next == StatusPaid
 	case StatusReady:
-		return next == StatusServed || next == StatusCancelled
+		return next == StatusServed || next == StatusCancelled || next == StatusPaid
 	case StatusServed:
 		return next == StatusPaid || next == StatusCancelled
 	default:
@@ -170,6 +173,10 @@ func (o *Order) TransitionTo(next OrderStatus, note string) error {
 	o.Status = next
 	if next == StatusPaid {
 		o.PaymentStatus = PaymentPaid
+		now := time.Now().UTC()
+		if o.SettledAt == nil {
+			o.SettledAt = &now
+		}
 	}
 	o.Timeline = append(o.Timeline, OrderTimeline{
 		Status:    next,

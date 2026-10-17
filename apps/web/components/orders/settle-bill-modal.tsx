@@ -16,6 +16,7 @@ import {
   Clock,
   Utensils,
   Check,
+  RefreshCw,
 } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
 import { cn, formatCurrency } from "@/lib/utils";
 import { useTenantData, KdsOrder, TableItem } from "@/lib/stores/tenant-data-store";
+import { useUpiSettings } from "@/lib/stores/upi-settings-store";
 import { ThermalPrintModal } from "@/components/orders/thermal-receipt-modal";
 import { triggerDiningBillSettled } from "@/lib/realtime/history-events";
 
@@ -45,6 +47,7 @@ export function SettleBillModal({
 }: SettleBillModalProps) {
   const { addToast } = useToast();
   const { settleOrderBill, tenantName, tenantSlug, tenantId } = useTenantData();
+  const { vpa, merchantName, generateUpiUri } = useUpiSettings();
 
   const [paymentMethod, setPaymentMethod] = React.useState<PaymentMethod>("cash");
   const [cashTendered, setCashTendered] = React.useState<string>("");
@@ -56,6 +59,32 @@ export function SettleBillModal({
   const [settlementNote, setSettlementNote] = React.useState<string>("");
   const [isSettling, setIsSettling] = React.useState<boolean>(false);
   const [isThermalOpen, setIsThermalOpen] = React.useState<boolean>(false);
+
+  // Poll for live UPI webhook settlement when in UPI payment tab
+  React.useEffect(() => {
+    if (!isOpen || paymentMethod !== "upi" || !order) return;
+    let isMounted = true;
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/v1/payments/status/${encodeURIComponent(order.id)}`);
+        if (!res.ok) return;
+        const json = await res.json();
+        const data = json.data || json;
+        if (data && data.status === "paid" && isMounted) {
+          if (data.utr) {
+            setUpiRef(data.utr);
+          }
+          addToast("success", "UPI Payment Detected!", `Received via bank UTR ${data.utr || "Verified"}.`);
+        }
+      } catch {
+        // silent polling
+      }
+    }, 3000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [isOpen, paymentMethod, order, addToast]);
 
   // Sync state whenever active order changes
   React.useEffect(() => {
@@ -436,31 +465,56 @@ export function SettleBillModal({
           )}
 
           {paymentMethod === "upi" && (
-            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-4 space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center font-bold shrink-0">
-                  <QrCode className="h-5 w-5" />
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-4 space-y-4">
+              <div className="flex flex-col sm:flex-row items-center gap-4">
+                <div className="p-2 bg-white rounded-xl border border-slate-200 shadow-xs shrink-0 text-center">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(
+                      generateUpiUri(order.id, totalAmount, `Order #${order.id}`)
+                    )}&margin=4`}
+                    alt="Dynamic UPI QR"
+                    width={130}
+                    height={130}
+                    className="mx-auto rounded"
+                  />
+                  <span className="text-[10px] font-bold text-slate-500 block mt-1">
+                    Scan with any UPI App
+                  </span>
                 </div>
-                <div>
+
+                <div className="flex-1 space-y-2 text-center sm:text-left">
+                  <div className="flex items-center justify-center sm:justify-start gap-2">
+                    <Badge variant="outline" className="border-teal-500/30 text-teal-700 dark:text-teal-300 bg-teal-500/10 text-[10px]">
+                      0% Transaction Fee
+                    </Badge>
+                    <span className="text-[11px] text-slate-400 font-mono">
+                      {vpa || "dineflow@icici"}
+                    </span>
+                  </div>
                   <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                    Dynamic UPI Payment
+                    Dynamic Counter QR Code
                   </h4>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Guest scans UPI QR code via PhonePe, Google Pay, Paytm, or BHIM.
+                    Guest scans this QR at checkout. Exact bill amount <strong className="text-slate-900 dark:text-white">{formatCurrency(totalAmount)}</strong> and Order Ref are encoded.
                   </p>
+                  <div className="flex items-center justify-center sm:justify-start gap-2 pt-1 text-[11px] text-emerald-600 dark:text-emerald-400">
+                    <RefreshCw className="h-3 w-3 animate-spin shrink-0" />
+                    <span>Listening for bank credit notification...</span>
+                  </div>
                 </div>
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-slate-500 mb-1">
-                  UPI UTR / Reference ID (Optional):
+                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                  UPI Bank UTR / Reference ID:
                 </label>
                 <input
                   type="text"
                   value={upiRef}
                   onChange={(e) => setUpiRef(e.target.value)}
-                  placeholder="e.g. 429188201948 or UPI Transaction ID"
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  placeholder="e.g. 429188201948 (Auto-detected on payment or enter manually)"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
             </div>

@@ -164,6 +164,15 @@ func (c *Client) EnsureIndexes(ctx context.Context) error {
 		"push_subscriptions": {
 			{Keys: bson.D{{Key: "tenantId", Value: 1}, {Key: "endpoint", Value: 1}}, Options: options.Index().SetUnique(true).SetName("idx_push_sub_tenant_endpoint")},
 		},
+		"payment_transactions": {
+			{Keys: bson.D{{Key: "tenantId", Value: 1}, {Key: "orderId", Value: 1}}, Options: options.Index().SetName("idx_payment_tenant_order")},
+			{Keys: bson.D{{Key: "orderId", Value: 1}}, Options: options.Index().SetName("idx_payment_order")},
+			{Keys: bson.D{{Key: "utr", Value: 1}}, Options: options.Index().SetSparse(true).SetName("idx_payment_utr")},
+			{Keys: bson.D{{Key: "status", Value: 1}}, Options: options.Index().SetName("idx_payment_status")},
+		},
+		"tenant_payment_configs": {
+			{Keys: bson.D{{Key: "tenantId", Value: 1}}, Options: options.Index().SetUnique(true).SetName("idx_tenant_payment_config")},
+		},
 	}
 
 	for collName, models := range indexDefs {

@@ -36,6 +36,7 @@ func Setup(
 	platformHandler *handlers.PlatformHandler,
 	reviewHandler *handlers.ReviewHandler,
 	offerHandler *handlers.OfferHandler,
+	paymentHandler *handlers.PaymentHandler,
 ) {
 	// Auth middleware (used on protected routes, checks token signature and real-time Redis revocation)
 	authMiddleware := middleware.Auth(tokenMaker, redisClient)
@@ -97,6 +98,15 @@ func Setup(
 			offerPublic.GET("/stream/:slug", offerHandler.StreamActiveOffers)
 			offerPublic.POST("/subscribe-push", offerHandler.SubscribePush)
 			offerPublic.POST("/track-click", offerHandler.TrackClick)
+		}
+
+		// ── Public UPI Payments (YouPI-PG 0% Fee Gateway & Webhook) ───────
+		paymentPublic := v1.Group("/payments", publicRateLimit)
+		{
+			paymentPublic.POST("/create-session", paymentHandler.CreateSession)
+			paymentPublic.POST("/youpi/webhook", paymentHandler.HandleWebhook)
+			paymentPublic.GET("/status/:orderId", paymentHandler.GetPaymentStatus)
+			paymentPublic.POST("/verify-utr", paymentHandler.VerifyManualUTR)
 		}
 
 		// ── Public WhatsApp Webhook (Meta Cloud API & OpenWA Gateway) ─────
@@ -433,6 +443,13 @@ func Setup(
 			searchGroup := protected.Group("/search")
 			{
 				searchGroup.GET("", searchHandler.Search)
+			}
+
+			// ── 0% Fee UPI & Gateway Configuration ───────────────────────────
+			paymentProtected := protected.Group("/payments")
+			{
+				paymentProtected.GET("/config", paymentHandler.GetPaymentConfig)
+				paymentProtected.PUT("/config", paymentHandler.UpdatePaymentConfig)
 			}
 		}
 	}
