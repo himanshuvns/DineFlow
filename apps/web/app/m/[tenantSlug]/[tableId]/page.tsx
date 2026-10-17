@@ -39,6 +39,7 @@ import { CustomerOrdersHub } from "@/components/customer/customer-orders-hub";
 import { CustomerReviewHub } from "@/components/customer/customer-review-hub";
 import { useCartStore } from "@/lib/stores/cart-store";
 import { useTenantDataStore } from "@/lib/stores/tenant-data-store";
+import { useUpiSettings } from "@/lib/stores/upi-settings-store";
 import { isCategoryMatch } from "@/lib/utils/category-utils";
 
 function matchesTable(candidateIdOrName: string, targetTableId: string): boolean {
@@ -116,6 +117,7 @@ export default function CustomerMenuPage() {
       } catch {}
     };
     fetchOffersCount();
+    useUpiSettings.getState().fetchPublicSettings(tenantSlug).catch(() => {});
 
     let bc: BroadcastChannel | null = null;
     try {

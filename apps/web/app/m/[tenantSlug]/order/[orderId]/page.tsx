@@ -34,6 +34,7 @@ import { CustomerReviewHub } from "@/components/customer/customer-review-hub";
 import { CustomerCartDrawer } from "@/components/customer/customer-cart-drawer";
 import { CustomerUpiPaymentModal } from "@/components/customer/customer-upi-payment-modal";
 import { useCartStore } from "@/lib/stores/cart-store";
+import { useUpiSettings } from "@/lib/stores/upi-settings-store";
 
 type OrderStatus = "pending" | "preparing" | "ready" | "served" | "paid" | "cancelled";
 type TrackingTab = "orders" | "offers" | "service" | "reviews";
@@ -128,6 +129,9 @@ export default function OrderTrackingPage() {
         }
       })
       .catch(() => {});
+
+    // Pre-fetch live UPI gateway settings so payment QR renders with zero delay
+    useUpiSettings.getState().fetchPublicSettings(tenantSlug).catch(() => {});
   }, [tenantSlug]);
 
   // Fetch real order from database via proxy route

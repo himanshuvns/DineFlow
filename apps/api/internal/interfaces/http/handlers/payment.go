@@ -180,3 +180,32 @@ func (h *PaymentHandler) GetPublicPaymentConfig(c *gin.Context) {
 	response.OK(c, cfg)
 }
 
+// UpdatePublicPaymentConfig godoc
+// POST /api/v1/payments/public-config/:slug
+// PUT /api/v1/payments/public-config/:slug
+func (h *PaymentHandler) UpdatePublicPaymentConfig(c *gin.Context) {
+	slug := strings.TrimSpace(c.Param("slug"))
+	if slug == "" {
+		response.BadRequest(c, "MISSING_SLUG", "tenant slug is required")
+		return
+	}
+
+	var req domainpayment.TenantPaymentConfig
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "INVALID_PAYLOAD", err.Error())
+		return
+	}
+
+	req.TenantSlug = slug
+	updated, err := h.paymentService.UpdatePaymentConfigBySlug(c.Request.Context(), slug, &req)
+	if err != nil {
+		response.BadRequest(c, "CONFIG_UPDATE_FAILED", err.Error())
+		return
+	}
+
+	// Never leak private webhook secret in public response
+	updated.YoupiWebhookSecret = ""
+	response.OK(c, updated)
+}
+
+

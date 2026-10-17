@@ -171,7 +171,8 @@ func (c *Client) EnsureIndexes(ctx context.Context) error {
 			{Keys: bson.D{{Key: "status", Value: 1}}, Options: options.Index().SetName("idx_payment_status")},
 		},
 		"tenant_payment_configs": {
-			{Keys: bson.D{{Key: "tenantId", Value: 1}}, Options: options.Index().SetUnique(true).SetName("idx_tenant_payment_config")},
+			{Keys: bson.D{{Key: "tenantId", Value: 1}}, Options: options.Index().SetSparse(true).SetName("idx_tenant_payment_config")},
+			{Keys: bson.D{{Key: "tenantSlug", Value: 1}}, Options: options.Index().SetSparse(true).SetName("idx_payment_tenant_slug")},
 		},
 	}
 

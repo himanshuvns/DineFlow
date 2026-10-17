@@ -98,6 +98,7 @@ export function CustomerUpiPaymentModal({
 
   const [activeVpa, setActiveVpa] = React.useState<string>(defaultVpa);
   const [activeMerchantName, setActiveMerchantName] = React.useState<string>(defaultName);
+  const [isConfigLoading, setIsConfigLoading] = React.useState<boolean>(true);
   const [timeLeft, setTimeLeft] = React.useState<number>(300); // 5 min countdown
   const [copiedVpa, setCopiedVpa] = React.useState<boolean>(false);
   const [utrInput, setUtrInput] = React.useState<string>("");
@@ -114,18 +115,43 @@ export function CustomerUpiPaymentModal({
   React.useEffect(() => {
     if (!isOpen) return;
     let isMounted = true;
+    setIsConfigLoading(true);
 
-    fetchPublicSettings(cleanSlug).then((settings) => {
-      if (isMounted && settings && settings.vpa) {
-        setActiveVpa(settings.vpa);
-        setActiveMerchantName(settings.merchantName || "DineFlow Restaurant");
-      }
-    });
+    fetchPublicSettings(cleanSlug)
+      .then((settings) => {
+        if (isMounted && settings && settings.vpa) {
+          setActiveVpa(settings.vpa);
+          setActiveMerchantName(settings.merchantName || "DineFlow Restaurant");
+        }
+      })
+      .finally(() => {
+        if (isMounted) setIsConfigLoading(false);
+      });
 
     return () => {
       isMounted = false;
     };
   }, [isOpen, cleanSlug, fetchPublicSettings]);
+
+  // Real-time cross-tab broadcast synchronization
+  React.useEffect(() => {
+    if (typeof window === "undefined" || !("BroadcastChannel" in window)) return;
+    const channel = new BroadcastChannel("dineflow_upi_sync");
+    const handleMsg = (e: MessageEvent) => {
+      if (e.data && e.data.type === "UPI_SETTINGS_UPDATED") {
+        if (!e.data.slug || e.data.slug === cleanSlug) {
+          if (e.data.vpa) setActiveVpa(e.data.vpa);
+          if (e.data.merchantName) setActiveMerchantName(e.data.merchantName);
+          setIsConfigLoading(false);
+        }
+      }
+    };
+    channel.addEventListener("message", handleMsg);
+    return () => {
+      channel.removeEventListener("message", handleMsg);
+      channel.close();
+    };
+  }, [cleanSlug]);
 
   // Generate dynamic NPCI UPI URI with live server VPA and amount
   const upiUri = React.useMemo(() => {
@@ -472,15 +498,22 @@ export function CustomerUpiPaymentModal({
 
             {/* QR Code Container for Scanning */}
             <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center space-y-3">
-              <div className="relative p-2.5 rounded-2xl bg-white border border-slate-200 shadow-inner">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={qrCodeUrl}
-                  alt="Live Dynamic UPI QR Code"
-                  width={200}
-                  height={200}
-                  className="rounded-lg object-contain"
-                />
+              <div className="relative p-2.5 rounded-2xl bg-white border border-slate-200 shadow-inner flex items-center justify-center min-w-[200px] min-h-[200px]">
+                {isConfigLoading ? (
+                  <div className="w-[190px] h-[190px] flex flex-col items-center justify-center gap-2 bg-slate-50 dark:bg-slate-800/40 rounded-lg">
+                    <RefreshCw className="h-6 w-6 text-emerald-600 animate-spin" />
+                    <span className="text-[11px] font-semibold text-slate-500">Syncing Bank QR...</span>
+                  </div>
+                ) : (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={qrCodeUrl}
+                    alt="Live Dynamic UPI QR Code"
+                    width={200}
+                    height={200}
+                    className="rounded-lg object-contain"
+                  />
+                )}
               </div>
 
               <div className="space-y-1">

@@ -461,6 +461,14 @@ func (s *Service) UpdateTenantPaymentConfig(ctx context.Context, tenantID bson.O
 	}
 	cfg.TenantID = tenantID
 
+	// Resolve tenant slug if not provided
+	if strings.TrimSpace(cfg.TenantSlug) == "" {
+		var t domaintenant.Tenant
+		if err := s.db.Collection("tenants").FindOne(ctx, bson.M{"_id": tenantID}).Decode(&t); err == nil && t.Slug != "" {
+			cfg.TenantSlug = t.Slug
+		}
+	}
+
 	if err := cfg.Validate(); err != nil {
 		return nil, err
 	}
@@ -468,19 +476,25 @@ func (s *Service) UpdateTenantPaymentConfig(ctx context.Context, tenantID bson.O
 	now := time.Now().UTC()
 	cfg.UpdatedAt = now
 
+	setDoc := bson.M{
+		"tenantId":            tenantID,
+		"defaultProvider":     cfg.DefaultProvider,
+		"upiVpa":              strings.TrimSpace(cfg.UPIVPA),
+		"merchantName":        strings.TrimSpace(cfg.MerchantName),
+		"youpiGatewayUrl":     strings.TrimSpace(cfg.YoupiGatewayURL),
+		"youpiWebhookSecret":  strings.TrimSpace(cfg.YoupiWebhookSecret),
+		"autoSettleOnWebhook": cfg.AutoSettleOnWebhook,
+		"observerStatus":      cfg.ObserverStatus,
+		"updatedAt":           now,
+	}
+	if strings.TrimSpace(cfg.TenantSlug) != "" {
+		setDoc["tenantSlug"] = strings.ToLower(strings.TrimSpace(cfg.TenantSlug))
+	}
+
 	_, err := s.db.Collection("tenant_payment_configs").UpdateOne(ctx,
 		bson.M{"tenantId": tenantID},
 		bson.M{
-			"$set": bson.M{
-				"defaultProvider":     cfg.DefaultProvider,
-				"upiVpa":              strings.TrimSpace(cfg.UPIVPA),
-				"merchantName":        strings.TrimSpace(cfg.MerchantName),
-				"youpiGatewayUrl":     strings.TrimSpace(cfg.YoupiGatewayURL),
-				"youpiWebhookSecret":  strings.TrimSpace(cfg.YoupiWebhookSecret),
-				"autoSettleOnWebhook": cfg.AutoSettleOnWebhook,
-				"observerStatus":      cfg.ObserverStatus,
-				"updatedAt":           now,
-			},
+			"$set": setDoc,
 			"$setOnInsert": bson.M{
 				"createdAt": now,
 			},
@@ -494,45 +508,131 @@ func (s *Service) UpdateTenantPaymentConfig(ctx context.Context, tenantID bson.O
 	return cfg, nil
 }
 
-// GetPublicPaymentConfig fetches the public UPI VPA and Merchant Name for an unauthenticated diner by tenant slug.
-func (s *Service) GetPublicPaymentConfig(ctx context.Context, tenantSlug string) (*domainpayment.TenantPaymentConfig, error) {
+// UpdatePaymentConfigBySlug creates or updates restaurant UPI credentials directly by tenant slug.
+func (s *Service) UpdatePaymentConfigBySlug(ctx context.Context, tenantSlug string, cfg *domainpayment.TenantPaymentConfig) (*domainpayment.TenantPaymentConfig, error) {
 	cleanSlug := strings.ToLower(strings.TrimSpace(tenantSlug))
 	if cleanSlug == "" {
 		return nil, errors.New("tenant slug is required")
 	}
+	cfg.TenantSlug = cleanSlug
 
 	var t domaintenant.Tenant
 	err := s.db.Collection("tenants").FindOne(ctx, bson.M{"slug": cleanSlug}).Decode(&t)
-	if err != nil || t.ID.IsZero() {
-		// Return standard defaults if tenant not in DB yet
-		return &domainpayment.TenantPaymentConfig{
-			DefaultProvider:     domainpayment.ProviderYoupi,
-			UPIVPA:              "dineflow@icici",
-			MerchantName:        "DineFlow Restaurant",
-			AutoSettleOnWebhook: true,
-			ObserverStatus:      "offline",
-		}, nil
-	}
-
-	var cfg domainpayment.TenantPaymentConfig
-	cErr := s.db.Collection("tenant_payment_configs").FindOne(ctx, bson.M{"tenantId": t.ID}).Decode(&cfg)
-	if cErr != nil || strings.TrimSpace(cfg.UPIVPA) == "" {
-		merchantName := t.Name
-		if strings.TrimSpace(merchantName) == "" {
-			merchantName = "DineFlow Restaurant"
+	if err == nil && !t.ID.IsZero() {
+		cfg.TenantID = t.ID
+		if strings.TrimSpace(cfg.MerchantName) == "" {
+			cfg.MerchantName = t.Name
 		}
-		return &domainpayment.TenantPaymentConfig{
-			TenantID:            t.ID,
-			DefaultProvider:     domainpayment.ProviderYoupi,
-			UPIVPA:              "dineflow@icici",
-			MerchantName:        merchantName,
-			AutoSettleOnWebhook: true,
-			ObserverStatus:      "offline",
-		}, nil
 	}
 
-	// Never leak private webhook secret in public endpoint
-	cfg.YoupiWebhookSecret = ""
-	return &cfg, nil
+	if err := cfg.Validate(); err != nil {
+		return nil, err
+	}
+
+	now := time.Now().UTC()
+	cfg.UpdatedAt = now
+
+	filter := bson.M{
+		"$or": []bson.M{
+			{"tenantSlug": cleanSlug},
+			{"slug": cleanSlug},
+		},
+	}
+	if !cfg.TenantID.IsZero() {
+		filter = bson.M{
+			"$or": []bson.M{
+				{"tenantSlug": cleanSlug},
+				{"slug": cleanSlug},
+				{"tenantId": cfg.TenantID},
+			},
+		}
+	}
+
+	setDoc := bson.M{
+		"tenantSlug":          cleanSlug,
+		"defaultProvider":     cfg.DefaultProvider,
+		"upiVpa":              strings.TrimSpace(cfg.UPIVPA),
+		"merchantName":        strings.TrimSpace(cfg.MerchantName),
+		"youpiGatewayUrl":     strings.TrimSpace(cfg.YoupiGatewayURL),
+		"youpiWebhookSecret":  strings.TrimSpace(cfg.YoupiWebhookSecret),
+		"autoSettleOnWebhook": cfg.AutoSettleOnWebhook,
+		"observerStatus":      cfg.ObserverStatus,
+		"updatedAt":           now,
+	}
+	if !cfg.TenantID.IsZero() {
+		setDoc["tenantId"] = cfg.TenantID
+	}
+
+	_, updateErr := s.db.Collection("tenant_payment_configs").UpdateOne(ctx,
+		filter,
+		bson.M{
+			"$set": setDoc,
+			"$setOnInsert": bson.M{
+				"createdAt": now,
+			},
+		},
+		options.UpdateOne().SetUpsert(true),
+	)
+	if updateErr != nil {
+		return nil, fmt.Errorf("failed to save payment config: %w", updateErr)
+	}
+
+	return cfg, nil
+}
+
+// GetPublicPaymentConfig fetches the public UPI VPA and Merchant Name for an unauthenticated diner by tenant slug.
+func (s *Service) GetPublicPaymentConfig(ctx context.Context, tenantSlug string) (*domainpayment.TenantPaymentConfig, error) {
+	cleanSlug := strings.ToLower(strings.TrimSpace(tenantSlug))
+	if cleanSlug == "" {
+		cleanSlug = "the-grand-bistro"
+	}
+
+	// 1. Direct lookup by tenantSlug in tenant_payment_configs
+	var cfg domainpayment.TenantPaymentConfig
+	err := s.db.Collection("tenant_payment_configs").FindOne(ctx, bson.M{
+		"$or": []bson.M{
+			{"tenantSlug": cleanSlug},
+			{"slug": cleanSlug},
+		},
+	}).Decode(&cfg)
+
+	if err == nil && strings.TrimSpace(cfg.UPIVPA) != "" {
+		cfg.YoupiWebhookSecret = ""
+		return &cfg, nil
+	}
+
+	// 2. Lookup tenant in tenants collection
+	var t domaintenant.Tenant
+	tErr := s.db.Collection("tenants").FindOne(ctx, bson.M{"slug": cleanSlug}).Decode(&t)
+	if tErr == nil && !t.ID.IsZero() {
+		cErr := s.db.Collection("tenant_payment_configs").FindOne(ctx, bson.M{"tenantId": t.ID}).Decode(&cfg)
+		if cErr == nil && strings.TrimSpace(cfg.UPIVPA) != "" {
+			cfg.YoupiWebhookSecret = ""
+			return &cfg, nil
+		}
+	}
+
+	// 3. Fallback: check most recently updated payment config in DB (e.g. for single-restaurant setups)
+	var latestCfg domainpayment.TenantPaymentConfig
+	opts := options.FindOne().SetSort(bson.M{"updatedAt": -1})
+	if lErr := s.db.Collection("tenant_payment_configs").FindOne(ctx, bson.M{"upiVpa": bson.M{"$regex": "@"}}, opts).Decode(&latestCfg); lErr == nil {
+		if strings.TrimSpace(latestCfg.UPIVPA) != "" {
+			latestCfg.YoupiWebhookSecret = ""
+			return &latestCfg, nil
+		}
+	}
+
+	// 4. Default fallback
+	merchantName := "DineFlow Restaurant"
+	if !t.ID.IsZero() && strings.TrimSpace(t.Name) != "" {
+		merchantName = t.Name
+	}
+	return &domainpayment.TenantPaymentConfig{
+		DefaultProvider:     domainpayment.ProviderYoupi,
+		UPIVPA:              "dineflow@icici",
+		MerchantName:        merchantName,
+		AutoSettleOnWebhook: true,
+		ObserverStatus:      "offline",
+	}, nil
 }
 

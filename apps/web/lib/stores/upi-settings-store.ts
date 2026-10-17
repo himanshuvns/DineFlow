@@ -119,11 +119,26 @@ export const useUpiSettings = create<UpiSettingsState>((set, get) => ({
 
   fetchPublicSettings: async (tenantSlug: string) => {
     const cleanSlug = (tenantSlug || "the-grand-bistro").trim().toLowerCase();
+    const apiBase =
+      process.env.NEXT_PUBLIC_API_URL ||
+      (process.env.NODE_ENV === "production"
+        ? "https://dine.rovixatech.com/api/v1"
+        : "http://localhost:8080/api/v1");
+
+    // 1. Try local route first
     try {
-      const res = await fetch(`/api/v1/payments/public-config/${encodeURIComponent(cleanSlug)}`, {
+      let res = await fetch(`/api/v1/payments/public-config/${encodeURIComponent(cleanSlug)}?_t=${Date.now()}`, {
         cache: "no-store",
-      });
-      if (res.ok) {
+      }).catch(() => null);
+
+      // 2. Fallback to direct backend API if local route returned error
+      if (!res || !res.ok) {
+        res = await fetch(`${apiBase}/payments/public-config/${encodeURIComponent(cleanSlug)}?_t=${Date.now()}`, {
+          cache: "no-store",
+        }).catch(() => null);
+      }
+
+      if (res && res.ok) {
         const json = await res.json();
         const data = json.data || json;
         if (data && data.upiVpa) {
@@ -151,48 +166,68 @@ export const useUpiSettings = create<UpiSettingsState>((set, get) => ({
     get().updateLocalSettings(settingsToSave);
 
     const cleanSlug = (tenantSlug || "the-grand-bistro").trim().toLowerCase();
+    const apiBase =
+      process.env.NEXT_PUBLIC_API_URL ||
+      (process.env.NODE_ENV === "production"
+        ? "https://dine.rovixatech.com/api/v1"
+        : "http://localhost:8080/api/v1");
 
-    // 1. Immediately update public cache so all customer phones get the new VPA
+    const payload = {
+      defaultProvider: "youpi",
+      upiVpa: settingsToSave.vpa ?? get().vpa,
+      merchantName: settingsToSave.merchantName ?? get().merchantName,
+      youpiGatewayUrl: settingsToSave.youpiGatewayUrl ?? get().youpiGatewayUrl,
+      youpiWebhookSecret: settingsToSave.webhookSecret ?? get().webhookSecret,
+      autoSettleOnWebhook: settingsToSave.autoSettleOnWebhook ?? get().autoSettleOnWebhook,
+      observerStatus: settingsToSave.observerStatus ?? get().observerStatus,
+    };
+
+    // 1. Broadcast change to all local browser tabs/windows
+    if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+      try {
+        const channel = new BroadcastChannel("dineflow_upi_sync");
+        channel.postMessage({
+          type: "UPI_SETTINGS_UPDATED",
+          slug: cleanSlug,
+          vpa: payload.upiVpa,
+          merchantName: payload.merchantName,
+          timestamp: Date.now(),
+        });
+      } catch {
+        // BroadcastChannel optional
+      }
+    }
+
+    // 2. Persist to public-config endpoint so all customer mobile devices sync instantly
     try {
       await fetch(`/api/v1/payments/public-config/${encodeURIComponent(cleanSlug)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          upiVpa: settingsToSave.vpa ?? get().vpa,
-          merchantName: settingsToSave.merchantName ?? get().merchantName,
-          autoSettleOnWebhook: settingsToSave.autoSettleOnWebhook ?? get().autoSettleOnWebhook,
-          observerStatus: settingsToSave.observerStatus ?? get().observerStatus,
-        }),
-      });
+        body: JSON.stringify(payload),
+      }).catch(() => null);
     } catch (e) {
       console.warn("Local public cache update error:", e);
     }
 
-    // 2. Persist to Go backend
+    // Also send direct to backend public endpoint
     try {
-      const apiBase =
-        process.env.NEXT_PUBLIC_API_URL ||
-        (process.env.NODE_ENV === "production"
-          ? "https://dine.rovixatech.com/api/v1"
-          : "http://localhost:8080/api/v1");
+      await fetch(`${apiBase}/payments/public-config/${encodeURIComponent(cleanSlug)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }).catch(() => null);
+    } catch {
+      // Backend direct public post optional
+    }
 
+    // 3. Persist to Go backend protected route if auth token is present
+    try {
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
       };
       if (authToken) {
         headers["Authorization"] = `Bearer ${authToken}`;
       }
-
-      const current = get();
-      const payload = {
-        defaultProvider: "youpi",
-        upiVpa: settingsToSave.vpa ?? current.vpa,
-        merchantName: settingsToSave.merchantName ?? current.merchantName,
-        youpiGatewayUrl: settingsToSave.youpiGatewayUrl ?? current.youpiGatewayUrl,
-        youpiWebhookSecret: settingsToSave.webhookSecret ?? current.webhookSecret,
-        autoSettleOnWebhook: settingsToSave.autoSettleOnWebhook ?? current.autoSettleOnWebhook,
-        observerStatus: settingsToSave.observerStatus ?? current.observerStatus,
-      };
 
       const res = await fetch(`${apiBase}/payments/config`, {
         method: "PUT",
@@ -209,7 +244,7 @@ export const useUpiSettings = create<UpiSettingsState>((set, get) => ({
     } finally {
       set({ isSaving: false });
     }
-    return true; // Local and public cache saved
+    return true;
   },
 
   generateUpiUri: (orderId: string, amount: number, note?: string) => {

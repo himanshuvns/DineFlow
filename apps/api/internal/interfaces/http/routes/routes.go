@@ -59,6 +59,9 @@ func Setup(
 		publicGroup := v1.Group("/public", publicRateLimit)
 		{
 			publicGroup.GET("/m/:slug", menuHandler.GetPublicMenu)
+			publicGroup.GET("/payments/:slug", paymentHandler.GetPublicPaymentConfig)
+			publicGroup.POST("/payments/:slug", paymentHandler.UpdatePublicPaymentConfig)
+			publicGroup.PUT("/payments/:slug", paymentHandler.UpdatePublicPaymentConfig)
 			publicGroup.GET("/tables/:tenantSlug/:tableId", tableHandler.GetPublicTable)
 			publicGroup.POST("/orders", orderHandler.CreateCustomerOrder)
 			publicGroup.GET("/orders/:orderId", orderHandler.GetCustomerOrder)
@@ -108,6 +111,8 @@ func Setup(
 			paymentPublic.GET("/status/:orderId", paymentHandler.GetPaymentStatus)
 			paymentPublic.POST("/verify-utr", paymentHandler.VerifyManualUTR)
 			paymentPublic.GET("/public-config/:slug", paymentHandler.GetPublicPaymentConfig)
+			paymentPublic.POST("/public-config/:slug", paymentHandler.UpdatePublicPaymentConfig)
+			paymentPublic.PUT("/public-config/:slug", paymentHandler.UpdatePublicPaymentConfig)
 		}
 
 		// ── Public WhatsApp Webhook (Meta Cloud API & OpenWA Gateway) ─────

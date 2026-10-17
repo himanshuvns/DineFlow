@@ -26,15 +26,7 @@ export async function GET(
     );
   }
 
-  // 1. If server memory has an updated config for this tenant slug, prefer it
-  if (publicConfigCache[cleanSlug]) {
-    return NextResponse.json({
-      success: true,
-      data: publicConfigCache[cleanSlug],
-    });
-  }
-
-  // 2. Fetch from Go Backend API
+  // 1. Fetch from Go Backend API first to ensure multi-device accuracy
   const apiBase =
     process.env.INTERNAL_API_URL ||
     process.env.NEXT_PUBLIC_API_URL ||
@@ -43,7 +35,7 @@ export async function GET(
       : "http://127.0.0.1:8080/api/v1");
 
   try {
-    const res = await fetch(`${apiBase}/payments/public-config/${encodeURIComponent(cleanSlug)}`, {
+    const res = await fetch(`${apiBase}/payments/public-config/${encodeURIComponent(cleanSlug)}?_t=${Date.now()}`, {
       cache: "no-store",
       headers: {
         "Content-Type": "application/json",
@@ -66,6 +58,14 @@ export async function GET(
     }
   } catch {
     // Backend offline / network fallback
+  }
+
+  // 2. If backend was unreachable but server memory has cached config, return that
+  if (publicConfigCache[cleanSlug]) {
+    return NextResponse.json({
+      success: true,
+      data: publicConfigCache[cleanSlug],
+    });
   }
 
   // 3. Fallback defaults for new tenants
@@ -100,7 +100,7 @@ export async function POST(
       );
     }
 
-    publicConfigCache[cleanSlug] = {
+    const payload = {
       upiVpa: String(upiVpa || "").trim() || "dineflow@icici",
       merchantName: String(merchantName || "").trim() || "DineFlow Restaurant",
       autoSettleOnWebhook: autoSettleOnWebhook ?? true,
@@ -108,11 +108,31 @@ export async function POST(
       updatedAt: new Date().toISOString(),
     };
 
+    publicConfigCache[cleanSlug] = payload;
+
+    // Forward to Go backend so database is updated
+    const apiBase =
+      process.env.INTERNAL_API_URL ||
+      process.env.NEXT_PUBLIC_API_URL ||
+      (process.env.NODE_ENV === "production"
+        ? "https://dine.rovixatech.com/api/v1"
+        : "http://127.0.0.1:8080/api/v1");
+
+    try {
+      await fetch(`${apiBase}/payments/public-config/${encodeURIComponent(cleanSlug)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+    } catch {
+      // Backend sync error tolerated
+    }
+
     return NextResponse.json({
       success: true,
       data: publicConfigCache[cleanSlug],
     });
-  } catch (e) {
+  } catch {
     return NextResponse.json(
       { success: false, error: { message: "Failed to update public config cache" } },
       { status: 500 }

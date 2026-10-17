@@ -48,7 +48,8 @@ type PaymentTransaction struct {
 // TenantPaymentConfig stores restaurant-specific payment configuration and UPI credentials.
 type TenantPaymentConfig struct {
 	ID                  bson.ObjectID   `bson:"_id,omitempty" json:"id"`
-	TenantID            bson.ObjectID   `bson:"tenantId" json:"tenantId"`
+	TenantID            bson.ObjectID   `bson:"tenantId,omitempty" json:"tenantId,omitempty"`
+	TenantSlug          string          `bson:"tenantSlug,omitempty" json:"tenantSlug,omitempty"`
 	DefaultProvider     PaymentProvider `bson:"defaultProvider" json:"defaultProvider"`
 	UPIVPA              string          `bson:"upiVpa" json:"upiVpa"`
 	MerchantName        string          `bson:"merchantName" json:"merchantName"`
@@ -62,17 +63,19 @@ type TenantPaymentConfig struct {
 
 // Validate ensures payment settings satisfy basic format constraints.
 func (c *TenantPaymentConfig) Validate() error {
-	if c.TenantID.IsZero() {
-		return errors.New("tenantId is required")
+	if c.TenantID.IsZero() && strings.TrimSpace(c.TenantSlug) == "" {
+		return errors.New("tenantId or tenantSlug is required")
 	}
-	if strings.TrimSpace(c.UPIVPA) == "" {
+	c.UPIVPA = strings.TrimSpace(c.UPIVPA)
+	if c.UPIVPA == "" {
 		return errors.New("UPI VPA is required (e.g. merchant@icici)")
 	}
 	if !strings.Contains(c.UPIVPA, "@") {
 		return errors.New("invalid UPI VPA format, must contain @")
 	}
-	if strings.TrimSpace(c.MerchantName) == "" {
-		return errors.New("merchantName is required")
+	c.MerchantName = strings.TrimSpace(c.MerchantName)
+	if c.MerchantName == "" {
+		c.MerchantName = "DineFlow Restaurant"
 	}
 	return nil
 }
