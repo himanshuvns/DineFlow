@@ -17,8 +17,9 @@ interface UpiSettingsState extends UpiSettings {
   isSaving: boolean;
   lastSyncedAt: string | null;
   updateLocalSettings: (settings: Partial<UpiSettings>) => void;
-  saveSettings: (settings: Partial<UpiSettings>, authToken?: string) => Promise<boolean>;
+  saveSettings: (settings: Partial<UpiSettings>, authToken?: string, tenantSlug?: string) => Promise<boolean>;
   fetchSettings: (authToken?: string) => Promise<void>;
+  fetchPublicSettings: (tenantSlug: string) => Promise<UpiSettings>;
   generateUpiUri: (orderId: string, amount: number, note?: string) => string;
 }
 
@@ -116,10 +117,58 @@ export const useUpiSettings = create<UpiSettingsState>((set, get) => ({
     }
   },
 
-  saveSettings: async (settingsToSave, authToken) => {
+  fetchPublicSettings: async (tenantSlug: string) => {
+    const cleanSlug = (tenantSlug || "the-grand-bistro").trim().toLowerCase();
+    try {
+      const res = await fetch(`/api/v1/payments/public-config/${encodeURIComponent(cleanSlug)}`, {
+        cache: "no-store",
+      });
+      if (res.ok) {
+        const json = await res.json();
+        const data = json.data || json;
+        if (data && data.upiVpa) {
+          const loaded: Partial<UpiSettings> = {
+            vpa: data.upiVpa,
+            merchantName: data.merchantName || get().merchantName,
+            autoSettleOnWebhook: data.autoSettleOnWebhook ?? true,
+            observerStatus: data.observerStatus || "offline",
+          };
+          get().updateLocalSettings(loaded);
+          return {
+            ...get(),
+            ...loaded,
+          };
+        }
+      }
+    } catch (err) {
+      console.warn("Failed to fetch public UPI config for", cleanSlug, err);
+    }
+    return get();
+  },
+
+  saveSettings: async (settingsToSave, authToken, tenantSlug) => {
     set({ isSaving: true });
     get().updateLocalSettings(settingsToSave);
 
+    const cleanSlug = (tenantSlug || "the-grand-bistro").trim().toLowerCase();
+
+    // 1. Immediately update public cache so all customer phones get the new VPA
+    try {
+      await fetch(`/api/v1/payments/public-config/${encodeURIComponent(cleanSlug)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          upiVpa: settingsToSave.vpa ?? get().vpa,
+          merchantName: settingsToSave.merchantName ?? get().merchantName,
+          autoSettleOnWebhook: settingsToSave.autoSettleOnWebhook ?? get().autoSettleOnWebhook,
+          observerStatus: settingsToSave.observerStatus ?? get().observerStatus,
+        }),
+      });
+    } catch (e) {
+      console.warn("Local public cache update error:", e);
+    }
+
+    // 2. Persist to Go backend
     try {
       const apiBase =
         process.env.NEXT_PUBLIC_API_URL ||
@@ -160,7 +209,7 @@ export const useUpiSettings = create<UpiSettingsState>((set, get) => ({
     } finally {
       set({ isSaving: false });
     }
-    return false;
+    return true; // Local and public cache saved
   },
 
   generateUpiUri: (orderId: string, amount: number, note?: string) => {

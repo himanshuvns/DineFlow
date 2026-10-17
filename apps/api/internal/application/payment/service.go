@@ -493,3 +493,46 @@ func (s *Service) UpdateTenantPaymentConfig(ctx context.Context, tenantID bson.O
 
 	return cfg, nil
 }
+
+// GetPublicPaymentConfig fetches the public UPI VPA and Merchant Name for an unauthenticated diner by tenant slug.
+func (s *Service) GetPublicPaymentConfig(ctx context.Context, tenantSlug string) (*domainpayment.TenantPaymentConfig, error) {
+	cleanSlug := strings.ToLower(strings.TrimSpace(tenantSlug))
+	if cleanSlug == "" {
+		return nil, errors.New("tenant slug is required")
+	}
+
+	var t domaintenant.Tenant
+	err := s.db.Collection("tenants").FindOne(ctx, bson.M{"slug": cleanSlug}).Decode(&t)
+	if err != nil || t.ID.IsZero() {
+		// Return standard defaults if tenant not in DB yet
+		return &domainpayment.TenantPaymentConfig{
+			DefaultProvider:     domainpayment.ProviderYoupi,
+			UPIVPA:              "dineflow@icici",
+			MerchantName:        "DineFlow Restaurant",
+			AutoSettleOnWebhook: true,
+			ObserverStatus:      "offline",
+		}, nil
+	}
+
+	var cfg domainpayment.TenantPaymentConfig
+	cErr := s.db.Collection("tenant_payment_configs").FindOne(ctx, bson.M{"tenantId": t.ID}).Decode(&cfg)
+	if cErr != nil || strings.TrimSpace(cfg.UPIVPA) == "" {
+		merchantName := t.Name
+		if strings.TrimSpace(merchantName) == "" {
+			merchantName = "DineFlow Restaurant"
+		}
+		return &domainpayment.TenantPaymentConfig{
+			TenantID:            t.ID,
+			DefaultProvider:     domainpayment.ProviderYoupi,
+			UPIVPA:              "dineflow@icici",
+			MerchantName:        merchantName,
+			AutoSettleOnWebhook: true,
+			ObserverStatus:      "offline",
+		}, nil
+	}
+
+	// Never leak private webhook secret in public endpoint
+	cfg.YoupiWebhookSecret = ""
+	return &cfg, nil
+}
+

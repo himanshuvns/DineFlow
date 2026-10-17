@@ -107,6 +107,7 @@ func Setup(
 			paymentPublic.POST("/youpi/webhook", paymentHandler.HandleWebhook)
 			paymentPublic.GET("/status/:orderId", paymentHandler.GetPaymentStatus)
 			paymentPublic.POST("/verify-utr", paymentHandler.VerifyManualUTR)
+			paymentPublic.GET("/public-config/:slug", paymentHandler.GetPublicPaymentConfig)
 		}
 
 		// ── Public WhatsApp Webhook (Meta Cloud API & OpenWA Gateway) ─────

@@ -840,14 +840,35 @@ export default function OrderTrackingPage() {
         orderId={orderId}
         orderNumber={order?.orderNumber}
         amount={order?.totalAmount || 0}
+        tenantSlug={tenantSlug}
         customerName={order?.customerName}
         tableName={tableName}
-        onPaymentSuccess={() => {
+        onPaymentSuccess={(utr) => {
           setStatus("paid");
           if (order) {
             setOrder({ ...order, status: "paid" });
           }
-          setIsUpiModalOpen(false);
+          if (typeof window !== "undefined") {
+            try {
+              for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (k && k.startsWith(`dineflow_orders_${tenantSlug}_`)) {
+                  const raw = localStorage.getItem(k);
+                  if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (Array.isArray(parsed)) {
+                      const updated = parsed.map((o: any) =>
+                        o.id === orderId || o.orderNumber === orderId
+                          ? { ...o, status: "paid", paymentUtr: utr }
+                          : o
+                      );
+                      localStorage.setItem(k, JSON.stringify(updated));
+                    }
+                  }
+                }
+              }
+            } catch {}
+          }
         }}
       />
     </div>

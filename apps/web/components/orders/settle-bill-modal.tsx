@@ -47,7 +47,7 @@ export function SettleBillModal({
 }: SettleBillModalProps) {
   const { addToast } = useToast();
   const { settleOrderBill, tenantName, tenantSlug, tenantId } = useTenantData();
-  const { vpa, merchantName, generateUpiUri } = useUpiSettings();
+  const { vpa, merchantName, generateUpiUri, fetchPublicSettings } = useUpiSettings();
 
   const [paymentMethod, setPaymentMethod] = React.useState<PaymentMethod>("cash");
   const [cashTendered, setCashTendered] = React.useState<string>("");
@@ -59,6 +59,13 @@ export function SettleBillModal({
   const [settlementNote, setSettlementNote] = React.useState<string>("");
   const [isSettling, setIsSettling] = React.useState<boolean>(false);
   const [isThermalOpen, setIsThermalOpen] = React.useState<boolean>(false);
+
+  // Sync latest UPI VPA for this restaurant
+  React.useEffect(() => {
+    if (isOpen && tenantSlug) {
+      fetchPublicSettings(tenantSlug);
+    }
+  }, [isOpen, tenantSlug, fetchPublicSettings]);
 
   // Poll for live UPI webhook settlement when in UPI payment tab
   React.useEffect(() => {

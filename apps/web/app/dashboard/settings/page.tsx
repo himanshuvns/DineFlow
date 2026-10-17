@@ -165,6 +165,7 @@ export default function SettingsPage() {
       return;
     }
     const token = useAuthStore.getState().accessToken;
+    const slug = tenant?.slug || "the-grand-bistro";
     await saveUpiSettings(
       {
         vpa: upiVpa.trim(),
@@ -173,9 +174,10 @@ export default function SettingsPage() {
         webhookSecret: upiWebhookSecret.trim(),
         autoSettleOnWebhook: upiAutoSettle,
       },
-      token || undefined
+      token || undefined,
+      slug
     );
-    addToast("success", "UPI Settings Saved", "Zero-fee UPI gateway credentials updated successfully.");
+    addToast("success", "UPI Settings Saved", `Zero-fee UPI gateway updated for ${upiVpa.trim()}.`);
   };
 
   // Resource usage metrics

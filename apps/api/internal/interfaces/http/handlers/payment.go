@@ -161,3 +161,22 @@ func (h *PaymentHandler) UpdatePaymentConfig(c *gin.Context) {
 
 	response.OK(c, updated)
 }
+
+// GetPublicPaymentConfig godoc
+// GET /api/v1/payments/public-config/:slug
+func (h *PaymentHandler) GetPublicPaymentConfig(c *gin.Context) {
+	slug := strings.TrimSpace(c.Param("slug"))
+	if slug == "" {
+		response.BadRequest(c, "MISSING_SLUG", "tenant slug is required")
+		return
+	}
+
+	cfg, err := h.paymentService.GetPublicPaymentConfig(c.Request.Context(), slug)
+	if err != nil {
+		response.InternalError(c)
+		return
+	}
+
+	response.OK(c, cfg)
+}
+
