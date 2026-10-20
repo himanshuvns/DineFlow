@@ -36,6 +36,7 @@ func TestRoutesSetup_NoPanic(t *testing.T) {
 			&handlers.ReviewHandler{},
 			&handlers.OfferHandler{},
 			&handlers.PaymentHandler{},
+			&handlers.InventoryHandler{},
 		)
 	})
 }

@@ -45,13 +45,18 @@ function MobileNavSubItemsInner({
   isParentActive: boolean;
   onItemClick: () => void;
 }) {
+  const pathname = usePathname();
   const searchParams = useSearchParams();
-  const currentTab = searchParams.get("tab") || items[0]?.tab || "";
+  const currentTab = searchParams.get("tab") || "";
 
   return (
     <div className="ml-5 pl-2.5 border-l border-slate-200 dark:border-slate-800 space-y-0.5 my-1">
       {items.map((sub) => {
-        const isSubActive = isParentActive && currentTab === sub.tab;
+        const isSubActive = sub.href.includes("?tab=")
+          ? isParentActive && currentTab === sub.tab
+          : (sub.href === "/dashboard/inventory"
+              ? pathname === "/dashboard/inventory"
+              : pathname === sub.href || pathname.startsWith(`${sub.href}/`));
         const SubIcon = sub.icon;
 
         return (

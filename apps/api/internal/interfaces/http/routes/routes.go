@@ -37,6 +37,7 @@ func Setup(
 	reviewHandler *handlers.ReviewHandler,
 	offerHandler *handlers.OfferHandler,
 	paymentHandler *handlers.PaymentHandler,
+	inventoryHandler *handlers.InventoryHandler,
 ) {
 	// Auth middleware (used on protected routes, checks token signature and real-time Redis revocation)
 	authMiddleware := middleware.Auth(tokenMaker, redisClient)
@@ -456,6 +457,65 @@ func Setup(
 			{
 				paymentProtected.GET("/config", paymentHandler.GetPaymentConfig)
 				paymentProtected.PUT("/config", paymentHandler.UpdatePaymentConfig)
+			}
+
+			// ── Stock & Inventory Management ──────────────────────────────
+			invGroup := protected.Group("/inventory")
+			{
+				invGroup.GET("/dashboard", inventoryHandler.GetDashboardSummary)
+				invGroup.GET("/items", inventoryHandler.ListItems)
+				invGroup.POST("/items", middleware.OwnerOrManager(), inventoryHandler.CreateItem)
+				invGroup.GET("/items/:id", inventoryHandler.GetItem)
+				invGroup.PUT("/items/:id", middleware.OwnerOrManager(), inventoryHandler.UpdateItem)
+				invGroup.DELETE("/items/:id", middleware.OwnerOnly(), inventoryHandler.DeleteItem)
+				invGroup.POST("/items/:id/adjust", middleware.OwnerOrManager(), inventoryHandler.AdjustStock)
+
+				invGroup.GET("/recipes", inventoryHandler.ListRecipes)
+				invGroup.POST("/recipes", middleware.OwnerOrManager(), inventoryHandler.CreateRecipe)
+				invGroup.GET("/recipes/:id", inventoryHandler.GetRecipe)
+				invGroup.GET("/recipes/menu-item/:menuItemId", inventoryHandler.GetRecipeByMenuItem)
+				invGroup.DELETE("/recipes/:id", middleware.OwnerOrManager(), inventoryHandler.DeleteRecipe)
+
+				invGroup.GET("/suppliers", inventoryHandler.ListSuppliers)
+				invGroup.POST("/suppliers", middleware.OwnerOrManager(), inventoryHandler.CreateSupplier)
+				invGroup.GET("/suppliers/:id", inventoryHandler.GetSupplier)
+				invGroup.PUT("/suppliers/:id", middleware.OwnerOrManager(), inventoryHandler.UpdateSupplier)
+				invGroup.DELETE("/suppliers/:id", middleware.OwnerOrManager(), inventoryHandler.DeleteSupplier)
+
+				invGroup.GET("/purchase-orders", inventoryHandler.ListPurchaseOrders)
+				invGroup.POST("/purchase-orders", middleware.OwnerOrManager(), inventoryHandler.CreatePurchaseOrder)
+				invGroup.GET("/purchase-orders/:id", inventoryHandler.GetPurchaseOrder)
+				invGroup.POST("/purchase-orders/:id/approve", middleware.OwnerOrManager(), inventoryHandler.ApprovePurchaseOrder)
+				invGroup.POST("/purchase-orders/:id/order", middleware.OwnerOrManager(), inventoryHandler.OrderPurchaseOrder)
+				invGroup.POST("/purchase-orders/:id/cancel", middleware.OwnerOrManager(), inventoryHandler.CancelPurchaseOrder)
+
+				invGroup.POST("/grn", middleware.OwnerOrManager(), inventoryHandler.ReceiveGRN)
+				invGroup.GET("/grn", inventoryHandler.ListGRN)
+				invGroup.GET("/grn/:id", inventoryHandler.GetGRN)
+
+				invGroup.GET("/movements", inventoryHandler.ListMovements)
+
+				invGroup.GET("/counts", inventoryHandler.ListStockCounts)
+				invGroup.POST("/counts", middleware.OwnerOrManager(), inventoryHandler.CreateStockCount)
+				invGroup.GET("/counts/:id", inventoryHandler.GetStockCount)
+				invGroup.PUT("/counts/:id/items", middleware.OwnerOrManager(), inventoryHandler.UpdateStockCountItems)
+				invGroup.POST("/counts/:id/submit", middleware.OwnerOrManager(), inventoryHandler.SubmitStockCount)
+				invGroup.POST("/counts/:id/approve", middleware.OwnerOrManager(), inventoryHandler.ApproveStockCount)
+
+				invGroup.GET("/transfers", inventoryHandler.ListTransfers)
+				invGroup.POST("/transfers", middleware.OwnerOrManager(), inventoryHandler.CreateTransfer)
+				invGroup.GET("/transfers/:id", inventoryHandler.GetTransfer)
+				invGroup.POST("/transfers/:id/approve", middleware.OwnerOrManager(), inventoryHandler.ApproveTransfer)
+				invGroup.POST("/transfers/:id/dispatch", middleware.OwnerOrManager(), inventoryHandler.DispatchTransfer)
+				invGroup.POST("/transfers/:id/receive", middleware.OwnerOrManager(), inventoryHandler.ReceiveTransfer)
+
+				invGroup.GET("/outlets", inventoryHandler.ListOutlets)
+				invGroup.POST("/outlets", middleware.OwnerOrManager(), inventoryHandler.CreateOutlet)
+
+				invGroup.GET("/settings", inventoryHandler.GetSettings)
+				invGroup.PUT("/settings", middleware.OwnerOrManager(), inventoryHandler.UpdateSettings)
+
+				invGroup.GET("/reports/valuation", inventoryHandler.GetValuationReport)
 			}
 		}
 	}

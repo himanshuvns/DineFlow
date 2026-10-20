@@ -31,6 +31,14 @@ import {
   Bot,
   Layers,
   Receipt,
+  Boxes,
+  Package,
+  Truck,
+  ShoppingCart,
+  ClipboardCheck,
+  ArrowLeftRight,
+  Calculator,
+  GitPullRequest,
 } from "lucide-react";
 import { useUIStore } from "@/lib/stores/ui-store";
 import { useAuthStore } from "@/lib/stores/auth-store";
@@ -79,6 +87,30 @@ export function getNavSections(category?: string | null): NavSection[] {
         ...(config.hasTables
           ? [{ href: "/dashboard/tables", label: config.tableLabel || "Tables & QR Codes", icon: QrCode }]
           : []),
+      ],
+    },
+    {
+      title: "Inventory & Stock",
+      items: [
+        {
+          href: "/dashboard/inventory",
+          label: "Inventory & Stock",
+          icon: Boxes,
+          badge: "ERP",
+          children: [
+            { href: "/dashboard/inventory", tab: "overview", label: "Overview", icon: LayoutDashboard },
+            { href: "/dashboard/inventory/items", tab: "items", label: "Items Catalog", icon: Package },
+            { href: "/dashboard/inventory/recipes", tab: "recipes", label: "Recipes & BOM", icon: ChefHat },
+            { href: "/dashboard/inventory/suppliers", tab: "suppliers", label: "Suppliers", icon: Truck },
+            { href: "/dashboard/inventory/purchase-orders", tab: "purchase-orders", label: "Purchase Orders", icon: ShoppingCart },
+            { href: "/dashboard/inventory/receiving", tab: "receiving", label: "Stock Receiving (GRN)", icon: ClipboardCheck },
+            { href: "/dashboard/inventory/movements", tab: "movements", label: "Stock Movements", icon: ArrowLeftRight },
+            { href: "/dashboard/inventory/counts", tab: "counts", label: "Stock Counts & Audit", icon: Calculator },
+            { href: "/dashboard/inventory/transfers", tab: "transfers", label: "Transfers", icon: GitPullRequest },
+            { href: "/dashboard/inventory/reports", tab: "reports", label: "Reports & Analytics", icon: BarChart3 },
+            { href: "/dashboard/inventory/settings", tab: "settings", label: "Settings", icon: Settings },
+          ],
+        },
       ],
     },
     {
@@ -173,15 +205,20 @@ function NavSubItemsListInner({
   isParentActive: boolean;
   sidebarCollapsed: boolean;
 }) {
+  const pathname = usePathname();
   const searchParams = useSearchParams();
-  const currentTab = searchParams.get("tab") || items[0]?.tab || "";
+  const currentTab = searchParams.get("tab") || "";
 
   if (sidebarCollapsed) return null;
 
   return (
     <div className="ml-5 pl-2.5 border-l border-slate-200 dark:border-slate-800 space-y-0.5 my-1">
       {items.map((sub) => {
-        const isSubActive = isParentActive && currentTab === sub.tab;
+        const isSubActive = sub.href.includes("?tab=")
+          ? isParentActive && currentTab === sub.tab
+          : (sub.href === "/dashboard/inventory"
+              ? pathname === "/dashboard/inventory"
+              : pathname === sub.href || pathname.startsWith(`${sub.href}/`));
         const SubIcon = sub.icon;
 
         return (

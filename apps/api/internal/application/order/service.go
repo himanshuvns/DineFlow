@@ -38,11 +38,17 @@ type WhatsAppOrderNotifier interface {
 	NotifyAdminOrderCancelled(ctx context.Context, tenantID bson.ObjectID, ord *domainorder.Order)
 }
 
+// InventoryOrderDeductor defines the inventory deduction hook.
+type InventoryOrderDeductor interface {
+	DeductForOrder(ctx context.Context, ord *domainorder.Order) error
+}
+
 type Service struct {
 	db           *mongoinfra.Client
 	hub          *realtime.Hub
 	notifService notifServiceIface
 	waNotifier   WhatsAppOrderNotifier
+	invDeductor  InventoryOrderDeductor
 }
 
 func NewService(db *mongoinfra.Client, hub *realtime.Hub) *Service {
@@ -57,6 +63,11 @@ func (s *Service) SetNotificationService(ns notifServiceIface) {
 // SetWhatsAppNotifier injects the WhatsApp order notification service.
 func (s *Service) SetWhatsAppNotifier(wn WhatsAppOrderNotifier) {
 	s.waNotifier = wn
+}
+
+// SetInventoryService injects the inventory service for automatic recipe ingredient deduction.
+func (s *Service) SetInventoryService(id InventoryOrderDeductor) {
+	s.invDeductor = id
 }
 
 // emitOrderNotif is a fire-and-forget notification helper.
@@ -716,6 +727,13 @@ func (s *Service) UpdateOrderStatus(ctx context.Context, tenantID bson.ObjectID,
 				s.waNotifier.NotifyAdminOrderCancelled(bgCtx, tid, o)
 			}
 		}(&ord, tenantID, nextStatus)
+	}
+
+	// Trigger automated inventory ingredient deduction when order moves to preparing or paid
+	if s.invDeductor != nil && (nextStatus == domainorder.StatusPreparing || nextStatus == domainorder.StatusPaid) {
+		go func(o *domainorder.Order) {
+			_ = s.invDeductor.DeductForOrder(context.Background(), o)
+		}(&ord)
 	}
 
 	return &ord, nil

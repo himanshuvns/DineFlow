@@ -174,6 +174,45 @@ func (c *Client) EnsureIndexes(ctx context.Context) error {
 			{Keys: bson.D{{Key: "tenantId", Value: 1}}, Options: options.Index().SetSparse(true).SetName("idx_tenant_payment_config")},
 			{Keys: bson.D{{Key: "tenantSlug", Value: 1}}, Options: options.Index().SetSparse(true).SetName("idx_payment_tenant_slug")},
 		},
+		"inventory_items": {
+			{Keys: bson.D{{Key: "tenantId", Value: 1}, {Key: "isArchived", Value: 1}, {Key: "currentQuantity", Value: 1}}, Options: options.Index().SetName("idx_inv_tenant_stock")},
+			{Keys: bson.D{{Key: "tenantId", Value: 1}, {Key: "sku", Value: 1}}, Options: options.Index().SetSparse(true).SetName("idx_inv_tenant_sku")},
+			{Keys: bson.D{{Key: "tenantId", Value: 1}, {Key: "category", Value: 1}}, Options: options.Index().SetName("idx_inv_tenant_cat")},
+		},
+		"recipes": {
+			{Keys: bson.D{{Key: "tenantId", Value: 1}, {Key: "menuItemId", Value: 1}}, Options: options.Index().SetName("idx_recipe_tenant_menu")},
+			{Keys: bson.D{{Key: "tenantId", Value: 1}, {Key: "isActive", Value: 1}}, Options: options.Index().SetName("idx_recipe_tenant_active")},
+		},
+		"suppliers": {
+			{Keys: bson.D{{Key: "tenantId", Value: 1}, {Key: "isActive", Value: 1}}, Options: options.Index().SetName("idx_supp_tenant_active")},
+		},
+		"purchase_orders": {
+			{Keys: bson.D{{Key: "tenantId", Value: 1}, {Key: "poNumber", Value: 1}}, Options: options.Index().SetUnique(true).SetName("idx_po_tenant_num")},
+			{Keys: bson.D{{Key: "tenantId", Value: 1}, {Key: "status", Value: 1}, {Key: "createdAt", Value: -1}}, Options: options.Index().SetName("idx_po_tenant_status")},
+		},
+		"goods_received_notes": {
+			{Keys: bson.D{{Key: "tenantId", Value: 1}, {Key: "grnNumber", Value: 1}}, Options: options.Index().SetUnique(true).SetName("idx_grn_tenant_num")},
+			{Keys: bson.D{{Key: "tenantId", Value: 1}, {Key: "receivedAt", Value: -1}}, Options: options.Index().SetName("idx_grn_tenant_date")},
+		},
+		"stock_movements": {
+			{Keys: bson.D{{Key: "tenantId", Value: 1}, {Key: "inventoryItemId", Value: 1}, {Key: "timestamp", Value: -1}}, Options: options.Index().SetName("idx_mov_tenant_item_time")},
+			{Keys: bson.D{{Key: "tenantId", Value: 1}, {Key: "movementType", Value: 1}}, Options: options.Index().SetName("idx_mov_tenant_type")},
+		},
+		"stock_counts": {
+			{Keys: bson.D{{Key: "tenantId", Value: 1}, {Key: "countNumber", Value: 1}}, Options: options.Index().SetUnique(true).SetName("idx_sc_tenant_num")},
+		},
+		"stock_transfers": {
+			{Keys: bson.D{{Key: "tenantId", Value: 1}, {Key: "transferNumber", Value: 1}}, Options: options.Index().SetUnique(true).SetName("idx_tr_tenant_num")},
+		},
+		"inventory_outlets": {
+			{Keys: bson.D{{Key: "tenantId", Value: 1}, {Key: "code", Value: 1}}, Options: options.Index().SetName("idx_outlet_tenant_code")},
+		},
+		"inventory_settings": {
+			{Keys: bson.D{{Key: "tenantId", Value: 1}}, Options: options.Index().SetUnique(true).SetName("idx_inv_settings_tenant")},
+		},
+		"inventory_order_deductions": {
+			{Keys: bson.D{{Key: "tenantId", Value: 1}, {Key: "orderId", Value: 1}}, Options: options.Index().SetUnique(true).SetName("idx_deduction_tenant_order")},
+		},
 	}
 
 	for collName, models := range indexDefs {

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	domaininv "github.com/dineflow/api/internal/domain/inventory"
 	"github.com/dineflow/api/internal/domain/menu"
 	domainplat "github.com/dineflow/api/internal/domain/platform"
 	"github.com/dineflow/api/internal/domain/table"
@@ -498,6 +499,13 @@ func seedDefaultData(ctx context.Context, db *mongoinfra.Client, log *zap.Logger
 		log.Warn("Failed to seed platform data", zap.Error(err))
 	}
 
+	// Seed inventory data (outlets, suppliers, raw ingredients, recipes)
+	if !tenantID.IsZero() {
+		if err := seedInventoryData(ctx, db, tenantID, log); err != nil {
+			log.Warn("Failed to seed inventory data", zap.Error(err))
+		}
+	}
+
 	return nil
 }
 
@@ -937,6 +945,381 @@ func runStartupCleanup(ctx context.Context, db *mongoinfra.Client, log *zap.Logg
 	}
 
 	log.Info("🧹 MongoDB disk cleanup complete")
+	return nil
+}
+
+func seedInventoryData(ctx context.Context, db *mongoinfra.Client, tenantID bson.ObjectID, log *zap.Logger) error {
+	itemsColl := db.Collection("inventory_items")
+	recipesColl := db.Collection("recipes")
+	suppColl := db.Collection("suppliers")
+	outletsColl := db.Collection("inventory_outlets")
+	settingsColl := db.Collection("inventory_settings")
+	menuColl := db.Collection("menu_items")
+
+	// 1. Ensure primary outlet
+	outletCount, _ := outletsColl.CountDocuments(ctx, bson.M{"tenantId": tenantID})
+	var primaryOutletID bson.ObjectID
+	if outletCount == 0 {
+		primaryOutletID = bson.NewObjectID()
+		_, _ = outletsColl.InsertOne(ctx, domaininv.Outlet{
+			ID:         primaryOutletID,
+			TenantID:   tenantID,
+			Name:       "Main Kitchen & Bar",
+			Code:       "MAIN-01",
+			Department: "Food & Beverage",
+			IsPrimary:  true,
+			IsActive:   true,
+			CreatedAt:  time.Now().UTC(),
+		})
+	}
+
+	// 2. Ensure sample suppliers
+	suppCount, _ := suppColl.CountDocuments(ctx, bson.M{"tenantId": tenantID})
+	var suppDelhi, suppHimalaya, suppOcean, suppValrhona bson.ObjectID
+	now := time.Now().UTC()
+	if suppCount == 0 {
+		suppDelhi = bson.NewObjectID()
+		suppHimalaya = bson.NewObjectID()
+		suppOcean = bson.NewObjectID()
+		suppValrhona = bson.NewObjectID()
+
+		_, _ = suppColl.InsertMany(ctx, []interface{}{
+			domaininv.Supplier{
+				ID:                 suppDelhi,
+				TenantID:           tenantID,
+				Name:               "Delhi Dairy Farms",
+				ContactPerson:      "Vipul Sharma",
+				Phone:              "+919811122233",
+				Email:              "orders@delhidairy.com",
+				SuppliedCategories: []string{"Dairy", "Cheese"},
+				IsActive:           true,
+				CreatedAt:          now,
+				UpdatedAt:          now,
+			},
+			domaininv.Supplier{
+				ID:                 suppHimalaya,
+				TenantID:           tenantID,
+				Name:               "Himalayan Forest Truffles & Produce",
+				ContactPerson:      "Rajesh Rawat",
+				Phone:              "+919811133344",
+				Email:              "supply@himalayantruffles.in",
+				SuppliedCategories: []string{"Produce", "Spices", "Oils"},
+				IsActive:           true,
+				CreatedAt:          now,
+				UpdatedAt:          now,
+			},
+			domaininv.Supplier{
+				ID:                 suppOcean,
+				TenantID:           tenantID,
+				Name:               "Ocean Catch Seafood Co",
+				ContactPerson:      "Kenneth Dias",
+				Phone:              "+919811144455",
+				Email:              "orders@oceancatch.co.in",
+				SuppliedCategories: []string{"Seafood"},
+				IsActive:           true,
+				CreatedAt:          now,
+				UpdatedAt:          now,
+			},
+			domaininv.Supplier{
+				ID:                 suppValrhona,
+				TenantID:           tenantID,
+				Name:               "Valrhona Gourmet Imports",
+				ContactPerson:      "Sophie Martin",
+				Phone:              "+919811155566",
+				Email:              "sales@valrhona-india.com",
+				SuppliedCategories: []string{"Pastry", "Baking"},
+				IsActive:           true,
+				CreatedAt:          now,
+				UpdatedAt:          now,
+			},
+		})
+		log.Info("🌱 Seeded initial suppliers for demo restaurant")
+	}
+
+	// 3. Ensure sample inventory items
+	itemCount, _ := itemsColl.CountDocuments(ctx, bson.M{"tenantId": tenantID})
+	if itemCount == 0 {
+		items := []interface{}{
+			domaininv.InventoryItem{
+				ID:                bson.NewObjectID(),
+				TenantID:          tenantID,
+				Name:              "Wild Forest Mushrooms",
+				SKU:               "ING-MUSH-001",
+				Category:          "Produce",
+				ItemType:          domaininv.ItemTypeRawIngredient,
+				BaseUnit:          "g",
+				PurchaseUnit:      "kg",
+				ConversionFactor:  1000,
+				CurrentQuantity:   15000, // 15 kg
+				MinStockLevel:     3000,  // 3 kg
+				AvgPurchaseCost:   0.65,  // Rs. 0.65 / g -> Rs. 650 / kg
+				LastPurchasePrice: 650.0,
+				StorageLocation:   "Walk-in Cooler 1",
+				CreatedAt:         now,
+				UpdatedAt:         now,
+			},
+			domaininv.InventoryItem{
+				ID:                bson.NewObjectID(),
+				TenantID:          tenantID,
+				Name:              "Black Truffle Oil",
+				SKU:               "ING-TRUF-002",
+				Category:          "Oils",
+				ItemType:          domaininv.ItemTypeRawIngredient,
+				BaseUnit:          "ml",
+				PurchaseUnit:      "bottle",
+				ConversionFactor:  500, // 500 ml
+				CurrentQuantity:   3500,
+				MinStockLevel:     1000,
+				AvgPurchaseCost:   3.2,
+				LastPurchasePrice: 1600.0,
+				StorageLocation:   "Dry Pantry Shelf 2",
+				CreatedAt:         now,
+				UpdatedAt:         now,
+			},
+			domaininv.InventoryItem{
+				ID:                bson.NewObjectID(),
+				TenantID:          tenantID,
+				Name:              "Artisanal Sourdough Bread",
+				SKU:               "ING-BRED-003",
+				Category:          "Bakery",
+				ItemType:          domaininv.ItemTypeRawIngredient,
+				BaseUnit:          "pcs",
+				PurchaseUnit:      "pcs",
+				ConversionFactor:  1,
+				CurrentQuantity:   40,
+				MinStockLevel:     10,
+				AvgPurchaseCost:   85.0,
+				LastPurchasePrice: 85.0,
+				StorageLocation:   "Bakery Station",
+				CreatedAt:         now,
+				UpdatedAt:         now,
+			},
+			domaininv.InventoryItem{
+				ID:                bson.NewObjectID(),
+				TenantID:          tenantID,
+				Name:              "Fresh Burrata 150g",
+				SKU:               "ING-BURR-004",
+				Category:          "Dairy",
+				ItemType:          domaininv.ItemTypeRawIngredient,
+				BaseUnit:          "pcs",
+				PurchaseUnit:      "box",
+				ConversionFactor:  12, // 12 pcs / box
+				CurrentQuantity:   48,
+				MinStockLevel:     12,
+				AvgPurchaseCost:   120.0,
+				LastPurchasePrice: 1440.0,
+				StorageLocation:   "Walk-in Cooler 1",
+				CreatedAt:         now,
+				UpdatedAt:         now,
+			},
+			domaininv.InventoryItem{
+				ID:                bson.NewObjectID(),
+				TenantID:          tenantID,
+				Name:              "Chilean Sea Bass Fillet",
+				SKU:               "ING-BASS-005",
+				Category:          "Seafood",
+				ItemType:          domaininv.ItemTypeRawIngredient,
+				BaseUnit:          "g",
+				PurchaseUnit:      "kg",
+				ConversionFactor:  1000,
+				CurrentQuantity:   8000, // 8 kg
+				MinStockLevel:     2000,
+				AvgPurchaseCost:   1.8, // Rs. 1800 / kg
+				LastPurchasePrice: 1800.0,
+				StorageLocation:   "Seafood Freezer 2",
+				CreatedAt:         now,
+				UpdatedAt:         now,
+			},
+			domaininv.InventoryItem{
+				ID:                bson.NewObjectID(),
+				TenantID:          tenantID,
+				Name:              "Valrhona 70% Dark Chocolate",
+				SKU:               "ING-CHOC-006",
+				Category:          "Pastry",
+				ItemType:          domaininv.ItemTypeRawIngredient,
+				BaseUnit:          "g",
+				PurchaseUnit:      "kg",
+				ConversionFactor:  1000,
+				CurrentQuantity:   12000, // 12 kg
+				MinStockLevel:     2500,
+				AvgPurchaseCost:   1.4, // Rs. 1400 / kg
+				LastPurchasePrice: 1400.0,
+				StorageLocation:   "Pastry Store",
+				CreatedAt:         now,
+				UpdatedAt:         now,
+			},
+		}
+		_, _ = itemsColl.InsertMany(ctx, items)
+		log.Info("🌱 Seeded initial inventory raw ingredient items")
+	}
+
+	// 4. Link recipes to menu items
+	recCount, _ := recipesColl.CountDocuments(ctx, bson.M{"tenantId": tenantID})
+	if recCount == 0 {
+		var bruschettaItem, bassItem, pizzaItem, cakeItem struct {
+			ID   bson.ObjectID `bson:"_id"`
+			Name string        `bson:"name"`
+		}
+		_ = menuColl.FindOne(ctx, bson.M{"tenantId": tenantID, "slug": "truffle-wild-mushroom-bruschetta"}).Decode(&bruschettaItem)
+		_ = menuColl.FindOne(ctx, bson.M{"tenantId": tenantID, "slug": "pan-seared-sea-bass"}).Decode(&bassItem)
+		_ = menuColl.FindOne(ctx, bson.M{"tenantId": tenantID, "slug": "artisanal-woodfired-burrata-pizza"}).Decode(&pizzaItem)
+		_ = menuColl.FindOne(ctx, bson.M{"tenantId": tenantID, "slug": "valrhona-dark-chocolate-lava-cake"}).Decode(&cakeItem)
+
+		var mushItem, trufItem, breadItem, burrItem, fishItem, chocItem domaininv.InventoryItem
+		_ = itemsColl.FindOne(ctx, bson.M{"tenantId": tenantID, "sku": "ING-MUSH-001"}).Decode(&mushItem)
+		_ = itemsColl.FindOne(ctx, bson.M{"tenantId": tenantID, "sku": "ING-TRUF-002"}).Decode(&trufItem)
+		_ = itemsColl.FindOne(ctx, bson.M{"tenantId": tenantID, "sku": "ING-BRED-003"}).Decode(&breadItem)
+		_ = itemsColl.FindOne(ctx, bson.M{"tenantId": tenantID, "sku": "ING-BURR-004"}).Decode(&burrItem)
+		_ = itemsColl.FindOne(ctx, bson.M{"tenantId": tenantID, "sku": "ING-BASS-005"}).Decode(&fishItem)
+		_ = itemsColl.FindOne(ctx, bson.M{"tenantId": tenantID, "sku": "ING-CHOC-006"}).Decode(&chocItem)
+
+		if !bruschettaItem.ID.IsZero() && !mushItem.ID.IsZero() {
+			rec1 := domaininv.Recipe{
+				ID:            bson.NewObjectID(),
+				TenantID:      tenantID,
+				MenuItemID:    bruschettaItem.ID,
+				MenuItemName:  bruschettaItem.Name,
+				Name:          "Bruschetta Standard Recipe",
+				YieldServings: 1.0,
+				SellingPrice:  420.0,
+				Version:       1,
+				IsActive:      true,
+				Ingredients: []domaininv.RecipeIngredient{
+					{
+						InventoryItemID:   mushItem.ID,
+						InventoryItemName: mushItem.Name,
+						Quantity:          120, // 120g
+						Unit:              "g",
+						PrepLossPercent:   5.0,
+						UnitCost:          mushItem.AvgPurchaseCost,
+					},
+					{
+						InventoryItemID:   trufItem.ID,
+						InventoryItemName: trufItem.Name,
+						Quantity:          10, // 10 ml
+						Unit:              "ml",
+						PrepLossPercent:   0,
+						UnitCost:          trufItem.AvgPurchaseCost,
+					},
+					{
+						InventoryItemID:   breadItem.ID,
+						InventoryItemName: breadItem.Name,
+						Quantity:          0.25, // 1/4 loaf
+						Unit:              "pcs",
+						PrepLossPercent:   0,
+						UnitCost:          breadItem.AvgPurchaseCost,
+					},
+				},
+				CreatedAt: now,
+				UpdatedAt: now,
+			}
+			rec1.Recalculate()
+			_, _ = recipesColl.InsertOne(ctx, rec1)
+		}
+
+		if !bassItem.ID.IsZero() && !fishItem.ID.IsZero() {
+			rec2 := domaininv.Recipe{
+				ID:            bson.NewObjectID(),
+				TenantID:      tenantID,
+				MenuItemID:    bassItem.ID,
+				MenuItemName:  bassItem.Name,
+				Name:          "Herb Butter Sea Bass Recipe",
+				YieldServings: 1.0,
+				SellingPrice:  890.0,
+				Version:       1,
+				IsActive:      true,
+				Ingredients: []domaininv.RecipeIngredient{
+					{
+						InventoryItemID:   fishItem.ID,
+						InventoryItemName: fishItem.Name,
+						Quantity:          220, // 220g portion
+						Unit:              "g",
+						PrepLossPercent:   8.0,
+						UnitCost:          fishItem.AvgPurchaseCost,
+					},
+				},
+				CreatedAt: now,
+				UpdatedAt: now,
+			}
+			rec2.Recalculate()
+			_, _ = recipesColl.InsertOne(ctx, rec2)
+		}
+
+		if !pizzaItem.ID.IsZero() && !burrItem.ID.IsZero() {
+			rec3 := domaininv.Recipe{
+				ID:            bson.NewObjectID(),
+				TenantID:      tenantID,
+				MenuItemID:    pizzaItem.ID,
+				MenuItemName:  pizzaItem.Name,
+				Name:          "Burrata Pizza Recipe",
+				YieldServings: 1.0,
+				SellingPrice:  680.0,
+				Version:       1,
+				IsActive:      true,
+				Ingredients: []domaininv.RecipeIngredient{
+					{
+						InventoryItemID:   burrItem.ID,
+						InventoryItemName: burrItem.Name,
+						Quantity:          1.0, // 1 whole burrata
+						Unit:              "pcs",
+						PrepLossPercent:   0,
+						UnitCost:          burrItem.AvgPurchaseCost,
+					},
+				},
+				CreatedAt: now,
+				UpdatedAt: now,
+			}
+			rec3.Recalculate()
+			_, _ = recipesColl.InsertOne(ctx, rec3)
+		}
+
+		if !cakeItem.ID.IsZero() && !chocItem.ID.IsZero() {
+			rec4 := domaininv.Recipe{
+				ID:            bson.NewObjectID(),
+				TenantID:      tenantID,
+				MenuItemID:    cakeItem.ID,
+				MenuItemName:  cakeItem.Name,
+				Name:          "Lava Cake Recipe",
+				YieldServings: 1.0,
+				SellingPrice:  380.0,
+				Version:       1,
+				IsActive:      true,
+				Ingredients: []domaininv.RecipeIngredient{
+					{
+						InventoryItemID:   chocItem.ID,
+						InventoryItemName: chocItem.Name,
+						Quantity:          85, // 85g chocolate
+						Unit:              "g",
+						PrepLossPercent:   2.0,
+						UnitCost:          chocItem.AvgPurchaseCost,
+					},
+				},
+				CreatedAt: now,
+				UpdatedAt: now,
+			}
+			rec4.Recalculate()
+			_, _ = recipesColl.InsertOne(ctx, rec4)
+		}
+
+		log.Info("🌱 Seeded initial recipes and food costing benchmarks for menu items")
+	}
+
+	// 5. Ensure inventory settings
+	settingsCount, _ := settingsColl.CountDocuments(ctx, bson.M{"tenantId": tenantID})
+	if settingsCount == 0 {
+		_, _ = settingsColl.InsertOne(ctx, domaininv.InventorySettings{
+			ID:                     bson.NewObjectID(),
+			TenantID:               tenantID,
+			DeductionTrigger:       domaininv.DeductionOnOrderPreparing,
+			AllowNegativeStock:     false,
+			StrictStockEnforcement: false,
+			Auto86OnZeroStock:      true,
+			ExpiryAlertDays:        7,
+			ReversalPolicy:         "return_to_stock",
+			UpdatedAt:              now,
+		})
+	}
+
 	return nil
 }
 
