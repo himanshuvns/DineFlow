@@ -161,24 +161,28 @@ export default function LoginPage() {
       )}
 
       {/* ======================================================== */}
-      {/* FLOATING LOGIN CARD                                      */}
+      {/* LUXURY FLOATING LOGIN CARD                               */}
       {/* ======================================================== */}
-      <div className="w-full max-w-xl mx-auto relative rounded-[28px] sm:rounded-[36px] bg-white/95 dark:bg-[#0F172A]/85 backdrop-blur-2xl border border-slate-200/90 dark:border-white/10 p-6 sm:p-8 lg:p-9 shadow-[0_20px_50px_rgba(0,0,0,0.08)] dark:shadow-[0_24px_70px_rgba(0,0,0,0.65)] text-slate-900 dark:text-[#F8FAFC] transition-colors duration-200">
-        {/* Subtle glossy top reflection */}
-        <div className="absolute inset-x-8 top-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-500/20 dark:via-[#14F1C7]/30 to-transparent pointer-events-none rounded-t-[36px]" />
+      <div className="w-full max-w-lg mx-auto relative rounded-[28px] sm:rounded-[36px] bg-white/95 dark:bg-[#0F172A]/85 backdrop-blur-3xl border border-slate-200/90 dark:border-white/10 p-6 sm:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.08)] dark:shadow-[0_24px_70px_rgba(0,0,0,0.65)] text-slate-900 dark:text-[#F8FAFC] transition-colors duration-200">
+        {/* Specular glossy top reflection */}
+        <div className="absolute inset-x-8 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-emerald-500/30 dark:via-[#14F1C7]/40 to-transparent pointer-events-none rounded-t-[36px]" />
 
         {/* Card Header */}
         <div className="text-center pb-4 sm:pb-5">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-[#14F1C7] text-[11px] font-semibold mb-2">
+            <ShieldCheck className="h-3 w-3" />
+            <span>Enterprise Multi-Tenant Control Plane</span>
+          </div>
           <h2 className="text-2xl sm:text-3xl font-display font-extrabold text-slate-900 dark:text-white tracking-tight">
             Sign in to DineFlow
           </h2>
-          <p className="mt-1.5 text-xs sm:text-sm font-body text-slate-600 dark:text-[#94A3B8] max-w-sm mx-auto leading-relaxed">
+          <p className="mt-1 text-xs sm:text-sm font-body text-slate-600 dark:text-[#94A3B8] max-w-sm mx-auto leading-relaxed">
             Enter your work email and password to access your restaurant workspace
           </p>
         </div>
 
         {/* Super Admin Test Credentials Pill (Only Super Admin) */}
-        <div className="mb-5 p-3 rounded-2xl bg-slate-100/80 dark:bg-slate-900/60 border border-slate-200/90 dark:border-slate-800/80 flex items-center justify-between gap-3">
+        <div className="mb-4 p-2.5 px-3.5 rounded-2xl bg-slate-100/80 dark:bg-slate-900/60 border border-slate-200/90 dark:border-slate-800/80 flex items-center justify-between gap-3 select-none">
           <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
             <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-[#14F1C7] shrink-0" />
             <span className="font-medium">Platform Super Admin</span>
@@ -186,9 +190,9 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={handleFillSuperAdmin}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-[#14F1C7] text-xs font-semibold hover:bg-emerald-500/20 transition-all cursor-pointer"
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-[#14F1C7] text-xs font-semibold hover:bg-emerald-500/20 transition-all cursor-pointer"
           >
-            <span>Auto-fill Super Admin</span>
+            <span>Auto-fill</span>
           </button>
         </div>
 
@@ -254,7 +258,7 @@ export default function LoginPage() {
           </div>
         </form>
 
-        <div className="mt-5 text-center">
+        <div className="mt-4 text-center">
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
             Don&apos;t have a workspace?{" "}
             <Link
@@ -267,18 +271,18 @@ export default function LoginPage() {
         </div>
 
         {/* Bottom Trust Section */}
-        <div className="mt-5 pt-4 border-t border-slate-200/80 dark:border-white/10 grid grid-cols-1 xs:grid-cols-3 gap-2.5 text-center select-none">
+        <div className="mt-4 pt-3 border-t border-slate-200/80 dark:border-white/10 grid grid-cols-1 xs:grid-cols-3 gap-2.5 text-center select-none">
           <div className="flex items-center justify-center gap-1.5 text-xs text-slate-600 dark:text-slate-400 font-medium">
             <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-[#14F1C7] shrink-0" />
             <span className="truncate">Secure & Encrypted</span>
           </div>
           <div className="flex items-center justify-center gap-1.5 text-xs text-slate-600 dark:text-slate-400 font-medium">
             <Headphones className="h-4 w-4 text-emerald-600 dark:text-[#14F1C7] shrink-0" />
-            <span className="truncate">24/7 Support</span>
+            <span className="truncate">24/7 Priority Support</span>
           </div>
           <div className="flex items-center justify-center gap-1.5 text-xs text-slate-600 dark:text-slate-400 font-medium">
             <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-[#14F1C7] shrink-0" />
-            <span className="truncate">No Setup Fees</span>
+            <span className="truncate">Zero Setup Fees</span>
           </div>
         </div>
       </div>
