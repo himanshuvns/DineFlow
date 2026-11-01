@@ -72,6 +72,24 @@ func (h *InventoryHandler) CreateItem(c *gin.Context) {
 	response.Created(c, item)
 }
 
+func (h *InventoryHandler) BulkImportItems(c *gin.Context) {
+	tenantID := middleware.GetTenantID(c)
+	tOID, _ := bson.ObjectIDFromHex(tenantID)
+
+	var input appinv.BulkImportInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		response.BadRequest(c, "INVALID_INPUT", err.Error())
+		return
+	}
+
+	result, err := h.service.BulkImportItems(c.Request.Context(), tOID, input)
+	if err != nil {
+		response.InternalError(c)
+		return
+	}
+	response.OK(c, result)
+}
+
 func (h *InventoryHandler) GetItem(c *gin.Context) {
 	tenantID := middleware.GetTenantID(c)
 	tOID, _ := bson.ObjectIDFromHex(tenantID)

@@ -569,3 +569,13 @@ func (s *InventorySettings) Validate() error {
 	}
 	return nil
 }
+
+// BulkImportResult summarizes the outcome of a bulk inventory import or upsert operation.
+type BulkImportResult struct {
+	TotalProcessed int      `json:"totalProcessed"`
+	CreatedCount   int      `json:"createdCount"`
+	UpdatedCount   int      `json:"updatedCount"`
+	SkippedCount   int      `json:"skippedCount"`
+	Errors         []string `json:"errors,omitempty"`
+}
+

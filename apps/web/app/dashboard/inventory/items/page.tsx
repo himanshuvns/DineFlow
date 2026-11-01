@@ -19,6 +19,7 @@ import {
   XCircle,
   SlidersHorizontal,
   RefreshCw,
+  FileSpreadsheet,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,7 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
+import { ExcelBulkImportModal } from "@/components/inventory/excel-bulk-import-modal";
 import { useInventoryStore, InventoryItem, StockStatus } from "@/lib/stores/inventory-store";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { formatCurrency, cn } from "@/lib/utils";
@@ -67,9 +69,8 @@ export default function InventoryItemsPage() {
   const [adjustReason, setAdjustReason] = React.useState<"Wastage" | "Correction" | "Damaged" | "Opening Stock" | "Sampling">("Wastage");
   const [adjustNotes, setAdjustNotes] = React.useState("");
 
-  // CSV Import Modal
-  const [importModalOpen, setImportModalOpen] = React.useState(false);
-  const [csvText, setCsvText] = React.useState("");
+  // Excel / CSV Bulk Import Modal
+  const [excelImportModalOpen, setExcelImportModalOpen] = React.useState(false);
 
   // Add/Edit Form State
   const [formData, setFormData] = React.useState({
@@ -259,40 +260,31 @@ export default function InventoryItemsPage() {
     toast({ title: "Export Complete", description: "Inventory items catalog downloaded to CSV." });
   };
 
-  // CSV Bulk Import
-  const handleBulkImport = () => {
-    if (!csvText.trim()) return;
-    const lines = csvText.trim().split("\n");
-    let count = 0;
+  // Download Starter Excel Template
+  const handleDownloadTemplate = () => {
+    const template = `\uFEFFItem Name,SKU,Category,Current Stock,Base Unit,Purchase Unit,Pack Conversion Factor,Purchase Cost (INR),Storage Location,Track Expiry (YES/NO),Shelf Life (Days)
+Packaged Drinking Water 1L,WAT-001,Beverages,240,Bottle,Crate (24x),24,360,Bar Cellar / Beverage Bay,NO,
+Fresh Full Cream Milk,MILK-001,Dairy,25000,ml,Pouch 1L,1000,64,Walk-in Chiller,YES,4
+Fortune Cooking Oil,OIL-001,Oils & Fats,60000,ml,Tin 15L,15000,2100,Dry Storage Rack B,YES,180
+Daawat Basmati Rice,RIC-001,Dry Pantry,100000,g,Bag 25kg,25000,2750,Dry Store Shelf A,NO,
+Fresh Red Onions,VEG-001,Produce,50000,g,Sack 50kg,50000,1400,Vegetable Bins,YES,14
+Kraft Meal Takeaway Box 750ml,PKG-001,Packaging & Disposables,500,pcs,Bundle 100pcs,100,650,Packaging Bay,NO,
+Housekeeping Floor Disinfectant,CLN-001,Cleaning & Hygiene,20000,ml,Can 5L,5000,450,Housekeeping Store,NO,`;
 
-    for (let i = 1; i < lines.length; i++) {
-      const parts = lines[i].split(",").map((s) => s.trim().replace(/^"|"$/g, ""));
-      if (parts.length >= 5) {
-        const [name, sku, category, stock, unit, cost] = parts;
-        addItem({
-          name: name || "Imported Item",
-          sku: sku || `SKU-${Date.now()}-${i}`,
-          category: category || "Produce",
-          currentStock: parseFloat(stock) || 0,
-          minStock: 500,
-          reorderPoint: 1000,
-          maxStock: 5000,
-          baseUnit: unit || "g",
-          purchaseUnit: "kg",
-          conversionFactor: 1000,
-          averageCost: parseFloat(cost) || 0.5,
-          purchaseCost: (parseFloat(cost) || 0.5) * 1000,
-          storageLocation: "Central Storage",
-          trackExpiry: false,
-          trackBatches: false,
-        });
-        count++;
-      }
-    }
+    const blob = new Blob([template], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `dineflow_inventory_template_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
 
-    toast({ title: "Import Successful", description: `Imported ${count} items from CSV data.` });
-    setImportModalOpen(false);
-    setCsvText("");
+    toast({
+      title: "Template Downloaded",
+      description: "Open in Microsoft Excel, Numbers, or Google Sheets to populate your catalog.",
+    });
   };
 
   // Filtering
@@ -334,18 +326,29 @@ export default function InventoryItemsPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setImportModalOpen(true)}
-            className="gap-2 cursor-pointer"
+            onClick={handleDownloadTemplate}
+            className="gap-2 cursor-pointer border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300"
           >
-            <Upload className="h-4 w-4" />
-            <span className="hidden sm:inline">Bulk Import</span>
+            <Download className="h-4 w-4 text-slate-500" />
+            <span className="hidden sm:inline">Excel Template</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setExcelImportModalOpen(true)}
+            className="gap-2 cursor-pointer border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/10"
+          >
+            <FileSpreadsheet className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            <span>Import Excel / CSV</span>
           </Button>
 
           <Button
             variant="outline"
             size="sm"
             onClick={handleExportCSV}
-            className="gap-2 cursor-pointer"
+            disabled={items.length === 0}
+            className="gap-2 cursor-pointer border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 disabled:opacity-50"
           >
             <Download className="h-4 w-4" />
             <span className="hidden sm:inline">Export CSV</span>
@@ -428,7 +431,78 @@ export default function InventoryItemsPage() {
       </div>
 
       {/* Main Catalog View */}
-      {viewMode === "table" ? (
+      {items.length === 0 ? (
+        <Card className="rounded-3xl border-dashed border-2 border-slate-300 dark:border-slate-800 bg-white/70 dark:bg-slate-900/40 p-8 sm:p-12 text-center space-y-6 shadow-xs">
+          <div className="max-w-xl mx-auto space-y-3">
+            <div className="mx-auto w-16 h-16 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center justify-center shadow-xs">
+              <FileSpreadsheet className="h-8 w-8" />
+            </div>
+            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+              Your Stock Catalog is Clean & Ready
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+              As a freshly registered property, your inventory ledger starts with zero static demo data.
+              Easily upload your hotel&apos;s drinking water, pantry ingredients, cleaning supplies, and packaging from Excel or add them individually.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto pt-2 text-left">
+            <div
+              onClick={() => setExcelImportModalOpen(true)}
+              className="p-5 rounded-2xl border border-emerald-500/40 bg-gradient-to-b from-emerald-500/10 to-teal-500/5 hover:border-emerald-500 transition-all cursor-pointer space-y-2 group shadow-2xs hover:shadow-md"
+            >
+              <div className="p-2.5 rounded-xl bg-emerald-500 text-white w-fit group-hover:scale-105 transition-transform shadow-xs">
+                <FileSpreadsheet className="h-5 w-5" />
+              </div>
+              <h3 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">
+                Import from Excel / CSV
+              </h3>
+              <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                Bulk upload your entire catalog with units, stock quantities, and pack costs in one click.
+              </p>
+              <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 pt-1 group-hover:translate-x-0.5 transition-transform">
+                Open Spreadsheet Uploader &rarr;
+              </span>
+            </div>
+
+            <div
+              onClick={handleDownloadTemplate}
+              className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-slate-300 dark:hover:border-slate-700 transition-all cursor-pointer space-y-2 group shadow-2xs hover:shadow-md"
+            >
+              <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 w-fit group-hover:scale-105 transition-transform">
+                <Download className="h-5 w-5" />
+              </div>
+              <h3 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">
+                Download Starter Template
+              </h3>
+              <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                Pre-formatted .csv template filled with drinking water, dairy, oils, packaging & housekeeping.
+              </p>
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1 pt-1 group-hover:translate-x-0.5 transition-transform">
+                Download Template (.csv) &rarr;
+              </span>
+            </div>
+
+            <div
+              onClick={handleOpenAdd}
+              className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-slate-300 dark:hover:border-slate-700 transition-all cursor-pointer space-y-2 group shadow-2xs hover:shadow-md"
+            >
+              <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 w-fit group-hover:scale-105 transition-transform">
+                <Plus className="h-5 w-5" />
+              </div>
+              <h3 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">
+                Add Single Item Manually
+              </h3>
+              <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                Step-by-step entry for unit conversions, preferred suppliers, and reorder alerts.
+              </p>
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1 pt-1 group-hover:translate-x-0.5 transition-transform">
+                Create First Item &rarr;
+              </span>
+            </div>
+          </div>
+        </Card>
+      ) : viewMode === "table" ? (
         <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-xs overflow-hidden">
           <div className="overflow-x-auto">
             <Table>
@@ -966,37 +1040,11 @@ export default function InventoryItemsPage() {
         )}
       </Modal>
 
-      {/* CSV Bulk Import Modal */}
-      <Modal
-        isOpen={importModalOpen}
-        onClose={() => setImportModalOpen(false)}
-        title="CSV Bulk Inventory Import"
-        description="Paste comma-separated rows: Name, SKU, Category, Stock, Unit, Cost"
-        size="md"
-        footer={
-          <div className="flex items-center justify-end gap-2">
-            <Button variant="outline" size="sm" onClick={() => setImportModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button size="sm" onClick={handleBulkImport} className="bg-emerald-600 hover:bg-emerald-700 text-white">
-              Import Items
-            </Button>
-          </div>
-        }
-      >
-        <div className="space-y-3">
-          <p className="text-xs text-slate-500">
-            Format: Name, SKU, Category, CurrentStock, Unit, CostPerUnit
-          </p>
-          <textarea
-            rows={8}
-            value={csvText}
-            onChange={(e) => setCsvText(e.target.value)}
-            placeholder={`Name,SKU,Category,CurrentStock,Unit,Cost\nCheddar Cheese,DAI-CHD-01,Dairy,5000,g,0.65\nBasmati Rice,DRY-BAS-02,Dry Pantry,30000,g,0.18`}
-            className="w-full p-3 rounded-xl font-mono text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-emerald-500/20"
-          />
-        </div>
-      </Modal>
+      {/* Excel / Spreadsheet Bulk Import Modal */}
+      <ExcelBulkImportModal
+        isOpen={excelImportModalOpen}
+        onClose={() => setExcelImportModalOpen(false)}
+      />
     </div>
   );
 }

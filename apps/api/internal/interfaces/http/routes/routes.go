@@ -465,6 +465,7 @@ func Setup(
 				invGroup.GET("/dashboard", inventoryHandler.GetDashboardSummary)
 				invGroup.GET("/items", inventoryHandler.ListItems)
 				invGroup.POST("/items", middleware.OwnerOrManager(), inventoryHandler.CreateItem)
+				invGroup.POST("/items/bulk", middleware.OwnerOrManager(), inventoryHandler.BulkImportItems)
 				invGroup.GET("/items/:id", inventoryHandler.GetItem)
 				invGroup.PUT("/items/:id", middleware.OwnerOrManager(), inventoryHandler.UpdateItem)
 				invGroup.DELETE("/items/:id", middleware.OwnerOnly(), inventoryHandler.DeleteItem)

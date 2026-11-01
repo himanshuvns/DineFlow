@@ -1,8 +1,7 @@
-"use client";
-
+import * as React from "react";
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 import { apiClient } from "@/lib/api";
+import { useAuthStore, Tenant, User } from "./auth-store";
 
 // ── Types & Interfaces ────────────────────────────────────────────────────────
 
@@ -1379,6 +1378,30 @@ const DEFAULT_SETTINGS: InventorySettings = {
   autoGeneratePoOnLowStock: false,
 };
 
+// Demo Constants
+export const DEMO_ITEMS = SEED_ITEMS;
+export const DEMO_SUPPLIERS = SEED_SUPPLIERS;
+export const DEMO_POS = SEED_POS;
+export const DEMO_GRNS = SEED_GRNS;
+export const DEMO_RECIPES = SEED_RECIPES;
+export const DEMO_MOVEMENTS = SEED_MOVEMENTS;
+export const DEMO_COUNTS = SEED_COUNTS;
+export const DEMO_TRANSFERS = SEED_TRANSFERS;
+
+export const getInventoryStorageKey = (tenantId: string) => `dineflow_inventory_v2_${tenantId}`;
+
+export function persistTenantInventoryState(tenantId: string | null, state: any) {
+  if (typeof window === "undefined" || !tenantId) return;
+  try {
+    const key = getInventoryStorageKey(tenantId);
+    const existingRaw = localStorage.getItem(key);
+    const existing = existingRaw ? JSON.parse(existingRaw) : {};
+    localStorage.setItem(key, JSON.stringify({ ...existing, ...state, updatedAt: new Date().toISOString() }));
+  } catch (e) {
+    console.warn("Could not persist inventory state:", e);
+  }
+}
+
 // ── Store State Interface ─────────────────────────────────────────────────────
 
 interface InventoryStoreState {
@@ -1394,6 +1417,14 @@ interface InventoryStoreState {
   filters: InventoryFilters;
   isLoading: boolean;
   error: string | null;
+
+  // Multi-Tenant Isolation & Lifecycle
+  tenantId: string | null;
+  isDemoTenant: boolean;
+  initialized: boolean;
+  initializeTenant: (tenant: any, user: any) => Promise<void>;
+  resetTenantInventory: () => void;
+  loadDemoInventory: () => void;
 
   // Metric Computations
   getMetrics: () => DashboardMetrics;
@@ -1418,6 +1449,11 @@ interface InventoryStoreState {
     actorName: string;
     actorRole: string;
   }) => Promise<void>;
+  bulkUpsertItems: (
+    itemsData: Array<Omit<InventoryItem, "id" | "status" | "updatedAt">>,
+    mode?: "upsert" | "append" | "replace",
+    actorName?: string
+  ) => Promise<{ createdCount: number; updatedCount: number }>;
 
   // Supplier Management
   addSupplier: (supplier: Omit<Supplier, "id" | "totalSpend" | "activeOrders">) => Promise<Supplier>;
@@ -1462,18 +1498,200 @@ function calculateItemStatus(stock: number, reorder: number, trackExpiry: boolea
 
 // ── Store Implementation ──────────────────────────────────────────────────────
 
-export const useInventoryStore = create<InventoryStoreState>()(
-  persist(
-    (set, get) => ({
-      items: SEED_ITEMS,
-      suppliers: SEED_SUPPLIERS,
-      purchaseOrders: SEED_POS,
-      grns: SEED_GRNS,
-      recipes: SEED_RECIPES,
-      movements: SEED_MOVEMENTS,
-      stockCounts: SEED_COUNTS,
-      transfers: SEED_TRANSFERS,
-      settings: DEFAULT_SETTINGS,
+export const useInventoryStore = create<InventoryStoreState>()((set, get) => ({
+  items: [],
+  suppliers: [],
+  purchaseOrders: [],
+  grns: [],
+  recipes: [],
+  movements: [],
+  stockCounts: [],
+  transfers: [],
+  settings: DEFAULT_SETTINGS,
+  filters: {
+    category: "all",
+    stockStatus: "all",
+    outlet: "all",
+    search: "",
+    dateRange: "this_month",
+  },
+  tenantId: null,
+  isDemoTenant: false,
+  initialized: false,
+  isLoading: false,
+  error: null,
+
+  initializeTenant: async (tenant: any, user: any) => {
+    const tenantId = tenant?.id || "";
+    const tenantName = tenant?.name || "";
+    const isDemoTenant = Boolean(
+      (tenant &&
+        (tenantId === "demo-tenant" ||
+          tenantId === "6aa52dd1187698227bc298ae" ||
+          tenantName.toLowerCase().includes("grand bistro"))) ||
+        user?.phone === "+91 98765 43210" ||
+        user?.phone === "+919876543210"
+    );
+
+    // If already initialized for this same tenant, skip redundant init
+    if (get().initialized && get().tenantId === tenantId) {
+      return;
+    }
+
+    // Purge old legacy un-scoped key
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.removeItem("dineflow_inventory_store");
+      } catch {}
+    }
+
+    set({
+      tenantId,
+      isDemoTenant,
+      isLoading: true,
+    });
+
+    // Check localStorage cache for this tenant
+    let cachedData: any = null;
+    if (typeof window !== "undefined" && tenantId) {
+      try {
+        const raw = localStorage.getItem(getInventoryStorageKey(tenantId));
+        if (raw) cachedData = JSON.parse(raw);
+      } catch (e) {
+        console.warn("Could not read cached inventory:", e);
+      }
+    }
+
+    if (cachedData && typeof cachedData === "object") {
+      set({
+        items: Array.isArray(cachedData.items) ? cachedData.items : [],
+        suppliers: Array.isArray(cachedData.suppliers) ? cachedData.suppliers : [],
+        purchaseOrders: Array.isArray(cachedData.purchaseOrders) ? cachedData.purchaseOrders : [],
+        grns: Array.isArray(cachedData.grns) ? cachedData.grns : [],
+        recipes: Array.isArray(cachedData.recipes) ? cachedData.recipes : [],
+        movements: Array.isArray(cachedData.movements) ? cachedData.movements : [],
+        stockCounts: Array.isArray(cachedData.stockCounts) ? cachedData.stockCounts : [],
+        transfers: Array.isArray(cachedData.transfers) ? cachedData.transfers : [],
+        settings: cachedData.settings || DEFAULT_SETTINGS,
+        isLoading: false,
+        initialized: true,
+      });
+    } else if (isDemoTenant) {
+      // Demo restaurant gets pre-populated items
+      const demoState = {
+        items: DEMO_ITEMS,
+        suppliers: DEMO_SUPPLIERS,
+        purchaseOrders: DEMO_POS,
+        grns: DEMO_GRNS,
+        recipes: DEMO_RECIPES,
+        movements: DEMO_MOVEMENTS,
+        stockCounts: DEMO_COUNTS,
+        transfers: DEMO_TRANSFERS,
+        settings: DEFAULT_SETTINGS,
+      };
+      persistTenantInventoryState(tenantId, demoState);
+      set({
+        ...demoState,
+        isLoading: false,
+        initialized: true,
+      });
+    } else {
+      // 100% Clean slate for new registered hotel / restaurant
+      const cleanState = {
+        items: [],
+        suppliers: [],
+        purchaseOrders: [],
+        grns: [],
+        recipes: [],
+        movements: [],
+        stockCounts: [],
+        transfers: [],
+        settings: DEFAULT_SETTINGS,
+      };
+      persistTenantInventoryState(tenantId, cleanState);
+      set({
+        ...cleanState,
+        isLoading: false,
+        initialized: true,
+      });
+    }
+
+    // SWR background fetch if user has active session
+    if (useAuthStore.getState().accessToken) {
+      get().fetchInventory();
+    }
+  },
+
+  resetTenantInventory: () => {
+    const tenantId = get().tenantId;
+    const cleanState = {
+      items: [],
+      suppliers: [],
+      purchaseOrders: [],
+      grns: [],
+      recipes: [],
+      movements: [],
+      stockCounts: [],
+      transfers: [],
+    };
+    set(cleanState);
+    persistTenantInventoryState(tenantId, cleanState);
+  },
+
+  loadDemoInventory: () => {
+    const tenantId = get().tenantId;
+    const demoState = {
+      items: DEMO_ITEMS,
+      suppliers: DEMO_SUPPLIERS,
+      purchaseOrders: DEMO_POS,
+      grns: DEMO_GRNS,
+      recipes: DEMO_RECIPES,
+      movements: DEMO_MOVEMENTS,
+      stockCounts: DEMO_COUNTS,
+      transfers: DEMO_TRANSFERS,
+    };
+    set(demoState);
+    persistTenantInventoryState(tenantId, demoState);
+  },
+
+  getMetrics: () => {
+    const { items, purchaseOrders, grns, movements } = get();
+    const totalItems = items.length;
+    const totalStockValue = items.reduce((sum, item) => sum + item.currentStock * item.averageCost, 0);
+    const lowStockCount = items.filter((i) => i.currentStock > 0 && i.currentStock <= i.reorderPoint).length;
+    const outOfStockCount = items.filter((i) => i.currentStock <= 0).length;
+    const expiringCount = items.filter((i) => i.status === "expiring_soon").length;
+
+    const pendingPOs = purchaseOrders.filter((po) => po.status === "pending_approval" || po.status === "ordered");
+    const pendingPOCount = pendingPOs.length;
+    const pendingPOValue = pendingPOs.reduce((sum, po) => sum + po.grandTotal, 0);
+
+    const monthlyReceivedValue = grns.reduce((sum, grn) => sum + grn.grandTotal, 0);
+    const monthlyConsumedValue = movements
+      .filter((m) => m.type === "consumption" || m.type === "wastage")
+      .reduce((sum, m) => sum + m.totalCost, 0);
+
+    return {
+      totalItems,
+      totalStockValue,
+      lowStockCount,
+      outOfStockCount,
+      expiringCount,
+      pendingPOCount,
+      pendingPOValue,
+      monthlyReceivedValue,
+      monthlyConsumedValue,
+    };
+  },
+
+  setFilter: (key, value) => {
+    set((state) => ({
+      filters: { ...state.filters, [key]: value },
+    }));
+  },
+
+  resetFilters: () => {
+    set({
       filters: {
         category: "all",
         stockStatus: "all",
@@ -1481,597 +1699,775 @@ export const useInventoryStore = create<InventoryStoreState>()(
         search: "",
         dateRange: "this_month",
       },
-      isLoading: false,
-      error: null,
+    });
+  },
 
-      getMetrics: () => {
-        const { items, purchaseOrders, grns, movements } = get();
-        const totalItems = items.length;
-        const totalStockValue = items.reduce((sum, item) => sum + item.currentStock * item.averageCost, 0);
-        const lowStockCount = items.filter((i) => i.currentStock > 0 && i.currentStock <= i.reorderPoint).length;
-        const outOfStockCount = items.filter((i) => i.currentStock <= 0).length;
-        const expiringCount = items.filter((i) => i.status === "expiring_soon").length;
+  getFilteredItems: () => {
+    const { items, filters } = get();
+    return items.filter((item) => {
+      if (filters.category !== "all" && item.category !== filters.category) return false;
+      if (filters.stockStatus !== "all" && item.status !== filters.stockStatus) return false;
+      if (filters.search) {
+        const query = filters.search.toLowerCase();
+        const matchesName = item.name.toLowerCase().includes(query);
+        const matchesSku = item.sku.toLowerCase().includes(query);
+        const matchesLoc = item.storageLocation.toLowerCase().includes(query);
+        if (!matchesName && !matchesSku && !matchesLoc) return false;
+      }
+      return true;
+    });
+  },
 
-        const pendingPOs = purchaseOrders.filter((po) => po.status === "pending_approval" || po.status === "ordered");
-        const pendingPOCount = pendingPOs.length;
-        const pendingPOValue = pendingPOs.reduce((sum, po) => sum + po.grandTotal, 0);
+  fetchInventory: async () => {
+    const { tenantId } = get();
+    if (!useAuthStore.getState().accessToken) return;
+    set({ isLoading: true, error: null });
+    try {
+      const [itemsRes, suppliersRes, recipesRes, posRes, grnsRes, movsRes] = await Promise.allSettled([
+        apiClient.get("/inventory/items"),
+        apiClient.get("/inventory/suppliers"),
+        apiClient.get("/inventory/recipes"),
+        apiClient.get("/inventory/purchase-orders"),
+        apiClient.get("/inventory/grn"),
+        apiClient.get("/inventory/movements"),
+      ]);
 
-        const monthlyReceivedValue = grns.reduce((sum, grn) => sum + grn.grandTotal, 0);
-        const monthlyConsumedValue = movements
-          .filter((m) => m.type === "consumption" || m.type === "wastage")
-          .reduce((sum, m) => sum + m.totalCost, 0);
-
-        return {
-          totalItems,
-          totalStockValue,
-          lowStockCount,
-          outOfStockCount,
-          expiringCount,
-          pendingPOCount,
-          pendingPOValue,
-          monthlyReceivedValue,
-          monthlyConsumedValue,
-        };
-      },
-
-      setFilter: (key, value) => {
-        set((state) => ({
-          filters: { ...state.filters, [key]: value },
-        }));
-      },
-
-      resetFilters: () => {
-        set({
-          filters: {
-            category: "all",
-            stockStatus: "all",
-            outlet: "all",
-            search: "",
-            dateRange: "this_month",
-          },
-        });
-      },
-
-      getFilteredItems: () => {
-        const { items, filters } = get();
-        return items.filter((item) => {
-          if (filters.category !== "all" && item.category !== filters.category) return false;
-          if (filters.stockStatus !== "all" && item.status !== filters.stockStatus) return false;
-          if (filters.search) {
-            const query = filters.search.toLowerCase();
-            const matchesName = item.name.toLowerCase().includes(query);
-            const matchesSku = item.sku.toLowerCase().includes(query);
-            const matchesLoc = item.storageLocation.toLowerCase().includes(query);
-            if (!matchesName && !matchesSku && !matchesLoc) return false;
-          }
-          return true;
-        });
-      },
-
-      fetchInventory: async () => {
-        set({ isLoading: true, error: null });
-        try {
-          const res = await apiClient.get("/inventory");
-          if (res.data) {
-            set({
-              items: res.data.items || get().items,
-              suppliers: res.data.suppliers || get().suppliers,
-              purchaseOrders: res.data.purchaseOrders || get().purchaseOrders,
-              grns: res.data.grns || get().grns,
-              recipes: res.data.recipes || get().recipes,
-              movements: res.data.movements || get().movements,
-              stockCounts: res.data.stockCounts || get().stockCounts,
-              transfers: res.data.transfers || get().transfers,
-              settings: res.data.settings || get().settings,
-            });
-          }
-        } catch {
-          // Graceful fallback to client state & seed data
-        } finally {
-          set({ isLoading: false });
+      if (itemsRes.status === "fulfilled" && itemsRes.value.data?.data) {
+        const raw = itemsRes.value.data.data;
+        if (Array.isArray(raw)) {
+          const remoteItems: InventoryItem[] = raw.map((i: any) => ({
+            id: String(i.id || i._id),
+            name: i.name,
+            sku: i.sku,
+            barcode: i.barcode,
+            category: i.category || "General",
+            currentStock: typeof i.currentQuantity === "number" ? i.currentQuantity : (typeof i.currentStock === "number" ? i.currentStock : 0),
+            minStock: i.minStockLevel || i.minStock || 0,
+            reorderPoint: i.reorderQuantity || i.reorderPoint || 0,
+            maxStock: i.maxStockLevel || i.maxStock || 100,
+            baseUnit: i.baseUnit || "pcs",
+            purchaseUnit: i.purchaseUnit || i.baseUnit || "pcs",
+            conversionFactor: i.conversionFactor || 1,
+            averageCost: i.avgPurchaseCost || i.averageCost || 0,
+            purchaseCost: i.lastPurchasePrice || i.purchaseCost || 0,
+            storageLocation: i.storageLocation || "Main Storage",
+            preferredSupplierId: i.preferredSupplierId,
+            preferredSupplierName: i.preferredSupplierName,
+            trackExpiry: Boolean(i.expiryTracking || i.trackExpiry),
+            trackBatches: Boolean(i.batchTracking || i.trackBatches),
+            shelfLifeDays: i.shelfLifeDays,
+            outletId: i.outletId,
+            status: calculateItemStatus(i.currentQuantity || 0, i.reorderQuantity || 0, Boolean(i.expiryTracking)),
+            updatedAt: i.updatedAt || new Date().toISOString(),
+          }));
+          set({ items: remoteItems });
+          persistTenantInventoryState(tenantId, { items: remoteItems });
         }
-      },
-
-      addItem: async (itemData) => {
-        const status = calculateItemStatus(
-          itemData.currentStock,
-          itemData.reorderPoint,
-          itemData.trackExpiry,
-          itemData.shelfLifeDays
-        );
-        const newItem: InventoryItem = {
-          ...itemData,
-          id: `inv-${Date.now()}`,
-          status,
-          updatedAt: new Date().toISOString(),
-        };
-
-        try {
-          await apiClient.post("/inventory/items", newItem);
-        } catch {
-          // Optimistic local persistence
-        }
-
-        set((state) => ({ items: [newItem, ...state.items] }));
-        return newItem;
-      },
-
-      updateItem: async (id, updates) => {
-        set((state) => ({
-          items: state.items.map((item) => {
-            if (item.id !== id) return item;
-            const updated = { ...item, ...updates, updatedAt: new Date().toISOString() };
-            updated.status = calculateItemStatus(
-              updated.currentStock,
-              updated.reorderPoint,
-              updated.trackExpiry,
-              updated.shelfLifeDays
-            );
-            return updated;
-          }),
-        }));
-
-        try {
-          await apiClient.put(`/inventory/items/${id}`, updates);
-        } catch {}
-      },
-
-      deleteItem: async (id) => {
-        set((state) => ({
-          items: state.items.filter((item) => item.id !== id),
-        }));
-        try {
-          await apiClient.delete(`/inventory/items/${id}`);
-        } catch {}
-      },
-
-      adjustStock: async ({ itemId, quantityDelta, reason, notes, actorName, actorRole }) => {
-        const { items } = get();
-        const item = items.find((i) => i.id === itemId);
-        if (!item) return;
-
-        const previousBalance = item.currentStock;
-        const newBalance = Math.max(0, previousBalance + quantityDelta);
-        const costImpact = Math.abs(quantityDelta * item.averageCost);
-
-        const movementType: StockMovementType =
-          reason === "Wastage" || reason === "Damaged"
-            ? "wastage"
-            : reason === "Sampling"
-            ? "consumption"
-            : "adjustment";
-
-        const movement: StockMovement = {
-          id: `mov-${Date.now()}`,
-          movementDate: new Date().toISOString(),
-          itemId: item.id,
-          itemName: item.name,
-          sku: item.sku,
-          type: movementType,
-          deltaQty: quantityDelta,
-          unit: item.baseUnit,
-          previousBalance,
-          newBalance,
-          unitCost: item.averageCost,
-          totalCost: costImpact,
-          referenceType: "MANUAL_ADJUST",
-          referenceNumber: `ADJ-${Date.now().toString().slice(-4)}`,
-          storageLocation: item.storageLocation,
-          reason: notes || `Manual stock adjustment: ${reason}`,
-          actorName,
-          actorRole,
-        };
-
-        const updatedStatus = calculateItemStatus(
-          newBalance,
-          item.reorderPoint,
-          item.trackExpiry,
-          item.shelfLifeDays
-        );
-
-        set((state) => ({
-          items: state.items.map((i) =>
-            i.id === itemId
-              ? { ...i, currentStock: newBalance, status: updatedStatus, updatedAt: new Date().toISOString() }
-              : i
-          ),
-          movements: [movement, ...state.movements],
-        }));
-
-        try {
-          await apiClient.post("/inventory/adjustments", { itemId, quantityDelta, reason, notes });
-        } catch {}
-      },
-
-      addSupplier: async (supplierData) => {
-        const newSupplier: Supplier = {
-          ...supplierData,
-          id: `sup-${Date.now()}`,
-          totalSpend: 0,
-          activeOrders: 0,
-        };
-
-        try {
-          await apiClient.post("/inventory/suppliers", newSupplier);
-        } catch {}
-
-        set((state) => ({ suppliers: [newSupplier, ...state.suppliers] }));
-        return newSupplier;
-      },
-
-      updateSupplier: async (id, updates) => {
-        set((state) => ({
-          suppliers: state.suppliers.map((s) => (s.id === id ? { ...s, ...updates } : s)),
-        }));
-        try {
-          await apiClient.put(`/inventory/suppliers/${id}`, updates);
-        } catch {}
-      },
-
-      deleteSupplier: async (id) => {
-        set((state) => ({
-          suppliers: state.suppliers.filter((s) => s.id !== id),
-        }));
-        try {
-          await apiClient.delete(`/inventory/suppliers/${id}`);
-        } catch {}
-      },
-
-      createPurchaseOrder: async (poData) => {
-        const count = get().purchaseOrders.length + 1;
-        const newPO: PurchaseOrder = {
-          ...poData,
-          id: `po-${Date.now()}`,
-          poNumber: `PO-${new Date().getFullYear()}-${count.toString().padStart(4, "0")}`,
-          status: "pending_approval",
-          createdAt: new Date().toISOString(),
-        };
-
-        try {
-          await apiClient.post("/inventory/purchase-orders", newPO);
-        } catch {}
-
-        set((state) => ({
-          purchaseOrders: [newPO, ...state.purchaseOrders],
-          suppliers: state.suppliers.map((s) =>
-            s.id === newPO.supplierId ? { ...s, activeOrders: s.activeOrders + 1 } : s
-          ),
-        }));
-        return newPO;
-      },
-
-      approvePurchaseOrder: async (id, approvedBy) => {
-        set((state) => ({
-          purchaseOrders: state.purchaseOrders.map((po) =>
-            po.id === id
-              ? {
-                  ...po,
-                  status: "approved",
-                  approvedBy,
-                  approvedAt: new Date().toISOString(),
-                }
-              : po
-          ),
-        }));
-        try {
-          await apiClient.patch(`/inventory/purchase-orders/${id}/approve`, { approvedBy });
-        } catch {}
-      },
-
-      updatePOStatus: async (id, status) => {
-        set((state) => ({
-          purchaseOrders: state.purchaseOrders.map((po) => (po.id === id ? { ...po, status } : po)),
-        }));
-        try {
-          await apiClient.patch(`/inventory/purchase-orders/${id}/status`, { status });
-        } catch {}
-      },
-
-      createGRN: async (grnData) => {
-        const count = get().grns.length + 1;
-        const newGRN: GoodsReceivedNote = {
-          ...grnData,
-          id: `grn-${Date.now()}`,
-          grnNumber: `GRN-${new Date().getFullYear()}-${count.toString().padStart(4, "0")}`,
-        };
-
-        const newMovements: StockMovement[] = [];
-        const itemUpdates = new Map<string, number>();
-
-        grnData.items.forEach((line) => {
-          if (line.receivedQty > 0) {
-            itemUpdates.set(line.itemId, (itemUpdates.get(line.itemId) || 0) + line.receivedQty);
-            const currentItem = get().items.find((i) => i.id === line.itemId);
-            const prev = currentItem?.currentStock || 0;
-            const next = prev + line.receivedQty;
-
-            newMovements.push({
-              id: `mov-${Date.now()}-${line.itemId}`,
-              movementDate: new Date().toISOString(),
-              itemId: line.itemId,
-              itemName: line.itemName,
-              sku: line.sku,
-              type: "receipt",
-              deltaQty: line.receivedQty,
-              unit: line.unit,
-              previousBalance: prev,
-              newBalance: next,
-              unitCost: line.unitCost,
-              totalCost: line.totalCost,
-              referenceType: "GRN",
-              referenceNumber: newGRN.grnNumber,
-              storageLocation: line.storageLocation,
-              reason: `Stock receipt from ${newGRN.supplierName}`,
-              actorName: newGRN.receivedBy,
-              actorRole: "Receiving Inspector",
-            });
-          }
-        });
-
-        set((state) => ({
-          grns: [newGRN, ...state.grns],
-          movements: [...newMovements, ...state.movements],
-          items: state.items.map((item) => {
-            const added = itemUpdates.get(item.id);
-            if (!added) return item;
-            const newStock = item.currentStock + added;
-            const newStatus = calculateItemStatus(
-              newStock,
-              item.reorderPoint,
-              item.trackExpiry,
-              item.shelfLifeDays
-            );
-            return {
-              ...item,
-              currentStock: newStock,
-              status: newStatus,
-              updatedAt: new Date().toISOString(),
-            };
-          }),
-          // Mark associated PO received if present
-          purchaseOrders: state.purchaseOrders.map((po) =>
-            newGRN.poId && po.id === newGRN.poId ? { ...po, status: "received" } : po
-          ),
-        }));
-
-        try {
-          await apiClient.post("/inventory/grn", newGRN);
-        } catch {}
-
-        return newGRN;
-      },
-
-      saveRecipe: async (recipeData) => {
-        const id = recipeData.id || `rcp-${Date.now()}`;
-        const newRecipe: Recipe = {
-          ...recipeData,
-          id,
-          lastUpdated: new Date().toISOString(),
-        };
-
-        set((state) => ({
-          recipes: [newRecipe, ...state.recipes.filter((r) => r.id !== id)],
-        }));
-
-        try {
-          await apiClient.post("/inventory/recipes", newRecipe);
-        } catch {}
-
-        return newRecipe;
-      },
-
-      createStockCount: async (countData) => {
-        const countNum = get().stockCounts.length + 1;
-        const newCount: StockCount = {
-          ...countData,
-          id: `cnt-${Date.now()}`,
-          countNumber: `AUD-${new Date().getFullYear()}-${countNum.toString().padStart(4, "0")}`,
-          status: "in_progress",
-        };
-
-        set((state) => ({
-          stockCounts: [newCount, ...state.stockCounts],
-        }));
-
-        try {
-          await apiClient.post("/inventory/counts", newCount);
-        } catch {}
-
-        return newCount;
-      },
-
-      updateStockCount: async (id, updates) => {
-        set((state) => ({
-          stockCounts: state.stockCounts.map((c) => (c.id === id ? { ...c, ...updates } : c)),
-        }));
-        try {
-          await apiClient.put(`/inventory/counts/${id}`, updates);
-        } catch {}
-      },
-
-      approveStockCount: async (id, approvedBy) => {
-        const count = get().stockCounts.find((c) => c.id === id);
-        if (!count) return;
-
-        const newMovements: StockMovement[] = [];
-        const itemStockUpdates = new Map<string, number>();
-
-        count.items.forEach((item) => {
-          if (item.varianceQty !== 0) {
-            itemStockUpdates.set(item.itemId, item.countedQty);
-            newMovements.push({
-              id: `mov-${Date.now()}-${item.itemId}`,
-              movementDate: new Date().toISOString(),
-              itemId: item.itemId,
-              itemName: item.itemName,
-              sku: item.sku,
-              type: "adjustment",
-              deltaQty: item.varianceQty,
-              unit: item.unit,
-              previousBalance: item.systemQty,
-              newBalance: item.countedQty,
-              unitCost: item.unitCost,
-              totalCost: Math.abs(item.varianceValue),
-              referenceType: "COUNT_RECONCILE",
-              referenceNumber: count.countNumber,
-              storageLocation: count.storageLocation,
-              reason: `Physical stock count reconciliation approved by ${approvedBy}`,
-              actorName: approvedBy,
-              actorRole: "Operations Lead",
-            });
-          }
-        });
-
-        set((state) => ({
-          stockCounts: state.stockCounts.map((c) =>
-            c.id === id
-              ? {
-                  ...c,
-                  status: "approved",
-                  approvedBy,
-                  approvedAt: new Date().toISOString(),
-                }
-              : c
-          ),
-          movements: [...newMovements, ...state.movements],
-          items: state.items.map((item) => {
-            const counted = itemStockUpdates.get(item.id);
-            if (counted === undefined) return item;
-            const updatedStatus = calculateItemStatus(
-              counted,
-              item.reorderPoint,
-              item.trackExpiry,
-              item.shelfLifeDays
-            );
-            return {
-              ...item,
-              currentStock: counted,
-              status: updatedStatus,
-              updatedAt: new Date().toISOString(),
-            };
-          }),
-        }));
-
-        try {
-          await apiClient.patch(`/inventory/counts/${id}/approve`, { approvedBy });
-        } catch {}
-      },
-
-      createTransfer: async (transferData) => {
-        const count = get().transfers.length + 1;
-        const newTransfer: StockTransfer = {
-          ...transferData,
-          id: `tr-${Date.now()}`,
-          transferNumber: `TR-${new Date().getFullYear()}-${count.toString().padStart(4, "0")}`,
-          status: "in_transit",
-        };
-
-        // Deduct from source items immediately
-        const transferMovements: StockMovement[] = [];
-        transferData.items.forEach((line) => {
-          const item = get().items.find((i) => i.id === line.itemId);
-          if (item) {
-            const prev = item.currentStock;
-            const next = Math.max(0, prev - line.dispatchedQty);
-            transferMovements.push({
-              id: `mov-${Date.now()}-${line.itemId}`,
-              movementDate: new Date().toISOString(),
-              itemId: line.itemId,
-              itemName: line.itemName,
-              sku: line.sku,
-              type: "transfer",
-              deltaQty: -line.dispatchedQty,
-              unit: line.unit,
-              previousBalance: prev,
-              newBalance: next,
-              unitCost: item.averageCost,
-              totalCost: line.dispatchedQty * item.averageCost,
-              referenceType: "TRANSFER",
-              referenceNumber: newTransfer.transferNumber,
-              storageLocation: item.storageLocation,
-              reason: `Transfer to ${newTransfer.destinationOutlet}`,
-              actorName: newTransfer.requestedBy,
-              actorRole: "Inventory Controller",
-            });
-          }
-        });
-
-        set((state) => ({
-          transfers: [newTransfer, ...state.transfers],
-          movements: [...transferMovements, ...state.movements],
-          items: state.items.map((item) => {
-            const line = transferData.items.find((i) => i.itemId === item.id);
-            if (!line) return item;
-            const newStock = Math.max(0, item.currentStock - line.dispatchedQty);
-            return {
-              ...item,
-              currentStock: newStock,
-              status: calculateItemStatus(newStock, item.reorderPoint, item.trackExpiry, item.shelfLifeDays),
-              updatedAt: new Date().toISOString(),
-            };
-          }),
-        }));
-
-        try {
-          await apiClient.post("/inventory/transfers", newTransfer);
-        } catch {}
-
-        return newTransfer;
-      },
-
-      completeTransfer: async (id, receivedBy, itemReconciliation) => {
-        set((state) => ({
-          transfers: state.transfers.map((t) => {
-            if (t.id !== id) return t;
-            const updatedItems = t.items.map((line) => {
-              const rec = itemReconciliation.find((r) => r.itemId === line.itemId);
-              if (!rec) return line;
-              return {
-                ...line,
-                receivedQty: rec.receivedQty,
-                damagedQty: rec.damagedQty,
-                discrepancyNotes: rec.notes,
-              };
-            });
-            return {
-              ...t,
-              status: "completed",
-              receivedBy,
-              items: updatedItems,
-            };
-          }),
-        }));
-
-        try {
-          await apiClient.patch(`/inventory/transfers/${id}/complete`, {
-            receivedBy,
-            itemReconciliation,
-          });
-        } catch {}
-      },
-
-      updateSettings: async (newSettings) => {
-        set((state) => ({
-          settings: { ...state.settings, ...newSettings },
-        }));
-        try {
-          await apiClient.put("/inventory/settings", newSettings);
-        } catch {}
-      },
-    }),
-    {
-      name: "dineflow_inventory_store",
-      partialize: (state) => ({
-        items: state.items,
-        suppliers: state.suppliers,
-        purchaseOrders: state.purchaseOrders,
-        grns: state.grns,
-        recipes: state.recipes,
-        movements: state.movements,
-        stockCounts: state.stockCounts,
-        transfers: state.transfers,
-        settings: state.settings,
-      }),
+      }
+    } catch (err: any) {
+      set({ error: err?.message || "Failed to sync inventory" });
+    } finally {
+      set({ isLoading: false });
     }
-  )
-);
+  },
+
+  addItem: async (itemData) => {
+    const status = calculateItemStatus(
+      itemData.currentStock,
+      itemData.reorderPoint,
+      itemData.trackExpiry,
+      itemData.shelfLifeDays
+    );
+    const newItem: InventoryItem = {
+      ...itemData,
+      id: `inv-${Date.now()}`,
+      status,
+      updatedAt: new Date().toISOString(),
+    };
+
+    const updatedItems = [newItem, ...get().items];
+    set({ items: updatedItems });
+    persistTenantInventoryState(get().tenantId, { items: updatedItems });
+
+    try {
+      await apiClient.post("/inventory/items", newItem);
+    } catch {}
+
+    return newItem;
+  },
+
+  updateItem: async (id, updates) => {
+    const updatedItems = get().items.map((item) => {
+      if (item.id !== id) return item;
+      const updated = { ...item, ...updates, updatedAt: new Date().toISOString() };
+      updated.status = calculateItemStatus(
+        updated.currentStock,
+        updated.reorderPoint,
+        updated.trackExpiry,
+        updated.shelfLifeDays
+      );
+      return updated;
+    });
+
+    set({ items: updatedItems });
+    persistTenantInventoryState(get().tenantId, { items: updatedItems });
+
+    try {
+      await apiClient.put(`/inventory/items/${id}`, updates);
+    } catch {}
+  },
+
+  deleteItem: async (id) => {
+    const updatedItems = get().items.filter((item) => item.id !== id);
+    set({ items: updatedItems });
+    persistTenantInventoryState(get().tenantId, { items: updatedItems });
+
+    try {
+      await apiClient.delete(`/inventory/items/${id}`);
+    } catch {}
+  },
+
+  adjustStock: async ({ itemId, quantityDelta, reason, notes, actorName, actorRole }) => {
+    const { items } = get();
+    const item = items.find((i) => i.id === itemId);
+    if (!item) return;
+
+    const previousBalance = item.currentStock;
+    const newBalance = Math.max(0, previousBalance + quantityDelta);
+    const costImpact = Math.abs(quantityDelta * item.averageCost);
+
+    const movementType: StockMovementType =
+      reason === "Wastage" || reason === "Damaged"
+        ? "wastage"
+        : reason === "Sampling"
+        ? "consumption"
+        : "adjustment";
+
+    const movement: StockMovement = {
+      id: `mov-${Date.now()}`,
+      movementDate: new Date().toISOString(),
+      itemId: item.id,
+      itemName: item.name,
+      sku: item.sku,
+      type: movementType,
+      deltaQty: quantityDelta,
+      unit: item.baseUnit,
+      previousBalance,
+      newBalance,
+      unitCost: item.averageCost,
+      totalCost: costImpact,
+      referenceType: "MANUAL_ADJUST",
+      referenceNumber: `ADJ-${Date.now().toString().slice(-4)}`,
+      storageLocation: item.storageLocation,
+      reason: notes || `Manual stock adjustment: ${reason}`,
+      actorName,
+      actorRole,
+    };
+
+    const updatedStatus = calculateItemStatus(
+      newBalance,
+      item.reorderPoint,
+      item.trackExpiry,
+      item.shelfLifeDays
+    );
+
+    const updatedItems = items.map((i) =>
+      i.id === itemId
+        ? { ...i, currentStock: newBalance, status: updatedStatus, updatedAt: new Date().toISOString() }
+        : i
+    );
+    const updatedMovements = [movement, ...get().movements];
+
+    set({ items: updatedItems, movements: updatedMovements });
+    persistTenantInventoryState(get().tenantId, { items: updatedItems, movements: updatedMovements });
+
+    try {
+      await apiClient.post("/inventory/adjustments", { itemId, quantityDelta, reason, notes });
+    } catch {}
+  },
+
+  bulkUpsertItems: async (itemsData, mode = "upsert", actorName = "Inventory Manager") => {
+    const currentItems = get().items;
+    const currentMovements = get().movements;
+    const now = new Date().toISOString();
+    let createdCount = 0;
+    let updatedCount = 0;
+
+    const nextItems: InventoryItem[] = mode === "replace" ? [] : [...currentItems];
+    const newMovements: StockMovement[] = [];
+
+    for (const itmData of itemsData) {
+      const skuKey = itmData.sku ? itmData.sku.toUpperCase().trim() : "";
+      const nameKey = itmData.name.toLowerCase().trim();
+
+      const existingIndex = nextItems.findIndex(
+        (item) => (skuKey && item.sku.toUpperCase().trim() === skuKey) || item.name.toLowerCase().trim() === nameKey
+      );
+
+      if (existingIndex >= 0 && mode !== "replace") {
+        if (mode === "append") {
+          continue; // Skip existing items in append mode
+        }
+        // Update existing item
+        const existing = nextItems[existingIndex];
+        const prevQty = existing.currentStock;
+        const newQty = itmData.currentStock;
+        const deltaQty = newQty - prevQty;
+
+        const updatedItem: InventoryItem = {
+          ...existing,
+          ...itmData,
+          currentStock: newQty,
+          status: calculateItemStatus(
+            newQty,
+            itmData.reorderPoint || existing.reorderPoint,
+            itmData.trackExpiry,
+            itmData.shelfLifeDays
+          ),
+          updatedAt: now,
+        };
+        nextItems[existingIndex] = updatedItem;
+        updatedCount++;
+
+        // Log movement if stock changed
+        if (Math.abs(deltaQty) > 0.0001) {
+          newMovements.unshift({
+            id: `mov-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+            movementDate: now,
+            type: "adjustment",
+            itemId: existing.id,
+            itemName: existing.name,
+            sku: existing.sku,
+            unit: existing.baseUnit,
+            deltaQty,
+            previousBalance: prevQty,
+            newBalance: newQty,
+            unitCost: itmData.averageCost,
+            totalCost: Math.abs(deltaQty) * itmData.averageCost,
+            referenceType: "MANUAL_ADJUST",
+            referenceNumber: `BULK-${Date.now().toString().slice(-4)}`,
+            storageLocation: itmData.storageLocation || existing.storageLocation,
+            reason: "Bulk spreadsheet inventory update",
+            actorName,
+            actorRole: "Manager",
+          });
+        }
+      } else {
+        // Create new item
+        const newItemId = `inv-itm-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+        const sku = itmData.sku || `SKU-${Date.now().toString().slice(-5)}-${Math.floor(Math.random() * 900 + 100)}`;
+        const newItem: InventoryItem = {
+          ...itmData,
+          id: newItemId,
+          sku,
+          status: calculateItemStatus(
+            itmData.currentStock,
+            itmData.reorderPoint,
+            itmData.trackExpiry,
+            itmData.shelfLifeDays
+          ),
+          updatedAt: now,
+        };
+        nextItems.push(newItem);
+        createdCount++;
+
+        // Log opening stock movement if currentStock > 0
+        if (newItem.currentStock > 0) {
+          newMovements.unshift({
+            id: `mov-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+            movementDate: now,
+            type: "receipt",
+            itemId: newItemId,
+            itemName: newItem.name,
+            sku,
+            unit: newItem.baseUnit,
+            deltaQty: newItem.currentStock,
+            previousBalance: 0,
+            newBalance: newItem.currentStock,
+            unitCost: newItem.averageCost,
+            totalCost: newItem.currentStock * newItem.averageCost,
+            referenceType: "MANUAL_ADJUST",
+            referenceNumber: `OPN-${Date.now().toString().slice(-4)}`,
+            storageLocation: newItem.storageLocation,
+            reason: "Initial opening stock (Bulk spreadsheet upload)",
+            actorName,
+            actorRole: "Manager",
+          });
+        }
+      }
+    }
+
+    const finalMovements = [...newMovements, ...currentMovements];
+    set({ items: nextItems, movements: finalMovements });
+    persistTenantInventoryState(get().tenantId, { items: nextItems, movements: finalMovements });
+
+    // Push to backend API if authenticated
+    if (useAuthStore.getState().accessToken) {
+      try {
+        await apiClient.post("/inventory/items/bulk", {
+          mode,
+          actorName,
+          items: itemsData.map((d) => ({
+            name: d.name,
+            sku: d.sku,
+            barcode: d.barcode,
+            category: d.category,
+            itemType: "raw_ingredient",
+            baseUnit: d.baseUnit,
+            purchaseUnit: d.purchaseUnit,
+            conversionFactor: d.conversionFactor,
+            currentQuantity: d.currentStock,
+            minStockLevel: d.minStock,
+            reorderQuantity: d.reorderPoint,
+            maxStockLevel: d.maxStock,
+            avgPurchaseCost: d.averageCost,
+            lastPurchasePrice: d.purchaseCost,
+            storageLocation: d.storageLocation,
+            expiryTracking: d.trackExpiry,
+            batchTracking: d.trackBatches,
+          })),
+        });
+      } catch (e) {
+        console.warn("Backend bulk items sync failed:", e);
+      }
+    }
+
+    return { createdCount, updatedCount };
+  },
+
+  addSupplier: async (supplierData) => {
+    const newSupplier: Supplier = {
+      ...supplierData,
+      id: `sup-${Date.now()}`,
+      totalSpend: 0,
+      activeOrders: 0,
+    };
+
+    const updatedSuppliers = [newSupplier, ...get().suppliers];
+    set({ suppliers: updatedSuppliers });
+    persistTenantInventoryState(get().tenantId, { suppliers: updatedSuppliers });
+
+    try {
+      await apiClient.post("/inventory/suppliers", newSupplier);
+    } catch {}
+
+    return newSupplier;
+  },
+
+  updateSupplier: async (id, updates) => {
+    const updatedSuppliers = get().suppliers.map((s) => (s.id === id ? { ...s, ...updates } : s));
+    set({ suppliers: updatedSuppliers });
+    persistTenantInventoryState(get().tenantId, { suppliers: updatedSuppliers });
+
+    try {
+      await apiClient.put(`/inventory/suppliers/${id}`, updates);
+    } catch {}
+  },
+
+  deleteSupplier: async (id) => {
+    const updatedSuppliers = get().suppliers.filter((s) => s.id !== id);
+    set({ suppliers: updatedSuppliers });
+    persistTenantInventoryState(get().tenantId, { suppliers: updatedSuppliers });
+
+    try {
+      await apiClient.delete(`/inventory/suppliers/${id}`);
+    } catch {}
+  },
+
+  createPurchaseOrder: async (poData) => {
+    const count = get().purchaseOrders.length + 1;
+    const newPO: PurchaseOrder = {
+      ...poData,
+      id: `po-${Date.now()}`,
+      poNumber: `PO-${new Date().getFullYear()}-${count.toString().padStart(4, "0")}`,
+      status: "pending_approval",
+      createdAt: new Date().toISOString(),
+    };
+
+    const updatedPOs = [newPO, ...get().purchaseOrders];
+    const updatedSuppliers = get().suppliers.map((s) =>
+      s.id === newPO.supplierId ? { ...s, activeOrders: s.activeOrders + 1 } : s
+    );
+
+    set({ purchaseOrders: updatedPOs, suppliers: updatedSuppliers });
+    persistTenantInventoryState(get().tenantId, { purchaseOrders: updatedPOs, suppliers: updatedSuppliers });
+
+    try {
+      await apiClient.post("/inventory/purchase-orders", newPO);
+    } catch {}
+
+    return newPO;
+  },
+
+  approvePurchaseOrder: async (id, approvedBy) => {
+    const updatedPOs = get().purchaseOrders.map((po) =>
+      po.id === id
+        ? {
+            ...po,
+            status: "approved" as PurchaseOrderStatus,
+            approvedBy,
+            approvedAt: new Date().toISOString(),
+          }
+        : po
+    );
+
+    set({ purchaseOrders: updatedPOs });
+    persistTenantInventoryState(get().tenantId, { purchaseOrders: updatedPOs });
+
+    try {
+      await apiClient.patch(`/inventory/purchase-orders/${id}/approve`, { approvedBy });
+    } catch {}
+  },
+
+  updatePOStatus: async (id, status) => {
+    const updatedPOs = get().purchaseOrders.map((po) => (po.id === id ? { ...po, status } : po));
+    set({ purchaseOrders: updatedPOs });
+    persistTenantInventoryState(get().tenantId, { purchaseOrders: updatedPOs });
+
+    try {
+      await apiClient.patch(`/inventory/purchase-orders/${id}/status`, { status });
+    } catch {}
+  },
+
+  createGRN: async (grnData) => {
+    const count = get().grns.length + 1;
+    const newGRN: GoodsReceivedNote = {
+      ...grnData,
+      id: `grn-${Date.now()}`,
+      grnNumber: `GRN-${new Date().getFullYear()}-${count.toString().padStart(4, "0")}`,
+    };
+
+    const newMovements: StockMovement[] = [];
+    const itemUpdates = new Map<string, number>();
+
+    grnData.items.forEach((line) => {
+      if (line.receivedQty > 0) {
+        itemUpdates.set(line.itemId, (itemUpdates.get(line.itemId) || 0) + line.receivedQty);
+        const currentItem = get().items.find((i) => i.id === line.itemId);
+        const prev = currentItem?.currentStock || 0;
+        const next = prev + line.receivedQty;
+
+        newMovements.push({
+          id: `mov-${Date.now()}-${line.itemId}`,
+          movementDate: new Date().toISOString(),
+          itemId: line.itemId,
+          itemName: line.itemName,
+          sku: line.sku,
+          type: "receipt",
+          deltaQty: line.receivedQty,
+          unit: line.unit,
+          previousBalance: prev,
+          newBalance: next,
+          unitCost: line.unitCost,
+          totalCost: line.totalCost,
+          referenceType: "GRN",
+          referenceNumber: newGRN.grnNumber,
+          storageLocation: line.storageLocation,
+          reason: `Stock receipt from ${newGRN.supplierName}`,
+          actorName: newGRN.receivedBy,
+          actorRole: "Receiving Inspector",
+        });
+      }
+    });
+
+    const updatedItems = get().items.map((item) => {
+      const added = itemUpdates.get(item.id);
+      if (!added) return item;
+      const newStock = item.currentStock + added;
+      const newStatus = calculateItemStatus(
+        newStock,
+        item.reorderPoint,
+        item.trackExpiry,
+        item.shelfLifeDays
+      );
+      return {
+        ...item,
+        currentStock: newStock,
+        status: newStatus,
+        updatedAt: new Date().toISOString(),
+      };
+    });
+
+    const updatedPOs = get().purchaseOrders.map((po) =>
+      newGRN.poId && po.id === newGRN.poId ? { ...po, status: "received" as PurchaseOrderStatus } : po
+    );
+
+    const updatedGrns = [newGRN, ...get().grns];
+    const updatedMovements = [...newMovements, ...get().movements];
+
+    set({
+      grns: updatedGrns,
+      movements: updatedMovements,
+      items: updatedItems,
+      purchaseOrders: updatedPOs,
+    });
+    persistTenantInventoryState(get().tenantId, {
+      grns: updatedGrns,
+      movements: updatedMovements,
+      items: updatedItems,
+      purchaseOrders: updatedPOs,
+    });
+
+    try {
+      await apiClient.post("/inventory/grn", newGRN);
+    } catch {}
+
+    return newGRN;
+  },
+
+  saveRecipe: async (recipeData) => {
+    const id = recipeData.id || `rcp-${Date.now()}`;
+    const newRecipe: Recipe = {
+      ...recipeData,
+      id,
+      lastUpdated: new Date().toISOString(),
+    };
+
+    const updatedRecipes = [newRecipe, ...get().recipes.filter((r) => r.id !== id)];
+    set({ recipes: updatedRecipes });
+    persistTenantInventoryState(get().tenantId, { recipes: updatedRecipes });
+
+    try {
+      await apiClient.post("/inventory/recipes", newRecipe);
+    } catch {}
+
+    return newRecipe;
+  },
+
+  createStockCount: async (countData) => {
+    const countNum = get().stockCounts.length + 1;
+    const newCount: StockCount = {
+      ...countData,
+      id: `cnt-${Date.now()}`,
+      countNumber: `AUD-${new Date().getFullYear()}-${countNum.toString().padStart(4, "0")}`,
+      status: "in_progress",
+    };
+
+    const updatedCounts = [newCount, ...get().stockCounts];
+    set({ stockCounts: updatedCounts });
+    persistTenantInventoryState(get().tenantId, { stockCounts: updatedCounts });
+
+    try {
+      await apiClient.post("/inventory/counts", newCount);
+    } catch {}
+
+    return newCount;
+  },
+
+  updateStockCount: async (id, updates) => {
+    const updatedCounts = get().stockCounts.map((c) => (c.id === id ? { ...c, ...updates } : c));
+    set({ stockCounts: updatedCounts });
+    persistTenantInventoryState(get().tenantId, { stockCounts: updatedCounts });
+
+    try {
+      await apiClient.put(`/inventory/counts/${id}`, updates);
+    } catch {}
+  },
+
+  approveStockCount: async (id, approvedBy) => {
+    const count = get().stockCounts.find((c) => c.id === id);
+    if (!count) return;
+
+    const newMovements: StockMovement[] = [];
+    const itemStockUpdates = new Map<string, number>();
+
+    count.items.forEach((item) => {
+      if (item.varianceQty !== 0) {
+        itemStockUpdates.set(item.itemId, item.countedQty);
+        newMovements.push({
+          id: `mov-${Date.now()}-${item.itemId}`,
+          movementDate: new Date().toISOString(),
+          itemId: item.itemId,
+          itemName: item.itemName,
+          sku: item.sku,
+          type: "adjustment",
+          deltaQty: item.varianceQty,
+          unit: item.unit,
+          previousBalance: item.systemQty,
+          newBalance: item.countedQty,
+          unitCost: item.unitCost,
+          totalCost: Math.abs(item.varianceValue),
+          referenceType: "COUNT_RECONCILE",
+          referenceNumber: count.countNumber,
+          storageLocation: count.storageLocation,
+          reason: `Physical stock count reconciliation approved by ${approvedBy}`,
+          actorName: approvedBy,
+          actorRole: "Operations Lead",
+        });
+      }
+    });
+
+    const updatedCounts = get().stockCounts.map((c) =>
+      c.id === id
+        ? {
+            ...c,
+            status: "approved" as const,
+            approvedBy,
+            approvedAt: new Date().toISOString(),
+          }
+        : c
+    );
+
+    const updatedItems = get().items.map((item) => {
+      const counted = itemStockUpdates.get(item.id);
+      if (counted === undefined) return item;
+      const updatedStatus = calculateItemStatus(
+        counted,
+        item.reorderPoint,
+        item.trackExpiry,
+        item.shelfLifeDays
+      );
+      return {
+        ...item,
+        currentStock: counted,
+        status: updatedStatus,
+        updatedAt: new Date().toISOString(),
+      };
+    });
+
+    const updatedMovements = [...newMovements, ...get().movements];
+
+    set({
+      stockCounts: updatedCounts,
+      movements: updatedMovements,
+      items: updatedItems,
+    });
+    persistTenantInventoryState(get().tenantId, {
+      stockCounts: updatedCounts,
+      movements: updatedMovements,
+      items: updatedItems,
+    });
+
+    try {
+      await apiClient.patch(`/inventory/counts/${id}/approve`, { approvedBy });
+    } catch {}
+  },
+
+  createTransfer: async (transferData) => {
+    const count = get().transfers.length + 1;
+    const newTransfer: StockTransfer = {
+      ...transferData,
+      id: `tr-${Date.now()}`,
+      transferNumber: `TR-${new Date().getFullYear()}-${count.toString().padStart(4, "0")}`,
+      status: "in_transit",
+    };
+
+    // Deduct from source items immediately
+    const transferMovements: StockMovement[] = [];
+    transferData.items.forEach((line) => {
+      const item = get().items.find((i) => i.id === line.itemId);
+      if (item) {
+        const prev = item.currentStock;
+        const next = Math.max(0, prev - line.dispatchedQty);
+        transferMovements.push({
+          id: `mov-${Date.now()}-${line.itemId}`,
+          movementDate: new Date().toISOString(),
+          itemId: line.itemId,
+          itemName: line.itemName,
+          sku: line.sku,
+          type: "transfer",
+          deltaQty: -line.dispatchedQty,
+          unit: line.unit,
+          previousBalance: prev,
+          newBalance: next,
+          unitCost: item.averageCost,
+          totalCost: line.dispatchedQty * item.averageCost,
+          referenceType: "TRANSFER",
+          referenceNumber: newTransfer.transferNumber,
+          storageLocation: item.storageLocation,
+          reason: `Transfer to ${newTransfer.destinationOutlet}`,
+          actorName: newTransfer.requestedBy,
+          actorRole: "Inventory Controller",
+        });
+      }
+    });
+
+    const updatedItems = get().items.map((item) => {
+      const line = transferData.items.find((i) => i.itemId === item.id);
+      if (!line) return item;
+      const newStock = Math.max(0, item.currentStock - line.dispatchedQty);
+      return {
+        ...item,
+        currentStock: newStock,
+        status: calculateItemStatus(newStock, item.reorderPoint, item.trackExpiry, item.shelfLifeDays),
+        updatedAt: new Date().toISOString(),
+      };
+    });
+
+    const updatedTransfers = [newTransfer, ...get().transfers];
+    const updatedMovements = [...transferMovements, ...get().movements];
+
+    set({
+      transfers: updatedTransfers,
+      movements: updatedMovements,
+      items: updatedItems,
+    });
+    persistTenantInventoryState(get().tenantId, {
+      transfers: updatedTransfers,
+      movements: updatedMovements,
+      items: updatedItems,
+    });
+
+    try {
+      await apiClient.post("/inventory/transfers", newTransfer);
+    } catch {}
+
+    return newTransfer;
+  },
+
+  completeTransfer: async (id, receivedBy, itemReconciliation) => {
+    const updatedTransfers = get().transfers.map((t) => {
+      if (t.id !== id) return t;
+      const updatedItems = t.items.map((line) => {
+        const rec = itemReconciliation.find((r) => r.itemId === line.itemId);
+        if (!rec) return line;
+        return {
+          ...line,
+          receivedQty: rec.receivedQty,
+          damagedQty: rec.damagedQty,
+          discrepancyNotes: rec.notes,
+        };
+      });
+      return {
+        ...t,
+        status: "completed" as const,
+        receivedBy,
+        items: updatedItems,
+      };
+    });
+
+    set({ transfers: updatedTransfers });
+    persistTenantInventoryState(get().tenantId, { transfers: updatedTransfers });
+
+    try {
+      await apiClient.patch(`/inventory/transfers/${id}/complete`, {
+        receivedBy,
+        itemReconciliation,
+      });
+    } catch {}
+  },
+
+  updateSettings: async (newSettings) => {
+    const updated = { ...get().settings, ...newSettings };
+    set({ settings: updated });
+    persistTenantInventoryState(get().tenantId, { settings: updated });
+    try {
+      await apiClient.put("/inventory/settings", newSettings);
+    } catch {}
+  },
+}));
+
+/**
+ * Hook to automatically connect any component to the active tenant's isolated inventory.
+ */
+export function useTenantInventory() {
+  const { tenant, user } = useAuthStore();
+  const store = useInventoryStore();
+
+  React.useEffect(() => {
+    store.initializeTenant(tenant, user);
+  }, [tenant?.id, user?.id]);
+
+  return store;
+}
+

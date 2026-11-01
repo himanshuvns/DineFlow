@@ -9,6 +9,7 @@ import { ImpersonationBanner } from "@/components/dashboard/impersonation-banner
 import { BroadcastBanner } from "@/components/dashboard/broadcast-banner";
 import { useUIStore } from "@/lib/stores/ui-store";
 import { useAuthStore } from "@/lib/stores/auth-store";
+import { useInventoryStore } from "@/lib/stores/inventory-store";
 import { isPlatformRole, isRouteAllowed, getPrimaryRouteForRole, getCategoryConfig } from "@/lib/rbac/roles";
 import { X, UtensilsCrossed, Sparkles, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -148,6 +149,13 @@ export default function DashboardLayout({
 
     setIsAuthorized(true);
   }, [pathname, router, isAuthenticated, accessToken, user, tenant?.type]);
+
+  // Synchronize isolated tenant inventory on workspace load
+  React.useEffect(() => {
+    if (tenant?.id) {
+      useInventoryStore.getState().initializeTenant(tenant, user);
+    }
+  }, [tenant?.id, user?.id]);
 
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

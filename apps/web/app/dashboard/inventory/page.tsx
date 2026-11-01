@@ -195,6 +195,38 @@ export default function InventoryDashboardPage() {
         </div>
       </div>
 
+      {/* Onboarding Clean Slate Alert when 0 items */}
+      {items.length === 0 && (
+        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-indigo-500/10 border border-emerald-500/25 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xs">
+          <div className="flex items-start gap-3">
+            <div className="p-2.5 rounded-xl bg-emerald-500 text-white shadow-xs shrink-0 mt-0.5">
+              <Boxes className="h-5 w-5" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                <span>Welcome to DineFlow Inventory</span>
+                <Badge variant="outline" className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 text-[10px]">
+                  Clean Slate
+                </Badge>
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed">
+                Your property&apos;s inventory ledger starts completely clean with 0 static demo items.
+                Populate your pantry, drinking water, ingredients, and amenities by uploading an Excel/CSV spreadsheet or creating items manually.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 shrink-0 w-full md:w-auto">
+            <Link href="/dashboard/inventory/items" className="w-full md:w-auto">
+              <Button size="sm" className="w-full md:w-auto bg-emerald-600 hover:bg-emerald-700 text-white gap-2 cursor-pointer shadow-xs font-semibold text-xs h-9">
+                <span>Open Items Catalog & Excel Uploader</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Filter Toolbar */}
       <div className="p-3 sm:p-4 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">

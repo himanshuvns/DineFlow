@@ -136,6 +136,161 @@ func (s *Service) CreateItem(ctx context.Context, tenantID bson.ObjectID, input 
 	return item, nil
 }
 
+type BulkImportInput struct {
+	Mode      string            `json:"mode"` // "upsert", "append", "replace"
+	ActorName string            `json:"actorName"`
+	Items     []CreateItemInput `json:"items"`
+}
+
+func (s *Service) BulkImportItems(ctx context.Context, tenantID bson.ObjectID, input BulkImportInput) (*domaininv.BulkImportResult, error) {
+	result := &domaininv.BulkImportResult{
+		TotalProcessed: len(input.Items),
+		Errors:         []string{},
+	}
+	if len(input.Items) == 0 {
+		return result, nil
+	}
+
+	mode := strings.ToLower(strings.TrimSpace(input.Mode))
+	if mode == "" {
+		mode = "upsert"
+	}
+
+	actor := input.ActorName
+	if actor == "" {
+		actor = "Inventory Manager"
+	}
+
+	coll := s.db.Collection("inventory_items")
+
+	// If replace mode, archive existing items first
+	if mode == "replace" {
+		_, _ = coll.UpdateMany(ctx,
+			bson.M{"tenantId": tenantID, "isArchived": false},
+			bson.M{"$set": bson.M{"isArchived": true, "updatedAt": time.Now().UTC()}},
+		)
+	}
+
+	// Fetch non-archived existing items for this tenant to index by SKU and lower-case Name
+	existingCursor, err := coll.Find(ctx, bson.M{"tenantId": tenantID, "isArchived": false})
+	existingBySKU := make(map[string]domaininv.InventoryItem)
+	existingByName := make(map[string]domaininv.InventoryItem)
+	if err == nil {
+		var existingList []domaininv.InventoryItem
+		if err := existingCursor.All(ctx, &existingList); err == nil {
+			for _, itm := range existingList {
+				if itm.SKU != "" {
+					existingBySKU[strings.ToUpper(strings.TrimSpace(itm.SKU))] = itm
+				}
+				if itm.Name != "" {
+					existingByName[strings.ToLower(strings.TrimSpace(itm.Name))] = itm
+				}
+			}
+		}
+	}
+
+	for _, itemInput := range input.Items {
+		name := strings.TrimSpace(itemInput.Name)
+		if name == "" {
+			result.SkippedCount++
+			result.Errors = append(result.Errors, "Skipped item with missing name")
+			continue
+		}
+
+		sku := strings.ToUpper(strings.TrimSpace(itemInput.SKU))
+		nameKey := strings.ToLower(name)
+
+		// Check if item already exists
+		var existingItem *domaininv.InventoryItem
+		if mode != "replace" {
+			if itm, ok := existingBySKU[sku]; ok && sku != "" {
+				existingItem = &itm
+			} else if itm, ok := existingByName[nameKey]; ok {
+				existingItem = &itm
+			}
+		}
+
+		if existingItem != nil {
+			if mode == "append" {
+				result.SkippedCount++
+				continue
+			}
+
+			// Upsert / Update existing item
+			now := time.Now().UTC()
+			setFields := bson.M{
+				"category":        itemInput.Category,
+				"storageLocation": itemInput.StorageLocation,
+				"updatedAt":       now,
+			}
+			if itemInput.BaseUnit != "" {
+				setFields["baseUnit"] = domaininv.NormalizeUnit(itemInput.BaseUnit)
+			}
+			if itemInput.PurchaseUnit != "" {
+				setFields["purchaseUnit"] = domaininv.NormalizeUnit(itemInput.PurchaseUnit)
+			}
+			if itemInput.ConversionFactor > 0 {
+				setFields["conversionFactor"] = itemInput.ConversionFactor
+			}
+			if itemInput.MinStockLevel > 0 {
+				setFields["minStockLevel"] = itemInput.MinStockLevel
+			}
+			if itemInput.MaxStockLevel > 0 {
+				setFields["maxStockLevel"] = itemInput.MaxStockLevel
+			}
+			if itemInput.AvgPurchaseCost > 0 {
+				setFields["avgPurchaseCost"] = itemInput.AvgPurchaseCost
+			}
+			if itemInput.LastPurchasePrice > 0 {
+				setFields["lastPurchasePrice"] = itemInput.LastPurchasePrice
+			}
+
+			prevQty := existingItem.CurrentQuantity
+			qtyDelta := itemInput.CurrentQuantity - prevQty
+			setFields["currentQuantity"] = itemInput.CurrentQuantity
+
+			_, updErr := coll.UpdateOne(ctx,
+				bson.M{"_id": existingItem.ID, "tenantId": tenantID},
+				bson.M{"$set": setFields},
+			)
+			if updErr != nil {
+				result.Errors = append(result.Errors, fmt.Sprintf("Failed to update item %s: %v", name, updErr))
+				result.SkippedCount++
+				continue
+			}
+
+			// Log movement if quantity changed
+			if math.Abs(qtyDelta) > 0.0001 {
+				_ = s.logMovement(ctx, tenantID, existingItem.ID, existingItem.Name, existingItem.OutletID,
+					domaininv.MovementCorrection, qtyDelta, existingItem.BaseUnit, prevQty, itemInput.CurrentQuantity,
+					itemInput.AvgPurchaseCost, math.Abs(qtyDelta)*itemInput.AvgPurchaseCost,
+					"", "", "", "bulk_update", existingItem.ID.Hex(),
+					"Spreadsheet bulk catalog update", bson.NilObjectID, actor)
+			}
+
+			result.UpdatedCount++
+		} else {
+			// Create new item
+			created, createErr := s.CreateItem(ctx, tenantID, itemInput)
+			if createErr != nil {
+				result.Errors = append(result.Errors, fmt.Sprintf("Failed to create item %s: %v", name, createErr))
+				result.SkippedCount++
+				continue
+			}
+
+			// Update in-memory lookup cache to prevent duplicate creation in same batch
+			if created.SKU != "" {
+				existingBySKU[strings.ToUpper(created.SKU)] = *created
+			}
+			existingByName[nameKey] = *created
+
+			result.CreatedCount++
+		}
+	}
+
+	return result, nil
+}
+
 func (s *Service) GetItem(ctx context.Context, tenantID, itemID bson.ObjectID) (*domaininv.InventoryItem, error) {
 	var item domaininv.InventoryItem
 	err := s.db.Collection("inventory_items").FindOne(ctx, bson.M{
