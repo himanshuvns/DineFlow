@@ -65,6 +65,11 @@ type JWTConfig struct {
 }
 
 type EmailConfig struct {
+	Provider     string
+	SMTPHost     string
+	SMTPPort     string
+	SMTPUser     string
+	SMTPPass     string
 	ResendAPIKey string
 	FromAddress  string
 	FromName     string
@@ -129,8 +134,13 @@ func Load() (*Config, error) {
 	cfg.JWT.RefreshTTL = time.Duration(refreshTTL) * 24 * time.Hour
 
 	// ── Email ─────────────────────────────────────────────────────────────────
+	cfg.Email.Provider = strings.ToLower(getEnv("EMAIL_PROVIDER", "smtp"))
+	cfg.Email.SMTPHost = getEnv("SMTP_HOST", "smtp.gmail.com")
+	cfg.Email.SMTPPort = getEnv("SMTP_PORT", "587")
+	cfg.Email.SMTPUser = getEnv("SMTP_USER", "dineflowtech@gmail.com")
+	cfg.Email.SMTPPass = strings.ReplaceAll(getEnv("SMTP_PASS", ""), " ", "")
 	cfg.Email.ResendAPIKey = getEnv("RESEND_API_KEY", "")
-	cfg.Email.FromAddress = getEnv("EMAIL_FROM", "noreply@dineflow.app")
+	cfg.Email.FromAddress = getEnv("EMAIL_FROM", "dineflowtech@gmail.com")
 	cfg.Email.FromName = getEnv("EMAIL_FROM_NAME", "DineFlow")
 
 	// ── Storage (Cloudflare R2 / S3-compatible) ───────────────────────────────

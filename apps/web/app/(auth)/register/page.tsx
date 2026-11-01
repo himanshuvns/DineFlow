@@ -7,6 +7,7 @@ import {
   Store,
   User,
   Phone,
+  Mail,
   ChevronDown,
   ShieldCheck,
   Headphones,
@@ -23,6 +24,7 @@ import { useToast } from "@/components/ui/toast";
 import { apiClient } from "@/lib/api";
 import { HospitalityLoader } from "@/components/ui/hospitality-loader";
 import {
+  validateEmail,
   validateIndianPhone,
   formatIndianPhoneInput,
   validatePassword,
@@ -38,11 +40,13 @@ export default function RegisterPage() {
   const [businessType, setBusinessType] = React.useState("restaurant");
   const [firstName, setFirstName] = React.useState("");
   const [lastName, setLastName] = React.useState("");
-  const [phone, setPhone] = React.useState("+91");
+  const [email, setEmail] = React.useState("");
+  const [phone, setPhone] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [confirmPassword, setConfirmPassword] = React.useState("");
 
   // Touch states for inline validation on blur / first interaction
+  const [emailTouched, setEmailTouched] = React.useState(false);
   const [phoneTouched, setPhoneTouched] = React.useState(false);
   const [passwordTouched, setPasswordTouched] = React.useState(false);
   const [confirmPasswordTouched, setConfirmPasswordTouched] = React.useState(false);
@@ -63,7 +67,12 @@ export default function RegisterPage() {
   }, [businessName]);
 
   // Real-time validations
-  const phoneValidation = React.useMemo(() => validateIndianPhone(phone), [phone]);
+  const emailValidation = React.useMemo(() => validateEmail(email), [email]);
+  const isPhoneProvided = Boolean(phone.trim() && phone.trim() !== "+91");
+  const phoneValidation = React.useMemo(() => {
+    if (!isPhoneProvided) return { isValid: true, normalized: "", formatted: "" };
+    return validateIndianPhone(phone);
+  }, [phone, isPhoneProvided]);
   const passwordValidation = React.useMemo(() => validatePassword(password), [password]);
   const confirmPasswordValidation = React.useMemo(
     () => validateConfirmPassword(password, confirmPassword),
@@ -74,13 +83,15 @@ export default function RegisterPage() {
     businessName.trim().length >= 2 &&
     firstName.trim().length >= 1 &&
     lastName.trim().length >= 1 &&
-    phoneValidation.isValid &&
+    emailValidation.isValid &&
+    (!isPhoneProvided || phoneValidation.isValid) &&
     passwordValidation.isValid &&
     confirmPasswordValidation.isValid;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    setEmailTouched(true);
     setPhoneTouched(true);
     setPasswordTouched(true);
     setConfirmPasswordTouched(true);
@@ -89,7 +100,9 @@ export default function RegisterPage() {
     setLastNameTouched(true);
 
     if (!isFormValid) {
-      if (!phoneValidation.isValid) {
+      if (!emailValidation.isValid) {
+        addToast("error", "Invalid Email Address", emailValidation.error || "Please enter a valid work email address.");
+      } else if (isPhoneProvided && !phoneValidation.isValid) {
         addToast("error", "Invalid Mobile Number", phoneValidation.error || "Please enter a valid 10-digit Indian mobile number.");
       } else if (!passwordValidation.isValid) {
         addToast("error", "Weak Password", passwordValidation.error || "Please satisfy all password complexity criteria.");
@@ -104,36 +117,29 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      const res = await apiClient.post("/auth/register", {
+      await apiClient.post("/auth/register", {
         businessName: businessName.trim(),
         slug,
         businessType,
         name: `${firstName} ${lastName}`.trim(),
         firstName: firstName.trim(),
         lastName: lastName.trim(),
-        phone: phoneValidation.normalized,
+        email: emailValidation.normalized,
+        phone: isPhoneProvided ? phoneValidation.normalized : undefined,
         password,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Kolkata",
         country: "IN",
       });
 
-      const devOtp = res.data?.data?.devOtp;
       setIsRedirecting(true);
-      if (devOtp) {
-        addToast("success", "Account Created!", `Verification code: ${devOtp}`);
-        setTimeout(() => {
-          router.push(`/verify?phone=${encodeURIComponent(phoneValidation.normalized)}&devOtp=${encodeURIComponent(devOtp)}`);
-        }, 2200);
-      } else {
-        addToast(
-          "success",
-          "Registration submitted!",
-          "Please check your mobile for the 6-digit verification code."
-        );
-        setTimeout(() => {
-          router.push(`/verify?phone=${encodeURIComponent(phoneValidation.normalized)}`);
-        }, 2200);
-      }
+      addToast(
+        "success",
+        "Verification code sent!",
+        `We've sent a 6-digit code to ${emailValidation.normalized}.`
+      );
+      setTimeout(() => {
+        router.push(`/verify?email=${encodeURIComponent(emailValidation.normalized)}`);
+      }, 1500);
     } catch (err: any) {
       const msg =
         err?.response?.data?.error?.message ||
@@ -261,21 +267,51 @@ export default function RegisterPage() {
             />
           </div>
 
-          {/* 4. Mobile Number with +91 segmented pill and real-time formatting */}
+          {/* 4. Work Email Address (Primary Verification Channel) */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 select-none">
+                Work Email Address
+              </label>
+              <span className="text-[10.5px] font-medium text-emerald-600 dark:text-[#14F1C7]">
+                OTP sent here (Free verification)
+              </span>
+            </div>
+            <FormInput
+              type="email"
+              placeholder="e.g. owner@restaurant.com"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setEmailTouched(true);
+              }}
+              onBlur={() => setEmailTouched(true)}
+              error={
+                emailTouched && !emailValidation.isValid
+                  ? emailValidation.error
+                  : undefined
+              }
+              isSuccess={emailTouched && emailValidation.isValid}
+              required
+              leftIcon={<Mail className="h-4 w-4" />}
+            />
+          </div>
+
+          {/* 5. Mobile Number (Optional for WhatsApp / SMS alerts) */}
           <div className="w-full space-y-1">
             <div className="flex items-center justify-between">
               <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 select-none">
-                Mobile Number
+                Mobile Number <span className="text-slate-400 font-normal">(Optional)</span>
               </label>
               <span className="text-[10.5px] text-slate-500 dark:text-[#94A3B8]">
-                10-digit Indian Mobile
+                For WhatsApp alerts & recovery
               </span>
             </div>
             <div
               className={`group relative flex items-center rounded-2xl border transition-all duration-200 bg-slate-100/90 dark:bg-[#0F172A]/70 backdrop-blur-md ${
-                phoneTouched && !phoneValidation.isValid
+                isPhoneProvided && phoneTouched && !phoneValidation.isValid
                   ? "border-rose-500/80 focus-within:border-rose-500 focus-within:ring-2 focus-within:ring-rose-500/20"
-                  : phoneValidation.isValid
+                  : isPhoneProvided && phoneValidation.isValid
                   ? "border-emerald-500/60 dark:border-emerald-500/60 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20"
                   : "border-slate-200 dark:border-slate-700/60 hover:border-slate-300 dark:hover:border-slate-600 focus-within:border-emerald-500 dark:focus-within:border-[#14F1C7] focus-within:ring-2 focus-within:ring-emerald-500/20 dark:focus-within:ring-[#14F1C7]/40"
               }`}
@@ -290,7 +326,7 @@ export default function RegisterPage() {
               {/* Number Input with live formatting */}
               <input
                 type="tel"
-                placeholder="98765 43210"
+                placeholder="98765 43210 (Optional)"
                 value={
                   phone.startsWith("+91")
                     ? formatIndianPhoneInput(phone).replace(/^\+91\s*/, "")
@@ -298,18 +334,17 @@ export default function RegisterPage() {
                 }
                 onChange={(e) => {
                   const digits = e.target.value.replace(/[^0-9]/g, "").slice(0, 10);
-                  setPhone("+91" + digits);
+                  setPhone(digits ? "+91" + digits : "");
                   setPhoneTouched(true);
                 }}
                 onBlur={() => setPhoneTouched(true)}
-                required
                 maxLength={11}
-                aria-invalid={phoneTouched && !phoneValidation.isValid}
+                aria-invalid={isPhoneProvided && phoneTouched && !phoneValidation.isValid}
                 aria-describedby="register-phone-feedback"
                 className="w-full bg-transparent text-base sm:text-sm text-slate-900 dark:text-[#F8FAFC] placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none px-3 py-2"
               />
 
-              {phoneValidation.isValid && (
+              {isPhoneProvided && phoneValidation.isValid && (
                 <div className="pr-3 flex items-center text-emerald-500 dark:text-[#14F1C7] pointer-events-none shrink-0">
                   <CheckCircle2 className="h-4 w-4" />
                 </div>
@@ -317,13 +352,13 @@ export default function RegisterPage() {
             </div>
 
             {/* Inline Error or Helper */}
-            {phoneTouched && !phoneValidation.isValid ? (
+            {isPhoneProvided && phoneTouched && !phoneValidation.isValid ? (
               <p id="register-phone-feedback" role="alert" className="text-xs text-rose-500 pl-1 font-medium">
                 {phoneValidation.error}
               </p>
             ) : (
               <p id="register-phone-feedback" className="text-[11px] text-slate-500 dark:text-[#94A3B8] pl-1">
-                Enter your 10-digit mobile number starting with 6, 7, 8, or 9
+                Optional: 10-digit mobile number for WhatsApp alerts & kitchen notifications
               </p>
             )}
           </div>

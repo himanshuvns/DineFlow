@@ -4,7 +4,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
-	"os"
+	"strings"
 
 	authapp "github.com/dineflow/api/internal/application/auth"
 	"github.com/dineflow/api/internal/interfaces/http/middleware"
@@ -24,7 +24,7 @@ func NewAuthHandler(authService *authapp.Service) *AuthHandler {
 
 // Register godoc
 // POST /api/v1/auth/register
-// Creates a new tenant + owner user and sends an OTP.
+// Creates a new tenant + owner user and sends an email OTP.
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req authapp.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -32,13 +32,15 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	otpCode, err := h.authService.Register(c.Request.Context(), req)
+	_, err := h.authService.Register(c.Request.Context(), req)
 	if err != nil {
 		switch {
 		case errors.Is(err, authapp.ErrPhoneAlreadyExists):
 			response.Conflict(c, "PHONE_EXISTS", "An account with this mobile number already exists.")
 		case errors.Is(err, authapp.ErrEmailAlreadyExists):
 			response.Conflict(c, "EMAIL_EXISTS", "An account with this email already exists.")
+		case errors.Is(err, authapp.ErrInvalidEmail):
+			response.BadRequest(c, "INVALID_EMAIL", "Please provide a valid email address.")
 		case errors.Is(err, authapp.ErrInvalidPhone):
 			response.BadRequest(c, "INVALID_PHONE", "Please provide a valid 10-digit mobile number.")
 		case errors.Is(err, authapp.ErrSlugAlreadyExists):
@@ -51,10 +53,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	}
 
 	respData := gin.H{
-		"message": "Registration successful. Please enter the verification code sent to your mobile number.",
-	}
-	if os.Getenv("APP_ENV") != "production" || os.Getenv("OTP_PROVIDER") != "msg91" {
-		respData["devOtp"] = otpCode
+		"message": "Registration successful. Please enter the 6-digit verification code sent to your email address.",
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
@@ -80,6 +79,8 @@ func (h *AuthHandler) VerifyOTP(c *gin.Context) {
 			response.BadRequest(c, "INVALID_OTP", "The verification code is invalid or has expired.")
 		case errors.Is(err, authapp.ErrInvalidPhone):
 			response.BadRequest(c, "INVALID_PHONE", "Please provide a valid mobile number.")
+		case errors.Is(err, authapp.ErrInvalidEmail):
+			response.BadRequest(c, "INVALID_EMAIL", "Please provide a valid email address.")
 		case errors.Is(err, authapp.ErrInvalidCredentials):
 			response.NotFound(c, "Account")
 		default:
@@ -131,7 +132,7 @@ func (h *AuthHandler) SendOTP(c *gin.Context) {
 		return
 	}
 
-	otpCode, err := h.authService.SendLoginOTP(c.Request.Context(), req.Phone)
+	_, err := h.authService.SendLoginOTP(c.Request.Context(), req.Phone)
 	if err != nil {
 		switch {
 		case errors.Is(err, authapp.ErrInvalidPhone):
@@ -147,16 +148,13 @@ func (h *AuthHandler) SendOTP(c *gin.Context) {
 	respData := gin.H{
 		"message": "Verification code dispatched successfully.",
 	}
-	if os.Getenv("APP_ENV") != "production" || os.Getenv("OTP_PROVIDER") != "msg91" {
-		respData["devOtp"] = otpCode
-	}
 
 	response.OK(c, respData)
 }
 
 // ResendOTP godoc
 // POST /api/v1/auth/resend-otp
-// Resends a fresh OTP to the given mobile number.
+// Resends a fresh OTP to the given email address or mobile number.
 func (h *AuthHandler) ResendOTP(c *gin.Context) {
 	var req authapp.SendOTPRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -164,11 +162,22 @@ func (h *AuthHandler) ResendOTP(c *gin.Context) {
 		return
 	}
 
-	otpCode, err := h.authService.ResendOTP(c.Request.Context(), req.Phone)
+	target := strings.TrimSpace(req.Email)
+	if target == "" {
+		target = strings.TrimSpace(req.Phone)
+	}
+	if target == "" {
+		response.BadRequest(c, "INVALID_TARGET", "Please provide a valid email address or mobile number.")
+		return
+	}
+
+	_, err := h.authService.ResendOTP(c.Request.Context(), target)
 	if err != nil {
 		switch {
 		case errors.Is(err, authapp.ErrInvalidPhone):
 			response.BadRequest(c, "INVALID_PHONE", "Please provide a valid mobile number.")
+		case errors.Is(err, authapp.ErrInvalidEmail):
+			response.BadRequest(c, "INVALID_EMAIL", "Please provide a valid email address.")
 		default:
 			response.InternalError(c)
 		}
@@ -176,10 +185,7 @@ func (h *AuthHandler) ResendOTP(c *gin.Context) {
 	}
 
 	respData := gin.H{
-		"message": "New verification code dispatched.",
-	}
-	if os.Getenv("APP_ENV") != "production" || os.Getenv("OTP_PROVIDER") != "msg91" {
-		respData["devOtp"] = otpCode
+		"message": "A new verification code has been dispatched.",
 	}
 
 	response.OK(c, respData)

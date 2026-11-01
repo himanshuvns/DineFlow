@@ -152,12 +152,17 @@ func main() {
 	}
 	log.Info("Initialized OTP Provider", zap.String("provider", otpProvider.Name()))
 
-	emailService := emailinfra.NewService(
-		cfg.Email.ResendAPIKey,
-		cfg.Email.FromAddress,
-		cfg.Email.FromName,
-		"http://localhost:3000", // TODO: from config in production
-	)
+	emailService := emailinfra.NewService(emailinfra.Config{
+		Provider:     cfg.Email.Provider,
+		SMTPHost:     cfg.Email.SMTPHost,
+		SMTPPort:     cfg.Email.SMTPPort,
+		SMTPUser:     cfg.Email.SMTPUser,
+		SMTPPass:     cfg.Email.SMTPPass,
+		ResendAPIKey: cfg.Email.ResendAPIKey,
+		FromAddress:  cfg.Email.FromAddress,
+		FromName:     cfg.Email.FromName,
+		AppURL:       "https://dine.rovixatech.com",
+	})
 
 	authService := authapp.NewService(mongoDB, rdb, tokenMaker, otpProvider, emailService)
 
