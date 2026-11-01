@@ -15,6 +15,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
+import { useAuthStore } from "@/lib/stores/auth-store";
+import { useTenantData } from "@/lib/stores/tenant-data-store";
 
 const SAMPLE_ITEMS = [
   { name: "Truffle Mushroom Risotto", category: "Main Courses", price: 850, tags: ["veg", "gluten_free"] },
@@ -59,7 +61,34 @@ function getDescription(item: string, tone: string) {
 
 export default function MenuWriterPage() {
   const { addToast } = useToast();
-  const [selectedItem, setSelectedItem] = React.useState(SAMPLE_ITEMS[0]);
+  const { user, tenant } = useAuthStore();
+  const { menuItems, isDemoTenant } = useTenantData();
+  const isDemo = Boolean(
+    isDemoTenant ||
+    tenant?.slug === "the-grand-bistro" ||
+    tenant?.id === "demo-tenant" ||
+    user?.phone === "+91 98765 43210" ||
+    user?.phone === "+919876543210"
+  );
+
+  const availableItems = React.useMemo(() => {
+    if (menuItems.length > 0) {
+      return menuItems.map((m) => ({
+        name: m.name,
+        category: m.category || "Main Courses",
+        price: m.price || 0,
+        tags: m.isVeg ? ["veg"] : ["non_veg"],
+      }));
+    }
+    if (isDemo) {
+      return SAMPLE_ITEMS;
+    }
+    return [
+      { name: "Chef's Signature Creation", category: "Chef's Specials", price: 0, tags: ["special"] },
+    ];
+  }, [menuItems, isDemo]);
+
+  const [selectedItem, setSelectedItem] = React.useState(availableItems[0]);
   const [tone, setTone] = React.useState("poetic");
   const [isLoading, setIsLoading] = React.useState(false);
   const [result, setResult] = React.useState<null | { headline: string; description: string; tagLine: string }>(null);
@@ -67,12 +96,24 @@ export default function MenuWriterPage() {
   const [appliedItems, setAppliedItems] = React.useState<string[]>([]);
   const [showDropdown, setShowDropdown] = React.useState(false);
 
+  React.useEffect(() => {
+    if (availableItems.length > 0 && !availableItems.some((i) => i.name === selectedItem.name)) {
+      setSelectedItem(availableItems[0]);
+    }
+  }, [availableItems, selectedItem.name]);
+
   const handleGenerate = async () => {
     setIsLoading(true);
     setResult(null);
     // Simulate AI latency
     await new Promise((r) => setTimeout(r, 1800));
-    setResult(getDescription(selectedItem.name, tone));
+    const itemKey = `${selectedItem.name}|${tone}`;
+    const generated = MOCK_DESCRIPTIONS[itemKey] || {
+      headline: `${selectedItem.name} — Crafted with Passion`,
+      description: `Expertly prepared with prime ingredients, our ${selectedItem.name} brings together rich textures and layered flavours. Designed to delight your palate and offer an unforgettable dining experience.`,
+      tagLine: "Prepared fresh to order. Uncompromising culinary excellence.",
+    };
+    setResult(generated);
     setIsLoading(false);
   };
 
@@ -133,7 +174,7 @@ export default function MenuWriterPage() {
 
                 {showDropdown && (
                   <div className="absolute z-10 top-full mt-2 w-full bg-white dark:bg-[#0d1117] border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden">
-                    {SAMPLE_ITEMS.map((item) => (
+                    {availableItems.map((item) => (
                       <button
                         key={item.name}
                         onClick={() => { setSelectedItem(item); setShowDropdown(false); setResult(null); }}
@@ -149,7 +190,7 @@ export default function MenuWriterPage() {
 
               {/* Dietary tags */}
               <div className="flex flex-wrap gap-1.5 mt-3">
-                {selectedItem.tags.map((tag) => (
+                {selectedItem.tags.map((tag: string) => (
                   <Badge key={tag} variant="glow" size="sm">{tag.replace("_", " ")}</Badge>
                 ))}
               </div>

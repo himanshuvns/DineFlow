@@ -145,9 +145,16 @@ export function normalizePhone(phone: string): string {
   return digits;
 }
 
-export function getEnrolledStaff(): StaffMember[] {
+export function getEnrolledStaff(tenantSlug?: string): StaffMember[] {
   if (!global.__dineflow_enrolled_staff) {
-    global.__dineflow_enrolled_staff = [...INITIAL_STAFF_MEMBERS];
+    global.__dineflow_enrolled_staff = [];
+  }
+  // Only inject demo INITIAL_STAFF_MEMBERS for the official demo showcase
+  if (tenantSlug === "the-grand-bistro") {
+    return [...INITIAL_STAFF_MEMBERS];
+  }
+  if (tenantSlug) {
+    return global.__dineflow_enrolled_staff.filter((s) => s.tenantId === tenantSlug || !s.tenantId);
   }
   return global.__dineflow_enrolled_staff;
 }
@@ -156,18 +163,26 @@ export function setEnrolledStaff(list: StaffMember[]): void {
   global.__dineflow_enrolled_staff = list;
 }
 
-export function enrollStaff(member: StaffMember): StaffMember {
-  const staff = getEnrolledStaff();
+export function enrollStaff(member: StaffMember, tenantSlug?: string): StaffMember {
+  if (!global.__dineflow_enrolled_staff) {
+    global.__dineflow_enrolled_staff = [];
+  }
+  const staff = global.__dineflow_enrolled_staff;
   const existingIdx = staff.findIndex(
     (s) => s.id === member.id || normalizePhone(s.phone) === normalizePhone(member.phone)
   );
 
+  const enriched = {
+    ...member,
+    tenantId: member.tenantId || tenantSlug || undefined,
+  };
+
   if (existingIdx !== -1) {
-    staff[existingIdx] = { ...staff[existingIdx], ...member };
+    staff[existingIdx] = { ...staff[existingIdx], ...enriched };
     return staff[existingIdx];
   } else {
-    staff.push(member);
-    return member;
+    staff.push(enriched);
+    return enriched;
   }
 }
 

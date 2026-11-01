@@ -75,10 +75,13 @@ export const useReviewStore = create<ReviewStoreState>()(
         const current = get().configs[cleanSlug];
         if (current) return current;
 
-        const defaultUrl = `https://search.google.com/local/writereview?placeid=ChIJN1t_tDeuEmsRUsoyG83frY4`;
+        const isDemo = cleanSlug === "the-grand-bistro" || cleanSlug === "demo-tenant";
+        const defaultUrl = isDemo
+          ? `https://search.google.com/local/writereview?placeid=ChIJN1t_tDeuEmsRUsoyG83frY4`
+          : "";
         const newConfig: ReviewConfig = {
           tenantSlug: cleanSlug,
-          googlePlaceId: "ChIJN1t_tDeuEmsRUsoyG83frY4",
+          googlePlaceId: isDemo ? "ChIJN1t_tDeuEmsRUsoyG83frY4" : "",
           googleReviewUrl: defaultUrl,
           standCallToAction: "Loved your meal? Scan to rate us!",
           standSubtitle: "Takes 15 seconds • AI Review Assistant ✨",

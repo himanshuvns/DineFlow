@@ -2772,9 +2772,9 @@
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/inventory/counts/page.tsx": {
-    "mtime": 1792527816.5411856,
-    "seen": 1792528004.441331,
-    "ast_hash": "c74722aba246b77c51d75039b07bfc38",
+    "mtime": 1793518601.4347024,
+    "seen": 1793518670.836938,
+    "ast_hash": "b8b3e7b44e13452f7e5469776ff97462",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/inventory/items/page.tsx": {
@@ -2808,15 +2808,15 @@
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/inventory/recipes/page.tsx": {
-    "mtime": 1792527974.172177,
-    "seen": 1792528004.441335,
-    "ast_hash": "8b549582344e3e780aa1c63e13d9abf1",
+    "mtime": 1793518471.7294223,
+    "seen": 1793518670.8369431,
+    "ast_hash": "a9aa5f083960fa9baecfe3eb83065273",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/inventory/reports/page.tsx": {
-    "mtime": 1792527882.4183888,
-    "seen": 1792528004.4413362,
-    "ast_hash": "da34340f837ec8eab891d6e81612db5d",
+    "mtime": 1793518573.864348,
+    "seen": 1793518670.8369431,
+    "ast_hash": "3b993966a28ca1742f5d189c6bdce0e5",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/inventory/settings/page.tsx": {

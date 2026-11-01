@@ -17,6 +17,7 @@ import {
   Users,
   UtensilsCrossed,
   QrCode,
+  Receipt,
   CheckCircle2,
   Clock,
   RotateCcw,
@@ -41,6 +42,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs } from "@/components/ui/tabs";
 import { Modal } from "@/components/ui/modal";
 import { useAuthStore } from "@/lib/stores/auth-store";
+import { useTenantData } from "@/lib/stores/tenant-data-store";
 import { useUpiSettings } from "@/lib/stores/upi-settings-store";
 import { useToast } from "@/components/ui/toast";
 import { useTheme } from "@/components/theme-provider";
@@ -84,13 +86,21 @@ const INITIAL_INVOICES: Invoice[] = [
 
 export default function SettingsPage() {
   const { tenant, updateTenant, user } = useAuthStore();
+  const { isDemoTenant } = useTenantData();
+  const isDemo = Boolean(
+    isDemoTenant ||
+    tenant?.slug === "the-grand-bistro" ||
+    tenant?.id === "demo-tenant" ||
+    user?.phone === "+91 98765 43210" ||
+    user?.phone === "+919876543210"
+  );
   const isManager = user?.role === "manager";
   const { addToast } = useToast();
   const { theme, setTheme } = useTheme();
   const [activeTab, setActiveTab] = React.useState("general");
 
   // General settings state
-  const [name, setName] = React.useState(tenant?.name || "The Grand Bistro");
+  const [name, setName] = React.useState(tenant?.name || "My Property");
   const [currency, setCurrency] = React.useState(tenant?.currency || "INR");
   const [logoUrl, setLogoUrl] = React.useState(tenant?.logoUrl || tenant?.logo || "");
   const [category, setCategory] = React.useState<string>(tenant?.type || "restaurant");
@@ -127,7 +137,7 @@ export default function SettingsPage() {
   // Billing & Subscription state
   const currentPlan = tenant?.plan || "growth";
   const [isGracePeriod, setIsGracePeriod] = React.useState(false);
-  const [invoices, setInvoices] = React.useState<Invoice[]>(INITIAL_INVOICES);
+  const [invoices, setInvoices] = React.useState<Invoice[]>(isDemo ? INITIAL_INVOICES : []);
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = React.useState(false);
   const [targetUpgradePlan, setTargetUpgradePlan] = React.useState<"free" | "starter" | "growth" | "hotel_pro">("hotel_pro");
   const [isUpgrading, setIsUpgrading] = React.useState(false);
@@ -1133,28 +1143,38 @@ export default function SettingsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
-                    {invoices.map((inv) => (
-                      <tr key={inv.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                        <td className="py-3 pl-2 font-mono font-medium text-slate-900 dark:text-white">{inv.invoiceNumber}</td>
-                        <td className="py-3 text-slate-600 dark:text-slate-400">{inv.paidAt}</td>
-                        <td className="py-3 text-slate-800 dark:text-slate-300 font-medium">{inv.planName}</td>
-                        <td className="py-3 font-semibold text-slate-900 dark:text-white font-mono">₹{inv.amount.toLocaleString("en-IN")}</td>
-                        <td className="py-3">
-                          <Badge variant="success" size="sm">Paid</Badge>
-                        </td>
-                        <td className="py-3 text-right pr-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDownloadInvoice(inv)}
-                            leftIcon={<Download className="h-3 w-3" />}
-                            className="text-xs text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white font-medium"
-                          >
-                            PDF
-                          </Button>
+                    {invoices.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="py-8 text-center text-xs text-slate-500">
+                          <Receipt className="h-6 w-6 mx-auto text-slate-400 mb-1.5 opacity-50" />
+                          <p className="font-semibold text-slate-700 dark:text-slate-300">No subscription billing invoices yet</p>
+                          <p className="text-[11px] text-slate-500 mt-0.5">Your property is currently in active trial or evaluation tier.</p>
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      invoices.map((inv) => (
+                        <tr key={inv.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                          <td className="py-3 pl-2 font-mono font-medium text-slate-900 dark:text-white">{inv.invoiceNumber}</td>
+                          <td className="py-3 text-slate-600 dark:text-slate-400">{inv.paidAt}</td>
+                          <td className="py-3 text-slate-800 dark:text-slate-300 font-medium">{inv.planName}</td>
+                          <td className="py-3 font-semibold text-slate-900 dark:text-white font-mono">₹{inv.amount.toLocaleString("en-IN")}</td>
+                          <td className="py-3">
+                            <Badge variant="success" size="sm">Paid</Badge>
+                          </td>
+                          <td className="py-3 text-right pr-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDownloadInvoice(inv)}
+                              leftIcon={<Download className="h-3 w-3" />}
+                              className="text-xs text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white font-medium"
+                            >
+                              PDF
+                            </Button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>

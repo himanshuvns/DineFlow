@@ -87,8 +87,16 @@ type DatePreset = "today" | "yesterday" | "7d" | "30d" | "custom";
 
 export default function GuestDiningHistoryPage() {
   const { addToast } = useToast();
-  const { orders: storeOrders, tenantName, tenantSlug } = useTenantData();
+  const { orders: storeOrders, tenantName, tenantSlug, isDemoTenant } = useTenantData();
   const { user, tenant } = useAuthStore();
+
+  const isDemo = Boolean(
+    isDemoTenant ||
+    tenant?.slug === "the-grand-bistro" ||
+    tenant?.id === "demo-tenant" ||
+    user?.phone === "+91 98765 43210" ||
+    user?.phone === "+919876543210"
+  );
 
   const hasRoomsEnabled = hasRooms(tenant?.type);
   const categoryConfig = getCategoryConfig(tenant?.type);
@@ -204,8 +212,8 @@ export default function GuestDiningHistoryPage() {
         });
       }
 
-      // If backend has no past guests or in demo mode, supply rich realistic multi-day records
-      if (loadedGuests.length === 0) {
+      // If backend has no past guests and in demo mode, supply rich realistic multi-day records
+      if (loadedGuests.length === 0 && isDemo) {
         const now = new Date();
         const yDay = new Date(now);
         yDay.setDate(yDay.getDate() - 1);
@@ -428,8 +436,8 @@ export default function GuestDiningHistoryPage() {
         });
       }
 
-      // If still fewer than 5 orders, supply rich realistic multi-day restaurant dining history
-      if (loadedOrders.length < 5) {
+      // If in demo mode and fewer than 5 orders, supply rich realistic multi-day restaurant dining history
+      if (loadedOrders.length < 5 && isDemo) {
         const now = new Date();
         const yDay = new Date(now);
         yDay.setDate(yDay.getDate() - 1);
@@ -567,7 +575,7 @@ export default function GuestDiningHistoryPage() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [storeOrders, tenantSlug, tenantName, hasRoomsEnabled]);
+  }, [storeOrders, tenantSlug, tenantName, hasRoomsEnabled, isDemo]);
 
   // Initial load
   React.useEffect(() => {
@@ -956,8 +964,8 @@ export default function GuestDiningHistoryPage() {
   const handleSimulateCheckOut = () => {
     const inHouse = hotelGuests.find((g) => g.status === "checked_in");
     const targetRoom = inHouse ? inHouse.roomNumber : "302";
-    const targetName = inHouse ? inHouse.name : "Dr. Vikram Malhotra";
-    const targetId = inHouse ? inHouse.id : "gst-01";
+    const targetName = inHouse ? inHouse.name : "Resident Guest";
+    const targetId = inHouse ? inHouse.id : `gst-${Date.now()}`;
 
     triggerHotelGuestCheckedOut(
       {

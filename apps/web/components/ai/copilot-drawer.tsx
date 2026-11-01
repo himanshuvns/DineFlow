@@ -14,7 +14,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUIStore } from "@/lib/stores/ui-store";
-import { useTenantDataStore } from "@/lib/stores/tenant-data-store";
+import { useAuthStore } from "@/lib/stores/auth-store";
+import { useTenantData } from "@/lib/stores/tenant-data-store";
 
 interface ChatMessage {
   id: string;
@@ -99,14 +100,23 @@ Would you like me to forecast dinner covers, generate a promotional WhatsApp ann
 
 export function CopilotDrawer() {
   const { copilotOpen, setCopilotOpen, toggleCopilot } = useUIStore();
-  const { tenantName } = useTenantDataStore();
+  const { user, tenant } = useAuthStore();
+  const { orders, tenantName, isDemoTenant } = useTenantData();
+  const isDemo = Boolean(
+    isDemoTenant ||
+    tenant?.slug === "the-grand-bistro" ||
+    tenant?.id === "demo-tenant" ||
+    user?.phone === "+91 98765 43210" ||
+    user?.phone === "+919876543210"
+  );
+  const hasOrders = orders.length > 0;
 
   const [briefingExpanded, setBriefingExpanded] = React.useState(true);
   const [messages, setMessages] = React.useState<ChatMessage[]>([
     {
       id: "msg-welcome",
       sender: "copilot",
-      content: `### Good morning, ${tenantName || "Team"}! ☕\n\nI am your **Hospitality AI Co-pilot**. Telemetry is fully synced across your Live KDS, table turn times, and customer reviews. Ask me anything about revenue, kitchen speed, or menu performance.`,
+      content: `### Good morning, ${tenant?.name || tenantName || "Team"}! ☕\n\nI am your **Hospitality AI Co-pilot**. Telemetry is fully synced across your Live KDS, table turn times, and customer reviews. Ask me anything about revenue, kitchen speed, or menu performance.`,
       timestamp: "Just now",
     },
   ]);
@@ -260,25 +270,45 @@ export function CopilotDrawer() {
                       <div className="grid grid-cols-3 gap-2 text-center">
                         <div className="p-2 rounded-xl bg-white/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800">
                           <span className="text-[10px] text-slate-400 block">Yesterday Sales</span>
-                          <span className="font-extrabold text-slate-900 dark:text-white text-xs sm:text-sm">₹68,450</span>
-                          <span className="text-[9px] text-emerald-500 block font-semibold">+14.2%</span>
+                          <span className="font-extrabold text-slate-900 dark:text-white text-xs sm:text-sm">
+                            {hasOrders || isDemo ? "₹68,450" : "₹0"}
+                          </span>
+                          <span className="text-[9px] text-emerald-500 block font-semibold">
+                            {hasOrders || isDemo ? "+14.2%" : "No prior data"}
+                          </span>
                         </div>
                         <div className="p-2 rounded-xl bg-white/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800">
                           <span className="text-[10px] text-slate-400 block">Top Dish</span>
-                          <span className="font-extrabold text-slate-900 dark:text-white text-xs truncate block">Truffle Risotto</span>
-                          <span className="text-[9px] text-slate-400 block">42 orders</span>
+                          <span className="font-extrabold text-slate-900 dark:text-white text-xs truncate block">
+                            {hasOrders || isDemo ? "Truffle Risotto" : "—"}
+                          </span>
+                          <span className="text-[9px] text-slate-400 block">
+                            {hasOrders || isDemo ? "42 orders" : "0 orders"}
+                          </span>
                         </div>
                         <div className="p-2 rounded-xl bg-white/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800">
                           <span className="text-[10px] text-slate-400 block">Table Turn</span>
-                          <span className="font-extrabold text-slate-900 dark:text-white text-xs sm:text-sm">41 mins</span>
-                          <span className="text-[9px] text-emerald-500 block font-semibold">3.2 turns</span>
+                          <span className="font-extrabold text-slate-900 dark:text-white text-xs sm:text-sm">
+                            {hasOrders || isDemo ? "41 mins" : "—"}
+                          </span>
+                          <span className="text-[9px] text-emerald-500 block font-semibold">
+                            {hasOrders || isDemo ? "3.2 turns" : "0 turns"}
+                          </span>
                         </div>
                       </div>
 
                       <div className="flex items-start gap-2 p-2.5 rounded-xl bg-violet-500/10 text-violet-800 dark:text-violet-300 text-[11px] leading-relaxed">
                         <Lightbulb className="h-4 w-4 shrink-0 text-amber-500 mt-0.5" />
                         <span>
-                          <strong>Kitchen Observation:</strong> Friday dinner rush peaked 25 mins earlier than usual. Pre-portioning garlic toast cuts 4 mins off Appetizer prep station tickets.
+                          {hasOrders || isDemo ? (
+                            <>
+                              <strong>Kitchen Observation:</strong> Friday dinner rush peaked 25 mins earlier than usual. Pre-portioning garlic toast cuts 4 mins off Appetizer prep station tickets.
+                            </>
+                          ) : (
+                            <>
+                              <strong>Welcome to DineFlow AI:</strong> Telemetry will automatically track your kitchen prep speed, popular dishes, and table turnaround as guests order.
+                            </>
+                          )}
                         </span>
                       </div>
                     </div>

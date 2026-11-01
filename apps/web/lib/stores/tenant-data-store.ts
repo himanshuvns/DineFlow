@@ -437,9 +437,9 @@ const persistTenantState = (
 
 export const useTenantDataStore = create<TenantDataState>((set, get) => ({
   tenantId: null,
-  tenantName: "The Grand Bistro",
-  tenantSlug: "the-grand-bistro",
-  isDemoTenant: true,
+  tenantName: "",
+  tenantSlug: "",
+  isDemoTenant: false,
   categories: [],
   menuItems: [],
   tables: [],
@@ -1722,9 +1722,9 @@ export const useTenantDataStore = create<TenantDataState>((set, get) => ({
   clearTenantData: () => {
     set({
       tenantId: null,
-      tenantName: "The Grand Bistro",
-      tenantSlug: "the-grand-bistro",
-      isDemoTenant: true,
+      tenantName: "",
+      tenantSlug: "",
+      isDemoTenant: false,
       categories: [],
       menuItems: [],
       tables: [],

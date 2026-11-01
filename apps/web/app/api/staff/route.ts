@@ -3,9 +3,11 @@ import { getEnrolledStaff, enrollStaff, StaffMember } from "@/lib/staff-storage"
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const staff = getEnrolledStaff();
+    const { searchParams } = new URL(req.url);
+    const tenantSlug = searchParams.get("slug") || searchParams.get("tenantSlug") || undefined;
+    const staff = getEnrolledStaff(tenantSlug);
     return NextResponse.json({
       success: true,
       data: staff,

@@ -15,6 +15,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
+import { useAuthStore } from "@/lib/stores/auth-store";
+import { useTenantData } from "@/lib/stores/tenant-data-store";
 
 const UPSELL_RULES = [
   {
@@ -49,8 +51,20 @@ const UPSELL_RULES = [
 
 export default function UpsellPage() {
   const { addToast } = useToast();
-  const [rules, setRules] = React.useState(UPSELL_RULES);
-  const [previewCart, setPreviewCart] = React.useState(["Truffle Mushroom Risotto"]);
+  const { user, tenant } = useAuthStore();
+  const { menuItems, isDemoTenant } = useTenantData();
+  const isDemo = Boolean(
+    isDemoTenant ||
+    tenant?.slug === "the-grand-bistro" ||
+    tenant?.id === "demo-tenant" ||
+    user?.phone === "+91 98765 43210" ||
+    user?.phone === "+919876543210"
+  );
+
+  const [rules, setRules] = React.useState(isDemo || menuItems.length > 0 ? UPSELL_RULES : []);
+  const [previewCart, setPreviewCart] = React.useState<string[]>(
+    isDemo || menuItems.length > 0 ? ["Truffle Mushroom Risotto"] : []
+  );
   const [previewItemInput, setPreviewItemInput] = React.useState("");
 
   const activeRule = rules.find((r) => r.enabled && previewCart.some((c) => c.toLowerCase().includes(r.trigger.toLowerCase().split(" ")[0].toLowerCase())));
@@ -93,47 +107,57 @@ export default function UpsellPage() {
             Upsell Rules
           </h2>
 
-          {rules.map((rule) => (
-            <Card key={rule.id} variant="glass" className={`border ${rule.enabled ? "border-blue-500/30" : "border-slate-200 dark:border-slate-800/60"} transition-all`}>
-              <CardContent className="p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-0.5">When guest orders</p>
-                    <p className="text-sm font-bold text-slate-900 dark:text-white">{rule.trigger}</p>
-                  </div>
-                  <button onClick={() => toggleRule(rule.id)} className="flex items-center gap-2 text-xs font-semibold transition-colors cursor-pointer">
-                    {rule.enabled ? (
-                      <>
-                        <ToggleRight className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                        <span className="text-blue-600 dark:text-blue-400 font-bold">Active</span>
-                      </>
-                    ) : (
-                      <>
-                        <ToggleLeft className="h-6 w-6 text-slate-400 dark:text-slate-500" />
-                        <span className="text-slate-500">Inactive</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-
-                <div className="space-y-2">
-                  <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">AI Suggestions</p>
-                  {rule.suggestions.map((s, idx) => (
-                    <div key={idx} className={`flex items-center justify-between p-3 rounded-xl text-xs transition-all ${rule.enabled ? "bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 shadow-xs" : "bg-slate-50/50 dark:bg-slate-900/20 border border-slate-200/60 dark:border-slate-800/30 opacity-60"}`}>
-                      <div className="flex-1">
-                        <p className="font-bold text-slate-900 dark:text-white">{s.name}</p>
-                        <p className="text-slate-600 dark:text-slate-400 mt-0.5">{s.reason}</p>
-                      </div>
-                      <div className="text-right ml-3 shrink-0">
-                        <p className="font-mono font-bold text-slate-900 dark:text-white">₹{s.price}</p>
-                        <p className="text-emerald-600 dark:text-emerald-400 font-semibold">+{s.lift}% AOV</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+          {rules.length === 0 ? (
+            <Card variant="glass" className="border-slate-200 dark:border-slate-800">
+              <CardContent className="py-12 text-center text-xs text-slate-500">
+                <Sparkles className="h-8 w-8 mx-auto text-blue-400 mb-2 opacity-50" />
+                <p className="font-semibold text-slate-700 dark:text-slate-300">No upsell pairing rules configured</p>
+                <p className="text-[11px] text-slate-500 mt-0.5">Add dishes to your menu catalog to enable AI wine & side dish cross-selling.</p>
               </CardContent>
             </Card>
-          ))}
+          ) : (
+            rules.map((rule) => (
+              <Card key={rule.id} variant="glass" className={`border ${rule.enabled ? "border-blue-500/30" : "border-slate-200 dark:border-slate-800/60"} transition-all`}>
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mb-0.5">When guest orders</p>
+                      <p className="text-sm font-bold text-slate-900 dark:text-white">{rule.trigger}</p>
+                    </div>
+                    <button onClick={() => toggleRule(rule.id)} className="flex items-center gap-2 text-xs font-semibold transition-colors cursor-pointer">
+                      {rule.enabled ? (
+                        <>
+                          <ToggleRight className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                          <span className="text-blue-600 dark:text-blue-400 font-bold">Active</span>
+                        </>
+                      ) : (
+                        <>
+                          <ToggleLeft className="h-6 w-6 text-slate-400 dark:text-slate-500" />
+                          <span className="text-slate-500">Inactive</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">AI Suggestions</p>
+                    {rule.suggestions.map((s, idx) => (
+                      <div key={idx} className={`flex items-center justify-between p-3 rounded-xl text-xs transition-all ${rule.enabled ? "bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 shadow-xs" : "bg-slate-50/50 dark:bg-slate-900/20 border border-slate-200/60 dark:border-slate-800/30 opacity-60"}`}>
+                        <div className="flex-1">
+                          <p className="font-bold text-slate-900 dark:text-white">{s.name}</p>
+                          <p className="text-slate-600 dark:text-slate-400 mt-0.5">{s.reason}</p>
+                        </div>
+                        <div className="text-right ml-3 shrink-0">
+                          <p className="font-mono font-bold text-slate-900 dark:text-white">₹{s.price}</p>
+                          <p className="text-emerald-600 dark:text-emerald-400 font-semibold">+{s.lift}% AOV</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
         </div>
 
         {/* Right: Live Preview Simulator */}

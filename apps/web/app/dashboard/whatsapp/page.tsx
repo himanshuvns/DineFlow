@@ -65,6 +65,7 @@ import {
 import NumberFlow from "@number-flow/react";
 import { apiClient } from "@/lib/api";
 import { useAuthStore } from "@/lib/stores/auth-store";
+import { useTenantData } from "@/lib/stores/tenant-data-store";
 import { cn } from "@/lib/utils";
 import { validateIndianPhone, formatIndianPhoneInput } from "@/lib/validation";
 
@@ -295,7 +296,24 @@ const INITIAL_CAMPAIGNS: CampaignItem[] = [
   },
 ];
 
+const DEMO_STAFF_MEMBERS = [
+  { id: "st-himanshu", name: "Himanshu Singh", role: "owner", department: "Executive Management", phone: "+91 78888 34311", employeeId: "DF-EMP-1000" },
+  { id: "st-1", name: "Rahul Sharma", role: "waiter", department: "Floor Service", phone: "+91 98765 43210", employeeId: "DF-EMP-1002" },
+  { id: "st-2", name: "Ananya Deshmukh", role: "chef", department: "Kitchen", phone: "+91 98111 22334", employeeId: "DF-EMP-1003" },
+  { id: "st-3", name: "Vikram Malhotra", role: "manager", department: "Operations", phone: "+91 99887 76655", employeeId: "DF-EMP-1001" },
+  { id: "st-4", name: "Sunita Devi", role: "cleaner", department: "Housekeeping", phone: "+91 97654 32109", employeeId: "DF-EMP-1004" },
+];
+
 function WhatsAppPageContent() {
+  const { user, tenant } = useAuthStore();
+  const { isDemoTenant } = useTenantData();
+  const isDemo = Boolean(
+    isDemoTenant ||
+    tenant?.slug === "the-grand-bistro" ||
+    tenant?.id === "demo-tenant" ||
+    user?.phone === "+91 98765 43210" ||
+    user?.phone === "+919876543210"
+  );
   const { addToast } = useToast();
   const searchParams = useSearchParams();
   const urlTab = searchParams.get("tab") as "overview" | "gateway" | "chatbot" | "workforce" | "campaigns" | "invoices" | "logs" | null;
@@ -376,28 +394,39 @@ function WhatsAppPageContent() {
   const [configForm, setConfigForm] = React.useState<WABAConfig>(config);
 
   // Test Sender State
-  const [testNumber, setTestNumber] = React.useState("+91 78888 34311");
+  const [testNumber, setTestNumber] = React.useState(user?.phone || "+91 98000 12345");
   const [testNumberTouched, setTestNumberTouched] = React.useState(false);
-  const [testGuestName, setTestGuestName] = React.useState("Himanshu");
+  const [testGuestName, setTestGuestName] = React.useState(user?.name || "Valued Guest");
   const [isSendingTest, setIsSendingTest] = React.useState(false);
 
   // Dispatch Logs State
-  const [logs, setLogs] = React.useState<MessageLogItem[]>(INITIAL_LOGS);
+  const [logs, setLogs] = React.useState<MessageLogItem[]>(isDemo ? INITIAL_LOGS : []);
   const [logFilter, setLogFilter] = React.useState<string>("all");
   const [logSearch, setLogSearch] = React.useState<string>("");
 
   // Customer Segments State
-  const [segments, setSegments] = React.useState<SegmentCounts>({
-    all: 48,
-    first_time: 18,
-    repeat: 30,
-    vip: 12,
-    hotel_guests: 8,
-    inactive: 5,
-  });
+  const [segments, setSegments] = React.useState<SegmentCounts>(
+    isDemo
+      ? {
+          all: 48,
+          first_time: 18,
+          repeat: 30,
+          vip: 12,
+          hotel_guests: 8,
+          inactive: 5,
+        }
+      : {
+          all: 0,
+          first_time: 0,
+          repeat: 0,
+          vip: 0,
+          hotel_guests: 0,
+          inactive: 0,
+        }
+  );
 
   // Campaigns State
-  const [campaigns, setCampaigns] = React.useState<CampaignItem[]>(INITIAL_CAMPAIGNS);
+  const [campaigns, setCampaigns] = React.useState<CampaignItem[]>(isDemo ? INITIAL_CAMPAIGNS : []);
   const [isCampaignModalOpen, setIsCampaignModalOpen] = React.useState(false);
   const [newCampaign, setNewCampaign] = React.useState({
     name: "",
@@ -409,7 +438,7 @@ function WhatsAppPageContent() {
   });
 
   // GST Invoices State
-  const [invoices, setInvoices] = React.useState<CustomerInvoice[]>(INITIAL_INVOICES);
+  const [invoices, setInvoices] = React.useState<CustomerInvoice[]>(isDemo ? INITIAL_INVOICES : []);
   const [selectedInvoice, setSelectedInvoice] = React.useState<CustomerInvoice | null>(null);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = React.useState(false);
   const [isCreateInvoiceOpen, setIsCreateInvoiceOpen] = React.useState(false);
@@ -419,26 +448,30 @@ function WhatsAppPageContent() {
   // Chatbot State
   const [chatbotEnabled, setChatbotEnabled] = React.useState(true);
   const [chatbotInput, setChatbotInput] = React.useState("");
-  const [chatbotSimNumber, setChatbotSimNumber] = React.useState("+91 98000 12345");
-  const [chatbotSimName, setChatbotSimName] = React.useState("Alex Rivera");
+  const [chatbotSimNumber, setChatbotSimNumber] = React.useState(user?.phone || "+91 98000 12345");
+  const [chatbotSimName, setChatbotSimName] = React.useState(user?.name || "Guest Diner");
   const [chatbotMessages, setChatbotMessages] = React.useState<Array<{ role: "bot" | "user"; text: string; time: string }>>([
     {
       role: "bot",
-      text: "👋 Welcome to The Grand Bistro! ✨\n\nHow may we assist you today?\n1. 📋 Menu & Chef Specials\n2. 🛵 Track Live Order Status\n3. 🛎️ Room / Table Assistance\n4. 🙋 Speak with Staff\n\nReply with a number or text your request directly!",
+      text: `👋 Welcome to ${tenant?.name || "our restaurant"}! ✨\n\nHow may we assist you today?\n1. 📋 Menu & Chef Specials\n2. 🛵 Track Live Order Status\n3. 🛎️ Room / Table Assistance\n4. 🙋 Speak with Staff\n\nReply with a number or text your request directly!`,
       time: "Now",
     },
   ]);
   const [isBotTyping, setIsBotTyping] = React.useState(false);
 
   // Escalated inquiries queue
-  const [escalatedInquiries, setEscalatedInquiries] = React.useState<Array<{ phone: string; name: string; reason: string; time: string }>>([
-    {
-      phone: "+91 98450 11923",
-      name: "Dr. Rohini Mehta",
-      reason: "Requested steward assistance at Suite 302 for wine bucket refill.",
-      time: "12m ago",
-    },
-  ]);
+  const [escalatedInquiries, setEscalatedInquiries] = React.useState<Array<{ phone: string; name: string; reason: string; time: string }>>(
+    isDemo
+      ? [
+          {
+            phone: "+91 98450 11923",
+            name: "Dr. Rohini Mehta",
+            reason: "Requested steward assistance at Suite 302 for wine bucket refill.",
+            time: "12m ago",
+          },
+        ]
+      : []
+  );
 
   // Workforce Assistant State
   const [enrolledStaff, setEnrolledStaff] = React.useState<Array<{
@@ -448,19 +481,15 @@ function WhatsAppPageContent() {
     department?: string;
     phone?: string;
     employeeId?: string;
-  }>>([
-    { id: "st-himanshu", name: "Himanshu Singh", role: "owner", department: "Executive Management", phone: "+91 78888 34311", employeeId: "DF-EMP-1000" },
-    { id: "st-1", name: "Rahul Sharma", role: "waiter", department: "Floor Service", phone: "+91 98765 43210", employeeId: "DF-EMP-1002" },
-    { id: "st-2", name: "Ananya Deshmukh", role: "chef", department: "Kitchen", phone: "+91 98111 22334", employeeId: "DF-EMP-1003" },
-    { id: "st-3", name: "Vikram Malhotra", role: "manager", department: "Operations", phone: "+91 99887 76655", employeeId: "DF-EMP-1001" },
-    { id: "st-4", name: "Sunita Devi", role: "cleaner", department: "Housekeeping", phone: "+91 97654 32109", employeeId: "DF-EMP-1004" },
-  ]);
-  const [selectedStaffPhone, setSelectedStaffPhone] = React.useState<string>("+91 78888 34311");
+  }>>(isDemo ? DEMO_STAFF_MEMBERS : []);
+  const [selectedStaffPhone, setSelectedStaffPhone] = React.useState<string>(isDemo ? "+91 78888 34311" : "");
   const [wfInput, setWfInput] = React.useState("");
   const [wfMessages, setWfMessages] = React.useState<Array<{ role: "bot" | "user"; text: string; time: string }>>([
     {
       role: "bot",
-      text: "👋 *Hello Himanshu Singh!*\nWelcome to *DineFlow Workforce Assistant* (EXECUTIVE MANAGEMENT).\n\nReply with an option or number:\n1️⃣ 📍 *Clock In* (GPS Geofence)\n2️⃣ 🚪 *Clock Out* (GPS Geofence)\n3️⃣ ☕ *Break* (Take / Resume Break)\n4️⃣ 🌴 *Leave Balance & Apply*\n5️⃣ 📅 *Shift & Schedule*\n6️⃣ 🕒 *Attendance History*\n7️⃣ 💰 *Latest Payslip*\n8️⃣ 🛎️ *Tasks & Room Service*\n9️⃣ ❓ *Help / Menu*\n\n💡 _Or simply type 'apply sick leave tomorrow' or 'running 15 mins late'!_",
+      text: isDemo
+        ? "👋 *Hello Himanshu Singh!*\nWelcome to *DineFlow Workforce Assistant* (EXECUTIVE MANAGEMENT).\n\nReply with an option or number:\n1️⃣ 📍 *Clock In* (GPS Geofence)\n2️⃣ 🚪 *Clock Out* (GPS Geofence)\n3️⃣ ☕ *Break* (Take / Resume Break)\n4️⃣ 🌴 *Leave Balance & Apply*\n5️⃣ 📅 *Shift & Schedule*\n6️⃣ 🕒 *Attendance History*\n7️⃣ 💰 *Latest Payslip*\n8️⃣ 🛎️ *Tasks & Room Service*\n9️⃣ ❓ *Help / Menu*\n\n💡 _Or simply type 'apply sick leave tomorrow' or 'running 15 mins late'!_"
+        : `👋 *Welcome to ${tenant?.name || "DineFlow"} Workforce Assistant*.\n\nEnroll your team members under Staff & Permissions to test automated WhatsApp clock-in, leave requests, and shift schedules.`,
       time: "Now",
     },
   ]);
@@ -515,7 +544,7 @@ function WhatsAppPageContent() {
           location: l.location || "Dine-in",
         }));
       } else {
-        combinedLogs = [...INITIAL_LOGS];
+        combinedLogs = isDemo ? [...INITIAL_LOGS] : [];
       }
 
       // Merge real-time staff dispatch alerts from /api/whatsapp/logs
@@ -594,7 +623,7 @@ function WhatsAppPageContent() {
     try {
       // 6. Fetch Staff Directory (prefer /api/staff)
       let staffData: any[] = [];
-      const localStaffRes = await fetch("/api/staff", { cache: "no-store" }).catch(() => null);
+      const localStaffRes = await fetch(`/api/staff?tenant=${encodeURIComponent(tenant?.slug || "")}`, { cache: "no-store" }).catch(() => null);
       if (localStaffRes && localStaffRes.ok) {
         const lData = await localStaffRes.json().catch(() => null);
         if (Array.isArray(lData?.data) && lData.data.length > 0) {
@@ -613,10 +642,16 @@ function WhatsAppPageContent() {
           name: u.name,
           role: u.role,
           department: u.department,
-          phone: u.phone || "+91 78888 34311",
+          phone: u.phone || "",
           employeeId: u.employeeId,
         }));
         setEnrolledStaff(mapped);
+        if (mapped.length > 0) {
+          setSelectedStaffPhone(mapped[0].phone || "");
+        }
+      } else if (!isDemo) {
+        setEnrolledStaff([]);
+        setSelectedStaffPhone("");
       }
     } catch {
       // Keep defaults
@@ -2239,15 +2274,23 @@ function WhatsAppPageContent() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-2.5">
-                  {escalatedInquiries.map((inq, idx) => (
-                    <div key={idx} className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-slate-900 dark:text-white">{inq.name} ({inq.phone})</span>
-                        <span className="text-[10px] text-slate-500">{inq.time}</span>
-                      </div>
-                      <p className="text-slate-700 dark:text-slate-300 text-[11px]">{inq.reason}</p>
+                  {escalatedInquiries.length === 0 ? (
+                    <div className="py-6 text-center text-xs text-slate-500">
+                      <CheckCircle2 className="h-6 w-6 mx-auto text-emerald-500/60 mb-1.5" />
+                      <p className="font-semibold text-slate-700 dark:text-slate-300">All inquiries resolved</p>
+                      <p className="text-[11px] text-slate-500 mt-0.5">No guests are waiting for manual steward intervention.</p>
                     </div>
-                  ))}
+                  ) : (
+                    escalatedInquiries.map((inq, idx) => (
+                      <div key={idx} className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-slate-900 dark:text-white">{inq.name} ({inq.phone})</span>
+                          <span className="text-[10px] text-slate-500">{inq.time}</span>
+                        </div>
+                        <p className="text-slate-700 dark:text-slate-300 text-[11px]">{inq.reason}</p>
+                      </div>
+                    ))
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -2263,7 +2306,7 @@ function WhatsAppPageContent() {
                     </div>
                     <div>
                       <p className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                        DineBot • The Grand Bistro <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                        DineBot • {tenant?.name || "DineFlow AI"} <CheckCircle2 className="h-3 w-3 text-emerald-500" />
                       </p>
                       <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
                         ● Online (Meta Webhook Live)
@@ -2455,7 +2498,7 @@ function WhatsAppPageContent() {
                             setWfMessages([
                               {
                                 role: "bot",
-                                text: `👋 *Hello ${st.name}!*\nWelcome to *The Grand Bistro Workforce Assistant*.\n\nReply with an option or number:\n1️⃣ 📍 *Clock In* (GPS Geofence)\n2️⃣ 🚪 *Clock Out* (GPS Geofence)\n3️⃣ ☕ *Break* (Take / Resume Break)\n4️⃣ 🌴 *Leave Balance & Apply*\n5️⃣ 📅 *Shift & Schedule*\n6️⃣ 🕒 *Attendance History*\n7️⃣ 💰 *Latest Payslip*\n8️⃣ 🛎️ *Tasks & Room Service*\n9️⃣ ❓ *Help / Menu*`,
+                                text: `👋 *Hello ${st.name}!*\nWelcome to *${tenant?.name || "DineFlow"} Workforce Assistant*.\n\nReply with an option or number:\n1️⃣ 📍 *Clock In* (GPS Geofence)\n2️⃣ 🚪 *Clock Out* (GPS Geofence)\n3️⃣ ☕ *Break* (Take / Resume Break)\n4️⃣ 🌴 *Leave Balance & Apply*\n5️⃣ 📅 *Shift & Schedule*\n6️⃣ 🕒 *Attendance History*\n7️⃣ 💰 *Latest Payslip*\n8️⃣ 🛎️ *Tasks & Room Service*\n9️⃣ ❓ *Help / Menu*`,
                                 time: "Now",
                               },
                             ]);
@@ -2463,11 +2506,15 @@ function WhatsAppPageContent() {
                         }}
                         className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs rounded-lg px-2.5 py-1.5 font-medium text-slate-900 dark:text-white outline-none"
                       >
-                        {enrolledStaff.map((s) => (
-                          <option key={s.id} value={s.phone || ""}>
-                            {s.name} ({s.role} - {s.phone})
-                          </option>
-                        ))}
+                        {enrolledStaff.length === 0 ? (
+                          <option value="">No staff enrolled yet</option>
+                        ) : (
+                          enrolledStaff.map((s) => (
+                            <option key={s.id} value={s.phone || ""}>
+                              {s.name} ({s.role} - {s.phone})
+                            </option>
+                          ))
+                        )}
                       </select>
                     </div>
                   </div>
@@ -2825,7 +2872,16 @@ function WhatsAppPageContent() {
                     </TableRow>
                   </TableHeader>
                   <TableBody className="divide-y divide-slate-200 dark:divide-slate-800/60">
-                    {campaigns.map((camp) => (
+                    {campaigns.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="py-12 text-center text-xs text-slate-500">
+                          <MessageSquareShare className="h-8 w-8 mx-auto text-slate-400 mb-2 opacity-50" />
+                          <p className="font-semibold text-slate-700 dark:text-slate-300">No WhatsApp campaigns created yet</p>
+                          <p className="text-[11px] text-slate-500 mt-0.5">Create your first broadcast campaign or loyalty offer using the &quot;New Broadcast Campaign&quot; button.</p>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      campaigns.map((camp) => (
                       <TableRow key={camp.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                         <TableCell className="p-3.5 font-semibold text-slate-900 dark:text-white">{camp.name}</TableCell>
                         <TableCell className="p-3.5">
@@ -2878,7 +2934,7 @@ function WhatsAppPageContent() {
                           )}
                         </TableCell>
                       </TableRow>
-                    ))}
+                    )))}
                   </TableBody>
                 </Table>
               </div>
@@ -2928,7 +2984,16 @@ function WhatsAppPageContent() {
                     </TableRow>
                   </TableHeader>
                   <TableBody className="divide-y divide-slate-200 dark:divide-slate-800/60">
-                    {invoices.map((inv) => (
+                    {invoices.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="py-12 text-center text-xs text-slate-500">
+                          <Receipt className="h-8 w-8 mx-auto text-slate-400 mb-2 opacity-50" />
+                          <p className="font-semibold text-slate-700 dark:text-slate-300">No GST invoices issued yet</p>
+                          <p className="text-[11px] text-slate-500 mt-0.5">As orders are settled and billed, compliant tax invoices with PDF links will appear here.</p>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      invoices.map((inv) => (
                       <TableRow key={inv.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                         <TableCell className="p-3.5 font-mono font-bold text-slate-900 dark:text-white">{inv.invoiceNumber}</TableCell>
                         <TableCell className="p-3.5 font-mono text-slate-600 dark:text-slate-400">{inv.orderNumber}</TableCell>
@@ -2979,7 +3044,7 @@ function WhatsAppPageContent() {
                           </Button>
                         </TableCell>
                       </TableRow>
-                    ))}
+                    )))}
                   </TableBody>
                 </Table>
               </div>
@@ -3034,7 +3099,16 @@ function WhatsAppPageContent() {
                     </TableRow>
                   </TableHeader>
                   <TableBody className="divide-y divide-slate-200 dark:divide-slate-800/60">
-                    {filteredLogs.map((log) => (
+                    {filteredLogs.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="py-12 text-center text-xs text-slate-500">
+                          <MessageSquareShare className="h-8 w-8 mx-auto text-slate-400 mb-2 opacity-50" />
+                          <p className="font-semibold text-slate-700 dark:text-slate-300">No WhatsApp messages dispatched yet</p>
+                          <p className="text-[11px] text-slate-500 mt-0.5">Automated order updates, digital invoices, and staff alerts will be logged here in real-time.</p>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredLogs.map((log) => (
                       <TableRow key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                         <TableCell className="p-3.5 font-semibold text-slate-900 dark:text-white">{log.customerName}</TableCell>
                         <TableCell className="p-3.5 font-mono text-slate-700 dark:text-slate-300">{log.phone}</TableCell>
@@ -3056,7 +3130,7 @@ function WhatsAppPageContent() {
                         </TableCell>
                         <TableCell className="p-3.5 text-right text-slate-500 font-medium">{log.time}</TableCell>
                       </TableRow>
-                    ))}
+                    )))}
                   </TableBody>
                 </Table>
               </div>

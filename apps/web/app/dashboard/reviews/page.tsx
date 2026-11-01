@@ -71,9 +71,15 @@ interface LiveReviewStats {
 
 export default function ReviewsManagementPage() {
   const { addToast } = useToast();
-  const { tenant } = useAuthStore();
-  const tenantSlug = tenant?.slug || "the-grand-bistro";
-  const restaurantName = tenant?.name || "The Grand Bistro";
+  const { user, tenant } = useAuthStore();
+  const isDemo = Boolean(
+    tenant?.slug === "the-grand-bistro" ||
+    tenant?.id === "demo-tenant" ||
+    user?.phone === "+91 98765 43210" ||
+    user?.phone === "+919876543210"
+  );
+  const tenantSlug = tenant?.slug || (isDemo ? "the-grand-bistro" : "");
+  const restaurantName = tenant?.name || (isDemo ? "The Grand Bistro" : "My Venue");
 
   const { getConfig, updateConfig } = useReviewStore();
   const config = getConfig(tenantSlug);

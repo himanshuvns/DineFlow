@@ -166,9 +166,15 @@ export default function RoomDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { addToast } = useToast();
-  const { tenant } = useAuthStore();
+  const { tenant, user } = useAuthStore();
   const tenantSlug = tenant?.slug || "dineflow";
   const tenantName = tenant?.name || "Your Hotel & Suites";
+  const isDemo = Boolean(
+    tenant?.slug === "the-grand-bistro" ||
+    tenant?.id === "demo-tenant" ||
+    user?.phone === "+91 98765 43210" ||
+    user?.phone === "+919876543210"
+  );
 
   const roomId = params?.roomId as string;
 
@@ -318,7 +324,7 @@ export default function RoomDetailPage() {
         setRoom(loadedRoom);
       }
 
-      if (!loadedRoom) {
+      if (!loadedRoom && isDemo) {
         const cleanNum = roomId.toUpperCase().replace(/^(ROOM-|SUITE-)/, "").trim();
         const fallback = DEFAULT_FALLBACK_ROOMS[cleanNum] || DEFAULT_FALLBACK_ROOMS[roomId];
         if (fallback) {
@@ -338,24 +344,9 @@ export default function RoomDetailPage() {
             createdAt: new Date().toISOString(),
           };
           setRoom(loadedRoom);
-        } else if (cleanNum) {
-          loadedRoom = {
-            id: `room-${cleanNum.toLowerCase()}`,
-            roomNumber: cleanNum,
-            name: `Suite ${cleanNum}`,
-            roomType: "suite",
-            floor: "Floor 1",
-            wing: "East Wing",
-            capacity: 2,
-            status: "occupied",
-            doNotDisturb: false,
-            folioEnabled: true,
-            currentGuestName: "Guest Resident",
-            amenities: ["King Bed", "High-Speed Wi-Fi", "En-Suite Bath"],
-            createdAt: new Date().toISOString(),
-          };
-          setRoom(loadedRoom);
         }
+      } else if (!loadedRoom) {
+        setRoom(null);
       }
 
       const activeRoomNum = (loadedRoom?.roomNumber || room?.roomNumber || roomId)
@@ -661,7 +652,7 @@ export default function RoomDetailPage() {
     } finally {
       setLoading(false);
     }
-  }, [roomId, room?.roomNumber, room?.id]);
+  }, [roomId, room?.roomNumber, room?.id, isDemo]);
 
   React.useEffect(() => {
     fetchRoomData();

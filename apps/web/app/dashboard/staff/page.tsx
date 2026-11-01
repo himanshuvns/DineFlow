@@ -228,6 +228,14 @@ function StaffPageContent() {
   const tabParam = searchParams.get("tab");
   const { addToast } = useToast();
   const currentUser = useAuthStore((s) => s.user);
+  const currentTenant = useAuthStore((s) => s.tenant);
+  const tenantSlug = currentTenant?.slug || "";
+  const isDemo = Boolean(
+    currentTenant?.slug === "the-grand-bistro" ||
+    currentTenant?.id === "demo-tenant" ||
+    currentUser?.phone === "+91 98765 43210" ||
+    currentUser?.phone === "+919876543210"
+  );
 
   const [activeTab, setActiveTab] = React.useState<"staff" | "attendance" | "shifts" | "leaves" | "payroll" | "holidays">("staff");
   const [loading, setLoading] = React.useState(true);
@@ -249,7 +257,7 @@ function StaffPageContent() {
     latitude: 28.6315,
     longitude: 77.2167,
     radiusMeters: 100,
-    address: "Connaught Place Central, New Delhi",
+    address: currentTenant?.name ? `${currentTenant.name} Location` : "Main Venue Location",
     enforceGeofence: false,
   });
   const [shifts, setShifts] = React.useState<Shift[]>([]);
@@ -390,7 +398,7 @@ function StaffPageContent() {
       // 1. Fetch from Go API (primary source of truth in MongoDB)
       try {
         const res = await apiClient.get("/staff");
-        if (res.data?.data && Array.isArray(res.data.data) && res.data.data.length > 0) {
+        if (res.data?.data && Array.isArray(res.data.data)) {
           setStaffList(res.data.data);
           return;
         }
@@ -399,18 +407,26 @@ function StaffPageContent() {
       }
 
       // 2. Fallback to /api/staff (local Next.js storage)
-      const localRes = await fetch("/api/staff");
+      const localRes = await fetch(`/api/staff?tenantSlug=${encodeURIComponent(tenantSlug)}`);
       if (localRes.ok) {
         const localData = await localRes.json();
         const list = localData?.data || localData?.staff;
-        if (Array.isArray(list) && list.length > 0) {
-          setStaffList(list);
+        if (Array.isArray(list)) {
+          if (list.length > 0 || !isDemo) {
+            setStaffList(list);
+            return;
+          }
         }
+      }
+
+      // If non-demo tenant and no staff enrolled, start with empty list
+      if (!isDemo) {
+        setStaffList([]);
       }
     } catch (e) {
       console.warn("Staff fetch fallback:", e);
     }
-  }, []);
+  }, [tenantSlug, isDemo]);
 
   const fetchAttendance = React.useCallback(async () => {
     try {

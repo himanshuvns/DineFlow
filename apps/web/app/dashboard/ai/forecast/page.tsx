@@ -17,6 +17,9 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
 import { HospitalityLoader } from "@/components/ui/hospitality-loader";
 
+import { useAuthStore } from "@/lib/stores/auth-store";
+import { useTenantData } from "@/lib/stores/tenant-data-store";
+
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const HOURS = Array.from({ length: 14 }, (_, i) => `${i + 10}:00`);
 
@@ -56,6 +59,18 @@ function getIntensityClass(orders: number): string {
 
 export default function ForecastPage() {
   const { addToast } = useToast();
+  const { user, tenant } = useAuthStore();
+  const { orders, isDemoTenant } = useTenantData();
+
+  const isDemo = Boolean(
+    isDemoTenant ||
+    tenant?.slug === "the-grand-bistro" ||
+    tenant?.id === "demo-tenant" ||
+    user?.phone === "+91 98765 43210" ||
+    user?.phone === "+919876543210"
+  );
+  const hasOrders = (orders && orders.length > 0) || isDemo;
+
   const [isLoading, setIsLoading] = React.useState(false);
   const [forecast, setForecast] = React.useState(generateForecast());
   const [selectedDay, setSelectedDay] = React.useState<string | null>(null);
@@ -115,10 +130,26 @@ export default function ForecastPage() {
       {/* Summary row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: "Total Predicted Orders", value: forecast.reduce((a, d) => a + d.total, 0).toLocaleString(), color: "text-violet-700 dark:text-violet-400" },
-          { label: "Peak Day", value: "Saturday", color: "text-emerald-700 dark:text-emerald-400" },
-          { label: "Peak Hour", value: "8:00 PM", color: "text-amber-700 dark:text-amber-400" },
-          { label: "Forecast Confidence", value: "78%", color: "text-cyan-700 dark:text-cyan-400" },
+          {
+            label: "Total Predicted Orders",
+            value: hasOrders ? forecast.reduce((a, d) => a + d.total, 0).toLocaleString() : "0",
+            color: "text-violet-700 dark:text-violet-400",
+          },
+          {
+            label: "Peak Day",
+            value: hasOrders ? "Saturday" : "—",
+            color: "text-emerald-700 dark:text-emerald-400",
+          },
+          {
+            label: "Peak Hour",
+            value: hasOrders ? "8:00 PM" : "—",
+            color: "text-amber-700 dark:text-amber-400",
+          },
+          {
+            label: "Forecast Confidence",
+            value: hasOrders ? "78%" : "Needs Data",
+            color: "text-cyan-700 dark:text-cyan-400",
+          },
         ].map((stat) => (
           <Card key={stat.label} variant="glass">
             <CardContent className="p-4">
@@ -153,6 +184,16 @@ export default function ForecastPage() {
                 title="Simulating Table Footfall & Kitchen Demand…"
                 subtitle="Analyzing peak dinner seating, preparation velocity & table turnover"
               />
+            </div>
+          ) : !hasOrders ? (
+            <div className="py-12 flex flex-col items-center justify-center text-center px-4">
+              <div className="h-12 w-12 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-500 mb-3">
+                <TrendingUp className="h-6 w-6" />
+              </div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">Awaiting Order Telemetry</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400 max-w-md mt-1">
+                Demand forecasting activates automatically once your venue logs orders. DineFlow will project hourly peak volumes, table turnover, and staff requirements.
+              </p>
             </div>
           ) : view === "heatmap" ? (
             <div className="overflow-x-auto">
@@ -212,7 +253,7 @@ export default function ForecastPage() {
                       style={{ height: `${pct}%` }}
                       className="w-full rounded-t-lg bg-gradient-to-t from-violet-700/80 to-violet-400 group-hover:from-violet-600 group-hover:to-violet-300 transition-all duration-200"
                     />
-                    <span className="text-[10px] text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors font-medium">{d.day.slice(0, 3)}</span>
+                    <span className="text-[10px] text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:hover:text-white transition-colors font-medium">{d.day.slice(0, 3)}</span>
                   </div>
                 );
               })}
@@ -227,17 +268,23 @@ export default function ForecastPage() {
           <Users className="h-4 w-4 text-violet-600 dark:text-violet-400" />
           AI Staffing Recommendations
         </h2>
-        <div className="space-y-3">
-          {INSIGHTS.map((insight, idx) => {
-            const Icon = insight.icon;
-            return (
-              <div key={idx} className={`flex items-start gap-3 p-4 rounded-xl border ${insight.bg} text-sm`}>
-                <Icon className={`h-4 w-4 ${insight.color} shrink-0 mt-0.5`} />
-                <p className="text-slate-800 dark:text-slate-300 font-medium">{insight.text}</p>
-              </div>
-            );
-          })}
-        </div>
+        {hasOrders ? (
+          <div className="space-y-3">
+            {INSIGHTS.map((insight, idx) => {
+              const Icon = insight.icon;
+              return (
+                <div key={idx} className={`flex items-start gap-3 p-4 rounded-xl border ${insight.bg} text-sm`}>
+                  <Icon className={`h-4 w-4 ${insight.color} shrink-0 mt-0.5`} />
+                  <p className="text-slate-800 dark:text-slate-300 font-medium">{insight.text}</p>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="p-4 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 text-center text-xs text-slate-600 dark:text-slate-400">
+            AI staffing recommendations will appear here after analyzing your first week of orders.
+          </div>
+        )}
       </div>
     </div>
   );

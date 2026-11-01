@@ -17,6 +17,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
+import { useAuthStore } from "@/lib/stores/auth-store";
+import { useTenantData } from "@/lib/stores/tenant-data-store";
 
 const ALERTS = [
   {
@@ -80,17 +82,33 @@ const SEVERITY_COLOR = {
 
 export default function PricingAlertsPage() {
   const { addToast } = useToast();
+  const { user, tenant } = useAuthStore();
+  const { menuItems, isDemoTenant } = useTenantData();
+  const isDemo = Boolean(
+    isDemoTenant ||
+    tenant?.slug === "the-grand-bistro" ||
+    tenant?.id === "demo-tenant" ||
+    user?.phone === "+91 98765 43210" ||
+    user?.phone === "+919876543210"
+  );
+
+  const [alerts, setAlerts] = React.useState(isDemo || menuItems.length > 0 ? ALERTS : []);
   const [isScanning, setIsScanning] = React.useState(false);
   const [appliedAlerts, setAppliedAlerts] = React.useState<string[]>([]);
   const [filter, setFilter] = React.useState<"all" | "high" | "medium">("all");
 
-  const filtered = ALERTS.filter((a) => filter === "all" || a.severity === filter);
+  const filtered = alerts.filter((a) => filter === "all" || a.severity === filter);
 
   const handleScan = async () => {
+    if (!isDemo && menuItems.length === 0) {
+      addToast("info", "Menu Catalog Empty", "Add dishes to your menu catalog to run pricing scans.");
+      return;
+    }
     setIsScanning(true);
     await new Promise((r) => setTimeout(r, 2200));
     setIsScanning(false);
-    addToast("success", "Pricing Scan Complete", `Analysed 48 menu items. Found ${ALERTS.length} alerts.`);
+    setAlerts(ALERTS);
+    addToast("success", "Pricing Scan Complete", `Analysed ${menuItems.length || 48} menu items. Found ${ALERTS.length} alerts.`);
   };
 
   const handleApply = (itemName: string, suggestedPrice: number, alertType: string) => {
@@ -100,7 +118,7 @@ export default function PricingAlertsPage() {
 
   const handleExport = () => {
     const csv = ["Item,Category,Current Price,Suggested Price,Margin %,Volume,Alert Type,Severity,Rationale"]
-      .concat(ALERTS.map((a) => `"${a.itemName}","${a.category}",${a.currentPrice},${a.suggestedPrice},${a.margin},${a.volume},"${a.alertType}","${a.severity}","${a.rationale}"`))
+      .concat(alerts.map((a) => `"${a.itemName}","${a.category}",${a.currentPrice},${a.suggestedPrice},${a.margin},${a.volume},"${a.alertType}","${a.severity}","${a.rationale}"`))
       .join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
@@ -144,10 +162,10 @@ export default function PricingAlertsPage() {
       {/* Summary cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "Items Scanned", value: "48", sub: "full menu", color: "text-slate-900 dark:text-white" },
-          { label: "Alerts Found", value: `${ALERTS.length}`, sub: `${ALERTS.filter((a) => a.severity === "high").length} high priority`, color: "text-rose-600 dark:text-rose-400" },
-          { label: "Est. Revenue Gain", value: "₹84,500", sub: "projected / month", color: "text-emerald-700 dark:text-emerald-400" },
-          { label: "Avg. Margin Gap", value: "8.4%", sub: "vs target 65%", color: "text-amber-700 dark:text-amber-400" },
+          { label: "Items Scanned", value: alerts.length > 0 ? `${menuItems.length || 48}` : "0", sub: alerts.length > 0 ? "full menu" : "no catalog items", color: "text-slate-900 dark:text-white" },
+          { label: "Alerts Found", value: `${alerts.length}`, sub: `${alerts.filter((a) => a.severity === "high").length} high priority`, color: "text-rose-600 dark:text-rose-400" },
+          { label: "Est. Revenue Gain", value: alerts.length > 0 ? "₹84,500" : "₹0", sub: alerts.length > 0 ? "projected / month" : "no alerts", color: "text-emerald-700 dark:text-emerald-400" },
+          { label: "Avg. Margin Gap", value: alerts.length > 0 ? "8.4%" : "0%", sub: alerts.length > 0 ? "vs target 65%" : "margins on target", color: "text-amber-700 dark:text-amber-400" },
         ].map((s) => (
           <Card key={s.label} variant="glass">
             <CardContent className="p-4">
@@ -169,7 +187,7 @@ export default function PricingAlertsPage() {
               onClick={() => setFilter(f)}
               className={`px-3 py-1 rounded-lg font-medium transition-all capitalize ${filter === f ? "bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-semibold" : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"}`}
             >
-              {f} {f !== "all" && `(${ALERTS.filter((a) => a.severity === f).length})`}
+              {f} {f !== "all" && `(${alerts.filter((a) => a.severity === f).length})`}
             </button>
           ))}
         </div>
@@ -177,15 +195,24 @@ export default function PricingAlertsPage() {
 
       {/* Alert cards */}
       <div className="space-y-4">
-        {filtered.map((alert) => {
-          const config = ALERT_CONFIG[alert.alertType];
-          const Icon = config.icon;
-          const isApplied = appliedAlerts.includes(alert.itemName);
-          const priceDir = alert.suggestedPrice > alert.currentPrice;
-          const noPriceChange = alert.suggestedPrice === alert.currentPrice;
+        {filtered.length === 0 ? (
+          <Card variant="glass" className="border-slate-200 dark:border-slate-800">
+            <CardContent className="py-12 text-center text-xs text-slate-500">
+              <Sparkles className="h-8 w-8 mx-auto text-amber-400 mb-2 opacity-50" />
+              <p className="font-semibold text-slate-700 dark:text-slate-300">No dynamic pricing alerts detected</p>
+              <p className="text-[11px] text-slate-500 mt-0.5">As items are ordered and ingredient costs are updated, AI margin alerts will appear here.</p>
+            </CardContent>
+          </Card>
+        ) : (
+          filtered.map((alert) => {
+            const config = ALERT_CONFIG[alert.alertType];
+            const Icon = config.icon;
+            const isApplied = appliedAlerts.includes(alert.itemName);
+            const priceDir = alert.suggestedPrice > alert.currentPrice;
+            const noPriceChange = alert.suggestedPrice === alert.currentPrice;
 
-          return (
-            <Card key={alert.itemName} variant="glass" className={`border ${config.bg} transition-all ${isApplied ? "opacity-60" : ""}`}>
+            return (
+              <Card key={alert.itemName} variant="glass" className={`border ${config.bg} transition-all ${isApplied ? "opacity-60" : ""}`}>
               <CardContent className="p-5">
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                   {/* Left */}
@@ -240,7 +267,8 @@ export default function PricingAlertsPage() {
               </CardContent>
             </Card>
           );
-        })}
+        })
+      )}
       </div>
     </div>
   );
