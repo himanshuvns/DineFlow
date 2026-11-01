@@ -221,3 +221,35 @@ func (h *SubscriptionHandler) AdminOverridePlan(c *gin.Context) {
 		"subscription": sub,
 	})
 }
+
+type TestExpiryEmailRequest struct {
+	Email         string `json:"email"`
+	DaysRemaining int    `json:"daysRemaining"`
+}
+
+// SendTestExpiryEmail godoc
+// POST /api/v1/billing/test-expiry-email
+func (h *SubscriptionHandler) SendTestExpiryEmail(c *gin.Context) {
+	var req TestExpiryEmailRequest
+	_ = c.ShouldBindJSON(&req)
+
+	if req.Email == "" {
+		req.Email = "imhimanshuvns@gmail.com"
+	}
+	if req.DaysRemaining == 0 {
+		req.DaysRemaining = 7
+	}
+
+	err := h.subService.SendTestExpiryEmail(c.Request.Context(), req.Email, req.DaysRemaining)
+	if err != nil {
+		response.BadRequest(c, "EMAIL_SEND_FAILED", err.Error())
+		return
+	}
+
+	response.OK(c, gin.H{
+		"message":       "Test expiry notification email dispatched successfully",
+		"recipient":     req.Email,
+		"daysRemaining": req.DaysRemaining,
+	})
+}
+

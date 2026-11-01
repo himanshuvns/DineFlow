@@ -4,37 +4,55 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
+	"math"
 	"time"
 
 	domainsub "github.com/dineflow/api/internal/domain/subscription"
+	"github.com/dineflow/api/internal/domain/tenant"
+	"github.com/dineflow/api/internal/domain/user"
 	mongoinfra "github.com/dineflow/api/internal/infrastructure/mongodb"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
+// EmailSender defines the transactional email contract for billing & subscription notifications.
+type EmailSender interface {
+	SendTrialExpiryWarning(ctx context.Context, to, name, businessName string, daysRemaining int, upgradeLink string) error
+	SendTrialExpired(ctx context.Context, to, name, businessName, upgradeLink string) error
+	SendPlanUpgradeConfirmation(ctx context.Context, to, name, businessName, planTier, cycle string, price float64, renewalDate time.Time, invoiceNumber string) error
+}
+
 type Service struct {
-	db *mongoinfra.Client
+	db       *mongoinfra.Client
+	emailSvc EmailSender
 }
 
 func NewService(db *mongoinfra.Client) *Service {
 	return &Service{db: db}
 }
 
+func (s *Service) SetEmailService(emailSvc EmailSender) {
+	s.emailSvc = emailSvc
+}
+
 type UsageMetrics struct {
-	Plan           domainsub.PlanTier   `json:"plan"`
-	PlanName       string               `json:"planName"`
-	Cycle          domainsub.BillingCycle `json:"cycle"`
+	Plan           domainsub.PlanTier           `json:"plan"`
+	PlanName       string                       `json:"planName"`
+	Cycle          domainsub.BillingCycle       `json:"cycle"`
 	Status         domainsub.SubscriptionStatus `json:"status"`
-	TablesUsed     int                  `json:"tablesUsed"`
-	TablesMax      int                  `json:"tablesMax"`
-	MenuItemsUsed  int                  `json:"menuItemsUsed"`
-	MenuItemsMax   int                  `json:"menuItemsMax"`
-	StaffUsed      int                  `json:"staffUsed"`
-	StaffMax       int                  `json:"staffMax"`
-	HasHotelModule bool                 `json:"hasHotelModule"`
-	RenewalDate    time.Time            `json:"renewalDate"`
-	GracePeriodEnd *time.Time           `json:"gracePeriodEnd,omitempty"`
+	IsTrial        bool                         `json:"isTrial"`
+	DaysRemaining  int                          `json:"daysRemaining"`
+	TablesUsed     int                          `json:"tablesUsed"`
+	TablesMax      int                          `json:"tablesMax"`
+	MenuItemsUsed  int                          `json:"menuItemsUsed"`
+	MenuItemsMax   int                          `json:"menuItemsMax"`
+	StaffUsed      int                          `json:"staffUsed"`
+	StaffMax       int                          `json:"staffMax"`
+	HasHotelModule bool                         `json:"hasHotelModule"`
+	RenewalDate    time.Time                    `json:"renewalDate"`
+	GracePeriodEnd *time.Time                   `json:"gracePeriodEnd,omitempty"`
 }
 
 func (s *Service) GetSubscription(ctx context.Context, tenantID bson.ObjectID) (*domainsub.Subscription, error) {
@@ -44,17 +62,20 @@ func (s *Service) GetSubscription(ctx context.Context, tenantID bson.ObjectID) (
 	var sub domainsub.Subscription
 	err := scope.FindOne(ctx, bson.M{}, &sub)
 	if err == mongo.ErrNoDocuments {
-		// Auto-initialize default Free subscription
+		// Auto-initialize default Starter 14-day trial
 		now := time.Now().UTC()
+		trialEnd := now.Add(14 * 24 * time.Hour)
 		defaultSub := domainsub.Subscription{
 			ID:                 bson.NewObjectID(),
 			TenantID:           tenantID,
-			Plan:               domainsub.PlanFree,
+			Plan:               domainsub.PlanStarter,
 			Cycle:              domainsub.CycleMonthly,
 			Status:             domainsub.StatusActive,
 			CurrentPeriodStart: now,
-			CurrentPeriodEnd:   now.Add(365 * 24 * time.Hour),
-			Provider:           "system",
+			CurrentPeriodEnd:   trialEnd,
+			IsTrial:            true,
+			TrialEndsAt:        &trialEnd,
+			Provider:           "trial",
 			CreatedAt:          now,
 			UpdatedAt:          now,
 		}
@@ -93,11 +114,22 @@ func (s *Service) GetUsage(ctx context.Context, tenantID bson.ObjectID) (*UsageM
 	userScope := mongoinfra.NewScope(usersColl, tenantID)
 	staffCount, _ := userScope.Count(ctx, bson.M{})
 
+	daysRemaining := 0
+	if sub.IsTrial && !sub.CurrentPeriodEnd.IsZero() {
+		hours := time.Until(sub.CurrentPeriodEnd).Hours()
+		daysRemaining = int(math.Ceil(hours / 24))
+		if daysRemaining < 0 {
+			daysRemaining = 0
+		}
+	}
+
 	return &UsageMetrics{
 		Plan:           sub.Plan,
 		PlanName:       domainsub.FormatPlanName(sub.Plan),
 		Cycle:          sub.Cycle,
 		Status:         sub.Status,
+		IsTrial:        sub.IsTrial,
+		DaysRemaining:  daysRemaining,
 		TablesUsed:     int(tableCount),
 		TablesMax:      limits.MaxTables,
 		MenuItemsUsed:  int(itemCount),
@@ -166,19 +198,27 @@ func (s *Service) ChangePlan(ctx context.Context, tenantID bson.ObjectID, target
 	sub.CurrentPeriodStart = now
 	sub.CurrentPeriodEnd = now.Add(duration)
 	sub.GracePeriodEnd = nil
+	sub.IsTrial = false
+	sub.TrialEndsAt = nil
+	sub.LastExpiryNotifDate = ""
+	sub.LastExpiryNotifDays = 0
 	sub.UpdatedAt = now
 
 	subColl := s.db.Collection("subscriptions")
 	subScope := mongoinfra.NewScope(subColl, tenantID)
 	update := bson.M{
 		"$set": bson.M{
-			"plan":               sub.Plan,
-			"cycle":              sub.Cycle,
-			"status":             sub.Status,
-			"currentPeriodStart": sub.CurrentPeriodStart,
-			"currentPeriodEnd":   sub.CurrentPeriodEnd,
-			"gracePeriodEnd":     nil,
-			"updatedAt":          now,
+			"plan":                sub.Plan,
+			"cycle":               sub.Cycle,
+			"status":              sub.Status,
+			"currentPeriodStart":  sub.CurrentPeriodStart,
+			"currentPeriodEnd":    sub.CurrentPeriodEnd,
+			"gracePeriodEnd":      nil,
+			"isTrial":             false,
+			"trialEndsAt":         nil,
+			"lastExpiryNotifDate": "",
+			"lastExpiryNotifDays": 0,
+			"updatedAt":           now,
 		},
 	}
 	if _, err := subScope.UpdateByID(ctx, sub.ID, update); err != nil {
@@ -191,13 +231,14 @@ func (s *Service) ChangePlan(ctx context.Context, tenantID bson.ObjectID, target
 		amount = limits.AnnualPriceINR * 12
 	}
 
+	invoiceNum := fmt.Sprintf("INV-%d", time.Now().Unix())
 	if amount > 0 {
 		invColl := s.db.Collection("invoices")
 		invScope := mongoinfra.NewScope(invColl, tenantID)
 		invoice := domainsub.Invoice{
 			ID:            bson.NewObjectID(),
 			TenantID:      tenantID,
-			InvoiceNumber: fmt.Sprintf("INV-%d", time.Now().Unix()),
+			InvoiceNumber: invoiceNum,
 			PlanName:      domainsub.FormatPlanName(targetPlan),
 			Amount:        amount,
 			Currency:      "INR",
@@ -213,7 +254,40 @@ func (s *Service) ChangePlan(ctx context.Context, tenantID bson.ObjectID, target
 	tenantColl := s.db.Collection("tenants")
 	_, _ = tenantColl.UpdateOne(ctx, bson.M{"_id": tenantID}, bson.M{"$set": bson.M{"plan": string(targetPlan)}})
 
+	// Send confirmation email asynchronously
+	if s.emailSvc != nil {
+		go func(tID bson.ObjectID, pTier string, cyc string, pPrice float64, renDate time.Time, invNum string) {
+			bgCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			defer cancel()
+			var t tenant.Tenant
+			if err := s.db.Collection("tenants").FindOne(bgCtx, bson.M{"_id": tID}).Decode(&t); err == nil {
+				var u user.User
+				if err := s.db.Collection("users").FindOne(bgCtx, bson.M{"tenantId": tID, "role": user.RoleOwner}).Decode(&u); err == nil && u.Email != "" {
+					if errMail := s.emailSvc.SendPlanUpgradeConfirmation(bgCtx, u.Email, u.Name, t.Name, pTier, cyc, pPrice, renDate, invNum); errMail != nil {
+						log.Printf("⚠️ [BILLING EMAIL] Failed to send upgrade confirmation to %s: %v", u.Email, errMail)
+					} else {
+						log.Printf("📧 [BILLING EMAIL] Sent upgrade confirmation to %s for %s (%s)", u.Email, t.Name, pTier)
+					}
+				}
+			}
+		}(tenantID, string(targetPlan), string(cycle), amount, sub.CurrentPeriodEnd, invoiceNum)
+	}
+
 	return sub, nil
+}
+
+// SendTestExpiryEmail dispatches a test expiry warning or expired email directly to the given recipient.
+func (s *Service) SendTestExpiryEmail(ctx context.Context, targetEmail string, daysRemaining int) error {
+	if s.emailSvc == nil {
+		return errors.New("email service not configured")
+	}
+	if targetEmail == "" {
+		targetEmail = "imhimanshuvns@gmail.com"
+	}
+	if daysRemaining <= 0 {
+		return s.emailSvc.SendTrialExpired(ctx, targetEmail, "Himanshu Singh", "The Gourmet Bistro", "https://dine.rovixatech.com/dashboard/settings?tab=billing")
+	}
+	return s.emailSvc.SendTrialExpiryWarning(ctx, targetEmail, "Himanshu Singh", "The Gourmet Bistro", daysRemaining, "https://dine.rovixatech.com/dashboard/settings?tab=billing")
 }
 
 func (s *Service) ListInvoices(ctx context.Context, tenantID bson.ObjectID) ([]domainsub.Invoice, error) {

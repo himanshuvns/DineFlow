@@ -103,18 +103,22 @@ var PlanMatrix = map[PlanTier]PlanLimits{
 }
 
 type Subscription struct {
-	ID                 bson.ObjectID      `bson:"_id,omitempty" json:"id"`
-	TenantID           bson.ObjectID      `bson:"tenantId" json:"tenantId"`
-	Plan               PlanTier           `bson:"plan" json:"plan"`
-	Cycle              BillingCycle       `bson:"cycle" json:"cycle"`
-	Status             SubscriptionStatus `bson:"status" json:"status"`
-	CurrentPeriodStart time.Time          `bson:"currentPeriodStart" json:"currentPeriodStart"`
-	CurrentPeriodEnd   time.Time          `bson:"currentPeriodEnd" json:"currentPeriodEnd"`
-	GracePeriodEnd     *time.Time         `bson:"gracePeriodEnd,omitempty" json:"gracePeriodEnd,omitempty"`
-	Provider           string             `bson:"provider" json:"provider"` // "razorpay" or "stripe"
-	ProviderSubID      string             `bson:"providerSubId,omitempty" json:"providerSubId,omitempty"`
-	CreatedAt          time.Time          `bson:"createdAt" json:"createdAt"`
-	UpdatedAt          time.Time          `bson:"updatedAt" json:"updatedAt"`
+	ID                  bson.ObjectID      `bson:"_id,omitempty" json:"id"`
+	TenantID            bson.ObjectID      `bson:"tenantId" json:"tenantId"`
+	Plan                PlanTier           `bson:"plan" json:"plan"`
+	Cycle               BillingCycle       `bson:"cycle" json:"cycle"`
+	Status              SubscriptionStatus `bson:"status" json:"status"`
+	CurrentPeriodStart  time.Time          `bson:"currentPeriodStart" json:"currentPeriodStart"`
+	CurrentPeriodEnd    time.Time          `bson:"currentPeriodEnd" json:"currentPeriodEnd"`
+	GracePeriodEnd      *time.Time         `bson:"gracePeriodEnd,omitempty" json:"gracePeriodEnd,omitempty"`
+	IsTrial             bool               `bson:"isTrial" json:"isTrial"`
+	TrialEndsAt         *time.Time         `bson:"trialEndsAt,omitempty" json:"trialEndsAt,omitempty"`
+	LastExpiryNotifDate string             `bson:"lastExpiryNotifDate,omitempty" json:"lastExpiryNotifDate,omitempty"`
+	LastExpiryNotifDays int                `bson:"lastExpiryNotifDays,omitempty" json:"lastExpiryNotifDays,omitempty"`
+	Provider            string             `bson:"provider" json:"provider"` // "trial", "razorpay" or "stripe"
+	ProviderSubID       string             `bson:"providerSubId,omitempty" json:"providerSubId,omitempty"`
+	CreatedAt           time.Time          `bson:"createdAt" json:"createdAt"`
+	UpdatedAt           time.Time          `bson:"updatedAt" json:"updatedAt"`
 }
 
 type Invoice struct {

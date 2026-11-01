@@ -289,6 +289,7 @@ func Setup(
 				billingGroup.POST("/change-plan", middleware.OwnerOnly(), subHandler.ChangePlan)
 				billingGroup.GET("/invoices", subHandler.ListInvoices)
 				billingGroup.POST("/simulate-grace-period", middleware.OwnerOnly(), subHandler.SimulateGracePeriod)
+				billingGroup.POST("/test-expiry-email", subHandler.SendTestExpiryEmail)
 			}
 
 			// ── Platform Super-Admin (Enterprise Multi-Tenant Separation) ───────────

@@ -6,9 +6,9 @@
     "semantic_hash": "5ccefffaba9f66f7bf35021aab9e4822"
   },
   "apps/api/cmd/server/main.go": {
-    "mtime": 1793535436.7849216,
-    "seen": 1793536072.853875,
-    "ast_hash": "bcff82ecf1308518f5ba892a264872c8",
+    "mtime": 1793552370.1713958,
+    "seen": 1793552606.579914,
+    "ast_hash": "caccd499c2f691629afe0ac54b97b5fe",
     "semantic_hash": ""
   },
   "apps/api/cmd/server/seed.go": {
@@ -42,9 +42,9 @@
     "semantic_hash": "25057b0cc8664c31bd863ee5b10f194f"
   },
   "apps/api/internal/application/auth/service.go": {
-    "mtime": 1793535848.4197934,
-    "seen": 1793536072.8538811,
-    "ast_hash": "6ed5d3efb125b2a44d5beacdee887c5d",
+    "mtime": 1793552243.307418,
+    "seen": 1793552606.579921,
+    "ast_hash": "95766c40f3690ef8d09d8cec50754f4d",
     "semantic_hash": ""
   },
   "apps/api/internal/application/menu/service.go": {
@@ -78,10 +78,10 @@
     "semantic_hash": ""
   },
   "apps/api/internal/application/subscription/service.go": {
-    "mtime": 1789162936.920614,
-    "seen": 1789625093.700945,
-    "ast_hash": "032788868bc5356403fe70d6923f5d29",
-    "semantic_hash": "032788868bc5356403fe70d6923f5d29"
+    "mtime": 1793552313.762138,
+    "seen": 1793552606.579937,
+    "ast_hash": "e5dc6c9ce4565ce511ec36d8f79dd8a7",
+    "semantic_hash": ""
   },
   "apps/api/internal/application/table/service.go": {
     "mtime": 1789844176.211171,
@@ -156,15 +156,15 @@
     "semantic_hash": ""
   },
   "apps/api/internal/domain/subscription/subscription.go": {
-    "mtime": 1791310580.1864834,
-    "seen": 1791310960.590616,
-    "ast_hash": "24b86485f21d29c51c4dcd25c4638bbf",
+    "mtime": 1793551971.1636803,
+    "seen": 1793552606.579961,
+    "ast_hash": "ce0066410c460213a2bbd77ba2a8d0e3",
     "semantic_hash": ""
   },
   "apps/api/internal/domain/subscription/subscription_test.go": {
-    "mtime": 1791310587.3942595,
-    "seen": 1791310960.5906172,
-    "ast_hash": "188625114d5d25779f4fceee9e501656",
+    "mtime": 1793552409.0479655,
+    "seen": 1793552606.579962,
+    "ast_hash": "b8244e5dadc97b8e4c29b28ae14c19e6",
     "semantic_hash": ""
   },
   "apps/api/internal/domain/table/table.go": {
@@ -198,9 +198,9 @@
     "semantic_hash": ""
   },
   "apps/api/internal/infrastructure/email/service.go": {
-    "mtime": 1793537866.9642963,
-    "seen": 1793537956.271819,
-    "ast_hash": "24e85caf1000b2a955908a9c4a8776d5",
+    "mtime": 1793552209.5274003,
+    "seen": 1793552606.579968,
+    "ast_hash": "5e3a3d7948f67e3babf44a8df8d500b9",
     "semantic_hash": ""
   },
   "apps/api/internal/infrastructure/mongodb/client.go": {
@@ -306,10 +306,10 @@
     "semantic_hash": "017116a8f7a5366602de386aca22c100"
   },
   "apps/api/internal/interfaces/http/handlers/subscription.go": {
-    "mtime": 1789162958.1381786,
-    "seen": 1789625093.700966,
-    "ast_hash": "f555eed0caa11865a64c4484dec9eaed",
-    "semantic_hash": "f555eed0caa11865a64c4484dec9eaed"
+    "mtime": 1793552345.4699068,
+    "seen": 1793552606.579985,
+    "ast_hash": "511303bb7a6f45b3d137a52fe46cb7bc",
+    "semantic_hash": ""
   },
   "apps/api/internal/interfaces/http/handlers/table.go": {
     "mtime": 1789844176.2149282,
@@ -348,9 +348,9 @@
     "semantic_hash": ""
   },
   "apps/api/internal/interfaces/http/routes/routes.go": {
-    "mtime": 1793515840.9137826,
-    "seen": 1793516917.8992078,
-    "ast_hash": "af359d6f7baa41f4050c6120435483d0",
+    "mtime": 1793552356.18417,
+    "seen": 1793552606.579993,
+    "ast_hash": "fc9979ef271c253737ebc2cd49f5e311",
     "semantic_hash": ""
   },
   "apps/api/package.json": {
@@ -444,9 +444,9 @@
     "semantic_hash": ""
   },
   "apps/web/app/(auth)/register/page.tsx": {
-    "mtime": 1793543027.44936,
-    "seen": 1793543153.989643,
-    "ast_hash": "7b4c197ea93370d650d77d1dcf6434c3",
+    "mtime": 1793552423.646333,
+    "seen": 1793552606.580012,
+    "ast_hash": "273b3fc09bab713437f05c647f78e451",
     "semantic_hash": ""
   },
   "apps/web/app/(auth)/reset-password/page.tsx": {
@@ -552,9 +552,9 @@
     "semantic_hash": "d29c43e8a5e05a6ca7c60f0a84efd176"
   },
   "apps/web/app/dashboard/layout.tsx": {
-    "mtime": 1793516481.1827586,
-    "seen": 1793516917.8992589,
-    "ast_hash": "8b2567b467417498ec0ab729685d8526",
+    "mtime": 1793552493.287299,
+    "seen": 1793552606.58005,
+    "ast_hash": "60762794e4f00d6f7a8759cf26c9afbd",
     "semantic_hash": ""
   },
   "apps/web/app/dashboard/loading.tsx": {
@@ -2847,6 +2847,18 @@
     "mtime": 1793516873.0182006,
     "seen": 1793516917.8993092,
     "ast_hash": "3ffefc6953b35c86e3d699cd720d05ab",
+    "semantic_hash": ""
+  },
+  "apps/api/internal/application/subscription/scheduler.go": {
+    "mtime": 1793552333.387445,
+    "seen": 1793552606.579936,
+    "ast_hash": "5a2ac026bb5f54da11e1cc4fd496dafa",
+    "semantic_hash": ""
+  },
+  "apps/web/components/dashboard/trial-expiry-banner.tsx": {
+    "mtime": 1793552445.091749,
+    "seen": 1793552606.580102,
+    "ast_hash": "1bcb705bcc94cbb4a320d77b4c665acb",
     "semantic_hash": ""
   }
 }

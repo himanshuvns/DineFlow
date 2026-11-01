@@ -270,7 +270,7 @@ export default function RegisterPage() {
             <div>
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-[#14F1C7] text-[11px] font-semibold mb-1">
                 <Sparkles className="h-3 w-3" />
-                <span>14-Day Free Growth Trial • No Credit Card Required</span>
+                <span>14-Day Free Starter Trial • No Credit Card Required</span>
               </div>
               <h1 className="text-xl sm:text-2xl font-display font-extrabold text-slate-900 dark:text-white tracking-tight">
                 Create your Restaurant Workspace

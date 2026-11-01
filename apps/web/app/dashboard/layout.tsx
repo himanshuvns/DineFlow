@@ -7,6 +7,7 @@ import { Sidebar, NAV_SECTIONS, getNavSections, type NavSubItem } from "@/compon
 import { TopBar } from "@/components/dashboard/topbar";
 import { ImpersonationBanner } from "@/components/dashboard/impersonation-banner";
 import { BroadcastBanner } from "@/components/dashboard/broadcast-banner";
+import { TrialExpiryBanner } from "@/components/dashboard/trial-expiry-banner";
 import { useUIStore } from "@/lib/stores/ui-store";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { useInventoryStore } from "@/lib/stores/inventory-store";
@@ -361,6 +362,7 @@ export default function DashboardLayout({
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         <ImpersonationBanner />
+        <TrialExpiryBanner />
         <BroadcastBanner />
         <TopBar />
         <main className="flex-1 p-3 sm:p-5 lg:p-6 xl:p-8 w-full min-w-0 pb-safe flex flex-col min-h-0 overflow-y-auto overflow-x-hidden">

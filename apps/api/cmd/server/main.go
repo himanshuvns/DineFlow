@@ -253,6 +253,10 @@ func main() {
 	roomHandler.SetStaffService(staffService)
 	roomHandler.SetWhatsAppService(waService)
 
+	// Inject email service into subscription service and start daily lifecycle scheduler
+	subService.SetEmailService(emailService)
+	go subService.StartLifecycleScheduler(ctx, log)
+
 	// Inject ping functions for health endpoint
 	handlers.SetHealthDeps(
 		func() error { return mongoDB.Ping(ctx) },

@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	domainsub "github.com/dineflow/api/internal/domain/subscription"
 	"github.com/dineflow/api/internal/domain/tenant"
 	"github.com/dineflow/api/internal/domain/user"
 	mongoinfra "github.com/dineflow/api/internal/infrastructure/mongodb"
@@ -241,8 +242,8 @@ func (s *Service) Register(ctx context.Context, req RegisterRequest) (string, er
 		return "", fmt.Errorf("register: hash password: %w", err)
 	}
 
-	// Build tenant with Growth plan trial features
-	plan := tenant.PlanGrowth // 14-day trial on Growth
+	// Build tenant with Starter plan (Basic Plan) 14-day trial
+	plan := tenant.PlanStarter // 14-day trial on Starter
 	now := time.Now().UTC()
 	newTenant := tenant.Tenant{
 		ID:           bson.NewObjectID(),
@@ -321,6 +322,28 @@ func (s *Service) Register(ctx context.Context, req RegisterRequest) (string, er
 		_, _ = tenantsColl.DeleteOne(ctx, bson.M{"_id": newTenant.ID})
 		log.Printf("❌ [AUTH] InsertOne user failed: %v", err)
 		return "", fmt.Errorf("register: insert user: %w", err)
+	}
+
+	// Create active 14-day Starter trial subscription record
+	trialEnd := now.Add(14 * 24 * time.Hour)
+	newSub := domainsub.Subscription{
+		ID:                  bson.NewObjectID(),
+		TenantID:            newTenant.ID,
+		Plan:                domainsub.PlanStarter,
+		Cycle:               domainsub.CycleMonthly,
+		Status:              domainsub.StatusActive,
+		CurrentPeriodStart:  now,
+		CurrentPeriodEnd:    trialEnd,
+		IsTrial:             true,
+		TrialEndsAt:         &trialEnd,
+		LastExpiryNotifDate: "",
+		LastExpiryNotifDays: 0,
+		Provider:            "trial",
+		CreatedAt:           now,
+		UpdatedAt:           now,
+	}
+	if _, err := s.mongo.Collection("subscriptions").InsertOne(ctx, newSub); err != nil {
+		log.Printf("⚠️ [AUTH] Failed to initialize subscription record: %v", err)
 	}
 
 	// Generate 6-digit OTP code for email verification

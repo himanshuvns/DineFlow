@@ -82,4 +82,41 @@ func TestPricingCalculations(t *testing.T) {
 		Cycle: CycleAnnual,
 	}
 	assert.Equal(t, 2399.0*12, subAnnual.GetPrice())
+
+	subStarterMonthly := &Subscription{
+		Plan:  PlanStarter,
+		Cycle: CycleMonthly,
+	}
+	assert.Equal(t, 999.0, subStarterMonthly.GetPrice())
+
+	subStarterAnnual := &Subscription{
+		Plan:  PlanStarter,
+		Cycle: CycleAnnual,
+	}
+	assert.Equal(t, 799.0*12, subStarterAnnual.GetPrice())
 }
+
+func TestStarter14DayTrial(t *testing.T) {
+	now := time.Now().UTC()
+	trialEnd := now.Add(14 * 24 * time.Hour)
+	sub := &Subscription{
+		TenantID:            bson.NewObjectID(),
+		Plan:                PlanStarter,
+		Cycle:               CycleMonthly,
+		Status:              StatusActive,
+		IsTrial:             true,
+		TrialEndsAt:         &trialEnd,
+		CurrentPeriodStart:  now,
+		CurrentPeriodEnd:    trialEnd,
+		LastExpiryNotifDate: "2026-11-01",
+		LastExpiryNotifDays: 7,
+	}
+
+	assert.True(t, sub.IsTrial)
+	assert.Equal(t, PlanStarter, sub.Plan)
+	assert.Equal(t, 7, sub.LastExpiryNotifDays)
+	assert.Equal(t, "2026-11-01", sub.LastExpiryNotifDate)
+	assert.True(t, sub.CanAddTable(9))
+	assert.False(t, sub.CanAddTable(10))
+}
+
