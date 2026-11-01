@@ -252,9 +252,9 @@
     "semantic_hash": "acc72050243d368c0e53f32e029c477b"
   },
   "apps/api/internal/interfaces/http/handlers/auth.go": {
-    "mtime": 1793535857.2051923,
-    "seen": 1793536072.853926,
-    "ast_hash": "c7efa1e7dd53a63443a984fc7682f9ca",
+    "mtime": 1793540031.4884405,
+    "seen": 1793540110.9675488,
+    "ast_hash": "15d412ec3ac295fa5d4d0aeed3c24c1d",
     "semantic_hash": ""
   },
   "apps/api/internal/interfaces/http/handlers/auth_extra.go": {
@@ -432,21 +432,21 @@
     "semantic_hash": ""
   },
   "apps/web/app/(auth)/layout.tsx": {
-    "mtime": 1789309665.0259137,
-    "seen": 1789625093.7009768,
-    "ast_hash": "729499d0fc4560de1949621e4e6e4cc0",
-    "semantic_hash": "729499d0fc4560de1949621e4e6e4cc0"
+    "mtime": 1793539780.0174975,
+    "seen": 1793540110.9675798,
+    "ast_hash": "a9f3cbb951919baa2d55c8bf71da6895",
+    "semantic_hash": ""
   },
   "apps/web/app/(auth)/login/page.tsx": {
-    "mtime": 1789846114.54166,
-    "seen": 1789846264.646657,
-    "ast_hash": "7a9d402166b91d3b8984b5f4111b982e",
+    "mtime": 1793540019.751124,
+    "seen": 1793540110.967581,
+    "ast_hash": "3d27d58f1101ee34f53f4297a7abae3f",
     "semantic_hash": ""
   },
   "apps/web/app/(auth)/register/page.tsx": {
-    "mtime": 1793535941.7115963,
-    "seen": 1793536072.8539572,
-    "ast_hash": "8ee99fa6100df4fe3df842f7956f37d0",
+    "mtime": 1793539861.6274178,
+    "seen": 1793540110.967582,
+    "ast_hash": "54b9e34bb70dbe12ed3b4202aa42c254",
     "semantic_hash": ""
   },
   "apps/web/app/(auth)/reset-password/page.tsx": {
@@ -678,9 +678,9 @@
     "semantic_hash": "d753aae00f9497d553e2d23eae3b4a7f"
   },
   "apps/web/components/auth/business-category-selector.tsx": {
-    "mtime": 1790190621.2041159,
-    "seen": 1790190770.210167,
-    "ast_hash": "0b2bd379d17ef5ead51e864901173ec2",
+    "mtime": 1793539803.273851,
+    "seen": 1793540110.96765,
+    "ast_hash": "6c2eadcba0e7de844dd8e96f24a17782",
     "semantic_hash": ""
   },
   "apps/web/components/auth/chef-mascot.tsx": {

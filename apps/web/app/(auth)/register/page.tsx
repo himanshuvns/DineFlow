@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Headphones,
   CheckCircle2,
+  Sparkles,
 } from "lucide-react";
 import {
   BusinessCategorySelector,
@@ -157,7 +158,7 @@ export default function RegisterPage() {
         <HospitalityLoader
           fullscreen
           variant="cloche"
-          title={`Registering ${businessName || "Your Restaurant"}…`}
+          title={`Registering ${businessName || "Your Workspace"}…`}
           messages={[
             "Creating encrypted workspace & tenant database…",
             "Generating bespoke QR stands & dining zones…",
@@ -169,51 +170,44 @@ export default function RegisterPage() {
       )}
 
       {/* ======================================================== */}
-      {/* FLOATING REGISTRATION CARD                               */}
+      {/* WIDE-CANVAS REGISTRATION CARD (Eliminates side whitespace) */}
       {/* ======================================================== */}
-      <div className="relative rounded-[28px] sm:rounded-[32px] bg-white/85 dark:bg-[#0F172A]/70 backdrop-blur-2xl border border-slate-200/90 dark:border-white/10 p-4 sm:p-5 lg:p-5 shadow-[0_16px_40px_rgba(0,0,0,0.06)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.6)] text-slate-900 dark:text-[#F8FAFC] transition-colors duration-200">
+      <div className="w-full max-w-3xl xl:max-w-4xl relative rounded-[28px] sm:rounded-[36px] bg-white/95 dark:bg-[#0F172A]/85 backdrop-blur-2xl border border-slate-200/90 dark:border-white/10 p-5 sm:p-8 lg:p-9 shadow-[0_20px_50px_rgba(0,0,0,0.08)] dark:shadow-[0_24px_70px_rgba(0,0,0,0.65)] text-slate-900 dark:text-[#F8FAFC] transition-colors duration-200">
         {/* Subtle glossy top reflection */}
-        <div className="absolute inset-x-8 top-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-500/20 dark:via-[#14F1C7]/30 to-transparent pointer-events-none rounded-t-[32px]" />
+        <div className="absolute inset-x-12 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-emerald-500/30 dark:via-[#14F1C7]/40 to-transparent pointer-events-none rounded-t-[36px]" />
 
         {/* Card Header */}
-        <div className="text-center pb-2 sm:pb-2.5">
-          <h2 className="text-lg sm:text-xl font-display font-extrabold text-slate-900 dark:text-white tracking-tight">
+        <div className="text-center pb-4 sm:pb-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-[#14F1C7] text-xs font-semibold mb-2.5">
+            <Sparkles className="h-3.5 w-3.5" />
+            <span>14-Day Free Growth Trial • No Credit Card Required</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-display font-extrabold text-slate-900 dark:text-white tracking-tight">
             Create your DineFlow Workspace
-          </h2>
-          <p className="mt-0.5 text-xs font-body text-slate-600 dark:text-[#94A3B8] max-w-sm mx-auto leading-tight">
-            Get started with contactless QR menus, live KDS, and WhatsApp marketing.
+          </h1>
+          <p className="mt-1 text-xs sm:text-sm font-body text-slate-600 dark:text-[#94A3B8] max-w-lg mx-auto leading-relaxed">
+            Get started with contactless QR menus, live KDS, guest feedback, and automated WhatsApp marketing.
           </p>
         </div>
 
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="space-y-2 sm:space-y-2.5">
-          {/* 1. Business Category Selector */}
-          <div>
+        {/* Form Body: 2-Column Responsive Grid */}
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+          {/* 1. Business Category Selector (Full Width) */}
+          <div className="w-full">
             <BusinessCategorySelector
               value={businessType}
               onChange={setBusinessType}
             />
-            <p className="text-[10.5px] text-slate-500 dark:text-slate-400 mt-1 px-0.5">
-              {businessType === "hotel"
-                ? "✨ Full Hospitality: Hotel Rooms, Suites & Folio Billing + Dining Management"
-                : businessType === "resort"
-                ? "🌴 Resort Living: Villas, Cabanas, Stays & In-Room / Poolside Dining"
-                : businessType === "cloud_kitchen"
-                ? "🍳 Kitchen Focused: Live KDS & Delivery Dispatch (No physical dine-in tables or rooms)"
-                : businessType === "cafe"
-                ? "☕ Café & Counter: Counter Orders, Tables, and Barista KDS Display"
-                : "🍽️ Full Service: Dining Room Tables, QR Ordering, Menu, and Kitchen Displays"}
-            </p>
           </div>
 
-          {/* 2. Business Name with inline QR Slug Preview */}
-          <div>
+          {/* 2. Business Name with inline QR Slug Preview (Full Width) */}
+          <div className="w-full">
             <div className="flex items-center justify-between mb-1">
               <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 select-none">
                 Business Name
               </label>
               {slug && (
-                <span className="text-[10.5px] font-mono text-emerald-600 dark:text-[#14F1C7] font-medium truncate max-w-full">
+                <span className="text-[11px] font-mono text-emerald-600 dark:text-[#14F1C7] font-medium truncate max-w-full">
                   dineflow.app/m/{slug}
                 </span>
               )}
@@ -237,11 +231,11 @@ export default function RegisterPage() {
             />
           </div>
 
-          {/* 3. First Name & Last Name (Responsive Columns) */}
-          <div className="grid grid-cols-1 xs:grid-cols-2 gap-2">
+          {/* 3. First Name & Last Name (2 Equal Columns) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <FormInput
               label="First Name"
-              placeholder="First name"
+              placeholder="e.g. Alexander"
               value={firstName}
               onChange={(e) => {
                 setFirstName(e.target.value);
@@ -254,7 +248,7 @@ export default function RegisterPage() {
             />
             <FormInput
               label="Last Name"
-              placeholder="Last name"
+              placeholder="e.g. Wright"
               value={lastName}
               onChange={(e) => {
                 setLastName(e.target.value);
@@ -267,106 +261,109 @@ export default function RegisterPage() {
             />
           </div>
 
-          {/* 4. Work Email Address (Primary Verification Channel) */}
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 select-none">
-                Work Email Address
-              </label>
-              <span className="text-[10.5px] font-medium text-emerald-600 dark:text-[#14F1C7]">
-                OTP sent here (Free verification)
-              </span>
+          {/* 4. Work Email & Mobile Number (2 Equal Columns) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            {/* Work Email Address */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 select-none">
+                  Work Email Address
+                </label>
+                <span className="text-[10.5px] font-medium text-emerald-600 dark:text-[#14F1C7]">
+                  Free Email OTP
+                </span>
+              </div>
+              <FormInput
+                type="email"
+                placeholder="owner@restaurant.com"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setEmailTouched(true);
+                }}
+                onBlur={() => setEmailTouched(true)}
+                error={
+                  emailTouched && !emailValidation.isValid
+                    ? emailValidation.error
+                    : undefined
+                }
+                isSuccess={emailTouched && emailValidation.isValid}
+                required
+                leftIcon={<Mail className="h-4 w-4" />}
+              />
             </div>
-            <FormInput
-              type="email"
-              placeholder="e.g. owner@restaurant.com"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                setEmailTouched(true);
-              }}
-              onBlur={() => setEmailTouched(true)}
-              error={
-                emailTouched && !emailValidation.isValid
-                  ? emailValidation.error
-                  : undefined
-              }
-              isSuccess={emailTouched && emailValidation.isValid}
-              required
-              leftIcon={<Mail className="h-4 w-4" />}
-            />
-          </div>
 
-          {/* 5. Mobile Number (Optional for WhatsApp / SMS alerts) */}
-          <div className="w-full space-y-1">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 select-none">
-                Mobile Number <span className="text-slate-400 font-normal">(Optional)</span>
-              </label>
-              <span className="text-[10.5px] text-slate-500 dark:text-[#94A3B8]">
-                For WhatsApp alerts & recovery
-              </span>
-            </div>
-            <div
-              className={`group relative flex items-center rounded-2xl border transition-all duration-200 bg-slate-100/90 dark:bg-[#0F172A]/70 backdrop-blur-md ${
-                isPhoneProvided && phoneTouched && !phoneValidation.isValid
-                  ? "border-rose-500/80 focus-within:border-rose-500 focus-within:ring-2 focus-within:ring-rose-500/20"
-                  : isPhoneProvided && phoneValidation.isValid
-                  ? "border-emerald-500/60 dark:border-emerald-500/60 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20"
-                  : "border-slate-200 dark:border-slate-700/60 hover:border-slate-300 dark:hover:border-slate-600 focus-within:border-emerald-500 dark:focus-within:border-[#14F1C7] focus-within:ring-2 focus-within:ring-emerald-500/20 dark:focus-within:ring-[#14F1C7]/40"
-              }`}
-            >
-              {/* Country Code Pill */}
-              <div className="flex items-center gap-1 pl-3.5 pr-2.5 py-2 border-r border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 font-medium text-[13.5px] select-none shrink-0">
-                <Phone className="h-4 w-4 text-slate-400 mr-1" />
-                <span>+91</span>
-                <ChevronDown className="h-3 w-3 text-slate-400" />
+            {/* Mobile Number (Optional) */}
+            <div className="w-full space-y-1">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 select-none">
+                  Mobile Number <span className="text-slate-400 font-normal">(Optional)</span>
+                </label>
+                <span className="text-[10.5px] text-slate-500 dark:text-[#94A3B8]">
+                  WhatsApp alerts
+                </span>
+              </div>
+              <div
+                className={`group relative flex items-center rounded-2xl border transition-all duration-200 bg-slate-100/90 dark:bg-[#0F172A]/70 backdrop-blur-md ${
+                  isPhoneProvided && phoneTouched && !phoneValidation.isValid
+                    ? "border-rose-500/80 focus-within:border-rose-500 focus-within:ring-2 focus-within:ring-rose-500/20"
+                    : isPhoneProvided && phoneValidation.isValid
+                    ? "border-emerald-500/60 dark:border-emerald-500/60 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20"
+                    : "border-slate-200 dark:border-slate-700/60 hover:border-slate-300 dark:hover:border-slate-600 focus-within:border-emerald-500 dark:focus-within:border-[#14F1C7] focus-within:ring-2 focus-within:ring-emerald-500/20 dark:focus-within:ring-[#14F1C7]/40"
+                }`}
+              >
+                {/* Country Code Pill */}
+                <div className="flex items-center gap-1 pl-3.5 pr-2.5 py-2.5 border-r border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 font-medium text-[13.5px] select-none shrink-0">
+                  <Phone className="h-4 w-4 text-slate-400 mr-1" />
+                  <span>+91</span>
+                  <ChevronDown className="h-3 w-3 text-slate-400" />
+                </div>
+
+                {/* Number Input with live formatting */}
+                <input
+                  type="tel"
+                  placeholder="98765 43210"
+                  value={
+                    phone.startsWith("+91")
+                      ? formatIndianPhoneInput(phone).replace(/^\+91\s*/, "")
+                      : formatIndianPhoneInput(phone)
+                  }
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/[^0-9]/g, "").slice(0, 10);
+                    setPhone(digits ? "+91" + digits : "");
+                    setPhoneTouched(true);
+                  }}
+                  onBlur={() => setPhoneTouched(true)}
+                  maxLength={11}
+                  aria-invalid={isPhoneProvided && phoneTouched && !phoneValidation.isValid}
+                  aria-describedby="register-phone-feedback"
+                  className="w-full bg-transparent text-base sm:text-sm text-slate-900 dark:text-[#F8FAFC] placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none px-3 py-2.5"
+                />
+
+                {isPhoneProvided && phoneValidation.isValid && (
+                  <div className="pr-3 flex items-center text-emerald-500 dark:text-[#14F1C7] pointer-events-none shrink-0">
+                    <CheckCircle2 className="h-4 w-4" />
+                  </div>
+                )}
               </div>
 
-              {/* Number Input with live formatting */}
-              <input
-                type="tel"
-                placeholder="98765 43210 (Optional)"
-                value={
-                  phone.startsWith("+91")
-                    ? formatIndianPhoneInput(phone).replace(/^\+91\s*/, "")
-                    : formatIndianPhoneInput(phone)
-                }
-                onChange={(e) => {
-                  const digits = e.target.value.replace(/[^0-9]/g, "").slice(0, 10);
-                  setPhone(digits ? "+91" + digits : "");
-                  setPhoneTouched(true);
-                }}
-                onBlur={() => setPhoneTouched(true)}
-                maxLength={11}
-                aria-invalid={isPhoneProvided && phoneTouched && !phoneValidation.isValid}
-                aria-describedby="register-phone-feedback"
-                className="w-full bg-transparent text-base sm:text-sm text-slate-900 dark:text-[#F8FAFC] placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none px-3 py-2"
-              />
-
-              {isPhoneProvided && phoneValidation.isValid && (
-                <div className="pr-3 flex items-center text-emerald-500 dark:text-[#14F1C7] pointer-events-none shrink-0">
-                  <CheckCircle2 className="h-4 w-4" />
-                </div>
+              {/* Inline Error or Helper */}
+              {isPhoneProvided && phoneTouched && !phoneValidation.isValid ? (
+                <p id="register-phone-feedback" role="alert" className="text-xs text-rose-500 pl-1 font-medium">
+                  {phoneValidation.error}
+                </p>
+              ) : (
+                <p id="register-phone-feedback" className="text-[10.5px] text-slate-500 dark:text-[#94A3B8] pl-1">
+                  Optional: for WhatsApp orders & manager notifications
+                </p>
               )}
             </div>
-
-            {/* Inline Error or Helper */}
-            {isPhoneProvided && phoneTouched && !phoneValidation.isValid ? (
-              <p id="register-phone-feedback" role="alert" className="text-xs text-rose-500 pl-1 font-medium">
-                {phoneValidation.error}
-              </p>
-            ) : (
-              <p id="register-phone-feedback" className="text-[11px] text-slate-500 dark:text-[#94A3B8] pl-1">
-                Optional: 10-digit mobile number for WhatsApp alerts & kitchen notifications
-              </p>
-            )}
           </div>
 
-          {/* 5. Password Field with Live Criteria Checklist & Strength Meter */}
-          <div>
+          {/* 5. Password & Confirm Password (2 Equal Columns) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <PasswordField
-              label="Password"
+              label="Create Password"
               placeholder="••••••••"
               value={password}
               onChange={(e) => {
@@ -378,16 +375,6 @@ export default function RegisterPage() {
               isSuccess={passwordValidation.isValid}
               helperText=""
             />
-
-            {/* Real-Time Password Strength Meter & 5-Criteria Checklist */}
-            <PasswordStrengthMeter
-              validation={passwordValidation}
-              hasTyped={password.length > 0}
-            />
-          </div>
-
-          {/* 6. Confirm Password with Live Matching Validation */}
-          <div>
             <PasswordField
               label="Confirm Password"
               placeholder="••••••••"
@@ -410,9 +397,17 @@ export default function RegisterPage() {
                 confirmPasswordTouched && confirmPasswordValidation.status === "match"
                   ? "✅ Passwords match"
                   : !confirmPasswordTouched || confirmPassword.length === 0
-                  ? "Re-enter your password to confirm"
+                  ? "Re-enter password to confirm"
                   : undefined
               }
+            />
+          </div>
+
+          {/* 6. Real-Time Password Strength Meter & Criteria Checklist */}
+          <div className="w-full">
+            <PasswordStrengthMeter
+              validation={passwordValidation}
+              hasTyped={password.length > 0}
             />
           </div>
 
@@ -422,20 +417,20 @@ export default function RegisterPage() {
               isLoading={isLoading}
               disabled={!isFormValid || isLoading}
             >
-              Create Workspace & Verify Mobile
+              Create Workspace & Verify Email →
             </CTAButton>
           </div>
         </form>
 
         {/* Footer: Already have an account */}
-        <div className="mt-2.5 text-center">
+        <div className="mt-4 text-center">
           <p className="text-xs text-slate-600 dark:text-slate-400">
             Already have an account?{" "}
             <Link
               href="/login"
               className="text-emerald-600 dark:text-[#14F1C7] hover:text-emerald-700 dark:hover:text-[#00E5B8] font-semibold transition-colors hover:underline"
             >
-              Sign in
+              Sign in to workspace
             </Link>
           </p>
         </div>
@@ -443,17 +438,17 @@ export default function RegisterPage() {
         {/* ======================================================== */}
         {/* BOTTOM TRUST SECTION                                     */}
         {/* ======================================================== */}
-        <div className="mt-2.5 pt-2 border-t border-slate-200/80 dark:border-white/10 grid grid-cols-1 xs:grid-cols-3 gap-2 text-center select-none">
-          <div className="flex items-center justify-center gap-1.5 text-[10.5px] text-slate-600 dark:text-slate-400 font-medium">
-            <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 dark:text-[#14F1C7] shrink-0" />
-            <span className="truncate">Secure & Encrypted</span>
+        <div className="mt-4 pt-3 border-t border-slate-200/80 dark:border-white/10 grid grid-cols-1 xs:grid-cols-3 gap-2.5 text-center select-none">
+          <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-400 font-medium">
+            <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-[#14F1C7] shrink-0" />
+            <span className="truncate">256-bit Encrypted</span>
           </div>
-          <div className="flex items-center justify-center gap-1.5 text-[10.5px] text-slate-600 dark:text-slate-400 font-medium">
-            <Headphones className="h-3.5 w-3.5 text-emerald-600 dark:text-[#14F1C7] shrink-0" />
-            <span className="truncate">24/7 Support</span>
+          <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-400 font-medium">
+            <Headphones className="h-4 w-4 text-emerald-600 dark:text-[#14F1C7] shrink-0" />
+            <span className="truncate">24/7 Priority Support</span>
           </div>
-          <div className="flex items-center justify-center gap-1.5 text-[10.5px] text-slate-600 dark:text-slate-400 font-medium">
-            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-[#14F1C7] shrink-0" />
+          <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-400 font-medium">
+            <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-[#14F1C7] shrink-0" />
             <span className="truncate">No Setup Fees</span>
           </div>
         </div>

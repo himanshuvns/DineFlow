@@ -109,7 +109,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, authapp.ErrInvalidCredentials):
-			response.Unauthorized(c, "Invalid mobile number or password.")
+			response.Unauthorized(c, "Invalid email address or password.")
 		case errors.Is(err, authapp.ErrAccountLocked):
 			response.Forbidden(c, "ACCOUNT_LOCKED", "Your account is temporarily locked. Please try again in 15 minutes.")
 		default:

@@ -33,28 +33,28 @@ export default function AuthLayout({
       </div>
 
       {/* ======================================================== */}
-      {/* LEFT 50%: IMMERSIVE HERO SECTION                         */}
+      {/* LEFT 42%: IMMERSIVE HERO SECTION                         */}
       {/* ======================================================== */}
-      <aside className="hidden lg:flex lg:col-span-6 w-full lg:h-full lg:max-h-screen relative z-10 border-b lg:border-b-0 lg:border-r border-slate-200/80 dark:border-white/10 overflow-hidden">
+      <aside className="hidden lg:flex lg:col-span-5 xl:col-span-5 w-full lg:h-full lg:max-h-screen relative z-10 border-b lg:border-b-0 lg:border-r border-slate-200/80 dark:border-white/10 overflow-hidden">
         <HeroSection isPasswordFocused={isPasswordFocused} />
       </aside>
 
       {/* ======================================================== */}
-      {/* RIGHT 50%: FLOATING AUTH FORM PANE                       */}
+      {/* RIGHT 58%: FLOATING AUTH FORM PANE                       */}
       {/* ======================================================== */}
-      <section className="col-span-1 lg:col-span-6 w-full min-h-screen lg:h-full lg:max-h-screen flex flex-col justify-center items-center p-4 sm:p-6 lg:py-3 lg:px-6 xl:px-8 relative z-20 overflow-x-hidden overflow-y-auto lg:overflow-hidden [@media(max-height:600px)]:lg:overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden bg-slate-50/90 dark:bg-[#020617]/95 transition-colors duration-200 pb-safe pt-safe touch-pan-y">
+      <section className="col-span-1 lg:col-span-7 xl:col-span-7 w-full min-h-screen lg:h-full lg:max-h-screen flex flex-col justify-center items-center p-4 sm:p-6 lg:py-6 lg:px-8 xl:px-12 relative z-20 overflow-x-hidden overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden bg-slate-50/90 dark:bg-[#020617]/95 transition-colors duration-200 pb-safe pt-safe touch-pan-y">
         {/* Soft Ambient Teal Accents Scoped to prevent horizontal bleed */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden select-none">
           <div className="absolute -top-32 -right-32 w-96 h-96 bg-emerald-500/8 dark:bg-[#14F1C7]/10 rounded-full blur-[130px]" />
           <div className="absolute -bottom-32 right-1/4 w-96 h-96 bg-teal-500/6 dark:bg-[#00D4AA]/8 rounded-full blur-[140px]" />
         </div>
 
-        {/* Content Container (Holds Floating Registration or Login Card) */}
-        <div className="w-full max-w-[480px] my-auto py-1 sm:py-2 relative z-10">
+        {/* Content Container (Flexible Width per Form Type) */}
+        <div className="w-full my-auto py-2 sm:py-4 flex flex-col items-center justify-center relative z-10">
           {children}
 
           {/* Bottom subtle signature quote */}
-          <div className="w-full text-right mt-1.5 pr-2 select-none pointer-events-none">
+          <div className="w-full max-w-3xl text-right mt-2 pr-2 select-none pointer-events-none">
             <p className="text-[11px] font-body text-slate-400 dark:text-slate-500 tracking-wide">
               Good Food. Greater Possibilities. —
             </p>
