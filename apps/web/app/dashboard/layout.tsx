@@ -340,20 +340,30 @@ export default function DashboardLayout({
 
             {/* Plan Footer in Mobile Drawer */}
             <div className="pt-4 mt-4 border-t border-slate-200/90 dark:border-slate-800/80 shrink-0">
-              <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200/90 dark:border-slate-800/80 shadow-xs">
+              <Link
+                href="/dashboard/settings?tab=billing"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block p-3.5 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200/90 dark:border-slate-800/80 shadow-xs hover:border-emerald-500/40 transition-all cursor-pointer"
+              >
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-1.5 min-w-0">
                     <Sparkles className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400 shrink-0" />
                     <span className="text-xs font-bold text-slate-900 dark:text-white capitalize truncate">
-                      {tenant?.plan || "Growth"} Plan
+                      {tenant?.plan === "growth" ? "Growth Pro" : tenant?.plan === "hotel_pro" ? "Hotel Pro PMS" : "Starter Plan"}
                     </span>
                   </div>
-                  <Badge variant="success" size="sm">Active</Badge>
+                  <Badge variant={tenant?.plan && tenant.plan !== "starter" ? "success" : "warning"} size="sm">
+                    {tenant?.plan && tenant.plan !== "starter" ? "Active" : "14-Day Trial"}
+                  </Badge>
                 </div>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
-                  Unlimited QR scans & 3 KDS display screens active.
+                  {tenant?.plan === "growth"
+                    ? "50 Tables • Unlimited Dishes • Multi-KDS"
+                    : tenant?.plan === "hotel_pro"
+                    ? "Unlimited Tables & Rooms • Multi-KDS"
+                    : "10 Tables • 100 Menu Items • 5 Staff • 1 KDS"}
                 </p>
-              </div>
+              </Link>
             </div>
           </div>
         </div>

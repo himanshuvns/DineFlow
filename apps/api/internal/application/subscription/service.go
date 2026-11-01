@@ -88,6 +88,14 @@ func (s *Service) GetSubscription(ctx context.Context, tenantID bson.ObjectID) (
 	if err != nil {
 		return nil, err
 	}
+
+	// Auto-correct any legacy trial subscription that was created as growth to starter
+	if sub.IsTrial && sub.Plan == domainsub.PlanGrowth {
+		sub.Plan = domainsub.PlanStarter
+		_, _ = coll.UpdateByID(ctx, sub.ID, bson.M{"$set": bson.M{"plan": domainsub.PlanStarter}})
+		_, _ = s.db.Collection("tenants").UpdateOne(ctx, bson.M{"_id": tenantID}, bson.M{"$set": bson.M{"plan": "starter"}})
+	}
+
 	return &sub, nil
 }
 

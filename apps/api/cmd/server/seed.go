@@ -28,6 +28,31 @@ func seedDefaultData(ctx context.Context, db *mongoinfra.Client, log *zap.Logger
 
 	demoEmail := strings.ToLower("owner@thegrandbistro.com")
 
+	// Ensure all customer / non-demo trial workspaces have Starter basic plan
+	demoSlugs := []string{"the-grand-bistro", "the-urban-cafe", "the-grand-palace-hotel", "cloud-bites-kitchen"}
+	_, _ = tenantsColl.UpdateMany(ctx, bson.M{
+		"slug": bson.M{"$nin": demoSlugs},
+		"$or": []bson.M{
+			{"plan": "growth"},
+			{"plan": bson.M{"$exists": false}},
+			{"plan": ""},
+		},
+	}, bson.M{
+		"$set": bson.M{
+			"plan": "starter",
+		},
+	})
+
+	subsColl := db.Collection("subscriptions")
+	_, _ = subsColl.UpdateMany(ctx, bson.M{
+		"isTrial": true,
+		"plan":    "growth",
+	}, bson.M{
+		"$set": bson.M{
+			"plan": "starter",
+		},
+	})
+
 	// Check if demo user already exists
 	count, err := usersColl.CountDocuments(ctx, bson.M{"email": demoEmail})
 	if err != nil {

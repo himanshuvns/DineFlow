@@ -45,6 +45,7 @@ import { useAuthStore } from "@/lib/stores/auth-store";
 import { isRouteAllowed, isOwner, getCategoryConfig } from "@/lib/rbac/roles";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { apiClient } from "@/lib/api";
 
 export interface NavSubItem {
   href: string;
@@ -260,11 +261,80 @@ export function Sidebar() {
   const pathname = usePathname();
   const { sidebarCollapsed, toggleSidebar } = useUIStore();
   const tenant = useAuthStore((state) => state.tenant);
+  const updateTenant = useAuthStore((state) => state.updateTenant);
   const user = useAuthStore((state) => state.user);
   const isOwnerUser = isOwner(user?.role);
   const categoryConfig = getCategoryConfig(tenant?.type);
   const navSections = React.useMemo(() => getNavSections(tenant?.type), [tenant?.type]);
   const [expandedItems, setExpandedItems] = React.useState<Record<string, boolean>>({});
+
+  const [billingMeta, setBillingMeta] = React.useState<{
+    plan: string;
+    isTrial: boolean;
+    daysRemaining: number;
+  } | null>(null);
+
+  React.useEffect(() => {
+    let mounted = true;
+    apiClient
+      .get<{ data: any }>("/billing/status")
+      .then((res) => {
+        if (!mounted) return;
+        const data = (res as any)?.data || res;
+        if (data && data.plan) {
+          setBillingMeta({
+            plan: data.plan,
+            isTrial: Boolean(data.isTrial),
+            daysRemaining: typeof data.daysRemaining === "number" ? data.daysRemaining : 14,
+          });
+          if (data.plan !== tenant?.plan) {
+            updateTenant({ plan: data.plan });
+          }
+        }
+      })
+      .catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, [tenant?.plan, updateTenant]);
+
+  const activePlanKey = (billingMeta?.plan || tenant?.plan || "starter").toLowerCase();
+  const isTrial = billingMeta?.isTrial ?? (activePlanKey === "starter" || !tenant?.plan);
+  const daysLeft = billingMeta?.daysRemaining ?? 14;
+
+  const planInfo = React.useMemo(() => {
+    switch (activePlanKey) {
+      case "starter":
+        return {
+          name: "Starter Plan",
+          badge: isTrial ? `${daysLeft}d Trial` : "Active",
+          badgeVariant: (isTrial ? "warning" : "success") as "warning" | "success",
+          desc: "10 Tables • 100 Dishes • 5 Staff • 1 KDS",
+        };
+      case "growth":
+        return {
+          name: "Growth Pro",
+          badge: isTrial ? "Trial" : "Active",
+          badgeVariant: (isTrial ? "warning" : "success") as "warning" | "success",
+          desc: "50 Tables • Unlimited Dishes • Multi-KDS",
+        };
+      case "hotel_pro":
+        return {
+          name: "Hotel Pro PMS",
+          badge: "Active",
+          badgeVariant: "success" as const,
+          desc: "Unlimited Tables & Rooms • Multi-KDS • AI",
+        };
+      case "free":
+      default:
+        return {
+          name: "Free Tier",
+          badge: "Free",
+          badgeVariant: "neutral" as const,
+          desc: "5 Tables • 30 Dishes • 2 Staff",
+        };
+    }
+  }, [activePlanKey, isTrial, daysLeft]);
 
   return (
     <aside
@@ -424,20 +494,26 @@ export function Sidebar() {
 
       {/* Plan & Footer Badge */}
       {!sidebarCollapsed && (
-        <div className="hidden lg:block p-4 border border-slate-200/90 dark:border-slate-800/80 m-3 rounded-2xl bg-white dark:bg-slate-900/60 shadow-xs">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-1.5">
-              <Sparkles className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" />
-              <span className="text-xs font-bold text-slate-900 dark:text-white capitalize">
-                {tenant?.plan || "Growth"} Plan
+        <Link
+          href="/dashboard/settings?tab=billing"
+          className="hidden lg:block p-3.5 border border-slate-200/90 dark:border-slate-800/80 m-3 rounded-2xl bg-white dark:bg-slate-900/60 shadow-xs hover:border-emerald-500/40 dark:hover:border-emerald-500/40 transition-all cursor-pointer group"
+          title="Manage Workspace Subscription & Billing"
+        >
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Sparkles className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400 shrink-0" />
+              <span className="text-xs font-bold text-slate-900 dark:text-white capitalize truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                {planInfo.name}
               </span>
             </div>
-            <Badge variant="success" size="sm">Active</Badge>
+            <Badge variant={planInfo.badgeVariant} size="sm">
+              {planInfo.badge}
+            </Badge>
           </div>
           <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
-            Unlimited QR scans & 3 KDS display screens active.
+            {planInfo.desc}
           </p>
-        </div>
+        </Link>
       )}
     </aside>
   );

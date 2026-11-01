@@ -120,7 +120,7 @@ export const useAuthStore = create<AuthState>()(
               name: rawTenant.name || "DineFlow Restaurant",
               slug: rawTenant.slug || "dineflow",
               type: rawTenant.businessType || rawTenant.type || "restaurant",
-              plan: rawTenant.plan || "growth",
+              plan: rawTenant.plan || "starter",
               logoUrl: resolvedLogo,
               logo: resolvedLogo,
               currency: rawTenant.currency || "INR",

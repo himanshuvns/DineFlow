@@ -135,7 +135,7 @@ export default function SettingsPage() {
   }, [isManager]);
 
   // Billing & Subscription state
-  const currentPlan = tenant?.plan || "growth";
+  const currentPlan = tenant?.plan || "starter";
   const [isGracePeriod, setIsGracePeriod] = React.useState(false);
   const [invoices, setInvoices] = React.useState<Invoice[]>(isDemo ? INITIAL_INVOICES : []);
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = React.useState(false);
