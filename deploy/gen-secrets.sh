@@ -49,10 +49,15 @@ MONGODB_URI=mongodb://dineflow-mongo:27017/dineflow
 MONGODB_DATABASE=dineflow
 REDIS_URL=redis://dineflow-redis:6379
 
-# Email & Notifications (Optional)
-RESEND_API_KEY=
-EMAIL_FROM=noreply@${DOMAIN}
+# Email & Notifications (Gmail SMTP)
+EMAIL_PROVIDER=smtp
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=dineflowtech@gmail.com
+SMTP_PASS=yzsiygikojdwawpe
+EMAIL_FROM=dineflowtech@gmail.com
 EMAIL_FROM_NAME=DineFlow
+RESEND_API_KEY=
 
 # AI
 GEMINI_API_KEY=${GEMINI_API_KEY:-}

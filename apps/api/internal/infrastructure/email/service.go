@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/smtp"
 	"strings"
+	"time"
 
 	"github.com/resend/resend-go/v2"
 )
@@ -79,15 +80,40 @@ func (s *Service) from() string {
 	return s.cfg.FromAddress
 }
 
-// sendViaSMTP sends email through an SMTP server (such as Gmail STARTTLS on port 587).
+// sendViaSMTP sends email through an SMTP server (defaults to Gmail STARTTLS on port 587, with automatic fallback to port 465 SSL).
 func (s *Service) sendViaSMTP(to, subject, htmlBody string) error {
-	host := s.cfg.SMTPHost
-	if host == "" {
-		host = "smtp.gmail.com"
-	}
 	port := s.cfg.SMTPPort
 	if port == "" {
 		port = "587"
+	}
+
+	err := s.sendViaPort(to, subject, htmlBody, port)
+	if err == nil {
+		return nil
+	}
+
+	// If initial attempt on port 587 failed, automatically retry via port 465 SSL
+	if port == "587" {
+		log.Printf("⚠️ [EMAIL SMTP] Port 587 attempt failed: %v. Retrying via SSL port 465...", err)
+		if err465 := s.sendViaPort(to, subject, htmlBody, "465"); err465 == nil {
+			log.Printf("📧 [EMAIL SMTP] Dispatched to %s via fallback SSL port 465", to)
+			return nil
+		}
+	} else if port == "465" {
+		log.Printf("⚠️ [EMAIL SMTP] Port 465 attempt failed: %v. Retrying via STARTTLS port 587...", err)
+		if err587 := s.sendViaPort(to, subject, htmlBody, "587"); err587 == nil {
+			log.Printf("📧 [EMAIL SMTP] Dispatched to %s via fallback STARTTLS port 587", to)
+			return nil
+		}
+	}
+
+	return err
+}
+
+func (s *Service) sendViaPort(to, subject, htmlBody, port string) error {
+	host := s.cfg.SMTPHost
+	if host == "" {
+		host = "smtp.gmail.com"
 	}
 	serverAddr := net.JoinHostPort(host, port)
 
@@ -107,20 +133,22 @@ func (s *Service) sendViaSMTP(to, subject, htmlBody string) error {
 	msg.WriteString("\r\n")
 	msg.WriteString(htmlBody)
 
+	dialer := &net.Dialer{Timeout: 10 * time.Second}
+
 	// Direct SSL on port 465
 	if port == "465" {
 		tlsConfig := &tls.Config{
 			ServerName: host,
 		}
-		conn, err := tls.Dial("tcp", serverAddr, tlsConfig)
+		conn, err := tls.DialWithDialer(dialer, "tcp", serverAddr, tlsConfig)
 		if err != nil {
-			return fmt.Errorf("smtp tls dial: %w", err)
+			return fmt.Errorf("smtp tls dial (%s): %w", serverAddr, err)
 		}
 		defer conn.Close()
 
 		c, err := smtp.NewClient(conn, host)
 		if err != nil {
-			return fmt.Errorf("smtp client: %w", err)
+			return fmt.Errorf("smtp client (%s): %w", host, err)
 		}
 		defer c.Quit()
 
@@ -145,9 +173,15 @@ func (s *Service) sendViaSMTP(to, subject, htmlBody string) error {
 	}
 
 	// Port 587 (Standard STARTTLS for Gmail)
-	c, err := smtp.Dial(serverAddr)
+	conn, err := dialer.Dial("tcp", serverAddr)
 	if err != nil {
 		return fmt.Errorf("smtp dial (%s): %w", serverAddr, err)
+	}
+	defer conn.Close()
+
+	c, err := smtp.NewClient(conn, host)
+	if err != nil {
+		return fmt.Errorf("smtp client (%s): %w", host, err)
 	}
 	defer c.Quit()
 

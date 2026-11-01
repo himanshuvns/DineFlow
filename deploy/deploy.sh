@@ -28,6 +28,26 @@ elif grep -q "^GEMINI_API_KEY=" .env 2>/dev/null; then
   fi
 fi
 
+# Sync Gmail SMTP credentials into .env if missing or empty
+if ! grep -q "^SMTP_PASS=" .env 2>/dev/null; then
+  echo "EMAIL_PROVIDER=smtp" >> .env
+  echo "SMTP_HOST=smtp.gmail.com" >> .env
+  echo "SMTP_PORT=587" >> .env
+  echo "SMTP_USER=dineflowtech@gmail.com" >> .env
+  echo "SMTP_PASS=yzsiygikojdwawpe" >> .env
+  echo "EMAIL_FROM=dineflowtech@gmail.com" >> .env
+  echo "EMAIL_FROM_NAME=DineFlow" >> .env
+  echo "✔ Injected Gmail SMTP credentials into .env"
+elif grep -q "^SMTP_PASS=" .env 2>/dev/null; then
+  current_smtp_pass=$(grep "^SMTP_PASS=" .env | cut -d= -f2-)
+  if [ -z "$current_smtp_pass" ]; then
+    sed -i "s|^SMTP_PASS=.*|SMTP_PASS=yzsiygikojdwawpe|" .env
+    sed -i "s|^SMTP_USER=.*|SMTP_USER=dineflowtech@gmail.com|" .env
+    sed -i "s|^EMAIL_FROM=.*|EMAIL_FROM=dineflowtech@gmail.com|" .env
+    echo "✔ Synced Gmail SMTP credentials into .env"
+  fi
+fi
+
 # Read configured ports safely
 BE_PORT=$(grep -E '^BACKEND_PORT=' .env 2>/dev/null | tr -cd '0-9' || true)
 FE_PORT=$(grep -E '^FRONTEND_PORT=' .env 2>/dev/null | tr -cd '0-9' || true)
