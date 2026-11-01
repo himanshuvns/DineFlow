@@ -151,35 +151,41 @@ export default function StockCountsPage() {
           <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-xs p-4">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Audit Sessions</h3>
             <div className="space-y-2">
-              {stockCounts.map((sc) => {
-                const isSelected = activeCount?.id === sc.id;
-                return (
-                  <div
-                    key={sc.id}
-                    onClick={() => setActiveCount(sc)}
-                    className={cn(
-                      "p-3 rounded-xl border transition-all cursor-pointer",
-                      isSelected
-                        ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-white shadow-2xs"
-                        : "border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300"
-                    )}
-                  >
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="font-mono font-bold">{sc.countNumber}</span>
-                      <Badge variant={sc.status === "approved" ? "success" : "warning"} size="sm">
-                        {sc.status === "approved" ? "Approved" : "In Progress"}
-                      </Badge>
+              {stockCounts.length === 0 ? (
+                <div className="p-4 text-center text-xs text-slate-400">
+                  No audit sessions created yet. Click &quot;Start Count Session&quot; to begin.
+                </div>
+              ) : (
+                stockCounts.map((sc) => {
+                  const isSelected = activeCount?.id === sc.id;
+                  return (
+                    <div
+                      key={sc.id}
+                      onClick={() => setActiveCount(sc)}
+                      className={cn(
+                        "p-3 rounded-xl border transition-all cursor-pointer",
+                        isSelected
+                          ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-white shadow-2xs"
+                          : "border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300"
+                      )}
+                    >
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="font-mono font-bold">{sc.countNumber}</span>
+                        <Badge variant={sc.status === "approved" ? "success" : "warning"} size="sm">
+                          {sc.status === "approved" ? "Approved" : "In Progress"}
+                        </Badge>
+                      </div>
+                      <div className="text-xs font-semibold text-slate-900 dark:text-white mt-1">
+                        {sc.title}
+                      </div>
+                      <div className="text-[11px] text-slate-400 mt-1 flex justify-between">
+                        <span>{sc.category}</span>
+                        <span>Variance: {formatCurrency(sc.totalVarianceValue)}</span>
+                      </div>
                     </div>
-                    <div className="text-xs font-semibold text-slate-900 dark:text-white mt-1">
-                      {sc.title}
-                    </div>
-                    <div className="text-[11px] text-slate-400 mt-1 flex justify-between">
-                      <span>{sc.category}</span>
-                      <span>Variance: {formatCurrency(sc.totalVarianceValue)}</span>
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
           </Card>
         </div>

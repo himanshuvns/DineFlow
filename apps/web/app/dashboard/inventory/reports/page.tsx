@@ -165,17 +165,25 @@ export default function InventoryReportsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {items.map((i) => (
-                    <TableRow key={i.id} className="border-b border-slate-100 dark:border-slate-800/60">
-                      <TableCell className="font-bold text-xs text-slate-900 dark:text-white">{i.name}</TableCell>
-                      <TableCell><Badge variant="neutral" size="sm">{i.category}</Badge></TableCell>
-                      <TableCell className="text-xs">{i.currentStock.toLocaleString()} {i.baseUnit}</TableCell>
-                      <TableCell className="text-xs">{formatCurrency(i.averageCost)} / {i.baseUnit}</TableCell>
-                      <TableCell className="text-right font-extrabold text-xs text-slate-900 dark:text-white">
-                        {formatCurrency(i.currentStock * i.averageCost)}
+                  {items.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-slate-400 text-xs">
+                        No inventory items in stock catalog. Add items to track holding value.
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    items.map((i) => (
+                      <TableRow key={i.id} className="border-b border-slate-100 dark:border-slate-800/60">
+                        <TableCell className="font-bold text-xs text-slate-900 dark:text-white">{i.name}</TableCell>
+                        <TableCell><Badge variant="neutral" size="sm">{i.category}</Badge></TableCell>
+                        <TableCell className="text-xs">{i.currentStock.toLocaleString()} {i.baseUnit}</TableCell>
+                        <TableCell className="text-xs">{formatCurrency(i.averageCost)} / {i.baseUnit}</TableCell>
+                        <TableCell className="text-right font-extrabold text-xs text-slate-900 dark:text-white">
+                          {formatCurrency(i.currentStock * i.averageCost)}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </div>
@@ -204,15 +212,23 @@ export default function InventoryReportsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {wastageMovements.map((w) => (
-                    <TableRow key={w.id} className="border-b border-slate-100 dark:border-slate-800/60">
-                      <TableCell className="text-xs text-slate-500">{new Date(w.movementDate).toLocaleDateString()}</TableCell>
-                      <TableCell className="font-bold text-xs">{w.itemName}</TableCell>
-                      <TableCell className="text-xs text-rose-500 font-bold">{Math.abs(w.deltaQty)} {w.unit}</TableCell>
-                      <TableCell className="font-bold text-xs">{formatCurrency(w.totalCost)}</TableCell>
-                      <TableCell className="text-xs">{w.reason} ({w.actorName})</TableCell>
+                  {wastageMovements.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-slate-400 text-xs">
+                        No kitchen wastage or spoilage recorded.
+                      </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    wastageMovements.map((w) => (
+                      <TableRow key={w.id} className="border-b border-slate-100 dark:border-slate-800/60">
+                        <TableCell className="text-xs text-slate-500">{new Date(w.movementDate).toLocaleDateString()}</TableCell>
+                        <TableCell className="font-bold text-xs">{w.itemName}</TableCell>
+                        <TableCell className="text-xs text-rose-500 font-bold">{Math.abs(w.deltaQty)} {w.unit}</TableCell>
+                        <TableCell className="font-bold text-xs">{formatCurrency(w.totalCost)}</TableCell>
+                        <TableCell className="text-xs">{w.reason} ({w.actorName})</TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </div>
@@ -259,17 +275,23 @@ export default function InventoryReportsPage() {
             Batch Expiry Radar (&lt; 30 Days)
           </CardTitle>
           <div className="divide-y divide-slate-100 dark:divide-slate-800">
-            {expiringItems.map((itm) => (
-              <div key={itm.id} className="py-3 flex items-center justify-between text-xs">
-                <div>
-                  <strong className="block text-slate-900 dark:text-white">{itm.name}</strong>
-                  <span className="text-slate-400">
-                    Stock: {itm.currentStock} {itm.baseUnit} • Storage: {itm.storageLocation}
-                  </span>
-                </div>
-                <Badge variant="danger" size="sm">Urgent: Use Within 3 Days</Badge>
+            {expiringItems.length === 0 ? (
+              <div className="py-8 text-center text-xs text-slate-400">
+                No items near expiry limit. All stock items and batches are fresh.
               </div>
-            ))}
+            ) : (
+              expiringItems.map((itm) => (
+                <div key={itm.id} className="py-3 flex items-center justify-between text-xs">
+                  <div>
+                    <strong className="block text-slate-900 dark:text-white">{itm.name}</strong>
+                    <span className="text-slate-400">
+                      Stock: {itm.currentStock} {itm.baseUnit} • Storage: {itm.storageLocation}
+                    </span>
+                  </div>
+                  <Badge variant="danger" size="sm">Urgent: Use Within 3 Days</Badge>
+                </div>
+              ))
+            )}
           </div>
         </Card>
       )}
@@ -288,16 +310,24 @@ export default function InventoryReportsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {suppliers.map((s) => (
-                  <TableRow key={s.id} className="border-b border-slate-100 dark:border-slate-800/60">
-                    <TableCell className="font-bold text-xs text-slate-900 dark:text-white">{s.name}</TableCell>
-                    <TableCell className="text-xs">{s.categories.join(", ")}</TableCell>
-                    <TableCell><Badge variant="neutral" size="sm">{s.paymentTerms}</Badge></TableCell>
-                    <TableCell className="text-right font-extrabold text-xs text-emerald-600 dark:text-emerald-400">
-                      {formatCurrency(s.totalSpend)}
+                {suppliers.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center py-8 text-slate-400 text-xs">
+                      No suppliers enrolled yet.
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  suppliers.map((s) => (
+                    <TableRow key={s.id} className="border-b border-slate-100 dark:border-slate-800/60">
+                      <TableCell className="font-bold text-xs text-slate-900 dark:text-white">{s.name}</TableCell>
+                      <TableCell className="text-xs">{s.categories.join(", ")}</TableCell>
+                      <TableCell><Badge variant="neutral" size="sm">{s.paymentTerms}</Badge></TableCell>
+                      <TableCell className="text-right font-extrabold text-xs text-emerald-600 dark:text-emerald-400">
+                        {formatCurrency(s.totalSpend)}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>
