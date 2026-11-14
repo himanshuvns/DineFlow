@@ -27,6 +27,7 @@ export default function PlatformFeatureFlagsPage() {
   const {
     featureFlags,
     clients,
+    tenantOverrides,
     fetchFeatureFlags,
     fetchClients,
     togglePlatformDefaultFlag,
@@ -73,10 +74,11 @@ export default function PlatformFeatureFlagsPage() {
   };
 
   // Count total overrides
-  const totalOverridesCount = clients.reduce(
-    (sum, c) => sum + Object.keys(c.featureOverrides || {}).length,
-    0
-  );
+  const totalOverridesCount = clients.reduce((sum, c) => {
+    const fromClient = Object.keys(c.featureOverrides || {}).length;
+    const fromStore = Object.keys(tenantOverrides[c.id] || {}).length;
+    return sum + Math.max(fromClient, fromStore);
+  }, 0);
 
   return (
     <div className="space-y-8">
@@ -261,12 +263,13 @@ export default function PlatformFeatureFlagsPage() {
                       </td>
 
                       {featureFlags.map((flag) => {
-                        const hasExplicitOverride =
-                          client.featureOverrides &&
-                          client.featureOverrides[flag.key] !== undefined;
-                        const isEnabled = hasExplicitOverride
-                          ? client.featureOverrides[flag.key]
-                          : flag.platformDefault;
+                        const explicitVal =
+                          client.featureOverrides && client.featureOverrides[flag.key] !== undefined
+                            ? client.featureOverrides[flag.key]
+                            : tenantOverrides[client.id]?.[flag.key];
+
+                        const hasExplicitOverride = explicitVal !== undefined;
+                        const isEnabled = hasExplicitOverride ? Boolean(explicitVal) : flag.platformDefault;
 
                         return (
                           <td key={flag.key} className="px-3 py-3 text-center">
@@ -288,7 +291,7 @@ export default function PlatformFeatureFlagsPage() {
                               }`}
                               title={
                                 hasExplicitOverride
-                                  ? `Explicitly overridden: ${isEnabled ? "Enabled" : "Disabled"}`
+                                  ? `Explicit override: ${isEnabled ? "Enabled" : "Disabled"}`
                                   : `Inherited default: ${flag.platformDefault ? "Enabled" : "Disabled"}`
                               }
                             >
@@ -299,8 +302,14 @@ export default function PlatformFeatureFlagsPage() {
                               />
                             </button>
                             {hasExplicitOverride && (
-                              <div className="text-[9px] font-bold text-purple-600 dark:text-purple-400 mt-0.5">
-                                override
+                              <div
+                                className={`text-[9px] font-bold mt-0.5 ${
+                                  isEnabled
+                                    ? "text-purple-600 dark:text-purple-400"
+                                    : "text-amber-600 dark:text-amber-400"
+                                }`}
+                              >
+                                {isEnabled ? "override (on)" : "override (off)"}
                               </div>
                             )}
                           </td>

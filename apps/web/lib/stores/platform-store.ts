@@ -771,6 +771,17 @@ export const usePlatformStore = create<PlatformState>()(
                 }
               : c
           ),
+          selectedClient360:
+            state.selectedClient360 && state.selectedClient360.id === id
+              ? {
+                  ...state.selectedClient360,
+                  plan,
+                  billingCycle,
+                  mrr,
+                  arr,
+                  status: plan === "trial" ? ("trial" as ClientStatus) : ("active" as ClientStatus),
+                }
+              : state.selectedClient360,
         }));
 
         apiClient.post(`/platform/tenants/${id}/plan`, { plan, cycle: billingCycle }).catch(() => {});
@@ -901,17 +912,34 @@ export const usePlatformStore = create<PlatformState>()(
 
       setClientFeatureOverride: (clientId, featureKey, enabled) => {
         set((state) => ({
+          tenantOverrides: {
+            ...state.tenantOverrides,
+            [clientId]: {
+              ...(state.tenantOverrides[clientId] || {}),
+              [featureKey]: enabled,
+            },
+          },
           clients: state.clients.map((c) =>
             c.id === clientId
               ? {
                   ...c,
                   featureOverrides: {
-                    ...c.featureOverrides,
+                    ...(c.featureOverrides || {}),
                     [featureKey]: enabled,
                   },
                 }
               : c
           ),
+          selectedClient360:
+            state.selectedClient360 && state.selectedClient360.id === clientId
+              ? {
+                  ...state.selectedClient360,
+                  featureOverrides: {
+                    ...(state.selectedClient360.featureOverrides || {}),
+                    [featureKey]: enabled,
+                  },
+                }
+              : state.selectedClient360,
         }));
 
         apiClient.put(`/platform/feature-flags/tenants/${clientId}/${featureKey}`, { enabled }).catch(() => {});
@@ -1177,6 +1205,7 @@ export const usePlatformStore = create<PlatformState>()(
       partialize: (state) => ({
         maintenanceMode: state.maintenanceMode,
         defaultTrialDays: state.defaultTrialDays,
+        auditLogs: state.auditLogs.slice(0, 100),
       }),
     }
   )

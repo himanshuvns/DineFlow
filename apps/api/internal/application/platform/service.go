@@ -915,10 +915,11 @@ func (s *Service) ListInvoices(
 // ─── Feature Flags ────────────────────────────────────────────────────────────
 
 func (s *Service) ListFeatureFlags(ctx context.Context) ([]domainplat.FeatureFlagDefinition, map[string]map[string]bool, error) {
-	// Base standard definitions
-	defs := StandardFeatureFlags
+	// Base standard definitions clone
+	defs := make([]domainplat.FeatureFlagDefinition, len(StandardFeatureFlags))
+	copy(defs, StandardFeatureFlags)
 
-	// Fetch tenant overrides
+	// Fetch all feature flag overrides and defaults from DB
 	overrides := make(map[string]map[string]bool)
 	cursor, err := s.db.Collection("feature_flags").Find(ctx, bson.M{})
 	if err == nil {
@@ -926,12 +927,19 @@ func (s *Service) ListFeatureFlags(ctx context.Context) ([]domainplat.FeatureFla
 		var records []domainplat.FeatureFlagRecord
 		if err := cursor.All(ctx, &records); err == nil {
 			for _, rec := range records {
-				if rec.TenantID != nil {
+				if rec.TenantID != nil && !rec.TenantID.IsZero() {
 					tid := rec.TenantID.Hex()
 					if overrides[tid] == nil {
 						overrides[tid] = make(map[string]bool)
 					}
 					overrides[tid][rec.Feature] = rec.Enabled
+				} else {
+					// Global default override
+					for i := range defs {
+						if defs[i].Key == rec.Feature {
+							defs[i].PlatformDefault = rec.Enabled
+						}
+					}
 				}
 			}
 		}
@@ -945,7 +953,15 @@ func (s *Service) ToggleGlobalFlag(ctx context.Context, featureKey string, enabl
 	_, err := s.db.Collection("feature_flags").UpdateOne(
 		ctx,
 		bson.M{"tenantId": nil, "feature": featureKey},
-		bson.M{"$set": bson.M{"enabled": enabled, "updatedAt": now, "updatedBy": actor.Email}},
+		bson.M{
+			"$set": bson.M{
+				"tenantId":  nil,
+				"feature":   featureKey,
+				"enabled":   enabled,
+				"updatedAt": now,
+				"updatedBy": actor.Email,
+			},
+		},
 		options.UpdateOne().SetUpsert(true),
 	)
 	if err != nil {
@@ -980,7 +996,15 @@ func (s *Service) SetTenantFeatureOverride(
 	_, err = s.db.Collection("feature_flags").UpdateOne(
 		ctx,
 		bson.M{"tenantId": objID, "feature": featureKey},
-		bson.M{"$set": bson.M{"enabled": enabled, "updatedAt": now, "updatedBy": actor.Email}},
+		bson.M{
+			"$set": bson.M{
+				"tenantId":  objID,
+				"feature":   featureKey,
+				"enabled":   enabled,
+				"updatedAt": now,
+				"updatedBy": actor.Email,
+			},
+		},
 		options.UpdateOne().SetUpsert(true),
 	)
 	if err != nil {

@@ -40,6 +40,7 @@ export default function PlatformDashboardPage() {
     dashboardMetrics,
     fetchDashboardMetrics,
     fetchClients,
+    fetchAuditLogs,
     isLoading,
   } = usePlatformStore();
 
@@ -48,11 +49,12 @@ export default function PlatformDashboardPage() {
   React.useEffect(() => {
     fetchDashboardMetrics();
     fetchClients();
-  }, [fetchDashboardMetrics, fetchClients]);
+    fetchAuditLogs();
+  }, [fetchDashboardMetrics, fetchClients, fetchAuditLogs]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    await Promise.all([fetchDashboardMetrics(), fetchClients()]);
+    await Promise.all([fetchDashboardMetrics(), fetchClients(), fetchAuditLogs()]);
     setIsRefreshing(false);
   };
 
@@ -449,21 +451,29 @@ export default function PlatformDashboardPage() {
             </Link>
           </div>
           <div className="divide-y divide-slate-100 dark:divide-slate-800/60 mt-2">
-            {auditLogs.slice(0, 3).map((log) => (
-              <div key={log.id} className="py-2 text-xs space-y-0.5">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono font-bold text-rose-600 dark:text-rose-400 text-[11px]">
-                    {log.action}
-                  </span>
-                  <span className="text-[10px] text-slate-400 font-mono">
-                    {new Date(log.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-600 dark:text-slate-400 truncate">
-                  {log.details}
-                </p>
+            {auditLogs.length === 0 ? (
+              <div className="py-6 text-center text-xs text-slate-500 dark:text-slate-400">
+                <ShieldCheck className="h-6 w-6 text-slate-400 dark:text-slate-500 mx-auto mb-1.5 opacity-60" />
+                Immutable compliance ledger active. Platform actions will appear here automatically.
               </div>
-            ))}
+            ) : (
+              auditLogs.slice(0, 4).map((log) => (
+                <div key={log.id} className="py-2 text-xs space-y-0.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono font-bold text-rose-600 dark:text-rose-400 text-[11px]">
+                      {log.action}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono">
+                      {new Date(log.timestamp).toLocaleDateString([], { month: "short", day: "numeric" })}{" "}
+                      {new Date(log.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400 truncate">
+                    {log.details}
+                  </p>
+                </div>
+              ))
+            )}
           </div>
         </Card>
       </div>

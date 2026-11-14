@@ -38,6 +38,7 @@ export default function ClientDetailsPage() {
   const { startImpersonation } = useAuthStore();
   const {
     clients,
+    tenantOverrides,
     fetchClient360,
     selectedClient360,
     activateClient,
@@ -389,13 +390,28 @@ export default function ClientDetailsPage() {
           </p>
           <div className="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs">
             {featureFlags.map((flag) => {
-              const hasOverride = client.featureOverrides[flag.key] !== undefined;
-              const isEnabled = hasOverride ? client.featureOverrides[flag.key] : flag.platformDefault;
+              const explicitVal =
+                client.featureOverrides?.[flag.key] !== undefined
+                  ? client.featureOverrides[flag.key]
+                  : tenantOverrides[client.id]?.[flag.key];
+              const hasOverride = explicitVal !== undefined;
+              const isEnabled = hasOverride ? Boolean(explicitVal) : flag.platformDefault;
 
               return (
                 <div key={flag.key} className="py-2.5 flex items-center justify-between">
                   <div className="min-w-0 pr-4">
-                    <span className="font-bold text-slate-900 dark:text-white block">{flag.name}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-slate-900 dark:text-white block">{flag.name}</span>
+                      {hasOverride && (
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
+                          isEnabled
+                            ? "bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20"
+                            : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+                        }`}>
+                          {isEnabled ? "Override: On" : "Override: Off"}
+                        </span>
+                      )}
+                    </div>
                     <span className="text-[11px] text-slate-500">{flag.description}</span>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
@@ -404,7 +420,9 @@ export default function ClientDetailsPage() {
                       onClick={() => setClientFeatureOverride(client.id, flag.key, !isEnabled)}
                       className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                         isEnabled
-                          ? "bg-emerald-500 text-white shadow-xs"
+                          ? hasOverride
+                            ? "bg-purple-600 text-white shadow-xs"
+                            : "bg-emerald-500 text-white shadow-xs"
                           : "bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                       }`}
                     >
