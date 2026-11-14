@@ -41,81 +41,6 @@ interface InvoiceRecord {
   paymentMethod: string;
 }
 
-const MOCK_INVOICES: InvoiceRecord[] = [
-  {
-    id: "INV-2026-089",
-    clientId: "ten-002",
-    clientName: "Taj Heritage Palace & Suites",
-    amount: 7999,
-    currency: "INR",
-    plan: "hotel_pro",
-    date: "2026-09-15",
-    dueDate: "2026-09-20",
-    status: "paid",
-    paymentMethod: "HDFC Corp NetBanking (•••• 4912)",
-  },
-  {
-    id: "INV-2026-088",
-    clientId: "ten-001",
-    clientName: "The Grand Bistro & Rooftop",
-    amount: 2999,
-    currency: "INR",
-    plan: "growth",
-    date: "2026-09-15",
-    dueDate: "2026-09-15",
-    status: "paid",
-    paymentMethod: "ICICI Auto-Debit (•••• 1029)",
-  },
-  {
-    id: "INV-2026-087",
-    clientId: "ten-005",
-    clientName: "Urban Wok Cloud Kitchen",
-    amount: 2999,
-    currency: "INR",
-    plan: "growth",
-    date: "2026-09-14",
-    dueDate: "2026-09-14",
-    status: "paid",
-    paymentMethod: "Razorpay UPI (kunal@okhla)",
-  },
-  {
-    id: "INV-2026-086",
-    clientId: "ten-004",
-    clientName: "Seaside Haven Resort & Spa",
-    amount: 7999,
-    currency: "INR",
-    plan: "hotel_pro",
-    date: "2026-09-12",
-    dueDate: "2026-09-12",
-    status: "failed",
-    paymentMethod: "Axis Visa Card (•••• 8821 - Card Expired)",
-  },
-  {
-    id: "INV-2026-085",
-    clientId: "ten-003",
-    clientName: "Le Petit Artisan Cafe",
-    amount: 999,
-    currency: "INR",
-    plan: "starter",
-    date: "2026-09-05",
-    dueDate: "2026-09-05",
-    status: "paid",
-    paymentMethod: "Axis Corporate Card (•••• 3311)",
-  },
-  {
-    id: "INV-2026-084",
-    clientId: "ten-007",
-    clientName: "Dhaba 1947 Heritage Kitchen",
-    amount: 999,
-    currency: "INR",
-    plan: "starter",
-    date: "2026-08-30",
-    dueDate: "2026-08-30",
-    status: "failed",
-    paymentMethod: "PNB Auto-Debit (Insufficient Balance)",
-  },
-];
-
 export default function PlatformRevenuePage() {
   const { toast } = useToast();
   const {
@@ -137,7 +62,7 @@ export default function PlatformRevenuePage() {
   const [searchQuery, setSearchQuery] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<string>("all");
 
-  const invoices: InvoiceRecord[] = (storeInvoices.length > 0 ? storeInvoices : MOCK_INVOICES) as any;
+  const invoices: InvoiceRecord[] = (storeInvoices || []) as any;
 
   // Financial aggregates (prefer live backend calculations when loaded)
   const totalMrr = revenueOverview?.mrr ?? clients
@@ -479,54 +404,37 @@ export default function PlatformRevenuePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-3">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-xs font-bold text-amber-900 dark:text-amber-200">
-                    Seaside Haven Resort & Spa
-                  </p>
-                  <p className="text-[11px] text-amber-700 dark:text-amber-400 mt-0.5">
-                    Card expired · Grace period ends in 4 days
-                  </p>
-                </div>
-                <Badge variant="outline" className="text-[10px] border-amber-500/40 text-amber-700 dark:text-amber-300">
-                  ₹7,999
-                </Badge>
+            {clients.filter((c) => c.status === "grace_period" || (c.status === "trial" && (c.trialDaysLeft ?? 14) <= 7)).length === 0 ? (
+              <div className="py-8 text-center text-xs text-neutral-500 dark:text-neutral-400">
+                <CheckCircle2 className="h-6 w-6 text-emerald-500 mx-auto mb-2" />
+                <p className="font-semibold text-neutral-800 dark:text-neutral-200">All Client Accounts in Good Standing</p>
+                <p className="mt-0.5">No urgent grace period lapses or expiring trials require operator intervention.</p>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleRetryPayment("INV-2026-086", "Seaside Haven Resort & Spa")}
-                className="mt-2.5 h-7 w-full text-xs font-medium border-amber-500/30 text-amber-800 dark:text-amber-200 hover:bg-amber-500/20"
-              >
-                Send Direct Payment Link
-              </Button>
-            </div>
-
-            <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50 p-3">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
-                    Spice Garden Pure Veg
-                  </p>
-                  <p className="text-[11px] text-neutral-600 dark:text-neutral-400 mt-0.5">
-                    Free Trial expiring in 5 days (Sep 23)
-                  </p>
-                </div>
-                <Badge variant="outline" className="text-[10px]">
-                  Trial
-                </Badge>
-              </div>
-              <Link href="/platform/clients/ten-006">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="mt-2.5 h-7 w-full text-xs text-neutral-700 dark:text-neutral-300"
-                >
-                  View Client Conversion Pipeline →
-                </Button>
-              </Link>
-            </div>
+            ) : (
+              clients
+                .filter((c) => c.status === "grace_period" || (c.status === "trial" && (c.trialDaysLeft ?? 14) <= 7))
+                .slice(0, 3)
+                .map((c) => (
+                  <div key={c.id} className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-3">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-xs font-bold text-amber-900 dark:text-amber-200">{c.name}</p>
+                        <p className="text-[11px] text-amber-700 dark:text-amber-400 mt-0.5">
+                          {c.status === "grace_period" ? "Grace period active · Renewal pending" : `Starter Trial expiring in ${c.trialDaysLeft ?? 7} days`}
+                        </p>
+                      </div>
+                      <Badge variant="outline" className="text-[10px] border-amber-500/40 text-amber-700 dark:text-amber-300">
+                        {c.plan.toUpperCase()}
+                      </Badge>
+                    </div>
+                    <Link href={`/platform/clients/${c.id}`}>
+                      <Button variant="ghost" size="sm" className="mt-2.5 h-7 w-full text-xs text-neutral-700 dark:text-neutral-300">
+                        Manage Client Workspace →
+                      </Button>
+                    </Link>
+                  </div>
+                ))
+            )}
           </CardContent>
         </Card>
       </div>
@@ -585,7 +493,20 @@ export default function PlatformRevenuePage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800">
-                {filteredInvoices.map((inv) => (
+                {filteredInvoices.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="px-4 py-12 text-center">
+                      <div className="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400">
+                        <CreditCard className="h-8 w-8 text-slate-400 dark:text-slate-600 mb-2" />
+                        <p className="text-sm font-semibold text-slate-900 dark:text-white">No Invoices Found</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                          Billing invoices appear automatically once active businesses complete subscription billing cycles.
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  filteredInvoices.map((inv) => (
                   <tr key={inv.id} className="hover:bg-neutral-50/75 dark:hover:bg-neutral-900/50 transition-colors">
                     <td className="px-4 py-3 font-mono font-medium text-neutral-900 dark:text-neutral-100">
                       {inv.id}
@@ -651,8 +572,9 @@ export default function PlatformRevenuePage() {
                       )}
                     </td>
                   </tr>
-                ))}
-              </tbody>
+                ))
+              )}
+            </tbody>
             </table>
           </div>
         </CardContent>

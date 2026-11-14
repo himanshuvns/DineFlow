@@ -20,12 +20,14 @@ import {
   ExternalLink,
   Lock,
   LogOut,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePlatformStore } from "@/lib/stores/platform-store";
 
 export const PLATFORM_NAV_ITEMS = [
   { href: "/platform/dashboard", label: "Executive Overview", icon: LayoutDashboard },
+  { href: "/platform/team", label: "Platform Team", icon: Users, badge: "RBAC" },
   { href: "/platform/clients", label: "Clients & Workspaces", icon: Building2, badge: "Tenants" },
   { href: "/platform/security", label: "Security Center", icon: ShieldCheck, badge: "Zero Trust" },
   { href: "/platform/subscriptions", label: "Subscription Tiers", icon: Sparkles },
@@ -51,7 +53,7 @@ export function PlatformSidebar() {
     try {
       await logoutPlatform();
     } catch {}
-    router.push("/login");
+    router.push("/platform/login");
   };
 
   return (

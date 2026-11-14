@@ -364,6 +364,13 @@ func Setup(
 				platformGroup.DELETE("/security/block-ip/:ip", middleware.PlatformAdminOrAbove(), platformHandler.UnblockIP)
 				platformGroup.POST("/security/revoke-user-sessions", middleware.PlatformAdminOrAbove(), platformHandler.RevokeUserSessions)
 
+				// Platform Administrators Management (Strictly SuperAdminOnly)
+				platformGroup.GET("/admins", middleware.SuperAdminOnly(), platformHandler.ListPlatformAdmins)
+				platformGroup.POST("/admins", middleware.SuperAdminOnly(), platformHandler.CreatePlatformAdmin)
+				platformGroup.PATCH("/admins/:id", middleware.SuperAdminOnly(), platformHandler.UpdatePlatformAdmin)
+				platformGroup.POST("/admins/:id/reset-password", middleware.SuperAdminOnly(), platformHandler.ResetPlatformAdminPassword)
+				platformGroup.DELETE("/admins/:id", middleware.SuperAdminOnly(), platformHandler.DeletePlatformAdmin)
+
 				// Super Admin Logout
 				platformGroup.POST("/auth/logout", platformHandler.Logout)
 			}

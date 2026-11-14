@@ -685,3 +685,82 @@ func (h *PlatformHandler) RevokeUserSessions(c *gin.Context) {
 	response.OK(c, gin.H{"message": fmt.Sprintf("All active sessions for user %s have been revoked.", req.UserID)})
 }
 
+// ─── Platform Administrators Management ───────────────────────────────────────
+
+func (h *PlatformHandler) ListPlatformAdmins(c *gin.Context) {
+	admins, err := h.svc.ListPlatformAdmins(c.Request.Context())
+	if err != nil {
+		response.InternalError(c)
+		return
+	}
+	response.OK(c, admins)
+}
+
+func (h *PlatformHandler) CreatePlatformAdmin(c *gin.Context) {
+	var req domainplat.CreatePlatformAdminRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "INVALID_REQUEST", "Name, work email, valid role, and initial password are required.")
+		return
+	}
+	actor := h.extractActor(c)
+	admin, err := h.svc.CreatePlatformAdmin(c.Request.Context(), req, actor, c.ClientIP())
+	if err != nil {
+		response.BadRequest(c, "CREATE_ADMIN_FAILED", err.Error())
+		return
+	}
+	response.Created(c, admin)
+}
+
+func (h *PlatformHandler) UpdatePlatformAdmin(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		response.BadRequest(c, "INVALID_ID", "Administrator ID is required.")
+		return
+	}
+	var req domainplat.UpdatePlatformAdminRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "INVALID_REQUEST", "Malformed update payload.")
+		return
+	}
+	actor := h.extractActor(c)
+	if err := h.svc.UpdatePlatformAdmin(c.Request.Context(), id, req, actor, c.ClientIP()); err != nil {
+		response.BadRequest(c, "UPDATE_FAILED", err.Error())
+		return
+	}
+	response.OK(c, gin.H{"message": "Administrator profile updated successfully."})
+}
+
+func (h *PlatformHandler) ResetPlatformAdminPassword(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		response.BadRequest(c, "INVALID_ID", "Administrator ID is required.")
+		return
+	}
+	var req domainplat.ResetAdminPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "INVALID_PASSWORD", "A valid password with at least 8 characters is required.")
+		return
+	}
+	actor := h.extractActor(c)
+	if err := h.svc.ResetPlatformAdminPassword(c.Request.Context(), id, req.Password, actor, c.ClientIP()); err != nil {
+		response.BadRequest(c, "RESET_FAILED", err.Error())
+		return
+	}
+	response.OK(c, gin.H{"message": "Administrator password reset successfully. Active sessions revoked."})
+}
+
+func (h *PlatformHandler) DeletePlatformAdmin(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		response.BadRequest(c, "INVALID_ID", "Administrator ID is required.")
+		return
+	}
+	actor := h.extractActor(c)
+	if err := h.svc.DeletePlatformAdmin(c.Request.Context(), id, actor, c.ClientIP()); err != nil {
+		response.BadRequest(c, "DELETE_FAILED", err.Error())
+		return
+	}
+	response.OK(c, gin.H{"message": "Administrator revoked and access removed."})
+}
+
+

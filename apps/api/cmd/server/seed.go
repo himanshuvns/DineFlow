@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 
@@ -537,8 +536,6 @@ func seedDefaultData(ctx context.Context, db *mongoinfra.Client, log *zap.Logger
 // seedPlatformData populates all enterprise multi-tenant records across the platform
 func seedPlatformData(ctx context.Context, db *mongoinfra.Client, log *zap.Logger) error {
 	tenantsColl := db.Collection("tenants")
-	usersColl := db.Collection("users")
-	invColl := db.Collection("invoices")
 	ticketColl := db.Collection("support_tickets")
 	auditColl := db.Collection("audit_logs")
 	notifColl := db.Collection("platform_notifications")
@@ -560,210 +557,18 @@ func seedPlatformData(ctx context.Context, db *mongoinfra.Client, log *zap.Logge
 		})
 	}
 
-	// Data definition for the 6 additional platform tenants
-	type TenantSeedConfig struct {
-		Name         string
-		Slug         string
-		BusinessType tenant.BusinessType
-		Plan         tenant.Plan
-		Status       tenant.Status
-		City         string
-		State        string
-		OwnerName    string
-		OwnerEmail   string
-		OwnerPhone   string
+	// Clean up legacy mock extra tenants so only real customer workspaces appear on the platform dashboard
+	dummySlugs := []string{
+		"taj-heritage-udaipur",
+		"le-petit-cafe",
+		"seaside-haven-goa",
+		"urban-wok-delhi",
+		"spice-garden-ahmedabad",
+		"dhaba-1947-amritsar",
 	}
+	_, _ = tenantsColl.DeleteMany(ctx, bson.M{"slug": bson.M{"$in": dummySlugs}})
 
-	extraTenants := []TenantSeedConfig{
-		{
-			Name:         "Taj Heritage Palace & Suites",
-			Slug:         "taj-heritage-udaipur",
-			BusinessType: tenant.BusinessTypeHotel,
-			Plan:         tenant.PlanHotelPro,
-			Status:       tenant.StatusActive,
-			City:         "Udaipur",
-			State:        "Rajasthan",
-			OwnerName:    "Maharaj Vikram Singh",
-			OwnerEmail:   "palace@tajheritage.com",
-			OwnerPhone:   "+919829012345",
-		},
-		{
-			Name:         "Le Petit Artisan Cafe",
-			Slug:         "le-petit-cafe",
-			BusinessType: tenant.BusinessTypeCafe,
-			Plan:         tenant.PlanStarter,
-			Status:       tenant.StatusActive,
-			City:         "Bengaluru",
-			State:        "Karnataka",
-			OwnerName:    "Camille Dupont",
-			OwnerEmail:   "camille@lepetit.co",
-			OwnerPhone:   "+919845067890",
-		},
-		{
-			Name:         "Seaside Haven Resort & Spa",
-			Slug:         "seaside-haven-goa",
-			BusinessType: tenant.BusinessTypeHotel,
-			Plan:         tenant.PlanHotelPro,
-			Status:       tenant.StatusActive, // grace period in UI
-			City:         "Goa",
-			State:        "Goa",
-			OwnerName:    "Anthony Rodrigues",
-			OwnerEmail:   "anthony@seasidehaven.com",
-			OwnerPhone:   "+919822144556",
-		},
-		{
-			Name:         "Urban Wok Cloud Kitchen",
-			Slug:         "urban-wok-delhi",
-			BusinessType: tenant.BusinessTypeCloudKitchen,
-			Plan:         tenant.PlanGrowth,
-			Status:       tenant.StatusActive,
-			City:         "New Delhi",
-			State:        "Delhi",
-			OwnerName:    "Kunal Mehra",
-			OwnerEmail:   "kunal@urbanwok.in",
-			OwnerPhone:   "+919810088990",
-		},
-		{
-			Name:         "Spice Garden Pure Veg",
-			Slug:         "spice-garden-ahmedabad",
-			BusinessType: tenant.BusinessTypeRestaurant,
-			Plan:         tenant.PlanFree,
-			Status:       tenant.StatusActive, // trial
-			City:         "Ahmedabad",
-			State:        "Gujarat",
-			OwnerName:    "Harsh Patel",
-			OwnerEmail:   "harsh@spicegarden.co.in",
-			OwnerPhone:   "+919898011223",
-		},
-		{
-			Name:         "Dhaba 1947 Heritage Kitchen",
-			Slug:         "dhaba-1947-amritsar",
-			BusinessType: tenant.BusinessTypeRestaurant,
-			Plan:         tenant.PlanStarter,
-			Status:       tenant.StatusSuspended,
-			City:         "Amritsar",
-			State:        "Punjab",
-			OwnerName:    "Gurpreet Singh",
-			OwnerEmail:   "gurpreet@dhaba1947.com",
-			OwnerPhone:   "+919872099887",
-		},
-	}
-
-	hash, _ := bcrypt.GenerateFromPassword([]byte("DineFlow@2026"), bcrypt.DefaultCost)
 	now := time.Now().UTC()
-
-	for _, cfg := range extraTenants {
-		tCount, _ := tenantsColl.CountDocuments(ctx, bson.M{"slug": cfg.Slug})
-		var tID bson.ObjectID
-		if tCount == 0 {
-			tID = bson.NewObjectID()
-			tDoc := tenant.Tenant{
-				ID:           tID,
-				Slug:         cfg.Slug,
-				Name:         cfg.Name,
-				BusinessType: cfg.BusinessType,
-				Plan:         cfg.Plan,
-				Status:       cfg.Status,
-				Timezone:     "Asia/Kolkata",
-				Currency:     "INR",
-				Country:      "IN",
-				TaxRate:      5.0,
-				Contact: tenant.Contact{
-					Email:         cfg.OwnerEmail,
-					Phone:         cfg.OwnerPhone,
-					WhatsAppPhone: cfg.OwnerPhone,
-				},
-				Address: tenant.Address{
-					Line1:   "Main Hospitality Avenue",
-					City:    cfg.City,
-					State:   cfg.State,
-					Pincode: "400001",
-					Country: "IN",
-				},
-				Settings: tenant.Settings{
-					OrderingEnabled:        true,
-					RequireGuestPhone:      false,
-					AutoAcceptOrders:       true,
-					PreparationTimeMinutes: 20,
-					OrderingPageTheme:      "default",
-					ItemUnavailableMode:    "gray_out",
-				},
-				Features: tenant.FeaturesForPlan(cfg.Plan),
-				Limits:   tenant.LimitsForPlan(cfg.Plan),
-				Onboarding: tenant.Onboarding{
-					Completed: true,
-					Steps: tenant.OnboardingSteps{
-						Profile:  true,
-						Menu:     true,
-						Tables:   true,
-						QRCodes:  true,
-						WhatsApp: true,
-					},
-				},
-				CreatedAt: now.AddDate(0, -3, 0),
-				UpdatedAt: now,
-			}
-			_, _ = tenantsColl.InsertOne(ctx, tDoc)
-
-			// Create Owner User
-			uDoc := user.User{
-				ID:          bson.NewObjectID(),
-				TenantID:    tID,
-				Phone:       cfg.OwnerPhone,
-				Email:       cfg.OwnerEmail,
-				Name:        cfg.OwnerName,
-				Role:        user.RoleOwner,
-				Permissions: user.DefaultPermissionsForRole(user.RoleOwner),
-				Auth: user.Auth{
-					PasswordHash:  string(hash),
-					EmailVerified: true,
-					PhoneVerified: true,
-				},
-				Status:    user.StatusActive,
-				CreatedAt: now.AddDate(0, -3, 0),
-				UpdatedAt: now,
-			}
-			_, _ = usersColl.InsertOne(ctx, uDoc)
-		} else {
-			var existingT tenant.Tenant
-			_ = tenantsColl.FindOne(ctx, bson.M{"slug": cfg.Slug}).Decode(&existingT)
-			tID = existingT.ID
-		}
-
-		// Ensure Invoices for this tenant
-		invCount, _ := invColl.CountDocuments(ctx, bson.M{"tenantId": tID.Hex()})
-		if invCount == 0 {
-			price := 999.0
-			planStr := domainplat.PlanTierStarter
-			status := "paid"
-			if cfg.Plan == tenant.PlanGrowth {
-				price = 2999.0
-				planStr = domainplat.PlanTierGrowth
-			} else if cfg.Plan == tenant.PlanHotelPro {
-				price = 7999.0
-				planStr = domainplat.PlanTierHotelPro
-			}
-			if cfg.Slug == "seaside-haven-goa" || cfg.Slug == "dhaba-1947-amritsar" {
-				status = "failed"
-			}
-
-			invDoc := domainplat.RevenueInvoice{
-				ID:            bson.NewObjectID().Hex(),
-				TenantID:      tID.Hex(),
-				ClientName:    cfg.Name,
-				InvoiceNumber: fmt.Sprintf("INV-2026-%d", time.Now().Unix()%1000+int64(len(cfg.Name))),
-				Plan:          planStr,
-				Amount:        price,
-				Currency:      "INR",
-				Status:        status,
-				PaymentMethod: "Auto-Debit NetBanking (•••• 4912)",
-				Date:          now.Format("2006-01-02"),
-				DueDate:       now.Format("2006-01-02"),
-				CreatedAt:     now,
-			}
-			_, _ = invColl.InsertOne(ctx, invDoc)
-		}
-	}
 
 	// Seed Sample Support Tickets
 	ticketCount, _ := ticketColl.CountDocuments(ctx, bson.M{})

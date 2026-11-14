@@ -4,18 +4,21 @@ import (
 	"bytes"
 	"context"
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"runtime"
 	"strings"
 	"time"
 
 	domainplat "github.com/dineflow/api/internal/domain/platform"
+	domainsub "github.com/dineflow/api/internal/domain/subscription"
 	domaintenant "github.com/dineflow/api/internal/domain/tenant"
 	domainuser "github.com/dineflow/api/internal/domain/user"
 	mongoinfra "github.com/dineflow/api/internal/infrastructure/mongodb"
 	redisinfra "github.com/dineflow/api/internal/infrastructure/redis"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var StandardFeatureFlags = []domainplat.FeatureFlagDefinition{
@@ -90,7 +93,20 @@ func (s *Service) GetDashboardMetrics(ctx context.Context) (*domainplat.Dashboar
 
 	metrics := &domainplat.DashboardMetrics{}
 
-	// 1. Tenants aggregation
+	// 1. Subscriptions map for exact plan and trial status
+	subsColl := s.db.Collection("subscriptions")
+	subMap := make(map[string]domainsub.Subscription)
+	if subCursor, err := subsColl.Find(ctx, bson.M{}); err == nil {
+		defer subCursor.Close(ctx)
+		var allSubs []domainsub.Subscription
+		if err := subCursor.All(ctx, &allSubs); err == nil {
+			for _, sub := range allSubs {
+				subMap[sub.TenantID.Hex()] = sub
+			}
+		}
+	}
+
+	// 2. Tenants aggregation
 	tenantFilter := bson.M{"deletedAt": bson.M{"$exists": false}}
 	cursor, err := tenantsColl.Find(ctx, tenantFilter)
 	if err == nil {
@@ -106,8 +122,29 @@ func (s *Service) GetDashboardMetrics(ctx context.Context) (*domainplat.Dashboar
 				case "suspended":
 					metrics.SuspendedClients++
 				}
-				if string(t.Plan) == "free" || strings.Contains(string(t.Plan), "trial") {
+
+				sub, hasSub := subMap[t.ID.Hex()]
+				isTrial := false
+				if hasSub {
+					isTrial = sub.IsTrial || sub.Status == domainsub.StatusGracePeriod
+				} else {
+					isTrial = string(t.Plan) == "free" || strings.Contains(string(t.Plan), "trial")
+				}
+
+				if isTrial {
 					metrics.TrialClients++
+				} else if t.Status == "active" {
+					// Actual paid subscriptions count towards TotalMRR
+					switch string(t.Plan) {
+					case "starter":
+						metrics.TotalMRR += 999
+					case "growth":
+						metrics.TotalMRR += 2999
+					case "hotel_pro":
+						metrics.TotalMRR += 7999
+					case "enterprise":
+						metrics.TotalMRR += 14999
+					}
 				}
 
 				switch string(t.BusinessType) {
@@ -119,18 +156,6 @@ func (s *Service) GetDashboardMetrics(ctx context.Context) (*domainplat.Dashboar
 					metrics.CafesCount++
 				case "cloud_kitchen":
 					metrics.CloudKitchensCount++
-				}
-
-				// Basic plan-based MRR estimation
-				switch string(t.Plan) {
-				case "starter":
-					metrics.TotalMRR += 999
-				case "growth":
-					metrics.TotalMRR += 2999
-				case "hotel_pro":
-					metrics.TotalMRR += 7999
-				case "enterprise":
-					metrics.TotalMRR += 14999
 				}
 
 				// Compute quick health score
@@ -150,12 +175,37 @@ func (s *Service) GetDashboardMetrics(ctx context.Context) (*domainplat.Dashboar
 	}
 
 	metrics.TotalARR = metrics.TotalMRR * 12
-	metrics.CollectionRate = 98.6 // baseline production collection efficiency
+	metrics.CollectionRate = 98.6
 
-	// 2. Orders & GMV
-	orderCount, _ := ordersColl.CountDocuments(ctx, bson.M{})
-	metrics.TotalOrders = int(orderCount)
-	metrics.PlatformGMV = float64(orderCount) * 850.0 // average GMV per hospitality ticket
+	// 3. Orders & GMV
+	orderPipeline := []bson.M{
+		{"$match": bson.M{"status": bson.M{"$ne": "cancelled"}}},
+		{"$group": bson.M{
+			"_id":   nil,
+			"gmv":   bson.M{"$sum": "$totalAmount"},
+			"count": bson.M{"$sum": 1},
+		}},
+	}
+	cursorGMV, err := ordersColl.Aggregate(ctx, orderPipeline)
+	if err == nil {
+		defer cursorGMV.Close(ctx)
+		var gmvResult []struct {
+			GMV   float64 `bson:"gmv"`
+			Count int     `bson:"count"`
+		}
+		if err := cursorGMV.All(ctx, &gmvResult); err == nil && len(gmvResult) > 0 {
+			metrics.PlatformGMV = gmvResult[0].GMV
+			metrics.TotalOrders = gmvResult[0].Count
+		} else {
+			orderCount, _ := ordersColl.CountDocuments(ctx, bson.M{})
+			metrics.TotalOrders = int(orderCount)
+			metrics.PlatformGMV = 0
+		}
+	} else {
+		orderCount, _ := ordersColl.CountDocuments(ctx, bson.M{})
+		metrics.TotalOrders = int(orderCount)
+		metrics.PlatformGMV = 0
+	}
 
 	// 3. Workforce & Inventory
 	staffCount, _ := staffColl.CountDocuments(ctx, bson.M{"deletedAt": bson.M{"$exists": false}})
@@ -726,8 +776,50 @@ func (s *Service) GetRevenueOverview(ctx context.Context) (*domainplat.RevenueOv
 		NetChurnRate:   1.2,
 	}
 
+	subsColl := s.db.Collection("subscriptions")
+	subMap := make(map[string]domainsub.Subscription)
+	if subCursor, err := subsColl.Find(ctx, bson.M{}); err == nil {
+		defer subCursor.Close(ctx)
+		var allSubs []domainsub.Subscription
+		if err := subCursor.All(ctx, &allSubs); err == nil {
+			for _, sub := range allSubs {
+				subMap[sub.TenantID.Hex()] = sub
+			}
+		}
+	}
+
 	for _, t := range tenants {
-		if t.Status == domaintenant.StatusActive {
+		sub, hasSub := subMap[t.ID.Hex()]
+		isTrial := false
+		if hasSub {
+			isTrial = sub.IsTrial || sub.Status == domainsub.StatusGracePeriod
+		} else {
+			isTrial = string(t.Plan) == "free" || strings.Contains(string(t.Plan), "trial")
+		}
+
+		if isTrial {
+			overview.TrialClients++
+			if hasSub && sub.TrialEndsAt != nil {
+				daysLeft := int(time.Until(*sub.TrialEndsAt).Hours() / 24)
+				if daysLeft <= 3 && daysLeft > 0 {
+					overview.ExpiringIn3Days++
+				} else if daysLeft <= 7 && daysLeft > 3 {
+					overview.ExpiringIn7Days++
+				} else if daysLeft <= 0 {
+					overview.ExpiredTrials++
+				}
+			} else {
+				daysOld := int(time.Since(t.CreatedAt).Hours() / 24)
+				daysLeft := 14 - daysOld
+				if daysLeft <= 3 && daysLeft > 0 {
+					overview.ExpiringIn3Days++
+				} else if daysLeft <= 7 && daysLeft > 3 {
+					overview.ExpiringIn7Days++
+				} else if daysLeft <= 0 {
+					overview.ExpiredTrials++
+				}
+			}
+		} else if t.Status == domaintenant.StatusActive {
 			overview.ActiveSubscriptions++
 			switch string(t.Plan) {
 			case "starter":
@@ -738,18 +830,6 @@ func (s *Service) GetRevenueOverview(ctx context.Context) (*domainplat.RevenueOv
 				overview.MRR += 7999
 			case "enterprise":
 				overview.MRR += 14999
-			}
-		}
-		if string(t.Plan) == "free" || strings.Contains(string(t.Plan), "trial") {
-			overview.TrialClients++
-			daysOld := int(time.Since(t.CreatedAt).Hours() / 24)
-			daysLeft := 14 - daysOld
-			if daysLeft <= 3 && daysLeft > 0 {
-				overview.ExpiringIn3Days++
-			} else if daysLeft <= 7 && daysLeft > 3 {
-				overview.ExpiringIn7Days++
-			} else if daysLeft <= 0 {
-				overview.ExpiredTrials++
 			}
 		}
 	}
@@ -1653,4 +1733,293 @@ func (s *Service) RevokeUserSessions(ctx context.Context, userID string, actor d
 	})
 	return nil
 }
+
+// ─── Platform Administrator Management ───────────────────────────────────────
+
+func (s *Service) ListPlatformAdmins(ctx context.Context) ([]domainplat.PlatformAdminUser, error) {
+	usersColl := s.db.Collection("users")
+	filter := bson.M{
+		"role": bson.M{
+			"$in": []string{
+				string(domainplat.RoleSuperAdmin),
+				string(domainplat.RolePlatformAdmin),
+				string(domainplat.RoleFinanceAdmin),
+				string(domainplat.RoleSupportAgent),
+			},
+		},
+		"deletedAt": bson.M{"$exists": false},
+	}
+
+	cursor, err := usersColl.Find(ctx, filter, options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}}))
+	if err != nil {
+		return nil, fmt.Errorf("list platform admins: %w", err)
+	}
+	defer cursor.Close(ctx)
+
+	var users []domainuser.User
+	if err := cursor.All(ctx, &users); err != nil {
+		return nil, fmt.Errorf("decode platform admins: %w", err)
+	}
+
+	admins := make([]domainplat.PlatformAdminUser, 0, len(users))
+	for _, u := range users {
+		admin := domainplat.PlatformAdminUser{
+			ID:          u.ID.Hex(),
+			Email:       u.Email,
+			Name:        u.Name,
+			Phone:       u.Phone,
+			Role:        domainplat.PlatformRole(u.Role),
+			Status:      string(u.Status),
+			LastLoginAt: u.Auth.LastLoginAt,
+			CreatedAt:   u.CreatedAt,
+			UpdatedAt:   u.UpdatedAt,
+		}
+		admins = append(admins, admin)
+	}
+	return admins, nil
+}
+
+func (s *Service) CreatePlatformAdmin(
+	ctx context.Context,
+	req domainplat.CreatePlatformAdminRequest,
+	actor domainplat.AuditActor,
+	ip string,
+) (*domainplat.PlatformAdminUser, error) {
+	cleanEmail := strings.ToLower(strings.TrimSpace(req.Email))
+	if cleanEmail == "" {
+		return nil, errors.New("email is required")
+	}
+
+	usersColl := s.db.Collection("users")
+
+	// Check collision
+	count, err := usersColl.CountDocuments(ctx, bson.M{"email": cleanEmail})
+	if err != nil {
+		return nil, err
+	}
+	if count > 0 {
+		return nil, errors.New("an administrator or user with this email already exists")
+	}
+
+	// Validate role
+	switch req.Role {
+	case domainplat.RoleSuperAdmin, domainplat.RolePlatformAdmin, domainplat.RoleFinanceAdmin, domainplat.RoleSupportAgent:
+		// allowed
+	default:
+		return nil, fmt.Errorf("invalid platform role: %s", req.Role)
+	}
+
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, fmt.Errorf("hash password: %w", err)
+	}
+
+	// Find root tenantID from existing superadmin if available
+	var rootTenantID bson.ObjectID
+	var existingSuper domainuser.User
+	if err := usersColl.FindOne(ctx, bson.M{"role": string(domainplat.RoleSuperAdmin)}).Decode(&existingSuper); err == nil && !existingSuper.TenantID.IsZero() {
+		rootTenantID = existingSuper.TenantID
+	} else {
+		rootTenantID = bson.NewObjectID()
+	}
+
+	now := time.Now().UTC()
+	newUser := domainuser.User{
+		ID:          bson.NewObjectID(),
+		TenantID:    rootTenantID,
+		Phone:       strings.TrimSpace(req.Phone),
+		Email:       cleanEmail,
+		Name:        strings.TrimSpace(req.Name),
+		Role:        domainuser.Role(req.Role),
+		Permissions: domainuser.DefaultPermissionsForRole(domainuser.Role(req.Role)),
+		Auth: domainuser.Auth{
+			PasswordHash:  string(passwordHash),
+			EmailVerified: true,
+			PhoneVerified: req.Phone != "",
+		},
+		Status:    domainuser.StatusActive,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+
+	if _, err := usersColl.InsertOne(ctx, newUser); err != nil {
+		return nil, fmt.Errorf("insert platform admin: %w", err)
+	}
+
+	_ = s.RecordAuditLog(ctx, domainplat.AuditLogRecord{
+		Timestamp:  now,
+		Actor:      actor,
+		Action:     "platform.admin_created",
+		Category:   "security",
+		TargetID:   newUser.ID.Hex(),
+		TargetName: newUser.Name,
+		IPAddress:  ip,
+		Details:    fmt.Sprintf("Provisioned new %s account for %s (%s).", req.Role, req.Name, cleanEmail),
+		Metadata:   map[string]any{"adminEmail": cleanEmail, "role": string(req.Role)},
+	})
+
+	return &domainplat.PlatformAdminUser{
+		ID:        newUser.ID.Hex(),
+		Email:     newUser.Email,
+		Name:      newUser.Name,
+		Phone:     newUser.Phone,
+		Role:      req.Role,
+		Status:    string(newUser.Status),
+		CreatedAt: newUser.CreatedAt,
+		UpdatedAt: newUser.UpdatedAt,
+	}, nil
+}
+
+func (s *Service) UpdatePlatformAdmin(
+	ctx context.Context,
+	adminID string,
+	req domainplat.UpdatePlatformAdminRequest,
+	actor domainplat.AuditActor,
+	ip string,
+) error {
+	objID, err := bson.ObjectIDFromHex(adminID)
+	if err != nil {
+		return errors.New("invalid administrator ID")
+	}
+
+	updateDoc := bson.M{"updatedAt": time.Now().UTC()}
+	if req.Name != "" {
+		updateDoc["name"] = strings.TrimSpace(req.Name)
+	}
+	if req.Phone != "" {
+		updateDoc["phone"] = strings.TrimSpace(req.Phone)
+	}
+	if req.Role != "" {
+		updateDoc["role"] = req.Role
+		updateDoc["permissions"] = domainuser.DefaultPermissionsForRole(domainuser.Role(req.Role))
+	}
+	if req.Status != "" {
+		updateDoc["status"] = req.Status
+	}
+
+	usersColl := s.db.Collection("users")
+	res, err := usersColl.UpdateOne(ctx, bson.M{"_id": objID}, bson.M{"$set": updateDoc})
+	if err != nil {
+		return fmt.Errorf("update platform admin: %w", err)
+	}
+	if res.MatchedCount == 0 {
+		return errors.New("administrator not found")
+	}
+
+	_ = s.RecordAuditLog(ctx, domainplat.AuditLogRecord{
+		Timestamp:  time.Now().UTC(),
+		Actor:      actor,
+		Action:     "platform.admin_updated",
+		Category:   "security",
+		TargetID:   adminID,
+		TargetName: req.Name,
+		IPAddress:  ip,
+		Details:    fmt.Sprintf("Updated platform admin %s (role: %s, status: %s).", adminID, req.Role, req.Status),
+	})
+
+	return nil
+}
+
+func (s *Service) ResetPlatformAdminPassword(
+	ctx context.Context,
+	adminID string,
+	newPassword string,
+	actor domainplat.AuditActor,
+	ip string,
+) error {
+	objID, err := bson.ObjectIDFromHex(adminID)
+	if err != nil {
+		return errors.New("invalid administrator ID")
+	}
+	if len(newPassword) < 8 {
+		return errors.New("password must be at least 8 characters long")
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("hash password: %w", err)
+	}
+
+	usersColl := s.db.Collection("users")
+	res, err := usersColl.UpdateOne(ctx, bson.M{"_id": objID}, bson.M{
+		"$set": bson.M{
+			"auth.passwordHash":        string(hash),
+			"auth.failedLoginAttempts": 0,
+			"auth.lockedUntil":         nil,
+			"updatedAt":                time.Now().UTC(),
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("reset admin password: %w", err)
+	}
+	if res.MatchedCount == 0 {
+		return errors.New("administrator not found")
+	}
+
+	// Revoke sessions
+	_ = s.redis.RevokeUserSessions(ctx, adminID, 7*24*time.Hour)
+
+	_ = s.RecordAuditLog(ctx, domainplat.AuditLogRecord{
+		Timestamp:  time.Now().UTC(),
+		Actor:      actor,
+		Action:     "platform.admin_password_reset",
+		Category:   "security",
+		TargetID:   adminID,
+		TargetName: adminID,
+		IPAddress:  ip,
+		Details:    "Platform Super Admin initiated password reset for administrator.",
+	})
+
+	return nil
+}
+
+func (s *Service) DeletePlatformAdmin(
+	ctx context.Context,
+	adminID string,
+	actor domainplat.AuditActor,
+	ip string,
+) error {
+	objID, err := bson.ObjectIDFromHex(adminID)
+	if err != nil {
+		return errors.New("invalid administrator ID")
+	}
+
+	usersColl := s.db.Collection("users")
+	var targetUser domainuser.User
+	if err := usersColl.FindOne(ctx, bson.M{"_id": objID}).Decode(&targetUser); err != nil {
+		return errors.New("administrator not found")
+	}
+
+	// Prevent deleting the primary seeded superadmin
+	if targetUser.Email == "superadmin@dineflow.io" {
+		return errors.New("root superadmin@dineflow.io cannot be deleted")
+	}
+
+	// Soft delete or revoke
+	_, err = usersColl.UpdateOne(ctx, bson.M{"_id": objID}, bson.M{
+		"$set": bson.M{
+			"status":    "inactive",
+			"deletedAt": time.Now().UTC(),
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("delete platform admin: %w", err)
+	}
+
+	_ = s.redis.RevokeUserSessions(ctx, adminID, 7*24*time.Hour)
+
+	_ = s.RecordAuditLog(ctx, domainplat.AuditLogRecord{
+		Timestamp:  time.Now().UTC(),
+		Actor:      actor,
+		Action:     "platform.admin_revoked",
+		Category:   "security",
+		TargetID:   adminID,
+		TargetName: targetUser.Name,
+		IPAddress:  ip,
+		Details:    fmt.Sprintf("Revoked platform access for administrator %s (%s).", targetUser.Name, targetUser.Email),
+	})
+
+	return nil
+}
+
 

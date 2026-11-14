@@ -345,3 +345,41 @@ type SecurityIncidentRecord struct {
 	Details   string    `json:"details"`
 }
 
+// ─── Platform Administrator Management Models ────────────────────────────────
+
+// PlatformAdminUser represents an administrator authorized for the platform control plane.
+type PlatformAdminUser struct {
+	ID          string       `json:"id"`
+	Email       string       `json:"email"`
+	Name        string       `json:"name"`
+	Phone       string       `json:"phone,omitempty"`
+	Role        PlatformRole `json:"role"`
+	Status      string       `json:"status"` // "active" | "suspended"
+	LastLoginAt *time.Time   `json:"lastLoginAt,omitempty"`
+	CreatedAt   time.Time    `json:"createdAt"`
+	UpdatedAt   time.Time    `json:"updatedAt"`
+}
+
+// CreatePlatformAdminRequest is the payload to provision a new platform administrator.
+type CreatePlatformAdminRequest struct {
+	Email    string       `json:"email" binding:"required"`
+	Name     string       `json:"name" binding:"required"`
+	Phone    string       `json:"phone,omitempty"`
+	Role     PlatformRole `json:"role" binding:"required"`
+	Password string       `json:"password" binding:"required"`
+}
+
+// UpdatePlatformAdminRequest is the payload to modify an administrator's profile or status.
+type UpdatePlatformAdminRequest struct {
+	Name   string       `json:"name,omitempty"`
+	Phone  string       `json:"phone,omitempty"`
+	Role   PlatformRole `json:"role,omitempty"`
+	Status string       `json:"status,omitempty"`
+}
+
+// ResetAdminPasswordRequest is the payload to reset an administrator's password.
+type ResetAdminPasswordRequest struct {
+	Password string `json:"password" binding:"required"`
+}
+
+

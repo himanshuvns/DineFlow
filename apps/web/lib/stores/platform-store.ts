@@ -6,6 +6,34 @@ import { useAuthStore } from "./auth-store";
 export type BusinessType = "restaurant" | "hotel" | "cafe" | "cloud_kitchen" | "bar";
 export type PlanTier = "trial" | "starter" | "growth" | "hotel_pro" | "enterprise";
 export type ClientStatus = "active" | "trial" | "grace_period" | "suspended" | "cancelled";
+export type PlatformRole = "super_admin" | "platform_admin" | "finance_admin" | "support_agent";
+
+export interface PlatformAdminUser {
+  id: string;
+  email: string;
+  name: string;
+  phone?: string;
+  role: PlatformRole;
+  status: "active" | "suspended";
+  lastLoginAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateAdminPayload {
+  name: string;
+  email: string;
+  phone?: string;
+  role: PlatformRole;
+  password: string;
+}
+
+export interface UpdateAdminPayload {
+  name?: string;
+  phone?: string;
+  role?: PlatformRole;
+  status?: "active" | "suspended";
+}
 
 export interface PlatformClient {
   id: string;
@@ -225,315 +253,11 @@ export const INITIAL_FEATURE_FLAGS: FeatureFlagDefinition[] = [
   },
 ];
 
-export const INITIAL_CLIENTS: PlatformClient[] = [
-  {
-    id: "ten-001",
-    name: "The Grand Bistro & Rooftop",
-    legalName: "Grand Bistro Hospitality LLP",
-    slug: "the-grand-bistro",
-    ownerName: "Laurent D'Souza",
-    ownerPhone: "+91 98765 43210",
-    ownerEmail: "laurent@grandbistro.in",
-    businessType: "restaurant",
-    plan: "growth",
-    billingCycle: "annual",
-    status: "active",
-    tablesCount: 38,
-    roomsCount: 0,
-    staffCount: 16,
-    menuCount: 84,
-    ordersCount: 4219,
-    mrr: 2999,
-    arr: 35988,
-    renewalDate: "2027-01-15",
-    joinedAt: "2026-01-15",
-    lastActiveAt: "Just now",
-    healthScore: 98,
-    address: "Level 14, Palladium Tower, High Street Phoenix",
-    city: "Mumbai",
-    state: "Maharashtra",
-    currency: "INR",
-    activeSessions: 6,
-    storageUsedMb: 142,
-    integrations: { whatsapp: true, email: true, qr: true },
-    featureOverrides: {},
-  },
-  {
-    id: "ten-002",
-    name: "Taj Heritage Palace & Suites",
-    legalName: "Taj Heritage Royal Resorts Pvt Ltd",
-    slug: "taj-heritage-udaipur",
-    ownerName: "Maharaj Vikram Singh",
-    ownerPhone: "+91 98290 12345",
-    ownerEmail: "palace@tajheritage.com",
-    businessType: "hotel",
-    plan: "hotel_pro",
-    billingCycle: "annual",
-    status: "active",
-    tablesCount: 65,
-    roomsCount: 140,
-    staffCount: 48,
-    menuCount: 162,
-    ordersCount: 11420,
-    mrr: 7999,
-    arr: 95988,
-    renewalDate: "2027-03-20",
-    joinedAt: "2026-03-20",
-    lastActiveAt: "3 mins ago",
-    healthScore: 100,
-    address: "Lake Pichola Promenade",
-    city: "Udaipur",
-    state: "Rajasthan",
-    currency: "INR",
-    activeSessions: 14,
-    storageUsedMb: 680,
-    integrations: { whatsapp: true, email: true, qr: true },
-    featureOverrides: {},
-  },
-  {
-    id: "ten-003",
-    name: "Le Petit Artisan Cafe",
-    legalName: "Petit Bakeries India Ltd",
-    slug: "le-petit-cafe",
-    ownerName: "Camille Dupont",
-    ownerPhone: "+91 98450 67890",
-    ownerEmail: "camille@lepetit.co",
-    businessType: "cafe",
-    plan: "starter",
-    billingCycle: "monthly",
-    status: "active",
-    tablesCount: 14,
-    roomsCount: 0,
-    staffCount: 6,
-    menuCount: 38,
-    ordersCount: 1890,
-    mrr: 999,
-    arr: 11988,
-    renewalDate: "2026-10-05",
-    joinedAt: "2026-06-05",
-    lastActiveAt: "12 mins ago",
-    healthScore: 92,
-    address: "100 Feet Road, Indiranagar",
-    city: "Bengaluru",
-    state: "Karnataka",
-    currency: "INR",
-    activeSessions: 2,
-    storageUsedMb: 64,
-    integrations: { whatsapp: true, email: true, qr: true },
-    featureOverrides: {},
-  },
-  {
-    id: "ten-004",
-    name: "Seaside Haven Resort & Spa",
-    legalName: "Goa Coastal Escapes LLP",
-    slug: "seaside-haven-goa",
-    ownerName: "Anthony Rodrigues",
-    ownerPhone: "+91 98221 44556",
-    ownerEmail: "anthony@seasidehaven.com",
-    businessType: "hotel",
-    plan: "hotel_pro",
-    billingCycle: "monthly",
-    status: "grace_period",
-    tablesCount: 45,
-    roomsCount: 88,
-    staffCount: 32,
-    menuCount: 110,
-    ordersCount: 6540,
-    mrr: 7999,
-    arr: 95988,
-    trialDaysLeft: 0,
-    renewalDate: "2026-09-12",
-    joinedAt: "2026-04-12",
-    lastActiveAt: "1 hour ago",
-    healthScore: 78,
-    address: "Sunset Beach Road, Candolim",
-    city: "Goa",
-    state: "Goa",
-    currency: "INR",
-    activeSessions: 4,
-    storageUsedMb: 410,
-    integrations: { whatsapp: true, email: true, qr: true },
-    featureOverrides: {},
-  },
-  {
-    id: "ten-005",
-    name: "Urban Wok Cloud Kitchen",
-    legalName: "Urban Food Innovations Pvt Ltd",
-    slug: "urban-wok-delhi",
-    ownerName: "Kunal Mehra",
-    ownerPhone: "+91 98100 88990",
-    ownerEmail: "kunal@urbanwok.in",
-    businessType: "cloud_kitchen",
-    plan: "growth",
-    billingCycle: "monthly",
-    status: "active",
-    tablesCount: 0,
-    roomsCount: 0,
-    staffCount: 12,
-    menuCount: 75,
-    ordersCount: 8940,
-    mrr: 2999,
-    arr: 35988,
-    renewalDate: "2026-10-18",
-    joinedAt: "2026-02-18",
-    lastActiveAt: "5 mins ago",
-    healthScore: 95,
-    address: "Okhla Industrial Area Phase 2",
-    city: "New Delhi",
-    state: "Delhi",
-    currency: "INR",
-    activeSessions: 5,
-    storageUsedMb: 118,
-    integrations: { whatsapp: true, email: true, qr: true },
-    featureOverrides: {},
-  },
-  {
-    id: "ten-006",
-    name: "Spice Garden Pure Veg",
-    legalName: "Spice Garden Foods LLP",
-    slug: "spice-garden-ahmedabad",
-    ownerName: "Harsh Patel",
-    ownerPhone: "+91 98980 11223",
-    ownerEmail: "harsh@spicegarden.co.in",
-    businessType: "restaurant",
-    plan: "trial",
-    billingCycle: "monthly",
-    status: "trial",
-    tablesCount: 18,
-    roomsCount: 0,
-    staffCount: 8,
-    menuCount: 42,
-    ordersCount: 310,
-    mrr: 0,
-    arr: 0,
-    trialDaysLeft: 5,
-    renewalDate: "2026-09-23",
-    joinedAt: "2026-09-09",
-    lastActiveAt: "25 mins ago",
-    healthScore: 68,
-    address: "SG Highway, Bodakdev",
-    city: "Ahmedabad",
-    state: "Gujarat",
-    currency: "INR",
-    activeSessions: 2,
-    storageUsedMb: 35,
-    integrations: { whatsapp: false, email: true, qr: true },
-    featureOverrides: {},
-  },
-  {
-    id: "ten-007",
-    name: "Dhaba 1947 Heritage Kitchen",
-    legalName: "1947 Dhabas India Pvt Ltd",
-    slug: "dhaba-1947-amritsar",
-    ownerName: "Gurpreet Singh",
-    ownerPhone: "+91 98720 99887",
-    ownerEmail: "gurpreet@dhaba1947.com",
-    businessType: "restaurant",
-    plan: "starter",
-    billingCycle: "monthly",
-    status: "suspended",
-    tablesCount: 24,
-    roomsCount: 0,
-    staffCount: 14,
-    menuCount: 56,
-    ordersCount: 2450,
-    mrr: 999,
-    arr: 11988,
-    renewalDate: "2026-08-30",
-    joinedAt: "2026-05-30",
-    lastActiveAt: "2 weeks ago",
-    healthScore: 54,
-    address: "GT Road Bypass",
-    city: "Amritsar",
-    state: "Punjab",
-    currency: "INR",
-    activeSessions: 0,
-    storageUsedMb: 52,
-    integrations: { whatsapp: false, email: true, qr: true },
-    featureOverrides: {},
-  },
-];
+export const INITIAL_CLIENTS: PlatformClient[] = [];
 
-export const INITIAL_SUPPORT_TICKETS: SupportTicket[] = [
-  {
-    id: "TCK-481",
-    tenantId: "ten-004",
-    tenantName: "Seaside Haven Resort & Spa",
-    subject: "Webhook delivery failure for WhatsApp invoices",
-    description: "Invoices created at check-out are not delivering to international guest numbers.",
-    priority: "high",
-    status: "open",
-    category: "whatsapp",
-    assignedAgent: "Aarav Sharma",
-    createdAt: "2026-09-17T14:30:00Z",
-    updatedAt: "2026-09-17T16:45:00Z",
-    internalNotes: ["Checked Meta Cloud API log. Client token expired yesterday."],
-  },
-  {
-    id: "TCK-480",
-    tenantId: "ten-002",
-    tenantName: "Taj Heritage Palace & Suites",
-    subject: "Requesting additional 50 room stands bulk PDF",
-    description: "Opening new royal wing next week, need custom gold border tent QR stands.",
-    priority: "medium",
-    status: "in_progress",
-    category: "hardware",
-    assignedAgent: "Priya Nair",
-    createdAt: "2026-09-16T11:15:00Z",
-    updatedAt: "2026-09-17T09:20:00Z",
-    internalNotes: ["Generated high-DPI SVG template with royal gold hex code."],
-  },
-  {
-    id: "TCK-478",
-    tenantId: "ten-006",
-    tenantName: "Spice Garden Pure Veg",
-    subject: "Assistance importing 40 items from Swiggy menu PDF",
-    description: "AI menu writer completed 80%, need review on Jain dietary tags.",
-    priority: "low",
-    status: "resolved",
-    category: "onboarding",
-    assignedAgent: "Rohan Varma",
-    createdAt: "2026-09-15T08:00:00Z",
-    updatedAt: "2026-09-16T14:10:00Z",
-    internalNotes: ["Manual verification completed and verified all 42 items as pure veg."],
-  },
-];
+export const INITIAL_SUPPORT_TICKETS: SupportTicket[] = [];
 
-export const INITIAL_AUDIT_LOGS: AuditLogEntry[] = [
-  {
-    id: "aud-901",
-    timestamp: "2026-09-17T18:40:00Z",
-    actor: { name: "Platform Super Admin", email: "superadmin@dineflow.io", role: "super_admin" },
-    action: "client.plan_override",
-    category: "subscription",
-    targetId: "ten-002",
-    targetName: "Taj Heritage Palace & Suites",
-    ipAddress: "157.34.120.91",
-    details: "Assigned enterprise Hotel Pro license tier with 140 rooms quota.",
-  },
-  {
-    id: "aud-900",
-    timestamp: "2026-09-17T17:15:00Z",
-    actor: { name: "Platform Admin", email: "admin@dineflow.io", role: "platform_admin" },
-    action: "client.trial_extended",
-    category: "client",
-    targetId: "ten-006",
-    targetName: "Spice Garden Pure Veg",
-    ipAddress: "103.21.124.4",
-    details: "Extended trial by 14 days upon request from client owner.",
-  },
-  {
-    id: "aud-899",
-    timestamp: "2026-09-17T15:22:00Z",
-    actor: { name: "Platform Super Admin", email: "superadmin@dineflow.io", role: "super_admin" },
-    action: "client.impersonation_started",
-    category: "security",
-    targetId: "ten-001",
-    targetName: "The Grand Bistro & Rooftop",
-    ipAddress: "157.34.120.91",
-    details: "Started verified impersonation session to inspect KDS station dispatch.",
-  },
-];
+export const INITIAL_AUDIT_LOGS: AuditLogEntry[] = [];
 
 export const INITIAL_SYSTEM_SERVICES: SystemServiceHealth[] = [
   {
@@ -581,61 +305,33 @@ export const INITIAL_SYSTEM_SERVICES: SystemServiceHealth[] = [
 ];
 
 export const INITIAL_SECURITY_METRICS: SecurityMetrics = {
-  healthScore: 98,
-  failedLoginsLast24h: 3,
-  blockedIpsCount: 1,
-  blockedIps: ["185.220.101.42"],
-  activeSessionsCount: 42,
-  mfaEnforcedTenants: 16,
+  healthScore: 100,
+  failedLoginsLast24h: 0,
+  blockedIpsCount: 0,
+  blockedIps: [],
+  activeSessionsCount: 1,
+  mfaEnforcedTenants: 0,
   webhookHealth: "verified",
   tokenRotationStatus: "active",
   zeroTrustEnforced: true,
-  lastBackupAt: new Date(Date.now() - 3600000).toISOString(),
+  lastBackupAt: new Date().toISOString(),
   backupStatus: "verified",
 };
 
-export const INITIAL_SECURITY_EVENTS: SecurityIncidentRecord[] = [
-  {
-    id: "sec-evt-1",
-    timestamp: new Date(Date.now() - 900000).toISOString(),
-    severity: "info",
-    type: "token_revoked",
-    sourceIp: "127.0.0.1",
-    target: "Redis Token Blacklist",
-    details: "Automated sliding window token rotation and JTI verification succeeded",
-  },
-  {
-    id: "sec-evt-2",
-    timestamp: new Date(Date.now() - 3600000).toISOString(),
-    severity: "medium",
-    type: "rate_limited",
-    sourceIp: "194.26.29.112",
-    target: "/api/v1/auth/login",
-    details: "Public sliding window rate limit triggered (exceeded 60 req/min)",
-  },
-  {
-    id: "sec-evt-3",
-    timestamp: new Date(Date.now() - 14400000).toISOString(),
-    severity: "high",
-    type: "operator_injection_blocked",
-    sourceIp: "185.220.101.42",
-    target: "/api/v1/orders",
-    details: "NoSQL operator injection key detected ($where) and rejected by edge firewall",
-  },
-  {
-    id: "sec-evt-4",
-    timestamp: new Date(Date.now() - 86400000).toISOString(),
-    severity: "info",
-    type: "webhook_signature_verified",
-    sourceIp: "157.240.199.36",
-    target: "/api/v1/webhooks/whatsapp",
-    details: "Meta Cloud API HMAC-SHA256 signature cryptographic verification valid",
-  },
-];
+export const INITIAL_SECURITY_EVENTS: SecurityIncidentRecord[] = [];
 
 // ─── Store Interface ──────────────────────────────────────────────────────────
 
 interface PlatformState {
+  // Platform Administrators
+  platformAdmins: PlatformAdminUser[];
+  isLoadingAdmins: boolean;
+  fetchPlatformAdmins: () => Promise<void>;
+  createPlatformAdmin: (payload: CreateAdminPayload) => Promise<boolean>;
+  updatePlatformAdmin: (id: string, payload: UpdateAdminPayload) => Promise<boolean>;
+  resetPlatformAdminPassword: (id: string, password: string) => Promise<boolean>;
+  deletePlatformAdmin: (id: string) => Promise<boolean>;
+
   clients: PlatformClient[];
   totalClientsCount: number;
   selectedClient360: any | null;
@@ -731,6 +427,9 @@ interface PlatformState {
 export const usePlatformStore = create<PlatformState>()(
   persist(
     (set, get) => ({
+      platformAdmins: [],
+      isLoadingAdmins: false,
+
       clients: INITIAL_CLIENTS,
       totalClientsCount: INITIAL_CLIENTS.length,
       selectedClient360: null,
@@ -759,6 +458,78 @@ export const usePlatformStore = create<PlatformState>()(
       securityEvents: INITIAL_SECURITY_EVENTS,
 
       // ─── API Fetchers ────────────────────────────────────────────────────────
+
+      
+      // ─── Platform Administrators Management ──────────────────────────────
+      fetchPlatformAdmins: async () => {
+        set({ isLoadingAdmins: true });
+        try {
+          const res = await apiClient.get("/platform/admins");
+          if (res.data?.success && Array.isArray(res.data?.data)) {
+            set({ platformAdmins: res.data.data });
+          }
+        } catch {
+          // Keep current state
+        } finally {
+          set({ isLoadingAdmins: false });
+        }
+      },
+
+      createPlatformAdmin: async (payload: CreateAdminPayload) => {
+        try {
+          const res = await apiClient.post("/platform/admins", payload);
+          if (res.data?.success && res.data?.data) {
+            set((s) => ({
+              platformAdmins: [res.data.data, ...s.platformAdmins],
+            }));
+            return true;
+          }
+          return false;
+        } catch {
+          return false;
+        }
+      },
+
+      updatePlatformAdmin: async (id: string, payload: UpdateAdminPayload) => {
+        try {
+          const res = await apiClient.patch(`/platform/admins/${id}`, payload);
+          if (res.data?.success) {
+            set((s) => ({
+              platformAdmins: s.platformAdmins.map((a) =>
+                a.id === id ? { ...a, ...payload } : a
+              ),
+            }));
+            return true;
+          }
+          return false;
+        } catch {
+          return false;
+        }
+      },
+
+      resetPlatformAdminPassword: async (id: string, password: string) => {
+        try {
+          const res = await apiClient.post(`/platform/admins/${id}/reset-password`, { password });
+          return !!res.data?.success;
+        } catch {
+          return false;
+        }
+      },
+
+      deletePlatformAdmin: async (id: string) => {
+        try {
+          const res = await apiClient.delete(`/platform/admins/${id}`);
+          if (res.data?.success) {
+            set((s) => ({
+              platformAdmins: s.platformAdmins.filter((a) => a.id !== id),
+            }));
+            return true;
+          }
+          return false;
+        } catch {
+          return false;
+        }
+      },
 
       fetchDashboardMetrics: async () => {
         try {
@@ -1402,7 +1173,11 @@ export const usePlatformStore = create<PlatformState>()(
       },
     }),
     {
-      name: "dineflow-platform-store",
+      name: "dineflow-platform-store-v2",
+      partialize: (state) => ({
+        maintenanceMode: state.maintenanceMode,
+        defaultTrialDays: state.defaultTrialDays,
+      }),
     }
   )
 );
