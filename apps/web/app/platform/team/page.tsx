@@ -31,6 +31,9 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
+import { useAuthStore } from "@/lib/stores/auth-store";
+import { canManagePlatformTeam } from "@/lib/rbac/roles";
+import { AccessDenied } from "@/components/platform/access-denied";
 import {
   usePlatformStore,
   PlatformAdminUser,
@@ -80,6 +83,9 @@ const ROLE_CONFIG: Record<
 
 export default function PlatformTeamPage() {
   const { toast } = useToast();
+  const user = useAuthStore((s) => s.user);
+  const isSuper = canManagePlatformTeam(user?.role);
+
   const {
     platformAdmins,
     isLoadingAdmins,
@@ -128,8 +134,19 @@ export default function PlatformTeamPage() {
   const [isSubmittingRevoke, setIsSubmittingRevoke] = React.useState(false);
 
   React.useEffect(() => {
-    fetchPlatformAdmins();
-  }, [fetchPlatformAdmins]);
+    if (isSuper) {
+      fetchPlatformAdmins();
+    }
+  }, [fetchPlatformAdmins, isSuper]);
+
+  if (!isSuper) {
+    return (
+      <AccessDenied
+        title="Super Admin Authority Required"
+        description="The Platform Administrators Directory is strictly restricted to Root Super Administrators. Your assigned role does not have authorization to view or manage platform administrators."
+      />
+    );
+  }
 
   const handleRefresh = async () => {
     setIsRefreshing(true);

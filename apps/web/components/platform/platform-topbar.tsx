@@ -21,6 +21,7 @@ import { getRoleLabel, getRoleBadgeClass } from "@/lib/rbac/roles";
 const PLATFORM_TITLES: Record<string, string> = {
   "/platform": "Platform Executive Dashboard",
   "/platform/dashboard": "Platform Executive Dashboard",
+  "/platform/team": "Platform Team & Access Control",
   "/platform/clients": "Clients & Workspaces Directory",
   "/platform/security": "Enterprise Security Center & Zero Trust",
   "/platform/subscriptions": "Subscription Tiers & Quotas",
@@ -261,12 +262,21 @@ export function PlatformTopbar({ onMenuClick }: PlatformTopbarProps = {}) {
 
         {/* User Badge */}
         <div className="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-800">
-          <div className="h-8 w-8 rounded-xl bg-gradient-to-tr from-rose-600 to-indigo-600 text-white flex items-center justify-center font-bold text-xs shadow-sm">
-            SA
+          <div className="h-8 w-8 rounded-xl bg-gradient-to-tr from-rose-600 to-indigo-600 text-white flex items-center justify-center font-bold text-xs shadow-sm uppercase">
+            {(() => {
+              const name = user?.name || user?.firstName;
+              if (name) {
+                const parts = name.trim().split(" ");
+                return parts.length > 1
+                  ? `${parts[0][0]}${parts[1][0]}`
+                  : name.slice(0, 2);
+              }
+              return "DF";
+            })()}
           </div>
           <div className="hidden lg:flex flex-col text-left">
             <span className="text-xs font-bold text-slate-900 dark:text-white leading-tight">
-              {user?.name || "Super Admin"}
+              {user?.name || user?.firstName || "Platform Operator"}
             </span>
             <span className="text-[10px] font-mono text-rose-600 dark:text-rose-400 uppercase font-semibold">
               {getRoleLabel(user?.role || "super_admin")}

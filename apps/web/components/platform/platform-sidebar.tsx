@@ -24,6 +24,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePlatformStore } from "@/lib/stores/platform-store";
+import { useAuthStore } from "@/lib/stores/auth-store";
+import { isPlatformRouteAllowed, getRoleLabel } from "@/lib/rbac/roles";
 
 export const PLATFORM_NAV_ITEMS = [
   { href: "/platform/dashboard", label: "Executive Overview", icon: LayoutDashboard },
@@ -44,10 +46,15 @@ export function PlatformSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [collapsed, setCollapsed] = React.useState(false);
+  const user = useAuthStore((s) => s.user);
   const clients = usePlatformStore((s) => s.clients);
   const logoutPlatform = usePlatformStore((s) => s.logoutPlatform);
 
   const activeClientsCount = clients.filter((c) => c.status === "active").length;
+
+  const allowedNavItems = React.useMemo(() => {
+    return PLATFORM_NAV_ITEMS.filter((item) => isPlatformRouteAllowed(item.href, user?.role));
+  }, [user?.role]);
 
   const handleLogout = async () => {
     try {
@@ -81,7 +88,7 @@ export function PlatformSidebar() {
                   </span>
                 </div>
                 <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 truncate">
-                  Software Owner Portal
+                  {user?.role ? `${getRoleLabel(user.role)} Portal` : "Software Owner Portal"}
                 </span>
               </div>
             )}
@@ -117,7 +124,7 @@ export function PlatformSidebar() {
 
         {/* Navigation Items */}
         <nav className="p-3 space-y-1">
-          {PLATFORM_NAV_ITEMS.map((item) => {
+          {allowedNavItems.map((item) => {
             const isActive = pathname === item.href || (item.href !== "/platform/dashboard" && pathname.startsWith(item.href));
             const Icon = item.icon;
             return (

@@ -26,6 +26,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
+import { useAuthStore } from "@/lib/stores/auth-store";
+import { canViewPlatformRevenue } from "@/lib/rbac/roles";
+import { AccessDenied } from "@/components/platform/access-denied";
 import { usePlatformStore, PlanTier } from "@/lib/stores/platform-store";
 
 interface InvoiceRecord {
@@ -43,6 +46,9 @@ interface InvoiceRecord {
 
 export default function PlatformRevenuePage() {
   const { toast } = useToast();
+  const user = useAuthStore((s) => s.user);
+  const canViewRevenue = canViewPlatformRevenue(user?.role);
+
   const {
     clients,
     invoices: storeInvoices,
@@ -53,9 +59,20 @@ export default function PlatformRevenuePage() {
   } = usePlatformStore();
 
   React.useEffect(() => {
-    fetchRevenueOverview();
-    fetchInvoices();
-  }, [fetchRevenueOverview, fetchInvoices]);
+    if (canViewRevenue) {
+      fetchRevenueOverview();
+      fetchInvoices();
+    }
+  }, [fetchRevenueOverview, fetchInvoices, canViewRevenue]);
+
+  if (!canViewRevenue) {
+    return (
+      <AccessDenied
+        title="Financial Telemetry Restricted"
+        description="Financial telemetry, ARR/MRR metrics, and invoice ledgers are strictly restricted to Super Admins and Finance Administrators."
+      />
+    );
+  }
 
   const [currency, setCurrency] = React.useState<"INR" | "USD">("INR");
   const [dateRange, setDateRange] = React.useState("This Month");

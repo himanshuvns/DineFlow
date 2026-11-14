@@ -29,12 +29,20 @@ import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { useAuthStore } from "@/lib/stores/auth-store";
+import {
+  canImpersonate,
+  canManagePlatformTenants,
+  canManageSubscriptions,
+} from "@/lib/rbac/roles";
 import { usePlatformStore, PlatformClient, PlanTier, ClientStatus } from "@/lib/stores/platform-store";
 
 export default function PlatformClientsPage() {
   const router = useRouter();
   const { addToast } = useToast();
-  const { startImpersonation } = useAuthStore();
+  const { user, startImpersonation } = useAuthStore();
+  const canImpersonateClient = canImpersonate(user?.role);
+  const canManageTenants = canManagePlatformTenants(user?.role);
+  const canManageSubs = canManageSubscriptions(user?.role);
   const {
     clients,
     fetchClients,
@@ -262,7 +270,7 @@ export default function PlatformClientsPage() {
           </div>
 
           {/* Bulk Selection Bar */}
-          {selectedIds.length > 0 && (
+          {canManageTenants && selectedIds.length > 0 && (
             <div className="p-2 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-between gap-2 text-xs">
               <span className="font-bold text-rose-600 dark:text-rose-400">
                 {selectedIds.length} workspace{selectedIds.length > 1 ? "s" : ""} selected
@@ -313,17 +321,19 @@ export default function PlatformClientsPage() {
             <Table className="w-full text-left text-xs">
               <TableHeader className="bg-slate-50/95 dark:bg-[#090D16]/95 backdrop-blur-md text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider text-[10px] sticky top-0 z-10">
                 <TableRow>
-                  <TableHead className="p-3 w-10 text-center">
-                    <input
-                      id="select-all-clients"
-                      name="selectAllClients"
-                      aria-label="Select all clients"
-                      type="checkbox"
-                      checked={selectedIds.length > 0 && selectedIds.length === filteredClients.length}
-                      onChange={(e) => handleSelectAll(e.target.checked)}
-                      className="rounded border-slate-300 dark:border-slate-700 text-rose-600 focus:ring-rose-500 cursor-pointer"
-                    />
-                  </TableHead>
+                  {canManageTenants && (
+                    <TableHead className="p-3 w-10 text-center">
+                      <input
+                        id="select-all-clients"
+                        name="selectAllClients"
+                        aria-label="Select all clients"
+                        type="checkbox"
+                        checked={selectedIds.length > 0 && selectedIds.length === filteredClients.length}
+                        onChange={(e) => handleSelectAll(e.target.checked)}
+                        className="rounded border-slate-300 dark:border-slate-700 text-rose-600 focus:ring-rose-500 cursor-pointer"
+                      />
+                    </TableHead>
+                  )}
                   <TableHead className="px-4 py-3">Business & City</TableHead>
                   <TableHead className="px-4 py-3">Owner & Contact</TableHead>
                   <TableHead className="px-4 py-3">Type</TableHead>
@@ -338,7 +348,7 @@ export default function PlatformClientsPage() {
               <TableBody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
                 {filteredClients.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={10} className="p-8 text-center text-slate-500">
+                    <TableCell colSpan={canManageTenants ? 10 : 9} className="p-8 text-center text-slate-500">
                       No client workspaces match the selected search or filter criteria.
                     </TableCell>
                   </TableRow>
@@ -352,17 +362,19 @@ export default function PlatformClientsPage() {
                           isSelected ? "bg-rose-500/5 dark:bg-rose-500/10" : ""
                         }`}
                       >
-                        <TableCell className="p-3 text-center">
-                          <input
-                            id={`select-client-${client.id}`}
-                            name={`selectClient-${client.id}`}
-                            aria-label={`Select client ${client.name}`}
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => handleToggleSelect(client.id)}
-                            className="rounded border-slate-300 dark:border-slate-700 text-rose-600 focus:ring-rose-500 cursor-pointer"
-                          />
-                        </TableCell>
+                        {canManageTenants && (
+                          <TableCell className="p-3 text-center">
+                            <input
+                              id={`select-client-${client.id}`}
+                              name={`selectClient-${client.id}`}
+                              aria-label={`Select client ${client.name}`}
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => handleToggleSelect(client.id)}
+                              className="rounded border-slate-300 dark:border-slate-700 text-rose-600 focus:ring-rose-500 cursor-pointer"
+                            />
+                          </TableCell>
+                        )}
                         <TableCell className="px-4 py-3.5">
                           <div className="flex items-center gap-2.5">
                             <div className="h-8 w-8 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center font-bold text-xs shrink-0">
@@ -393,19 +405,26 @@ export default function PlatformClientsPage() {
                           {client.businessType.replace("_", " ")}
                         </TableCell>
                         <TableCell className="px-4 py-3.5">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setPlanChangeClient(client);
-                              setSelectedPlanTier(client.plan);
-                              setSelectedCycle(client.billingCycle);
-                            }}
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 hover:bg-purple-500/20 transition-colors cursor-pointer"
-                            title="Click to override subscription plan"
-                          >
-                            <span>{client.plan.replace("_", " ")}</span>
-                            <span className="text-[9px] opacity-75">({client.billingCycle})</span>
-                          </button>
+                          {canManageSubs ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPlanChangeClient(client);
+                                setSelectedPlanTier(client.plan);
+                                setSelectedCycle(client.billingCycle);
+                              }}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 hover:bg-purple-500/20 transition-colors cursor-pointer"
+                              title="Click to override subscription plan"
+                            >
+                              <span>{client.plan.replace("_", " ")}</span>
+                              <span className="text-[9px] opacity-75">({client.billingCycle})</span>
+                            </button>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+                              <span>{client.plan.replace("_", " ")}</span>
+                              <span className="text-[9px] opacity-75">({client.billingCycle})</span>
+                            </span>
+                          )}
                         </TableCell>
                         <TableCell className="px-4 py-3.5">
                           <span
@@ -449,15 +468,17 @@ export default function PlatformClientsPage() {
                         </TableCell>
                         <TableCell className="px-4 py-3.5 text-right">
                           <div className="flex items-center justify-end gap-1">
-                            <button
-                              type="button"
-                              onClick={() => setImpersonateClient(client)}
-                              className="h-7 px-2 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 font-bold text-[11px] flex items-center gap-1 transition-colors cursor-pointer"
-                              title="Secure Impersonation (audited session)"
-                            >
-                              <ShieldAlert className="h-3 w-3" />
-                              <span className="hidden sm:inline">Impersonate</span>
-                            </button>
+                            {canImpersonateClient && (
+                              <button
+                                type="button"
+                                onClick={() => setImpersonateClient(client)}
+                                className="h-7 px-2 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 font-bold text-[11px] flex items-center gap-1 transition-colors cursor-pointer"
+                                title="Secure Impersonation (audited session)"
+                              >
+                                <ShieldAlert className="h-3 w-3" />
+                                <span className="hidden sm:inline">Impersonate</span>
+                              </button>
+                            )}
 
                             <Button
                               variant="ghost"

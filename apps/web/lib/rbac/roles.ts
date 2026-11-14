@@ -144,6 +144,42 @@ export function canManageSupport(role?: string | null): boolean {
 }
 
 /**
+ * Checks if a user has permission to view and manage the Platform Team.
+ * Strictly restricted to Super Admin.
+ */
+export function canManagePlatformTeam(role?: string | null): boolean {
+  return role === "super_admin";
+}
+
+/**
+ * Checks if a user can manage platform tenants/clients (activate, suspend, change plan).
+ */
+export function canManagePlatformTenants(role?: string | null): boolean {
+  return role === "super_admin" || role === "platform_admin";
+}
+
+/**
+ * Checks if a user can view financial telemetry, ARR/MRR, and invoices.
+ */
+export function canViewPlatformRevenue(role?: string | null): boolean {
+  return role === "super_admin" || role === "finance_admin";
+}
+
+/**
+ * Checks if a user can manage security center, block IPs, and revoke sessions.
+ */
+export function canManagePlatformSecurity(role?: string | null): boolean {
+  return role === "super_admin" || role === "platform_admin";
+}
+
+/**
+ * Checks if a user can modify platform feature flags.
+ */
+export function canManageFeatureFlags(role?: string | null): boolean {
+  return role === "super_admin" || role === "platform_admin";
+}
+
+/**
  * Human-readable role label.
  */
 export function getRoleLabel(role?: string | null): string {
@@ -346,6 +382,91 @@ export function getPrimaryRouteForRole(role?: string | null): string {
       return "/dashboard/rooms";
     default:
       return "/dashboard";
+  }
+}
+
+/**
+ * Permitted routes per platform role.
+ */
+export const PLATFORM_ROLE_ALLOWED_ROUTES: Record<PlatformRole, string[]> = {
+  super_admin: [
+    "/platform/dashboard",
+    "/platform/team",
+    "/platform/clients",
+    "/platform/security",
+    "/platform/subscriptions",
+    "/platform/revenue",
+    "/platform/feature-flags",
+    "/platform/support",
+    "/platform/analytics",
+    "/platform/audit-logs",
+    "/platform/system-health",
+    "/platform/operations",
+  ],
+  platform_admin: [
+    "/platform/dashboard",
+    "/platform/clients",
+    "/platform/security",
+    "/platform/subscriptions",
+    "/platform/feature-flags",
+    "/platform/support",
+    "/platform/analytics",
+    "/platform/audit-logs",
+    "/platform/system-health",
+    "/platform/operations",
+  ],
+  finance_admin: [
+    "/platform/dashboard",
+    "/platform/revenue",
+    "/platform/subscriptions",
+    "/platform/clients",
+    "/platform/support",
+    "/platform/analytics",
+  ],
+  support_agent: [
+    "/platform/support",
+    "/platform/dashboard",
+    "/platform/clients",
+    "/platform/system-health",
+  ],
+};
+
+/**
+ * Checks if a platform role is permitted to navigate to a specific platform route.
+ */
+export function isPlatformRouteAllowed(
+  pathname: string,
+  role?: string | null
+): boolean {
+  if (!role || !isPlatformRole(role)) return false;
+
+  // Normalize /platform to /platform/dashboard
+  const normalized = pathname === "/platform" ? "/platform/dashboard" : pathname;
+
+  const allowed = PLATFORM_ROLE_ALLOWED_ROUTES[role as PlatformRole];
+  if (!allowed) return false;
+
+  return allowed.some(
+    (route) =>
+      normalized === route ||
+      normalized.startsWith(`${route}/`) ||
+      normalized.startsWith(`${route}?`)
+  );
+}
+
+/**
+ * Returns the primary landing page for a platform operator role.
+ */
+export function getPrimaryPlatformRouteForRole(role?: string | null): string {
+  switch (role) {
+    case "support_agent":
+      return "/platform/support";
+    case "finance_admin":
+      return "/platform/revenue";
+    case "platform_admin":
+    case "super_admin":
+    default:
+      return "/platform/dashboard";
   }
 }
 

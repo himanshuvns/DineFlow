@@ -18,7 +18,12 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/stores/auth-store";
-import { isPlatformRole, getRoleLabel } from "@/lib/rbac/roles";
+import {
+  isPlatformRole,
+  getRoleLabel,
+  isPlatformRouteAllowed,
+  getPrimaryPlatformRouteForRole,
+} from "@/lib/rbac/roles";
 import { apiClient } from "@/lib/api";
 import { useToast } from "@/components/ui/toast";
 import { HospitalityLoader } from "@/components/ui/hospitality-loader";
@@ -119,10 +124,14 @@ export default function PlatformLoginPage() {
 
         const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
         const fromParam = params?.get("from");
+        const primaryRoute = getPrimaryPlatformRouteForRole(user?.role);
         const destination =
-          fromParam && fromParam.startsWith("/platform") && fromParam !== "/platform/login"
+          fromParam &&
+          fromParam.startsWith("/platform") &&
+          fromParam !== "/platform/login" &&
+          isPlatformRouteAllowed(fromParam, user?.role)
             ? fromParam
-            : "/platform/dashboard";
+            : primaryRoute;
 
         setTimeout(() => {
           router.push(destination);

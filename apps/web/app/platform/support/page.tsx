@@ -26,6 +26,7 @@ import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
 import { usePlatformStore, SupportTicket } from "@/lib/stores/platform-store";
 import { useAuthStore } from "@/lib/stores/auth-store";
+import { canImpersonate } from "@/lib/rbac/roles";
 import { useRouter } from "next/navigation";
 
 export default function PlatformSupportPage() {
@@ -40,7 +41,9 @@ export default function PlatformSupportPage() {
     updateSupportTicketStatus,
     addTicketInternalNote,
   } = usePlatformStore();
+  const user = useAuthStore((s) => s.user);
   const startImpersonation = useAuthStore((s) => s.startImpersonation);
+  const canImpersonateClient = canImpersonate(user?.role);
 
   React.useEffect(() => {
     fetchSupportTickets();
@@ -426,15 +429,21 @@ export default function PlatformSupportPage() {
                         Tenant ID: {selectedTicket.tenantId}
                       </p>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleImpersonateClient(selectedTicket.tenantId)}
-                      className="h-7 text-xs border-amber-500/30 text-amber-700 dark:text-amber-400 hover:bg-amber-500/10"
-                    >
-                      <ShieldAlert className="mr-1 h-3.5 w-3.5" />
-                      Impersonate Workspace
-                    </Button>
+                    {canImpersonateClient ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleImpersonateClient(selectedTicket.tenantId)}
+                        className="h-7 text-xs border-amber-500/30 text-amber-700 dark:text-amber-400 hover:bg-amber-500/10"
+                      >
+                        <ShieldAlert className="mr-1 h-3.5 w-3.5" />
+                        Impersonate Workspace
+                      </Button>
+                    ) : (
+                      <span className="text-[10px] font-mono font-bold text-slate-500 dark:text-slate-400 px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                        Diagnostics Only
+                      </span>
+                    )}
                   </div>
                 </div>
 

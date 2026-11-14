@@ -6,7 +6,12 @@ import { usePathname, useRouter } from "next/navigation";
 import { X, ExternalLink } from "lucide-react";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { usePlatformStore } from "@/lib/stores/platform-store";
-import { isPlatformRole } from "@/lib/rbac/roles";
+import {
+  isPlatformRole,
+  isPlatformRouteAllowed,
+  getPrimaryPlatformRouteForRole,
+  getRoleLabel,
+} from "@/lib/rbac/roles";
 import { PlatformSidebar, PLATFORM_NAV_ITEMS } from "@/components/platform/platform-sidebar";
 import { PlatformTopbar } from "@/components/platform/platform-topbar";
 import { AccessDenied } from "@/components/platform/access-denied";
@@ -65,6 +70,19 @@ export default function PlatformLayout({
     }
     // If authenticated as a non-platform client (e.g. restaurant owner), show formal access denial
     return <AccessDenied />;
+  }
+
+  // Capability Check: Strictly enforce Route Segregation per Platform Role
+  const isAllowedThisRoute = isPlatformRouteAllowed(pathname, user?.role);
+  if (!isAllowedThisRoute) {
+    return (
+      <AccessDenied
+        title="Platform Capability Restricted"
+        description={`Your assigned role (${getRoleLabel(user?.role)}) does not have permission to access ${pathname}.`}
+        backHref={getPrimaryPlatformRouteForRole(user?.role)}
+        backLabel={`Return to ${getRoleLabel(user?.role)} Console`}
+      />
+    );
   }
 
   const handleLogout = async () => {
@@ -134,7 +152,9 @@ export default function PlatformLayout({
 
               {/* Nav links */}
               <nav className="space-y-1">
-                {PLATFORM_NAV_ITEMS.map((item) => {
+                {PLATFORM_NAV_ITEMS.filter((item) =>
+                  isPlatformRouteAllowed(item.href, user?.role)
+                ).map((item) => {
                   const isActive = pathname === item.href || (item.href !== "/platform/dashboard" && pathname.startsWith(item.href));
                   const Icon = item.icon;
                   return (

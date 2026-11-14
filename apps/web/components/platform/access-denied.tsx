@@ -5,13 +5,18 @@ import { useRouter } from "next/navigation";
 import { ShieldAlert, ArrowLeft, Lock, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/lib/stores/auth-store";
+import { isPlatformRole, getPrimaryPlatformRouteForRole, getRoleLabel } from "@/lib/rbac/roles";
 
 export function AccessDenied({
   title = "Platform Access Restricted",
   description = "The Platform Super Admin Console is strictly segregated for DineFlow platform operators, finance administrators, and system architects. Your current user role does not possess platform credentials.",
+  backHref,
+  backLabel,
 }: {
   title?: string;
   description?: string;
+  backHref?: string;
+  backLabel?: string;
 }) {
   const router = useRouter();
   const { user, clearAuth } = useAuthStore();
@@ -21,6 +26,9 @@ export function AccessDenied({
     clearAuth();
     router.replace("/platform/login");
   };
+
+  const isPlatformUser = isPlatformRole(user?.role);
+  const primaryPlatformRoute = getPrimaryPlatformRouteForRole(user?.role);
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 bg-slate-950 text-slate-100 relative overflow-hidden">
@@ -51,29 +59,42 @@ export function AccessDenied({
             </div>
             <div className="flex justify-between text-slate-400">
               <span>Assigned Role:</span>
-              <span className="font-mono text-amber-400 capitalize">{user.role || "Client Staff"}</span>
+              <span className="font-mono text-amber-400 capitalize">{getRoleLabel(user.role)}</span>
             </div>
           </div>
         )}
 
         <div className="flex flex-col sm:flex-row gap-3 pt-2">
-          <Button
-            variant="secondary"
-            className="flex-1 text-xs"
-            leftIcon={<ArrowLeft className="h-4 w-4" />}
-            onClick={() => router.push("/dashboard")}
-          >
-            Return to Client Dashboard
-          </Button>
+          {isPlatformUser ? (
+            <Button
+              variant="glow"
+              className="flex-1 text-xs bg-rose-600 hover:bg-rose-500 text-white font-bold"
+              leftIcon={<ArrowLeft className="h-4 w-4" />}
+              onClick={() => router.push(backHref || primaryPlatformRoute)}
+            >
+              {backLabel || "Return to Your Platform Console"}
+            </Button>
+          ) : (
+            <>
+              <Button
+                variant="secondary"
+                className="flex-1 text-xs"
+                leftIcon={<ArrowLeft className="h-4 w-4" />}
+                onClick={() => router.push("/dashboard")}
+              >
+                Return to Client Dashboard
+              </Button>
 
-          <Button
-            variant="glow"
-            className="flex-1 text-xs bg-rose-600 hover:bg-rose-500 text-white"
-            leftIcon={<LogIn className="h-4 w-4" />}
-            onClick={handleLoginAsSuperAdmin}
-          >
-            Sign in to Platform Console
-          </Button>
+              <Button
+                variant="glow"
+                className="flex-1 text-xs bg-rose-600 hover:bg-rose-500 text-white"
+                leftIcon={<LogIn className="h-4 w-4" />}
+                onClick={handleLoginAsSuperAdmin}
+              >
+                Sign in to Platform Console
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </div>

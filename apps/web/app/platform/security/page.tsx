@@ -24,10 +24,16 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
+import { useAuthStore } from "@/lib/stores/auth-store";
+import { canManagePlatformSecurity } from "@/lib/rbac/roles";
+import { AccessDenied } from "@/components/platform/access-denied";
 import { usePlatformStore, SecurityIncidentRecord } from "@/lib/stores/platform-store";
 
 export default function PlatformSecurityCenterPage() {
   const { toast } = useToast();
+  const user = useAuthStore((s) => s.user);
+  const canManageSec = canManagePlatformSecurity(user?.role);
+
   const {
     securityMetrics,
     securityEvents,
@@ -54,9 +60,20 @@ export default function PlatformSecurityCenterPage() {
   const [severityFilter, setSeverityFilter] = React.useState<string>("all");
 
   React.useEffect(() => {
-    fetchSecurityMetrics();
-    fetchSecurityEvents();
-  }, [fetchSecurityMetrics, fetchSecurityEvents]);
+    if (canManageSec) {
+      fetchSecurityMetrics();
+      fetchSecurityEvents();
+    }
+  }, [fetchSecurityMetrics, fetchSecurityEvents, canManageSec]);
+
+  if (!canManageSec) {
+    return (
+      <AccessDenied
+        title="Zero Trust Security Center Restricted"
+        description="Security posture analytics, IP firewall controls, and session revocation tools are strictly restricted to Super Admins and Platform Operations Admins."
+      />
+    );
+  }
 
   const handleRefresh = async () => {
     setIsRefreshing(true);

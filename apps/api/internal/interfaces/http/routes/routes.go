@@ -322,7 +322,7 @@ func Setup(
 				platformGroup.GET("/revenue/invoices", middleware.FinanceAdminOrAbove(), platformHandler.ListInvoices)
 
 				// Feature Flags
-				platformGroup.GET("/feature-flags", platformHandler.ListFeatureFlags)
+				platformGroup.GET("/feature-flags", middleware.PlatformAdminOrAbove(), platformHandler.ListFeatureFlags)
 				platformGroup.PUT("/feature-flags/:key/default", middleware.PlatformAdminOrAbove(), platformHandler.ToggleGlobalFlag)
 				platformGroup.PUT("/feature-flags/tenants/:id/:key", middleware.PlatformAdminOrAbove(), platformHandler.SetTenantFeatureOverride)
 
@@ -333,14 +333,14 @@ func Setup(
 				platformGroup.POST("/support/tickets/:id/notes", platformHandler.AddTicketNote)
 
 				// Audit Logs
-				platformGroup.GET("/audit-logs", platformHandler.ListAuditLogs)
+				platformGroup.GET("/audit-logs", middleware.PlatformAdminOrAbove(), platformHandler.ListAuditLogs)
 				platformGroup.POST("/audit-logs", platformHandler.CreateAuditLog)
 
 				// Infrastructure & System Health
 				platformGroup.GET("/system-health", platformHandler.GetSystemHealth)
 
 				// Operations & Emergency Lockdown
-				platformGroup.GET("/operations/settings", platformHandler.GetOperationsSettings)
+				platformGroup.GET("/operations/settings", middleware.PlatformAdminOrAbove(), platformHandler.GetOperationsSettings)
 				platformGroup.PUT("/operations/maintenance", middleware.SuperAdminOnly(), platformHandler.SetMaintenanceMode)
 				platformGroup.PUT("/operations/announcement", middleware.SuperAdminOnly(), platformHandler.SetGlobalAnnouncement)
 				platformGroup.POST("/operations/flush-cache", middleware.SuperAdminOnly(), platformHandler.FlushCache)
@@ -358,8 +358,8 @@ func Setup(
 				platformGroup.GET("/export/:entity", middleware.FinanceAdminOrAbove(), platformHandler.ExportCSV)
 
 				// Security Center
-				platformGroup.GET("/security/metrics", platformHandler.GetSecurityMetrics)
-				platformGroup.GET("/security/events", platformHandler.GetSecurityEvents)
+				platformGroup.GET("/security/metrics", middleware.PlatformAdminOrAbove(), platformHandler.GetSecurityMetrics)
+				platformGroup.GET("/security/events", middleware.PlatformAdminOrAbove(), platformHandler.GetSecurityEvents)
 				platformGroup.POST("/security/block-ip", middleware.PlatformAdminOrAbove(), platformHandler.BlockIP)
 				platformGroup.DELETE("/security/block-ip/:ip", middleware.PlatformAdminOrAbove(), platformHandler.UnblockIP)
 				platformGroup.POST("/security/revoke-user-sessions", middleware.PlatformAdminOrAbove(), platformHandler.RevokeUserSessions)
