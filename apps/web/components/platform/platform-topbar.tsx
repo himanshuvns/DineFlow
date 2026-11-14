@@ -77,7 +77,7 @@ export function PlatformTopbar({ onMenuClick }: PlatformTopbarProps = {}) {
   }, [searchQuery, clients]);
 
   return (
-    <header className="h-16 px-4 sm:px-6 border-b border-slate-200/80 dark:border-slate-800/80 bg-white/80 dark:bg-[#070B14]/80 backdrop-blur-md sticky top-0 z-40 flex items-center justify-between gap-4">
+    <header className="h-16 px-4 sm:px-6 lg:px-8 border-b border-slate-200/80 dark:border-slate-800/80 bg-white/80 dark:bg-[#070B14]/80 backdrop-blur-md sticky top-0 z-40 flex items-center justify-between gap-4">
       {/* Page Title & Breadcrumbs */}
       <div className="flex items-center gap-2 min-w-0">
         {onMenuClick && (

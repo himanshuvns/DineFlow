@@ -1734,9 +1734,9 @@
     "semantic_hash": ""
   },
   "apps/web/app/platform/layout.tsx": {
-    "mtime": 1794632480.8441446,
-    "seen": 1794632881.779757,
-    "ast_hash": "54c8c97c9786a9ee5064a08ab4527767",
+    "mtime": 1794637271.3404033,
+    "seen": 1794637352.255817,
+    "ast_hash": "c9042d20d87c07d83458b77e7e1a4dd3",
     "semantic_hash": ""
   },
   "apps/web/app/platform/operations/page.tsx": {
@@ -1800,9 +1800,9 @@
     "semantic_hash": ""
   },
   "apps/web/components/platform/platform-topbar.tsx": {
-    "mtime": 1794632504.6686726,
-    "seen": 1794632881.7798028,
-    "ast_hash": "b5e64c7b47c5cc8bead791314ed80757",
+    "mtime": 1794637285.6499207,
+    "seen": 1794637352.255863,
+    "ast_hash": "b645ac97d4c9a44cd9561051106427ae",
     "semantic_hash": ""
   },
   "apps/web/lib/rbac/roles.ts": {
