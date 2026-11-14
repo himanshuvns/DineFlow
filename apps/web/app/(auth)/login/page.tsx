@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Mail,
+  Store,
   ShieldCheck,
   Headphones,
   CheckCircle2,
@@ -45,14 +46,6 @@ export default function LoginPage() {
       }
     }
   }, [addToast]);
-
-  const handleFillSuperAdmin = () => {
-    setEmail("superadmin@dineflow.io");
-    setPassword("SuperAdmin@2026");
-    setError("");
-    setEmailTouched(false);
-    setIsPlatformAdminUser(true);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -170,8 +163,8 @@ export default function LoginPage() {
         {/* Card Header */}
         <div className="text-center pb-4 sm:pb-5">
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-[#14F1C7] text-[11px] font-semibold mb-2">
-            <ShieldCheck className="h-3 w-3" />
-            <span>Enterprise Multi-Tenant Control Plane</span>
+            <Store className="h-3 w-3" />
+            <span>Hospitality Workspace Login</span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-display font-extrabold text-slate-900 dark:text-white tracking-tight">
             Sign in to DineFlow
@@ -179,21 +172,6 @@ export default function LoginPage() {
           <p className="mt-1 text-xs sm:text-sm font-body text-slate-600 dark:text-[#94A3B8] max-w-sm mx-auto leading-relaxed">
             Enter your work email and password to access your restaurant workspace
           </p>
-        </div>
-
-        {/* Super Admin Test Credentials Pill (Only Super Admin) */}
-        <div className="mb-4 p-2.5 px-3.5 rounded-2xl bg-slate-100/80 dark:bg-slate-900/60 border border-slate-200/90 dark:border-slate-800/80 flex items-center justify-between gap-3 select-none">
-          <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
-            <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-[#14F1C7] shrink-0" />
-            <span className="font-medium">Platform Super Admin</span>
-          </div>
-          <button
-            type="button"
-            onClick={handleFillSuperAdmin}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-[#14F1C7] text-xs font-semibold hover:bg-emerald-500/20 transition-all cursor-pointer"
-          >
-            <span>Auto-fill</span>
-          </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

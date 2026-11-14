@@ -17,9 +17,9 @@ export function AccessDenied({
   const { user, clearAuth } = useAuthStore();
 
   const handleLoginAsSuperAdmin = () => {
-    // Clear the current client session entirely, then go to login
+    // Clear the current client session entirely, then go to platform login
     clearAuth();
-    router.replace("/login");
+    router.replace("/platform/login");
   };
 
   return (
@@ -72,7 +72,7 @@ export function AccessDenied({
             leftIcon={<LogIn className="h-4 w-4" />}
             onClick={handleLoginAsSuperAdmin}
           >
-            Sign in as Super Admin
+            Sign in to Platform Console
           </Button>
         </div>
       </div>

@@ -30,6 +30,11 @@ export default function PlatformLayout({
     setMounted(true);
   }, []);
 
+  // Dedicated Platform Login route renders standalone without platform shell
+  if (pathname === "/platform/login") {
+    return <>{children}</>;
+  }
+
   if (!mounted) {
     return (
       <HospitalityLoader
@@ -51,6 +56,14 @@ export default function PlatformLayout({
   const hasPlatformAccess = isPlatformRole(user?.role);
 
   if (!hasPlatformAccess) {
+    // If not authenticated at all, redirect directly to /platform/login
+    if (!isAuthenticated || !user) {
+      if (typeof window !== "undefined") {
+        router.replace(`/platform/login?from=${encodeURIComponent(pathname)}`);
+      }
+      return null;
+    }
+    // If authenticated as a non-platform client (e.g. restaurant owner), show formal access denial
     return <AccessDenied />;
   }
 
@@ -58,7 +71,7 @@ export default function PlatformLayout({
     try {
       await logoutPlatform();
     } catch {}
-    router.push("/login");
+    router.push("/platform/login");
   };
 
   const activeClientsCount = clients.filter((c) => c.status === "active").length;
